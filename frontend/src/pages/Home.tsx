@@ -6,7 +6,7 @@ const Home = () => {
         <>
             <Hero />
             <SearchBar />
-            <div className="h-[80vh] bg-gray-100 p-10">
+            <div className="h-[80vh] bg-gray-100 p-4 md:p-10">
             </div>
         </>
     );
