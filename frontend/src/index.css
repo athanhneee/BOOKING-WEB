@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+/* Poppins */
+@font-face {
+    font-family: "Poppins";
+    src: url("/src/assets/fonts/Poppins/Poppins-Regular.ttf");
+    font-weight: 400;
+}
+
+/* Montserrat */
+@font-face {
+    font-family: "Montserrat";
+    src: url("/src/assets/fonts/Montserrat/Montserrat-Regular.ttf");
+    font-weight: 400;
+}
+
+body {
+    font-family: "Poppins", sans-serif;
+}
