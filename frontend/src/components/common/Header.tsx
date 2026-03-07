@@ -13,7 +13,7 @@ const navLinks = [
 ];
 
 const Header = () => {
-    const show = useScrollVisibility({ threshold: 8, topOffset: 24 });
+    const show = useScrollVisibility({ threshold: 12, topOffset: 36 });
     const location = useLocation();
     const [useDarkText, setUseDarkText] = useState(location.pathname !== "/");
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -48,7 +48,7 @@ const Header = () => {
 
     return (
         <header
-            className={`fixed top-0 left-0 z-50 w-full py-3 transition-transform duration-300 will-change-transform md:py-4 ${
+            className={`fixed top-0 left-0 z-50 w-full py-3 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform md:py-4 ${
                 isVisible ? "translate-y-0" : "-translate-y-full"
             }`}
         >

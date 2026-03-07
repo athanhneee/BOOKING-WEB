@@ -1,11 +1,13 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { FaCalendarAlt, FaMapMarkerAlt, FaSearch, FaUser } from "react-icons/fa";
 import useScrollVisibility from "../../hooks/useScrollVisibility";
 
 const SearchBar = () => {
     const [greeting, setGreeting] = useState<string>("");
     const [isPinned, setIsPinned] = useState(false);
-    const show = useScrollVisibility({ threshold: 8, topOffset: 24 });
+    const show = useScrollVisibility({ threshold: 12, topOffset: 36 });
+    const pinnedRef = useRef(false);
+    const rafRef = useRef<number | null>(null);
 
     useEffect(() => {
         const hour = new Date().getHours();
@@ -21,38 +23,62 @@ const SearchBar = () => {
     }, []);
 
     useEffect(() => {
-        const handleScroll = () => {
-            setIsPinned(window.scrollY > 260);
+        const pinAt = 280;
+        const unpinAt = 180;
+
+        const updatePinnedState = () => {
+            const currentY = window.scrollY;
+            const nextPinned = pinnedRef.current ? currentY > unpinAt : currentY > pinAt;
+
+            if (nextPinned !== pinnedRef.current) {
+                pinnedRef.current = nextPinned;
+                setIsPinned(nextPinned);
+            }
         };
 
+        const handleScroll = () => {
+            if (rafRef.current !== null) {
+                return;
+            }
+
+            rafRef.current = window.requestAnimationFrame(() => {
+                updatePinnedState();
+                rafRef.current = null;
+            });
+        };
+
+        updatePinnedState();
         window.addEventListener("scroll", handleScroll, { passive: true });
+
         return () => {
             window.removeEventListener("scroll", handleScroll);
+            if (rafRef.current !== null) {
+                window.cancelAnimationFrame(rafRef.current);
+            }
         };
     }, []);
 
     return (
         <div
-            className={`${isPinned ? "fixed left-0 top-14 w-full md:top-20" : "relative -mt-20 md:-mt-32"} z-40 flex justify-center px-3 transition-all duration-300 will-change-transform md:px-0 ${
-                show ? "translate-y-0 opacity-100" : "-translate-y-20 pointer-events-none opacity-0"
-            }`}
+            className={`${isPinned ? "fixed left-0 top-14 w-full md:top-20" : "relative -mt-20 md:-mt-32"} z-40 flex justify-center px-3 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform md:px-0 ${show ? "translate-y-0 opacity-100" : "-translate-y-16 pointer-events-none opacity-0"
+                }`}
         >
             <div
-                className={`w-full max-w-6xl text-center ${
-                    isPinned ? "bg-transparent p-0 shadow-none" : "rounded-3xl bg-white p-4 shadow-xl sm:p-6 md:p-8"
-                }`}
+                className={`w-full max-w-6xl text-center ${isPinned ? "bg-transparent p-0 shadow-none" : "rounded-3xl bg-white p-4 shadow-xl sm:p-6 md:p-8"
+                    }`}
             >
-                {!isPinned && (
-                    <>
-                        <h1 className="mb-3 text-center text-3xl font-bold text-cyan-600 sm:text-4xl md:mb-4 md:text-5xl">
-                            Chào buổi {greeting}!
-                        </h1>
+                <div
+                    className={`overflow-hidden transition-all duration-10 ease-[cubic-bezier(0.16,1,0.3,1)] ${isPinned ? "max-h-0 -translate-y-2 opacity-0" : "max-h-52 translate-y-0 opacity-100"
+                        }`}
+                >
+                    <h1 className="mb-3 text-center text-3xl font-bold text-cyan-600 sm:text-4xl md:mb-4 md:text-5xl">
+                        Chào buổi {greeting}!
+                    </h1>
 
-                        <p className="mb-6 text-center text-base text-gray-600 sm:text-lg md:mb-10">
-                            Trân trọng được chào đón bạn tại thành phố biển Vũng Tàu
-                        </p>
-                    </>
-                )}
+                    <p className="mb-6 text-center text-base text-gray-600 sm:text-lg md:mb-10">
+                        Trân trọng được chào đón bạn tại thành phố biển Vũng Tàu
+                    </p>
+                </div>
 
                 <div className="rounded-full border bg-white">
                     <div className="flex items-center gap-3 px-4 py-3 md:hidden">
