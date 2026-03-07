@@ -33,6 +33,8 @@ const Header = () => {
     }, [location.pathname]);
 
     useEffect(() => {
+        // Close the mobile drawer after route transitions.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMobileOpen(false);
     }, [location.pathname]);
 
@@ -48,8 +50,8 @@ const Header = () => {
 
     return (
         <header
-            className={`fixed top-0 left-0 z-50 w-full py-3 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform md:py-4 ${
-                isVisible ? "translate-y-0" : "-translate-y-full"
+            className={`fixed top-0 left-0 z-50 w-full py-3 transition-transform duration-[520ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] will-change-transform md:py-4 ${
+                isVisible ? "translate-y-0" : "pointer-events-none -translate-y-[110%]"
             }`}
         >
             <div className="container mx-auto flex items-center justify-between px-4 md:px-6">
