@@ -3,20 +3,24 @@ import { useEffect, useRef, useState } from "react";
 type UseScrollVisibilityOptions = {
     threshold?: number;
     topOffset?: number;
+    hideStartRatio?: number;
 };
 
 const useScrollVisibility = (options: UseScrollVisibilityOptions = {}) => {
-    const { threshold = 10, topOffset = 40 } = options;
+    const { threshold = 10, topOffset = 40, hideStartRatio = 0 } = options;
     const [isVisible, setIsVisible] = useState(true);
     const lastScrollYRef = useRef(0);
     const rafRef = useRef<number | null>(null);
 
     useEffect(() => {
+        const getHideStartOffset = () => topOffset + Math.max(0, hideStartRatio) * window.innerHeight;
+
         const updateVisibility = () => {
             const currentScrollY = window.scrollY;
             const delta = currentScrollY - lastScrollYRef.current;
+            const hideStartOffset = getHideStartOffset();
 
-            if (currentScrollY <= topOffset) {
+            if (currentScrollY <= hideStartOffset) {
                 setIsVisible(true);
                 lastScrollYRef.current = currentScrollY;
                 return;
@@ -52,7 +56,7 @@ const useScrollVisibility = (options: UseScrollVisibilityOptions = {}) => {
                 window.cancelAnimationFrame(rafRef.current);
             }
         };
-    }, [threshold, topOffset]);
+    }, [hideStartRatio, threshold, topOffset]);
 
     return isVisible;
 };
