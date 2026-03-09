@@ -76,7 +76,11 @@ const buildGuestSummary = (selection: GuestSelection): string => {
     return fragments.join(", ");
 };
 
-const SearchBar = () => {
+type SearchBarProps = {
+    forceHidden?: boolean;
+};
+
+const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
     const [greeting, setGreeting] = useState<string>("");
     const [isPinned, setIsPinned] = useState(false);
     const [locationQuery, setLocationQuery] = useState("");
@@ -110,6 +114,13 @@ const SearchBar = () => {
     }, []);
 
     useEffect(() => {
+        if (forceHidden) {
+            pinnedRef.current = false;
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setIsPinned(false);
+            return;
+        }
+
         const pinAt = 340;
         const unpinAt = 240;
 
@@ -143,7 +154,7 @@ const SearchBar = () => {
                 window.cancelAnimationFrame(rafRef.current);
             }
         };
-    }, []);
+    }, [forceHidden]);
 
     useEffect(() => {
         const handlePointerDown = (event: MouseEvent) => {
@@ -347,6 +358,10 @@ const SearchBar = () => {
 
         return openField === field ? "flex-[1.16]" : "flex-[0.82]";
     };
+
+    if (forceHidden) {
+        return null;
+    }
 
     return (
         <>

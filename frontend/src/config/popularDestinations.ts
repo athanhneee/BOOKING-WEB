@@ -28,7 +28,7 @@ const popularDestinationSeeds: PopularDestinationSeed[] = [
     { id: "villa-06", name: "16 Hà Huy Tập", address: "16 Hà Huy Tập, Vũng Tàu", rating: 4.6, pricePerNight: 5500000, imageFile: "16hahuytap.jpg" },
     { id: "villa-07", name: "C12 Tô Ngọc Vân", address: "C12 Tô Ngọc Vân, Vũng Tàu", rating: 4.7, pricePerNight: 6000000, imageFile: "c12tongocvan.jpg" },
     { id: "villa-08", name: "Mộc Nhiên", address: "B2.50 Thùy Dương, Vũng Tàu", rating: 4.7, pricePerNight: 3000000, imageFile: "mocnhien.jpg" },
-    { id: "villa-09", name: "Pha Lê Villa", address: "B2.5 Thùy Dương, Vũng Tàu", rating: 4.8, pricePerNight: 4000000, imageFile: "NDT05929-HDR1.jpg" },
+    { id: "villa-09", name: "Pha Lê Villa", address: "B2.5 Thùy Dương, Vũng Tàu", rating: 4.8, pricePerNight: 4000000, imageFile: "b25thuyduong.jpg" },
     { id: "villa-10", name: "A2 Đặng Thùy Trâm", address: "A2 Đặng Thùy Trâm, Vũng Tàu", rating: 4.6, pricePerNight: 5500000, imageFile: "a3dtt.jpg" },
     { id: "villa-11", name: "B5 Đặng Thùy Trâm", address: "B5 Đặng Thùy Trâm, Vũng Tàu", rating: 4.6, pricePerNight: 8000000, imageFile: "b5dtt.jpg" },
     { id: "villa-12", name: "11 Trần Phú", address: "11 Trần Phú, Vũng Tàu", rating: 4.9, pricePerNight: 8500000, imageFile: "11tranphu.jpg" },

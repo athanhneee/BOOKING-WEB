@@ -3,6 +3,7 @@ import type { PopularDestination } from "../../../config/popularDestinations";
 
 type PopularDestinationCardProps = {
     destination: PopularDestination;
+    onClick?: () => void;
 };
 
 const currencyFormatter = new Intl.NumberFormat("vi-VN", {
@@ -11,9 +12,9 @@ const currencyFormatter = new Intl.NumberFormat("vi-VN", {
     maximumFractionDigits: 0,
 });
 
-const PopularDestinationCard = ({ destination }: PopularDestinationCardProps) => {
-    return (
-        <article className="group min-w-0">
+const PopularDestinationCard = ({ destination, onClick }: PopularDestinationCardProps) => {
+    const content = (
+        <>
             <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-gray-200">
                 {destination.imageUrl ? (
                     <img
@@ -48,8 +49,22 @@ const PopularDestinationCard = ({ destination }: PopularDestinationCardProps) =>
                 <FaMapMarkerAlt className="text-zinc-400" />
                 {destination.address}
             </p>
-        </article>
+        </>
     );
+
+    if (onClick) {
+        return (
+            <button
+                type="button"
+                onClick={onClick}
+                className="group min-w-0 w-full appearance-none border-0 bg-transparent p-0 text-left"
+            >
+                {content}
+            </button>
+        );
+    }
+
+    return <article className="group min-w-0">{content}</article>;
 };
 
 export default PopularDestinationCard;
