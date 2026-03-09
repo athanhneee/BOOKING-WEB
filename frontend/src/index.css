@@ -1,19 +1,68 @@
 @import "tailwindcss";
 
-/* Poppins */
-@font-face {
-    font-family: "Poppins";
-    src: url("/src/assets/fonts/Poppins/Poppins-Regular.ttf");
-    font-weight: 400;
+@theme {
+    --font-sans: "Poppins", sans-serif;
 }
 
-/* Montserrat */
 @font-face {
-    font-family: "Montserrat";
-    src: url("/src/assets/fonts/Montserrat/Montserrat-Regular.ttf");
+    font-family: "Poppins";
+    src: url("./assets/fonts/Poppins/Poppins-Regular.ttf") format("truetype");
     font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Poppins";
+    src: url("./assets/fonts/Poppins/Poppins-Medium.ttf") format("truetype");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Poppins";
+    src: url("./assets/fonts/Poppins/Poppins-SemiBold.ttf") format("truetype");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Poppins";
+    src: url("./assets/fonts/Poppins/Poppins-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Poppins";
+    src: url("./assets/fonts/Poppins/Poppins-ExtraBold.ttf") format("truetype");
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Poppins";
+    src: url("./assets/fonts/Poppins/Poppins-Black.ttf") format("truetype");
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
 }
 
 body {
+    margin: 0;
+    font-family: "Poppins", sans-serif;
+}
+
+html,
+#root,
+*,
+button,
+input,
+select,
+textarea {
     font-family: "Poppins", sans-serif;
 }
