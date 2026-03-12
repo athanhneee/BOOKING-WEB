@@ -111,6 +111,7 @@ const PopularDestinationsSection = ({
             return;
         }
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsSearchBarHidden(false);
     }, [isExpanded]);
 
@@ -145,6 +146,7 @@ const PopularDestinationsSection = ({
         }
 
         const next = new URLSearchParams(searchParams);
+
         if (isExpanded) {
             next.set("popularExpanded", "1");
             next.set("popularPage", String(safePageIndex));
@@ -316,6 +318,7 @@ const PopularDestinationsSection = ({
 
     const handleOpenDetail = (villaId: string) => {
         const nextParams = new URLSearchParams(searchParams);
+
         if (isExpanded) {
             nextParams.set("popularExpanded", "1");
             nextParams.set("popularPage", String(safePageIndex));
@@ -375,7 +378,8 @@ const PopularDestinationsSection = ({
                 </div>
 
                 <div
-                    className={`mt-6 overflow-hidden transition-[max-height,opacity,transform] duration-[560ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] ${isExpanded ? "pointer-events-none max-h-0 -translate-y-2 opacity-0" : "max-h-[960px] translate-y-0 opacity-100"}`}
+                    className={`mt-6 overflow-hidden transition-[max-height,opacity,transform] duration-[560ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] ${isExpanded ? "pointer-events-none max-h-0 -translate-y-2 opacity-0" : "max-h-[960px] translate-y-0 opacity-100"
+                        }`}
                 >
                     <div
                         ref={trackRef}
@@ -394,7 +398,10 @@ const PopularDestinationsSection = ({
                 </div>
 
                 <div
-                    className={`mt-6 grid overflow-hidden transition-[grid-template-rows,opacity,transform] duration-[560ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] ${isExpanded ? "pointer-events-auto grid-rows-[1fr] translate-y-0 opacity-100" : "pointer-events-none grid-rows-[0fr] -translate-y-2 opacity-0"}`}
+                    className={`mt-6 grid overflow-hidden transition-[grid-template-rows,opacity,transform] duration-[560ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] ${isExpanded
+                        ? "pointer-events-auto grid-rows-[1fr] translate-y-0 opacity-100"
+                        : "pointer-events-none grid-rows-[0fr] -translate-y-2 opacity-0"
+                        }`}
                 >
                     <div className="min-h-0 overflow-hidden">
                         <div ref={expandedPanelRef} className="rounded-3xl border border-zinc-200 bg-white p-3 sm:p-5 md:p-7">
@@ -429,7 +436,10 @@ const PopularDestinationsSection = ({
                             <div className="relative overflow-hidden">
                                 {isGridSliding && slideTargetIndex !== null ? (
                                     <div
-                                        className={`flex w-[200%] ${slideOffsetClass} ${isGridTransitionEnabled ? "transition-transform duration-[520ms] ease-[cubic-bezier(0.22,0.61,0.36,1)]" : "transition-none"} will-change-transform motion-reduce:transition-none`}
+                                        className={`flex w-[200%] ${slideOffsetClass} ${isGridTransitionEnabled
+                                            ? "transition-transform duration-[520ms] ease-[cubic-bezier(0.22,0.61,0.36,1)]"
+                                            : "transition-none"
+                                            } will-change-transform motion-reduce:transition-none`}
                                         onTransitionEnd={handleGridSlideEnd}
                                     >
                                         {slideDirection === "forward" ? (
