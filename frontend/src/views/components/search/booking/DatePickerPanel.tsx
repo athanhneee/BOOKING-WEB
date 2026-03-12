@@ -1,4 +1,4 @@
-﻿import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { FaCalendarAlt, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 type DatePickerPanelProps = {
@@ -8,7 +8,9 @@ type DatePickerPanelProps = {
     selectedNightOffset?: number;
     onSelectDate: (nextDate: string) => void;
     onNightOffsetChange?: (nextOffset: number) => void;
+    onClear?: () => void;
     className?: string;
+    style?: CSSProperties;
     variant?: "popover" | "inline";
 };
 
@@ -81,6 +83,25 @@ const buildMonthCells = (monthStart: Date): Array<string | null> => {
 const formatMonthTitle = (monthStart: Date): string =>
     `Tháng ${monthStart.getMonth() + 1} năm ${monthStart.getFullYear()}`;
 
+const formatSelectedSummary = (selectedDate: string, selectedNightOffset: number): string => {
+    const parsed = parseIsoDate(selectedDate);
+    if (parsed) {
+        const baseLabel = new Intl.DateTimeFormat("vi-VN", {
+            weekday: "short",
+            day: "2-digit",
+            month: "2-digit",
+        }).format(parsed);
+
+        return selectedNightOffset > 0 ? `${baseLabel} · ± ${selectedNightOffset} ngày` : baseLabel;
+    }
+
+    if (selectedNightOffset > 0) {
+        return `± ${selectedNightOffset} ngày`;
+    }
+
+    return "Chưa chọn ngày";
+};
+
 const DatePickerPanel = ({
     isOpen,
     selectedDate,
@@ -88,7 +109,9 @@ const DatePickerPanel = ({
     selectedNightOffset = 0,
     onSelectDate,
     onNightOffsetChange,
+    onClear,
     className,
+    style,
     variant = "popover",
 }: DatePickerPanelProps) => {
     const isInline = variant === "inline";
@@ -110,6 +133,11 @@ const DatePickerPanel = ({
 
     const [currentMonth, setCurrentMonth] = useState<Date>(initialMonth);
     const canMovePrevious = monthKey(addMonths(currentMonth, -1)) >= monthKey(minMonth);
+    const hasClearableSelection = Boolean(selectedDate) || selectedNightOffset > 0;
+    const clearSummary = useMemo(
+        () => formatSelectedSummary(selectedDate, selectedNightOffset),
+        [selectedDate, selectedNightOffset],
+    );
 
     const flexibleMonths = useMemo(() => {
         const base = asMonthStart(minDateValue);
@@ -130,8 +158,7 @@ const DatePickerPanel = ({
     const placementClass = className ?? "left-1/2 -translate-x-[40%]";
     const containerClass = isInline
         ? "relative z-0 w-full rounded-[26px] border border-gray-200 bg-[#f5f5f5] p-4 shadow-sm md:p-6"
-        : `absolute top-[calc(100%+12px)] z-50 w-[min(860px,calc(100vw-2rem))] max-w-[95vw] transform-gpu rounded-[32px] border border-gray-200 bg-[#f5f5f5] p-6 shadow-2xl transition-[transform,opacity] duration-[980ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${placementClass} ${isOpen ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0"
-        }`;
+        : `absolute top-[calc(100%+12px)] z-50 w-[min(860px,calc(100vw-2rem))] max-w-[95vw] transform-gpu rounded-[32px] border border-gray-200 bg-[#f5f5f5] p-6 shadow-2xl transition-[transform,opacity] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${placementClass} ${isOpen ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0"}`;
 
     const renderMonth = (monthStart: Date) => {
         const cells = buildMonthCells(monthStart);
@@ -166,7 +193,7 @@ const DatePickerPanel = ({
                                 type="button"
                                 disabled={isDisabled}
                                 onClick={() => onSelectDate(isoDate)}
-                                className={`mx-auto h-11 w-11 rounded-full text-lg font-medium transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSelected
+                                className={`mx-auto h-11 w-11 rounded-full text-lg font-medium transition-all duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${isSelected
                                     ? "bg-gray-900 text-white"
                                     : isDisabled
                                         ? "cursor-not-allowed text-gray-300"
@@ -185,22 +212,20 @@ const DatePickerPanel = ({
     };
 
     return (
-        <div className={containerClass}>
+        <div className={containerClass} style={style}>
             <div className="mb-8 flex justify-center">
                 <div className={`flex max-w-full rounded-full bg-gray-300 p-1 ${isInline ? "w-full" : "w-96"}`}>
                     <button
                         type="button"
                         onClick={() => setMode("exact")}
-                        className={`w-1/2 rounded-full py-2 text-base font-semibold transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${mode === "exact" ? "bg-white text-gray-900" : "text-gray-700"
-                            }`}
+                        className={`w-1/2 rounded-full py-2 text-base font-semibold transition-all duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${mode === "exact" ? "bg-white text-gray-900" : "text-gray-700"}`}
                     >
                         Ngày
                     </button>
                     <button
                         type="button"
                         onClick={() => setMode("flex")}
-                        className={`w-1/2 rounded-full py-2 text-base font-semibold transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${mode === "flex" ? "bg-white text-gray-900" : "text-gray-700"
-                            }`}
+                        className={`w-1/2 rounded-full py-2 text-base font-semibold transition-all duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${mode === "flex" ? "bg-white text-gray-900" : "text-gray-700"}`}
                     >
                         Linh hoạt
                     </button>
@@ -244,7 +269,7 @@ const DatePickerPanel = ({
                                         key={option.label}
                                         type="button"
                                         onClick={() => onNightOffsetChange(option.nights)}
-                                        className={`rounded-full border px-5 py-2 text-sm font-medium transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isActive
+                                        className={`rounded-full border px-5 py-2 text-sm font-medium transition-all duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${isActive
                                             ? "border-gray-900 bg-white text-gray-900"
                                             : "border-gray-300 bg-transparent text-gray-700 hover:border-gray-400"
                                             }`}
@@ -266,7 +291,7 @@ const DatePickerPanel = ({
                                     key={option}
                                     type="button"
                                     onClick={() => setFlexDuration(option)}
-                                    className={`rounded-full border px-7 py-2.5 text-[18px] font-medium leading-none transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-[20px] ${flexDuration === option
+                                    className={`rounded-full border px-7 py-2.5 text-[18px] font-medium leading-none transition-all duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] md:text-[20px] ${flexDuration === option
                                         ? "border-gray-900 bg-white text-gray-900"
                                         : "border-gray-300 bg-transparent text-gray-700 hover:border-gray-400"
                                         }`}
@@ -297,7 +322,7 @@ const DatePickerPanel = ({
                                         key={monthIso}
                                         type="button"
                                         onClick={() => onSelectDate(monthIso)}
-                                        className={`min-w-[190px] rounded-[26px] border px-6 py-9 text-center transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isActive
+                                        className={`min-w-[190px] rounded-[26px] border px-6 py-9 text-center transition-all duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${isActive
                                             ? "border-gray-900 bg-white"
                                             : "border-gray-300 bg-transparent hover:border-gray-400"
                                             }`}
@@ -313,7 +338,7 @@ const DatePickerPanel = ({
                         <button
                             type="button"
                             onClick={scrollFlexibleMonths}
-                            className="absolute right-0 top-1/2 z-10 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-800 shadow transition-[transform,background-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 hover:bg-gray-50"
+                            className="absolute right-0 top-1/2 z-10 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-800 shadow transition-[transform,background-color] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-105 hover:bg-gray-50"
                             aria-label="Xem các tháng tiếp theo"
                         >
                             <FaChevronRight />
@@ -321,6 +346,24 @@ const DatePickerPanel = ({
                     </div>
                 </div>
             )}
+
+            {onClear ? (
+                <div className="mt-6 flex items-center justify-between gap-4 border-t border-gray-200 pt-4">
+                    <div className="text-left">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Lựa chọn</p>
+                        <p className="mt-1 text-sm font-semibold text-gray-900">{clearSummary}</p>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={onClear}
+                        disabled={!hasClearableSelection}
+                        className="shrink-0 rounded-full px-1 py-2 text-sm font-semibold text-gray-800 underline decoration-2 underline-offset-4 transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        Xóa tất cả
+                    </button>
+                </div>
+            ) : null}
         </div>
     );
 };

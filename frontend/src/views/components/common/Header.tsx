@@ -1,26 +1,27 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FaBars, FaTimes } from "react-icons/fa";
 import { Link, useLocation } from "react-router-dom";
 import logo from "../../../assets/img/logo_mau.svg";
+import { APP_ROUTES } from "../../../config/routes";
 import useScrollVisibility from "../../../hooks/useScrollVisibility";
 
 const navLinks = [
-    { to: "/", label: "Trang chủ" },
+    { to: APP_ROUTES.home, label: "Trang chủ" },
     { to: "/hotels", label: "Nơi lưu trú" },
     { to: "/blog", label: "Blog" },
     { to: "/news", label: "Liên hệ" },
-    { to: "/contact", label: "Đăng nhập" },
+    { to: APP_ROUTES.login, label: "Đăng nhập" },
 ];
 
 const Header = () => {
     const show = useScrollVisibility({ threshold: 12, topOffset: 64, hideStartRatio: 0.5 });
     const location = useLocation();
-    const [useDarkText, setUseDarkText] = useState(location.pathname !== "/");
+    const [useDarkText, setUseDarkText] = useState(location.pathname !== APP_ROUTES.home);
     const [mobileOpen, setMobileOpen] = useState(false);
 
     useEffect(() => {
         const updateTextMode = () => {
-            const isHome = location.pathname === "/";
+            const isHome = location.pathname === APP_ROUTES.home;
             setUseDarkText(!isHome || window.scrollY > 80);
         };
 
@@ -55,8 +56,8 @@ const Header = () => {
             }`}
         >
             <div className="container mx-auto flex items-center justify-between px-4 md:px-6">
-                <Link to="/">
-                    <img src={logo} alt="Villa Vung Tau" className="h-8 object-contain md:h-9" />
+                <Link to={APP_ROUTES.home}>
+                    <img src={logo} alt="Minh Thanh Villa" className="h-8 object-contain md:h-9" />
                 </Link>
 
                 <nav

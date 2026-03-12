@@ -1,0 +1,103 @@
+import type { FormEvent } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { FcGoogle } from "react-icons/fc";
+import { LuArrowRight, LuEye, LuEyeOff, LuLock, LuMail } from "react-icons/lu";
+import { APP_ROUTES } from "../../../config/routes";
+import AuthCard from "../../components/auth/AuthCard";
+import AuthInput from "../../components/auth/AuthInput";
+
+const primaryButtonClass =
+    "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-full bg-[#5d53f7] px-6 py-4 text-lg font-semibold text-white shadow-[0_18px_40px_-18px_rgba(93,83,247,0.8)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-[#4b40ef] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5d53f7]";
+
+const secondaryButtonClass =
+    "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white px-6 py-4 text-lg font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50";
+
+const LoginPage = () => {
+    const [email, setEmail] = useState("athanhnee@gmail.com");
+    const [password, setPassword] = useState("123");
+    const [showPassword, setShowPassword] = useState(false);
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+    };
+
+    return (
+        <AuthCard
+            title="Đăng nhập tài khoản"
+            description="Đăng nhập để trải nghiệm ưu đãi riêng, quản lý đặt phòng và theo dõi kỳ nghỉ của bạn."
+        >
+            <form className="space-y-5" onSubmit={handleSubmit}>
+                <AuthInput
+                    label="Email"
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    icon={<LuMail />}
+                    placeholder="Nhập email của bạn"
+                    required
+                />
+
+                <div>
+                    <AuthInput
+                        label="Mật khẩu"
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        icon={<LuLock />}
+                        placeholder="Nhập mật khẩu"
+                        required
+                        endAdornment={
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword((current) => !current)}
+                                aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                                className="cursor-pointer text-[22px] text-slate-400 transition-colors hover:text-slate-600"
+                            >
+                                {showPassword ? <LuEyeOff /> : <LuEye />}
+                            </button>
+                        }
+                    />
+
+                    <div className="mt-3 text-right">
+                        <Link
+                            to={APP_ROUTES.forgotPassword}
+                            className="text-sm font-semibold text-[#5d53f7] transition-colors hover:text-[#4b40ef] sm:text-base"
+                        >
+                            Quên mật khẩu
+                        </Link>
+                    </div>
+                </div>
+
+                <button type="submit" className={primaryButtonClass}>
+                    Đăng nhập
+                    <LuArrowRight className="text-xl" />
+                </button>
+            </form>
+
+            <div className="mt-7 text-center text-base text-slate-700 sm:text-lg">
+                Tôi chưa có tài khoản{" "}
+                <Link to={APP_ROUTES.register} className="font-semibold text-[#5d53f7] transition-colors hover:text-[#4b40ef]">
+                    Đăng ký
+                </Link>
+            </div>
+
+            <div className="my-7 flex items-center gap-4 text-sm font-semibold uppercase tracking-[0.28em] text-slate-400">
+                <span className="h-px flex-1 bg-slate-200" />
+                HOẶC
+                <span className="h-px flex-1 bg-slate-200" />
+            </div>
+
+            <button type="button" className={secondaryButtonClass}>
+                <FcGoogle className="text-[28px]" />
+                Đăng nhập với Google
+            </button>
+        </AuthCard>
+    );
+};
+
+export default LoginPage;

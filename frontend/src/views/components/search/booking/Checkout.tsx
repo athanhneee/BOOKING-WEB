@@ -1,4 +1,4 @@
-﻿import { useMemo } from "react";
+import { useMemo } from "react";
 import { FaCalendarAlt, FaTimes } from "react-icons/fa";
 import DatePickerPanel from "./DatePickerPanel";
 
@@ -8,6 +8,7 @@ type CheckoutProps = {
     isOpen: boolean;
     onOpen: () => void;
     onChange: (nextDate: string) => void;
+    onClear?: () => void;
     className?: string;
     panelClassName?: string;
     onClose?: () => void;
@@ -43,6 +44,7 @@ const Checkout = ({
     isOpen,
     onOpen,
     onChange,
+    onClear,
     className,
     panelClassName,
     onClose,
@@ -56,7 +58,7 @@ const Checkout = ({
             <button
                 type="button"
                 onClick={onOpen}
-                className={`flex h-full w-full items-center gap-3 rounded-full px-3 py-2 text-left transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${isOpen ? "bg-gray-100 pr-10" : "hover:bg-gray-50"}`}
+                className={`flex h-full w-full items-center gap-3 rounded-full px-3 py-2 text-left transition-[background-color,transform,box-shadow,padding] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.995] ${isOpen ? "bg-gray-100 pr-10 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.04)]" : "hover:bg-gray-50"}`}
                 aria-expanded={isOpen}
                 aria-label={"Ch\u1ecdn ng\u00e0y tr\u1ea3 ph\u00f2ng"}
             >
@@ -73,7 +75,7 @@ const Checkout = ({
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute right-2 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-800"
+                    className="absolute right-2 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-500 transition-[background-color,color,transform] duration-200 hover:bg-gray-200 hover:text-gray-800"
                     aria-label="Đóng trả phòng"
                 >
                     <FaTimes className="text-xs" />
@@ -86,6 +88,7 @@ const Checkout = ({
                     selectedDate={value}
                     minDate={minDate}
                     onSelectDate={onChange}
+                    onClear={onClear}
                     className={panelClassName ?? "left-1/2 -translate-x-[55%]"}
                 />
             ) : null}

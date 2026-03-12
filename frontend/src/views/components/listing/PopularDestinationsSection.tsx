@@ -11,6 +11,7 @@ type SlideDirection = "forward" | "backward";
 
 type PopularDestinationsSectionProps = {
     onExpandedChange?: (expanded: boolean) => void;
+    onSearchBarHiddenChange?: (hidden: boolean) => void;
 };
 
 const parsePageIndex = (value: string | null, maxPage: number): number => {
@@ -36,10 +37,14 @@ const buildPagedSlice = <T,>(items: T[], pageIndex: number, pageSize: number): T
     return items.slice(start, end);
 };
 
-const PopularDestinationsSection = ({ onExpandedChange }: PopularDestinationsSectionProps) => {
+const PopularDestinationsSection = ({
+    onExpandedChange,
+    onSearchBarHiddenChange,
+}: PopularDestinationsSectionProps) => {
     const navigate = useNavigate();
     const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
+    const sectionRef = useRef<HTMLElement | null>(null);
     const trackRef = useRef<HTMLDivElement | null>(null);
     const expandedPanelRef = useRef<HTMLDivElement | null>(null);
     const gridTopRef = useRef<HTMLDivElement | null>(null);
@@ -55,6 +60,7 @@ const PopularDestinationsSection = ({ onExpandedChange }: PopularDestinationsSec
     const [isGridSliding, setIsGridSliding] = useState(false);
     const [isGridPreparing, setIsGridPreparing] = useState(false);
     const [isGridTransitionEnabled, setIsGridTransitionEnabled] = useState(false);
+    const [isSearchBarHidden, setIsSearchBarHidden] = useState(false);
     const [slideDirection, setSlideDirection] = useState<SlideDirection>("forward");
     const [slideTargetIndex, setSlideTargetIndex] = useState<number | null>(null);
     const [slideOffsetClass, setSlideOffsetClass] = useState<"translate-x-0" | "-translate-x-1/2">("translate-x-0");
@@ -82,8 +88,13 @@ const PopularDestinationsSection = ({ onExpandedChange }: PopularDestinationsSec
     }, [isExpanded, onExpandedChange]);
 
     useEffect(() => {
+        onSearchBarHiddenChange?.(isSearchBarHidden);
+    }, [isSearchBarHidden, onSearchBarHiddenChange]);
+
+    useEffect(() => {
         return () => {
             onExpandedChange?.(false);
+            onSearchBarHiddenChange?.(false);
 
             if (slideFrameRef.current !== null) {
                 window.cancelAnimationFrame(slideFrameRef.current);
@@ -93,7 +104,37 @@ const PopularDestinationsSection = ({ onExpandedChange }: PopularDestinationsSec
                 window.clearTimeout(scrollTimerRef.current);
             }
         };
-    }, [onExpandedChange]);
+    }, [onExpandedChange, onSearchBarHiddenChange]);
+
+    useEffect(() => {
+        if (isExpanded) {
+            return;
+        }
+
+        setIsSearchBarHidden(false);
+    }, [isExpanded]);
+
+    useEffect(() => {
+        if (!isExpanded || !isSearchBarHidden) {
+            return;
+        }
+
+        const handlePointerDown = (event: PointerEvent) => {
+            if (!sectionRef.current) {
+                return;
+            }
+
+            if (!sectionRef.current.contains(event.target as Node)) {
+                setIsSearchBarHidden(false);
+            }
+        };
+
+        document.addEventListener("pointerdown", handlePointerDown);
+
+        return () => {
+            document.removeEventListener("pointerdown", handlePointerDown);
+        };
+    }, [isExpanded, isSearchBarHidden]);
 
     useEffect(() => {
         const currentExpandedParam = searchParams.get("popularExpanded") === "1";
@@ -229,6 +270,7 @@ const PopularDestinationsSection = ({ onExpandedChange }: PopularDestinationsSec
         if (!isExpanded) {
             setIsExpanded(true);
             setPageIndex(0);
+            setIsSearchBarHidden(true);
             return;
         }
 
@@ -250,6 +292,7 @@ const PopularDestinationsSection = ({ onExpandedChange }: PopularDestinationsSec
 
         setIsExpanded(false);
         setPageIndex(0);
+        setIsSearchBarHidden(false);
         setSlideTargetIndex(null);
         setSlideOffsetClass("translate-x-0");
     };
@@ -304,7 +347,7 @@ const PopularDestinationsSection = ({ onExpandedChange }: PopularDestinationsSec
     );
 
     return (
-        <section className="bg-[#efefef] py-12 sm:py-16 md:py-20 lg:py-24">
+        <section ref={sectionRef} className="bg-[#efefef] py-12 sm:py-16 md:py-20 lg:py-24">
             <div className="mx-auto w-full max-w-[74rem] px-4 md:px-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <h2 className="w-full text-center text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl md:text-4xl lg:text-5xl">

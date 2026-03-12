@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { FaMapMarkerAlt, FaSearch, FaTimes } from "react-icons/fa";
 import useScrollVisibility from "../../../hooks/useScrollVisibility";
 import Checkin from "./booking/Checkin";
@@ -31,6 +31,8 @@ const mobileGuestControls: MobileGuestControl[] = [
     { key: "infants", label: "Em bé", description: "Dưới 2 tuổi", min: 0, max: 5 },
     { key: "pets", label: "Thú cưng", description: "Mang theo thú cưng", min: 0, max: 5 },
 ];
+
+const desktopLocationPanelInset = 32;
 
 const formatMobileDate = (isoDate: string): string => {
     if (!isoDate) {
@@ -78,9 +80,10 @@ const buildGuestSummary = (selection: GuestSelection): string => {
 
 type SearchBarProps = {
     forceHidden?: boolean;
+    forceVisible?: boolean;
 };
 
-const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
+const SearchBar = ({ forceHidden = false, forceVisible = false }: SearchBarProps) => {
     const [greeting, setGreeting] = useState<string>("");
     const [isPinned, setIsPinned] = useState(false);
     const [locationQuery, setLocationQuery] = useState("");
@@ -93,11 +96,15 @@ const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
     const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
     const [mobileSection, setMobileSection] = useState<MobileSection>("location");
     const [mobileDateField, setMobileDateField] = useState<MobileDateField>("checkin");
+    const [checkinPanelStyle, setCheckinPanelStyle] = useState<CSSProperties>();
     const show = useScrollVisibility({ threshold: 12, topOffset: 64, hideStartRatio: 0.5 });
     const todayIso = useMemo(() => toIsoDate(new Date()), []);
     const pinnedRef = useRef(false);
     const rafRef = useRef<number | null>(null);
     const fieldWrapperRef = useRef<HTMLDivElement | null>(null);
+    const desktopSearchSurfaceRef = useRef<HTMLDivElement | null>(null);
+    const locationFieldRef = useRef<HTMLDivElement | null>(null);
+    const checkinFieldRef = useRef<HTMLDivElement | null>(null);
     const mobileSheetCloseTimerRef = useRef<number | null>(null);
 
     useEffect(() => {
@@ -118,6 +125,12 @@ const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
             pinnedRef.current = false;
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setIsPinned(false);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setOpenField(null);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setIsMobileSheetMounted(false);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setIsMobileSheetOpen(false);
             return;
         }
 
@@ -157,7 +170,7 @@ const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
     }, [forceHidden]);
 
     useEffect(() => {
-        const handlePointerDown = (event: MouseEvent) => {
+        const handlePointerDown = (event: PointerEvent) => {
             if (!fieldWrapperRef.current || !openField) {
                 return;
             }
@@ -167,12 +180,41 @@ const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
             }
         };
 
-        document.addEventListener("mousedown", handlePointerDown);
+        document.addEventListener("pointerdown", handlePointerDown);
 
         return () => {
-            document.removeEventListener("mousedown", handlePointerDown);
+            document.removeEventListener("pointerdown", handlePointerDown);
         };
     }, [openField]);
+
+    useLayoutEffect(() => {
+        if (forceHidden) {
+            setCheckinPanelStyle(undefined);
+            return;
+        }
+
+        const updateCheckinPanelAlignment = () => {
+            if (!desktopSearchSurfaceRef.current || !locationFieldRef.current || !checkinFieldRef.current) {
+                setCheckinPanelStyle(undefined);
+                return;
+            }
+
+            const surfaceRect = desktopSearchSurfaceRef.current.getBoundingClientRect();
+            const locationRect = locationFieldRef.current.getBoundingClientRect();
+            const checkinRect = checkinFieldRef.current.getBoundingClientRect();
+            const targetLeftInset = locationRect.left - surfaceRect.left + desktopLocationPanelInset;
+            const nextLeft = targetLeftInset - (checkinRect.left - surfaceRect.left);
+
+            setCheckinPanelStyle({ left: `${Math.round(nextLeft)}px` });
+        };
+
+        updateCheckinPanelAlignment();
+        window.addEventListener("resize", updateCheckinPanelAlignment);
+
+        return () => {
+            window.removeEventListener("resize", updateCheckinPanelAlignment);
+        };
+    }, [forceHidden, forceVisible, openField]);
 
     useEffect(() => {
         if (!isMobileSheetMounted) {
@@ -270,11 +312,16 @@ const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
         });
     };
 
-    const resetAll = () => {
-        setLocationQuery("");
+    const clearDates = () => {
         setCheckinDate("");
         setCheckoutDate("");
         setNightOffset(0);
+        setMobileDateField("checkin");
+    };
+
+    const resetAll = () => {
+        setLocationQuery("");
+        clearDates();
         setGuestSelection(defaultGuestSelection);
     };
 
@@ -302,7 +349,7 @@ const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
         mobileSheetCloseTimerRef.current = window.setTimeout(() => {
             setIsMobileSheetMounted(false);
             mobileSheetCloseTimerRef.current = null;
-        }, 1400);
+        }, 420);
     };
 
     const mobileDateText = useMemo(() => {
@@ -344,13 +391,17 @@ const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
         handleCheckoutChange(nextDate);
     };
 
-    const shouldPin = isPinned || openField !== null || isMobileSheetMounted;
-    const shouldShow = show || openField !== null || isMobileSheetMounted;
+    const shouldPin = forceVisible || isPinned || openField !== null || isMobileSheetMounted;
+    const shouldShow = forceVisible || show || openField !== null || isMobileSheetMounted;
     const shouldShowIntro = !shouldPin;
     const shouldExpandDesktopSearch = openField === "guest";
     const displayLocation = locationQuery || "Tìm kiếm điểm đến";
-    const rootMotionClass = "duration-[760ms]";
-    const headingMotionClass = "duration-[760ms]";
+    const rootMotionClass = "duration-[520ms]";
+    const headingMotionClass = "duration-[480ms]";
+    const desktopFieldMotionClass =
+        "transition-[background-color,transform,box-shadow,padding] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.995]";
+    const desktopPopoverMotionClass =
+        "transition-[transform,opacity] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]";
     const desktopFieldClass = (field: Exclude<OpenField, null>): string => {
         if (!openField) {
             return "flex-[0.94]";
@@ -383,7 +434,12 @@ const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
                         </p>
                     </div>
 
-                    <div ref={fieldWrapperRef} className="rounded-full border bg-white">
+                    <div
+                        ref={fieldWrapperRef}
+                        className={`rounded-full border bg-white transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                            openField ? "border-gray-300 shadow-[0_18px_40px_rgba(15,23,42,0.08)]" : "border-gray-200"
+                        }`}
+                    >
                         <button
                             type="button"
                             className="flex w-full items-center gap-3 px-4 py-3 text-left md:hidden"
@@ -401,12 +457,19 @@ const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
                             </span>
                         </button>
 
-                        <div className="hidden min-h-[60px] items-stretch justify-between gap-0.5 px-2 py-1.5 md:flex">
-                            <div className={`relative min-w-0 transition-[flex] duration-[760ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] ${desktopFieldClass("location")}`}>
+                        <div ref={desktopSearchSurfaceRef} className="hidden min-h-[60px] items-stretch justify-between gap-0.5 px-2 py-1.5 md:flex">
+                            <div
+                                ref={locationFieldRef}
+                                className={`relative min-w-0 transition-[flex] duration-[460ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${desktopFieldClass("location")}`}
+                            >
                                 <button
                                     type="button"
                                     onClick={() => openDesktopField("location")}
-                                    className={`flex h-full w-full items-center gap-3 rounded-full px-3 py-2 text-left transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${openField === "location" ? "bg-gray-100 pr-10" : "hover:bg-gray-50"}`}
+                                    className={`flex h-full w-full items-center gap-3 rounded-full px-3 py-2 text-left ${desktopFieldMotionClass} ${
+                                        openField === "location"
+                                            ? "bg-gray-100 pr-10 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.04)]"
+                                            : "hover:bg-gray-50"
+                                    }`}
                                 >
                                     <FaMapMarkerAlt className="text-gray-400" />
                                     <div className="min-w-0 text-left">
@@ -419,14 +482,18 @@ const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
                                     <button
                                         type="button"
                                         onClick={closeDesktopField}
-                                        className="absolute right-2 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-800"
+                                        className="absolute right-2 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-gray-500 transition-[background-color,color,transform] duration-200 hover:bg-gray-200 hover:text-gray-800"
                                         aria-label="Đóng địa điểm"
                                     >
                                         <FaTimes className="text-xs" />
                                     </button>
                                 ) : null}
 
-                                <div className={`absolute left-8 top-[calc(100%+10px)] z-50 w-[min(400px,calc(100vw-3rem))] transform-gpu rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl transition-[transform,opacity] duration-[980ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${openField === "location" ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none -translate-y-3 scale-[0.97] opacity-0"}`}>
+                                <div
+                                    className={`absolute left-8 top-[calc(100%+10px)] z-50 w-[min(400px,calc(100vw-3rem))] origin-top-left transform-gpu rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl ${desktopPopoverMotionClass} ${
+                                        openField === "location" ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none -translate-y-2 scale-[0.985] opacity-0"
+                                    }`}
+                                >
                                     <p className="text-sm font-semibold text-gray-900">Bạn muốn đi đâu?</p>
                                     <input
                                         type="text"
@@ -447,9 +514,12 @@ const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
                                 onOpen={() => openDesktopField("checkin")}
                                 onChange={handleCheckinChange}
                                 onNightOffsetChange={handleNightOffsetChange}
+                                onClear={clearDates}
                                 onClose={closeDesktopField}
-                                className={`transition-[flex] duration-[760ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] ${desktopFieldClass("checkin")}`}
-                                panelClassName="left-[calc(-100%+0.5rem)] -translate-x-0 w-[min(820px,calc(100vw-3rem))]"
+                                className={`transition-[flex] duration-[460ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${desktopFieldClass("checkin")}`}
+                                panelClassName="w-[min(820px,calc(100vw-3rem))]"
+                                panelStyle={checkinPanelStyle}
+                                containerRef={checkinFieldRef}
                             />
 
                             <div className="my-3 w-px bg-gray-200" />
@@ -460,8 +530,9 @@ const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
                                 isOpen={openField === "checkout"}
                                 onOpen={() => openDesktopField("checkout")}
                                 onChange={handleCheckoutChange}
+                                onClear={clearDates}
                                 onClose={closeDesktopField}
-                                className={`transition-[flex] duration-[760ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] ${desktopFieldClass("checkout")}`}
+                                className={`transition-[flex] duration-[460ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${desktopFieldClass("checkout")}`}
                                 panelClassName="left-auto right-[calc(-100%-0.5rem)] -translate-x-0 w-[min(820px,calc(100vw-3rem))]"
                             />
 
@@ -473,21 +544,21 @@ const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
                                 onOpen={() => openDesktopField("guest")}
                                 onChange={setGuestSelection}
                                 onClose={closeDesktopField}
-                                className={`transition-[flex] duration-[760ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] ${desktopFieldClass("guest")}`}
+                                className={`transition-[flex] duration-[460ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${desktopFieldClass("guest")}`}
                                 popupClassName="left-auto right-[-3.5rem] -translate-x-0"
                             />
 
                             <button
                                 type="button"
-                                className={`ml-2.5 flex h-11 items-center overflow-hidden rounded-full bg-cyan-600 text-white transition-all duration-[860ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[width,transform,opacity] ${
+                                className={`ml-2.5 flex h-12 self-center items-center overflow-hidden rounded-full bg-cyan-600 text-white transition-[width,transform,opacity,box-shadow] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width,transform,opacity] ${
                                     shouldExpandDesktopSearch ? "w-36 justify-start px-4" : "w-11 justify-center px-0"
                                 }`}
                                 aria-label="Search"
                                 onClick={closeDesktopField}
                             >
-                                <FaSearch className="shrink-0 translate-y-px" />
+                                <FaSearch className="shrink-0" />
                                 <span
-                                    className={`whitespace-nowrap pl-2 text-sm font-semibold transition-[opacity,transform,max-width] duration-[780ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                                    className={`whitespace-nowrap pl-2 text-sm font-semibold transition-[opacity,transform,max-width] duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                                         shouldExpandDesktopSearch
                                             ? "max-w-[100px] translate-x-0 opacity-100"
                                             : "max-w-0 -translate-x-2 opacity-0"
@@ -503,155 +574,157 @@ const SearchBar = ({ forceHidden = false }: SearchBarProps) => {
 
             {isMobileSheetMounted ? (
                 <div className="fixed inset-0 z-[80] md:hidden">
-                <div
-                    className={`absolute inset-0 bg-black/45 transition-opacity duration-[1000ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobileSheetOpen ? "opacity-100" : "opacity-0"}`}
-                    onClick={closeMobileSearch}
-                    role="presentation"
-                />
-
-                <div
-                    className={`absolute inset-x-0 bottom-0 top-0 overflow-y-auto overscroll-y-contain rounded-t-[36px] bg-[#efefef] px-4 pb-32 pt-4 shadow-2xl transform-gpu transition-[transform,opacity] duration-[1300ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${isMobileSheetOpen ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
-                    style={{ WebkitOverflowScrolling: "touch" }}
-                >
-                    <button
-                        type="button"
-                        className="mx-auto mb-4 block h-1.5 w-12 rounded-full bg-gray-300"
-                        aria-label="Đóng tìm kiếm"
+                    <div
+                        className={`absolute inset-0 bg-black/45 transition-opacity duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${isMobileSheetOpen ? "opacity-100" : "opacity-0"}`}
                         onClick={closeMobileSearch}
+                        role="presentation"
                     />
 
-                    <section className="rounded-[34px] border border-gray-200 bg-white p-5 shadow-sm">
-                        <h2 className="text-3xl font-bold text-gray-900">Địa điểm</h2>
-
-                        <div className="mt-5 rounded-2xl border border-gray-300 bg-white px-4 py-3">
-                            <div className="flex items-center gap-3">
-                                <FaSearch className="text-gray-500" />
-                                <input
-                                    value={locationQuery}
-                                    onChange={(event) => setLocationQuery(event.target.value)}
-                                    placeholder="Tìm kiếm điểm đến..."
-                                    className="w-full bg-transparent text-xl text-gray-700 outline-none placeholder:text-gray-400"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="mt-4 rounded-2xl bg-gray-50 px-4 py-3 text-left text-sm text-gray-500">
-                            Nhập điểm đến để bắt đầu tìm kiếm.
-                        </div>
-                    </section>
-
-                    <button
-                        type="button"
-                        onClick={() => setMobileSection((current) => (current === "time" ? "location" : "time"))}
-                        className="mt-4 flex w-full items-center justify-between rounded-3xl border border-gray-200 bg-white px-5 py-4 text-left shadow-sm"
+                    <div
+                        className={`absolute inset-x-0 bottom-0 top-0 overflow-y-auto overscroll-y-contain rounded-t-[36px] bg-[#efefef] px-4 pb-32 pt-4 shadow-2xl transform-gpu transition-[transform,opacity] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${isMobileSheetOpen ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
+                        style={{ WebkitOverflowScrolling: "touch" }}
                     >
-                        <span className="text-2xl text-gray-500">Thời gian</span>
-                        <span className="text-2xl font-semibold text-gray-900">{checkinDate || checkoutDate ? mobileDateText : "Thêm ngày"}</span>
-                    </button>
-
-                    <div className={`mt-3 grid transition-[grid-template-rows,opacity] duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${mobileSection === "time" ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
-                        <div className="overflow-hidden">
-                            <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
-                                <div className="mb-4 grid grid-cols-2 gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setMobileDateField("checkin")}
-                                        className={`rounded-2xl border px-3 py-3 text-left transition ${mobileDateField === "checkin" ? "border-gray-900 bg-gray-900 text-white" : "border-gray-300 bg-white text-gray-800"}`}
-                                    >
-                                        <p className={`text-xs ${mobileDateField === "checkin" ? "text-white/80" : "text-gray-500"}`}>Nhận phòng</p>
-                                        <p className="mt-1 text-sm font-semibold">{checkinDate ? formatMobileDate(checkinDate) : "Thêm ngày"}</p>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => setMobileDateField("checkout")}
-                                        className={`rounded-2xl border px-3 py-3 text-left transition ${mobileDateField === "checkout" ? "border-gray-900 bg-gray-900 text-white" : "border-gray-300 bg-white text-gray-800"}`}
-                                    >
-                                        <p className={`text-xs ${mobileDateField === "checkout" ? "text-white/80" : "text-gray-500"}`}>Trả phòng</p>
-                                        <p className="mt-1 text-sm font-semibold">{checkoutDate ? formatMobileDate(checkoutDate) : "Thêm ngày"}</p>
-                                    </button>
-                                </div>
-
-                                <DatePickerPanel
-                                    isOpen
-                                    selectedDate={activeMobileDate}
-                                    minDate={activeMobileMinDate}
-                                    selectedNightOffset={nightOffset}
-                                    onSelectDate={handleMobileDateSelect}
-                                    onNightOffsetChange={handleNightOffsetChange}
-                                    variant="inline"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => setMobileSection((current) => (current === "guest" ? "location" : "guest"))}
-                        className="mt-4 flex w-full items-center justify-between rounded-3xl border border-gray-200 bg-white px-5 py-4 text-left shadow-sm"
-                    >
-                        <span className="text-2xl text-gray-500">Khách</span>
-                        <span className="text-2xl font-semibold text-gray-900">{mobileGuestDisplay}</span>
-                    </button>
-
-                    <div className={`mt-3 grid transition-[grid-template-rows,opacity] duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${mobileSection === "guest" ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
-                        <div className="overflow-hidden">
-                            <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
-                            {mobileGuestControls.map((control) => {
-                                const currentValue = guestSelection[control.key];
-                                const disableMinus = currentValue <= control.min;
-                                const disablePlus = currentValue >= control.max;
-
-                                return (
-                                    <div key={control.key} className="grid grid-cols-[1fr_auto] items-center gap-4 py-3">
-                                        <div>
-                                            <p className="text-base font-semibold text-gray-900">{control.label}</p>
-                                            <p className="text-sm text-gray-500">{control.description}</p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleAdjustMobileGuest(control.key, -1, control.min, control.max)}
-                                                disabled={disableMinus}
-                                                className="h-8 w-8 rounded-full border border-gray-300 text-gray-700 disabled:opacity-40"
-                                            >
-                                                -
-                                            </button>
-                                            <span className="w-5 text-center text-sm font-semibold text-gray-900">{currentValue}</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleAdjustMobileGuest(control.key, 1, control.min, control.max)}
-                                                disabled={disablePlus}
-                                                className="h-8 w-8 rounded-full border border-gray-300 text-gray-700 disabled:opacity-40"
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className={`absolute inset-x-0 bottom-0 border-t border-gray-200 bg-white px-4 py-4 transition-[transform,opacity] duration-[1300ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobileSheetOpen ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
-                    <div className="flex items-center gap-3">
                         <button
                             type="button"
-                            onClick={resetAll}
-                            className="flex-1 rounded-2xl border border-transparent px-4 py-4 text-left text-xl font-semibold text-gray-800 underline decoration-2 underline-offset-4"
-                        >
-                            Xóa tất cả
-                        </button>
-                        <button
-                            type="button"
+                            className="mx-auto mb-4 block h-1.5 w-12 rounded-full bg-gray-300"
+                            aria-label="Đóng tìm kiếm"
                             onClick={closeMobileSearch}
-                            className="flex-1 rounded-2xl bg-gray-900 px-4 py-4 text-xl font-semibold text-white"
+                        />
+
+                        <section className="rounded-[34px] border border-gray-200 bg-white p-5 shadow-sm">
+                            <h2 className="text-3xl font-bold text-gray-900">Địa điểm</h2>
+
+                            <div className="mt-5 rounded-2xl border border-gray-300 bg-white px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                    <FaSearch className="text-gray-500" />
+                                    <input
+                                        value={locationQuery}
+                                        onChange={(event) => setLocationQuery(event.target.value)}
+                                        placeholder="Tìm kiếm điểm đến..."
+                                        className="w-full bg-transparent text-xl text-gray-700 outline-none placeholder:text-gray-400"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="mt-4 rounded-2xl bg-gray-50 px-4 py-3 text-left text-sm text-gray-500">
+                                Nhập điểm đến để bắt đầu tìm kiếm.
+                            </div>
+                        </section>
+
+                        <button
+                            type="button"
+                            onClick={() => setMobileSection((current) => (current === "time" ? "location" : "time"))}
+                            className="mt-4 flex w-full items-center justify-between rounded-3xl border border-gray-200 bg-white px-5 py-4 text-left shadow-sm"
                         >
-                            Tiếp theo
+                            <span className="text-2xl text-gray-500">Thời gian</span>
+                            <span className="text-2xl font-semibold text-gray-900">{checkinDate || checkoutDate ? mobileDateText : "Thêm ngày"}</span>
                         </button>
+
+                        <div className={`mt-3 grid transition-[grid-template-rows,opacity] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${mobileSection === "time" ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+                            <div className="overflow-hidden">
+                                <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
+                                    <div className="mb-4 grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setMobileDateField("checkin")}
+                                            className={`rounded-2xl border px-3 py-3 text-left transition ${mobileDateField === "checkin" ? "border-gray-900 bg-gray-900 text-white" : "border-gray-300 bg-white text-gray-800"}`}
+                                        >
+                                            <p className={`text-xs ${mobileDateField === "checkin" ? "text-white/80" : "text-gray-500"}`}>Nhận phòng</p>
+                                            <p className="mt-1 text-sm font-semibold">{checkinDate ? formatMobileDate(checkinDate) : "Thêm ngày"}</p>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setMobileDateField("checkout")}
+                                            className={`rounded-2xl border px-3 py-3 text-left transition ${mobileDateField === "checkout" ? "border-gray-900 bg-gray-900 text-white" : "border-gray-300 bg-white text-gray-800"}`}
+                                        >
+                                            <p className={`text-xs ${mobileDateField === "checkout" ? "text-white/80" : "text-gray-500"}`}>Trả phòng</p>
+                                            <p className="mt-1 text-sm font-semibold">{checkoutDate ? formatMobileDate(checkoutDate) : "Thêm ngày"}</p>
+                                        </button>
+                                    </div>
+
+                                    <DatePickerPanel
+                                        isOpen
+                                        selectedDate={activeMobileDate}
+                                        minDate={activeMobileMinDate}
+                                        selectedNightOffset={nightOffset}
+                                        onSelectDate={handleMobileDateSelect}
+                                        onNightOffsetChange={handleNightOffsetChange}
+                                        onClear={clearDates}
+                                        variant="inline"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setMobileSection((current) => (current === "guest" ? "location" : "guest"))}
+                            className="mt-4 flex w-full items-center justify-between rounded-3xl border border-gray-200 bg-white px-5 py-4 text-left shadow-sm"
+                        >
+                            <span className="text-2xl text-gray-500">Khách</span>
+                            <span className="text-2xl font-semibold text-gray-900">{mobileGuestDisplay}</span>
+                        </button>
+
+                        <div className={`mt-3 grid transition-[grid-template-rows,opacity] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${mobileSection === "guest" ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+                            <div className="overflow-hidden">
+                                <div className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
+                                    {mobileGuestControls.map((control) => {
+                                        const currentValue = guestSelection[control.key];
+                                        const disableMinus = currentValue <= control.min;
+                                        const disablePlus = currentValue >= control.max;
+
+                                        return (
+                                            <div key={control.key} className="grid grid-cols-[1fr_auto] items-center gap-4 py-3">
+                                                <div>
+                                                    <p className="text-base font-semibold text-gray-900">{control.label}</p>
+                                                    <p className="text-sm text-gray-500">{control.description}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleAdjustMobileGuest(control.key, -1, control.min, control.max)}
+                                                        disabled={disableMinus}
+                                                        className="h-8 w-8 rounded-full border border-gray-300 text-gray-700 disabled:opacity-40"
+                                                    >
+                                                        -
+                                                    </button>
+                                                    <span className="w-5 text-center text-sm font-semibold text-gray-900">{currentValue}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleAdjustMobileGuest(control.key, 1, control.min, control.max)}
+                                                        disabled={disablePlus}
+                                                        className="h-8 w-8 rounded-full border border-gray-300 text-gray-700 disabled:opacity-40"
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
+
+                    <div className={`absolute inset-x-0 bottom-0 border-t border-gray-200 bg-white px-4 py-4 transition-[transform,opacity] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${isMobileSheetOpen ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
+                        <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={resetAll}
+                                className="flex-1 rounded-2xl border border-transparent px-4 py-4 text-left text-xl font-semibold text-gray-800 underline decoration-2 underline-offset-4"
+                            >
+                                Xóa tất cả
+                            </button>
+                            <button
+                                type="button"
+                                onClick={closeMobileSearch}
+                                className="flex-1 rounded-2xl bg-gray-900 px-4 py-4 text-xl font-semibold text-white"
+                            >
+                                Tiếp theo
+                            </button>
+                        </div>
+                    </div>
                 </div>
             ) : null}
         </>
