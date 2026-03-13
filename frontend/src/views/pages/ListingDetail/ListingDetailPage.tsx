@@ -70,6 +70,12 @@ const sidebarCardClass =
 const mobileCardClass =
     "rounded-[28px] border border-[#e8ddd1] bg-white p-5 shadow-[0_28px_70px_-44px_rgba(71,47,23,0.32)] sm:p-6";
 
+const accentBadgeClass = "border border-cyan-100 bg-cyan-50 text-cyan-600";
+
+const activeBookingFieldClass = "border-cyan-600 bg-cyan-50";
+
+const inactiveBookingFieldClass = "border-cyan-100 bg-white hover:border-cyan-300";
+
 const defaultGuestSelection: GuestSelection = {
     adults: 2,
     children: 0,
@@ -482,7 +488,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                             Giá linh hoạt theo thời gian lưu trú.
                         </p>
                     </div>
-                    <div className="inline-flex items-center gap-2 rounded-full bg-[#f4eadc] px-3 py-1.5 text-xs font-semibold text-cyan-600">
+                    <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${accentBadgeClass}`}>
                         <FaUsers />
                         {stayingGuestCount} khách
                     </div>
@@ -493,9 +499,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                         <button
                             type="button"
                             onClick={() => openDateSelection("checkin")}
-                            className={`rounded-[20px] border px-4 py-3 text-left transition-colors ${activeDesktopField === "checkin" && isDesktop
-                                ? "border- bg-[#fffaf4]"
-                                : "border-[#e4d7c9] bg-[#fcfaf7] hover:border-[#d8c6b2]"
+                            className={`rounded-[20px] border px-4 py-3 text-left transition-colors ${activeDesktopField === "checkin" && isDesktop ? activeBookingFieldClass : inactiveBookingFieldClass
                                 }`}
                         >
                             <span className="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] text-black">
@@ -508,9 +512,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                         <button
                             type="button"
                             onClick={() => openDateSelection("checkout")}
-                            className={`rounded-[20px] border px-4 py-3 text-left transition-colors ${activeDesktopField === "checkout" && isDesktop
-                                ? "border-cyan-600 bg-[#fffaf4]"
-                                : "border-[#e4d7c9] bg-[#fcfaf7] hover:border-[#d8c6b2]"
+                            className={`rounded-[20px] border px-4 py-3 text-left transition-colors ${activeDesktopField === "checkout" && isDesktop ? activeBookingFieldClass : inactiveBookingFieldClass
                                 }`}
                         >
                             <span className="mb-2 flex items-center gap-2 text-[11px] font-semibold  tracking-[0.18em] text-black">
@@ -538,7 +540,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                     <button
                         type="button"
                         onClick={openGuestSelection}
-                        className={`w-full rounded-[20px] border px-4 py-3 text-left transition-colors ${showGuestPopover ? "border-cyan-600 bg-[#fffaf4]" : "border-[#e4d7c9] bg-[#fcfaf7] hover:border-[#d8c6b2]"
+                        className={`w-full rounded-[20px] border px-4 py-3 text-left transition-colors ${showGuestPopover ? activeBookingFieldClass : inactiveBookingFieldClass
                             }`}
                     >
                         <span className="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] text-black">
@@ -549,7 +551,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                     </button>
 
                     {showGuestPopover ? (
-                        <div className="absolute right-0 top-[calc(100%+12px)] z-40 w-full min-w-[320px] rounded-[28px] border border-[#e4d7c9] bg-white p-5 shadow-2xl">
+                        <div className="absolute right-0 top-[calc(100%+12px)] z-40 w-full min-w-[320px] rounded-[28px] border border-cyan-100 bg-white p-5 shadow-2xl">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
                                     <p className="text-sm font-semibold text-zinc-900">Bạn đi cùng ai?</p>
@@ -571,7 +573,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                             <button
                                 type="button"
                                 onClick={() => setActiveDesktopField(null)}
-                                className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-full bg-cyan-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-[#b37922]"
+                                className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-full bg-cyan-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-cyan-700"
                             >
                                 Áp dụng
                             </button>
@@ -579,7 +581,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                     ) : null}
                 </div>
 
-                <div className="mt-6 rounded-[24px] border border-[#ede3d8] bg-[#fcfaf7] p-4">
+                <div className="mt-6 rounded-[24px] border border-cyan-100 bg-cyan-50/40 p-4">
                     <div className="flex items-center justify-between gap-4 text-sm text-black">
                         <span>Kỳ nghỉ của bạn</span>
                         <span>{nights} đêm</span>
@@ -593,7 +595,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                             </p>
                         </div>
 
-                        <div className="rounded-full bg-[#f3ebdf] px-3 py-1.5 text-xs font-semibold text-cyan-600">
+                        <div className={`rounded-full px-3 py-1.5 text-xs font-semibold ${accentBadgeClass}`}>
                             {stayingGuestCount} khách
                         </div>
                     </div>
@@ -601,7 +603,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
 
                 <button
                     type="button"
-                    className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-full bg-cyan-600 px-6 text-base font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-600"
+                    className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-full bg-cyan-600 px-6 text-base font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-700"
                 >
                     Đặt ngay
                 </button>
@@ -616,8 +618,8 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                         </span>
                     </div>
 
-                    <div className="mt-4 flex items-center gap-2 rounded-[18px] bg-[#f5f1ea] px-3 py-3 text-xs font-medium text-zinc-600">
-                        <FaCheckCircle className="shrink-0 text-[#91ff00]" />
+                    <div className="mt-4 flex items-center gap-2 rounded-[18px] bg-cyan-50 px-3 py-3 text-xs font-medium text-zinc-600">
+                        <FaCheckCircle className="shrink-0 text-cyan-600" />
                         Miễn phí hủy trong khung thời gian hỗ trợ
                     </div>
                 </div>
@@ -662,7 +664,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                     <button
                         type="button"
                         onClick={handleBack}
-                        className="inline-flex items-center gap-2 rounded-full border border-[#dccdbd] bg-white/90 px-5 py-2.5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-white"
+                        className="inline-flex items-center gap-2 rounded-full border border-cyan-100 bg-white/90 px-5 py-2.5 text-sm font-semibold text-zinc-900 transition-colors hover:border-cyan-300 hover:bg-white"
                     >
                         <FaArrowLeft />
                         Quay lại danh sách
@@ -824,7 +826,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                             <p className="mt-1 text-sm text-black">Đánh giá tổng thể từ khách đã lưu trú.</p>
 
                                             <div className="mt-6 flex items-center gap-3">
-                                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-600 text-sm font-bold text-cyan-600">
+                                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-600 text-sm font-bold text-white">
                                                     ER
                                                 </div>
                                                 <div>
@@ -884,7 +886,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                             <button
                                 type="button"
                                 onClick={() => setMobileBookingSheet(null)}
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700"
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-cyan-100 bg-white text-zinc-700 transition-colors hover:border-cyan-300 hover:text-cyan-700"
                                 aria-label="Đóng"
                             >
                                 <FaTimes />
@@ -892,14 +894,14 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                         </div>
 
                         {mobileBookingSheet === "dates" ? (
-                            <div className="mt-5 rounded-[28px] border border-[#eadfd2] bg-white p-4 shadow-sm">
+                            <div className="mt-5 rounded-[28px] border border-cyan-100 bg-white p-4 shadow-sm">
                                 <div className="mb-4 grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setMobileDateField("checkin")}
                                         className={`rounded-2xl border px-3 py-3 text-left transition-colors ${mobileDateField === "checkin"
-                                            ? "border-zinc-900 bg-zinc-900 text-white"
-                                            : "border-zinc-300 bg-white text-zinc-800"
+                                                ? "border-cyan-600 bg-cyan-600 text-white"
+                                                : "border-cyan-100 bg-white text-zinc-800 hover:border-cyan-300"
                                             }`}
                                     >
                                         <p className={`text-xs ${mobileDateField === "checkin" ? "text-white/75" : "text-black"}`}>Nhận phòng</p>
@@ -910,8 +912,8 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                         type="button"
                                         onClick={() => setMobileDateField("checkout")}
                                         className={`rounded-2xl border px-3 py-3 text-left transition-colors ${mobileDateField === "checkout"
-                                            ? "border-zinc-900 bg-zinc-900 text-white"
-                                            : "border-zinc-300 bg-white text-zinc-800"
+                                                ? "border-cyan-600 bg-cyan-600 text-white"
+                                                : "border-cyan-100 bg-white text-zinc-800 hover:border-cyan-300"
                                             }`}
                                     >
                                         <p className={`text-xs ${mobileDateField === "checkout" ? "text-white/75" : "text-black"}`}>Trả phòng</p>
@@ -930,13 +932,13 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                 />
                             </div>
                         ) : (
-                            <div className="mt-5 rounded-[28px] border border-[#eadfd2] bg-white p-4 shadow-sm">{renderGuestControls(false)}</div>
+                            <div className="mt-5 rounded-[28px] border border-cyan-100 bg-white p-4 shadow-sm">{renderGuestControls(false)}</div>
                         )}
 
                         <button
                             type="button"
                             onClick={() => setMobileBookingSheet(null)}
-                            className="mt-5 inline-flex min-h-14 w-full items-center justify-center rounded-full bg-cyan-600 px-6 text-base font-semibold text-white"
+                            className="mt-5 inline-flex min-h-14 w-full items-center justify-center rounded-full bg-cyan-600 px-6 text-base font-semibold text-white transition-colors hover:bg-cyan-700"
                         >
                             Áp dụng
                         </button>

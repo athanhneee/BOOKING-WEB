@@ -2,7 +2,7 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
-import { LuArrowRight, LuEye, LuEyeOff, LuLock, LuMail } from "react-icons/lu";
+import { LuArrowRight, LuEye, LuEyeOff, LuLock, LuUserRound } from "react-icons/lu";
 import { APP_ROUTES } from "../../../config/routes";
 import AuthCard from "../../components/auth/AuthCard";
 import AuthInput from "../../components/auth/AuthInput";
@@ -14,7 +14,7 @@ const secondaryButtonClass =
     "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white px-6 py-4 text-lg font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50";
 
 const LoginPage = () => {
-    const [email, setEmail] = useState("athanhnee@gmail.com");
+    const [identifier, setIdentifier] = useState("athanhnee@gmail.com");
     const [password, setPassword] = useState("123");
     const [showPassword, setShowPassword] = useState(false);
 
@@ -29,14 +29,14 @@ const LoginPage = () => {
         >
             <form className="space-y-5" onSubmit={handleSubmit}>
                 <AuthInput
-                    label="Email"
-                    type="email"
-                    name="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    icon={<LuMail />}
-                    placeholder="Nhập email của bạn"
+                    label="Email hoặc số điện thoại"
+                    type="text"
+                    name="identifier"
+                    autoComplete="username"
+                    value={identifier}
+                    onChange={(event) => setIdentifier(event.target.value)}
+                    icon={<LuUserRound />}
+                    placeholder="Email hoặc số điện thoại"
                     required
                 />
 

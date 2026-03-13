@@ -2,7 +2,7 @@ import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
-import { LuArrowRight, LuEye, LuEyeOff, LuLock, LuMail, LuUserRound } from "react-icons/lu";
+import { LuArrowRight, LuEye, LuEyeOff, LuLock, LuMail, LuPhone, LuUserRound } from "react-icons/lu";
 import { APP_ROUTES } from "../../../config/routes";
 import AuthCard from "../../components/auth/AuthCard";
 import AuthInput from "../../components/auth/AuthInput";
@@ -49,6 +49,7 @@ const getPasswordStrength = (password: string) => {
 
 const RegisterPage = () => {
     const [fullName, setFullName] = useState("Đặng Minh Thành");
+    const [phoneNumber, setPhoneNumber] = useState("0929399893");
     const [email, setEmail] = useState("athanhnee@gmail.com");
     const [password, setPassword] = useState("123");
     const [showPassword, setShowPassword] = useState(false);
@@ -60,10 +61,7 @@ const RegisterPage = () => {
     };
 
     return (
-        <AuthCard
-            title="Đăng ký tài khoản"
-            description="Tạo tài khoản để tận hưởng tối đa ưu đãi."
-        >
+        <AuthCard title="Đăng ký tài khoản" description="Tạo tài khoản để tận hưởng tối đa ưu đãi.">
             <form className="space-y-5" onSubmit={handleSubmit}>
                 <AuthInput
                     label="Họ và tên"
@@ -74,6 +72,19 @@ const RegisterPage = () => {
                     onChange={(event) => setFullName(event.target.value)}
                     icon={<LuUserRound />}
                     placeholder="Nhập họ và tên"
+                    required
+                />
+
+                <AuthInput
+                    label="Số điện thoại"
+                    type="tel"
+                    name="phoneNumber"
+                    autoComplete="tel"
+                    inputMode="tel"
+                    value={phoneNumber}
+                    onChange={(event) => setPhoneNumber(event.target.value)}
+                    icon={<LuPhone />}
+                    placeholder="Nhập số điện thoại của bạn"
                     required
                 />
 
@@ -117,8 +128,7 @@ const RegisterPage = () => {
                             {Array.from({ length: 4 }, (_, index) => (
                                 <span
                                     key={index}
-                                    className={`h-1.5 rounded-full ${index < passwordStrength.score ? passwordStrength.color : "bg-slate-200"
-                                        }`}
+                                    className={`h-1.5 rounded-full ${index < passwordStrength.score ? passwordStrength.color : "bg-slate-200"}`}
                                 />
                             ))}
                         </div>

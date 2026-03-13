@@ -1,7 +1,7 @@
 import type { ClipboardEvent, FormEvent, KeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { LuArrowLeft, LuLock, LuMail } from "react-icons/lu";
+import { LuArrowLeft, LuLock, LuUserRound } from "react-icons/lu";
 import { APP_ROUTES } from "../../../config/routes";
 import AuthCard from "../../components/auth/AuthCard";
 import AuthInput from "../../components/auth/AuthInput";
@@ -15,7 +15,7 @@ const OTP_RESEND_SECONDS = 23;
 const createEmptyOtpDigits = () => Array.from({ length: OTP_LENGTH }, () => "");
 
 const ForgotPasswordPage = () => {
-    const [email, setEmail] = useState("athanhnee@gmail.com");
+    const [identifier, setIdentifier] = useState("athanhnee@gmail.com");
     const [step, setStep] = useState<"request" | "otp">("request");
     const [otpDigits, setOtpDigits] = useState<string[]>(createEmptyOtpDigits);
     const [resendCountdown, setResendCountdown] = useState(OTP_RESEND_SECONDS);
@@ -121,8 +121,8 @@ const ForgotPasswordPage = () => {
             title={isOtpStep ? "Xác thực mã OTP" : "Đặt lại mật khẩu"}
             description={
                 isOtpStep
-                    ? `Nhập mã OTP gồm 6 chữ số đã được gửi đến ${email} để tiếp tục đặt lại mật khẩu.`
-                    : "Nhập email đã đăng ký, chúng tôi sẽ gửi liên kết để bạn tạo mật khẩu mới một cách an toàn."
+                    ? `Nhập mã OTP gồm 6 chữ số đã được gửi đến ${identifier} để tiếp tục đặt lại mật khẩu.`
+                    : "Nhập email hoặc số điện thoại đã đăng ký, chúng tôi sẽ gửi mã xác thực để bạn tạo mật khẩu mới một cách an toàn."
             }
             align={isOtpStep ? "left" : "center"}
         >
@@ -181,19 +181,19 @@ const ForgotPasswordPage = () => {
                 <>
                     <form className="space-y-5 font-sans" onSubmit={handleSubmit}>
                         <AuthInput
-                            label="Email"
-                            type="email"
-                            name="email"
-                            autoComplete="email"
-                            value={email}
-                            onChange={(event) => setEmail(event.target.value)}
-                            icon={<LuMail />}
-                            placeholder="Nhập email của bạn"
+                            label="Email hoặc số điện thoại"
+                            type="text"
+                            name="identifier"
+                            autoComplete="username"
+                            value={identifier}
+                            onChange={(event) => setIdentifier(event.target.value)}
+                            icon={<LuUserRound />}
+                            placeholder="Email hoặc số điện thoại"
                             required
                         />
 
                         <button type="submit" className={primaryButtonClass}>
-                            Gửi liên kết đặt lại
+                            Gửi mã xác thực
                             <LuLock className="text-xl" />
                         </button>
                     </form>
