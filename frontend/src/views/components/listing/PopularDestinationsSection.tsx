@@ -404,7 +404,7 @@ const PopularDestinationsSection = ({
                         }`}
                 >
                     <div className="min-h-0 overflow-hidden">
-                        <div ref={expandedPanelRef} className="rounded-3xl border border-zinc-200 bg-white p-3 sm:p-5 md:p-7">
+                        <div ref={expandedPanelRef} className="rounded-2xl border border-zinc-200 bg-white p-3 sm:p-5 md:p-7">
                             <div ref={gridTopRef} className="h-0 scroll-mt-24" />
 
                             <div className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
@@ -467,7 +467,7 @@ const PopularDestinationsSection = ({
                         type="button"
                         onClick={handleOpenOrNext}
                         disabled={(isExpanded && !hasNextPage) || isGridBusy}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-zinc-300 bg-white px-6 py-3 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-8"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-6 py-3 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-8"
                     >
                         {nextButtonLabel}
                         <FaArrowRight />
@@ -478,7 +478,7 @@ const PopularDestinationsSection = ({
                             type="button"
                             onClick={handleBack}
                             disabled={isGridBusy}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-zinc-300 bg-white px-6 py-3 text-base font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-white px-6 py-3 text-base font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
                         >
                             Quay lại
                             <FaArrowLeft />
@@ -490,7 +490,7 @@ const PopularDestinationsSection = ({
                             type="button"
                             onClick={handleCollapse}
                             disabled={isGridBusy}
-                            className="inline-flex w-full items-center justify-center rounded-full border border-zinc-300 bg-white px-6 py-3 text-base font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+                            className="inline-flex w-full items-center justify-center rounded-xl border border-zinc-300 bg-white px-6 py-3 text-base font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
                         >
                             Thu gọn
                         </button>

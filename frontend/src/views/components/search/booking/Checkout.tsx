@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type CSSProperties, type Ref } from "react";
 import { FaCalendarAlt, FaTimes } from "react-icons/fa";
 import DatePickerPanel from "./DatePickerPanel";
 
@@ -11,6 +11,8 @@ type CheckoutProps = {
     onClear?: () => void;
     className?: string;
     panelClassName?: string;
+    panelStyle?: CSSProperties;
+    containerRef?: Ref<HTMLDivElement>;
     onClose?: () => void;
 };
 
@@ -47,6 +49,8 @@ const Checkout = ({
     onClear,
     className,
     panelClassName,
+    panelStyle,
+    containerRef,
     onClose,
 }: CheckoutProps) => {
     const today = useMemo(() => formatIsoDate(new Date()), []);
@@ -54,17 +58,17 @@ const Checkout = ({
     const minDate = checkinDate || today;
 
     return (
-        <div className={`relative min-w-0 ${className ?? "flex-1"}`.trim()}>
+        <div ref={containerRef} className={`relative min-w-0 ${className ?? "flex-1"}`.trim()}>
             <button
                 type="button"
                 onClick={onOpen}
-                className={`flex h-full w-full items-center gap-3 rounded-full px-3 py-2 text-left transition-[background-color,transform,box-shadow,padding] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.995] ${isOpen ? "bg-gray-100 pr-10 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.04)]" : "hover:bg-gray-50"}`}
+                className={`flex h-full w-full items-center gap-3 rounded-full px-4 py-3 text-left transition-[background-color,transform,box-shadow,padding] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.995] ${isOpen ? "bg-cyan-300/10 pr-10 shadow-[inset_0_0_0_1px_rgba(8,145,178,0.18)]" : "hover:bg-slate-50/80"}`}
                 aria-expanded={isOpen}
                 aria-label={"Ch\u1ecdn ng\u00e0y tr\u1ea3 ph\u00f2ng"}
             >
-                <FaCalendarAlt className="text-gray-400" />
+                <FaCalendarAlt className={`${isOpen ? "text-cyan-700" : "text-gray-400"}`} />
                 <div className="min-w-0 text-left">
-                    <p className="text-[11px] font-semibold text-gray-700">{"Tr\u1ea3 ph\u00f2ng"}</p>
+                    <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">{"Tr\u1ea3 ph\u00f2ng"}</p>
                     <p className={`truncate text-sm ${value ? "font-semibold text-gray-900" : "text-gray-500"}`}>
                         {displayValue}
                     </p>
@@ -82,16 +86,15 @@ const Checkout = ({
                 </button>
             ) : null}
 
-            {isOpen ? (
-                <DatePickerPanel
-                    isOpen={isOpen}
-                    selectedDate={value}
-                    minDate={minDate}
-                    onSelectDate={onChange}
-                    onClear={onClear}
-                    className={panelClassName ?? "left-1/2 -translate-x-[55%]"}
-                />
-            ) : null}
+            <DatePickerPanel
+                isOpen={isOpen}
+                selectedDate={value}
+                minDate={minDate}
+                onSelectDate={onChange}
+                onClear={onClear}
+                className={panelClassName ?? "left-1/2 -translate-x-1/2"}
+                style={panelStyle}
+            />
         </div>
     );
 };

@@ -1,0 +1,42 @@
+import { Link } from "react-router-dom";
+import { LuCompass, LuPlane } from "react-icons/lu";
+import { APP_ROUTES } from "../../../../config/routes";
+import type { TripHistory } from "../../../../data/mockTripHistory";
+import TripHistoryCard from "./TripHistoryCard";
+
+type TripHistoryListProps = {
+    trips: TripHistory[];
+};
+
+const TripHistoryList = ({ trips }: TripHistoryListProps) => {
+    if (trips.length === 0) {
+        return (
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
+                <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-cyan-300/10 text-cyan-700">
+                    <LuPlane size={34} />
+                </span>
+                <h3 className="mt-5 text-2xl font-semibold text-slate-900">Bạn chưa có chuyến đi nào</h3>
+                <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
+                    Hãy khám phá và đặt phòng ngay hôm nay để lưu lại những chuyến đi đáng nhớ tiếp theo của bạn.
+                </p>
+                <Link
+                    to={APP_ROUTES.home}
+                    className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-700 px-5 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-cyan-800"
+                >
+                    <LuCompass size={16} />
+                    Khám phá nơi lưu trú
+                </Link>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            {trips.map((trip) => (
+                <TripHistoryCard key={trip.id} trip={trip} />
+            ))}
+        </div>
+    );
+};
+
+export default TripHistoryList;

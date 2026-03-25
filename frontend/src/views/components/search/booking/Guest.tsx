@@ -98,13 +98,13 @@ const Guest = ({ value, isOpen, onOpen, onChange, className, popupClassName, onC
             <button
                 type="button"
                 onClick={onOpen}
-                className={`flex h-full w-full items-center gap-3 rounded-full px-3 py-2 text-left transition-[background-color,transform,box-shadow,padding] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.995] ${isOpen ? "bg-gray-100 pr-10 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.04)]" : "hover:bg-gray-50"}`}
+                className={`flex h-full w-full items-center gap-3 rounded-full px-4 py-3 text-left transition-[background-color,transform,box-shadow,padding] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.995] ${isOpen ? "bg-cyan-300/10 pr-10 shadow-[inset_0_0_0_1px_rgba(8,145,178,0.18)]" : "hover:bg-slate-50/80"}`}
                 aria-expanded={isOpen}
                 aria-label="Chọn số lượng khách"
             >
-                <FaUser className="text-gray-400" />
+                <FaUser className={isOpen ? "text-cyan-700" : "text-gray-400"} />
                 <div className="min-w-0 text-left">
-                    <p className="text-[11px] font-semibold text-gray-700">Khách</p>
+                    <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">Khách</p>
                     <p className={`truncate text-sm ${summary === "Thêm khách" ? "text-gray-500" : "font-semibold text-gray-900"}`}>
                         {summary}
                     </p>
@@ -122,9 +122,11 @@ const Guest = ({ value, isOpen, onOpen, onChange, className, popupClassName, onC
                 </button>
             ) : null}
 
-            <div className={`absolute left-1/2 top-[calc(100%+12px)] z-50 w-[380px] -translate-x-1/2 transform-gpu rounded-3xl border border-gray-100 bg-white p-5 shadow-2xl transition-[transform,opacity] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${popupClassName ?? ""} ${isOpen ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0"}`}>
+            <div
+                className={`absolute left-1/2 top-[calc(100%+12px)] z-50 w-[min(380px,calc(100vw-2rem))] -translate-x-1/2 transform-gpu rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_32px_70px_-42px_rgba(15,23,42,0.42)] origin-top transition-all duration-200 ease-out will-change-transform ${popupClassName ?? ""} ${isOpen ? "translate-y-0 scale-100 opacity-100 pointer-events-auto" : "pointer-events-none -translate-y-1 scale-[0.98] opacity-0"}`}
+            >
                 <p className="text-sm font-semibold text-gray-900">Bạn đi cùng ai?</p>
-                <p className="mt-1 text-xs text-gray-500">Tối đa 16 khách (không tính em bé và thú cưng).</p>
+                <p className="mt-1 text-xs text-gray-500">Tối đa 16 khách, chưa tính em bé và thú cưng.</p>
 
                 <div className="mt-5 space-y-4">
                     {guestFieldConfigs.map((config) => {
@@ -143,7 +145,7 @@ const Guest = ({ value, isOpen, onOpen, onChange, className, popupClassName, onC
                                     <button
                                         type="button"
                                         onClick={() => handleAdjust(config.key, -1, config.min, config.max)}
-                                        className="h-8 w-8 rounded-full border border-gray-300 text-base leading-none text-gray-600 transition hover:border-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="h-8 w-8 rounded-full border border-gray-300 text-base leading-none text-gray-600 transition hover:border-cyan-400 hover:text-cyan-800 disabled:cursor-not-allowed disabled:opacity-40"
                                         disabled={disableMinus}
                                         aria-label={`Giảm ${config.label}`}
                                     >
@@ -153,7 +155,7 @@ const Guest = ({ value, isOpen, onOpen, onChange, className, popupClassName, onC
                                     <button
                                         type="button"
                                         onClick={() => handleAdjust(config.key, 1, config.min, config.max)}
-                                        className="h-8 w-8 rounded-full border border-gray-300 text-base leading-none text-gray-600 transition hover:border-gray-500 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="h-8 w-8 rounded-full border border-gray-300 text-base leading-none text-gray-600 transition hover:border-cyan-400 hover:text-cyan-800 disabled:cursor-not-allowed disabled:opacity-40"
                                         disabled={disablePlus}
                                         aria-label={`Tăng ${config.label}`}
                                     >

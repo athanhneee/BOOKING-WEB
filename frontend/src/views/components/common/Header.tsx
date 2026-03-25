@@ -1,23 +1,24 @@
 import { useEffect, useState } from "react";
-import { FaBars, FaTimes } from "react-icons/fa";
+import { LuMenu, LuX } from "react-icons/lu";
 import { Link, useLocation } from "react-router-dom";
 import logo from "../../../assets/img/logo_mau.svg";
+import AccountMenu from "../navbar/AccountMenu";
 import { APP_ROUTES } from "../../../config/routes";
+import { mockAccountUser } from "../../../data/mockAccountUser";
 import useScrollVisibility from "../../../hooks/useScrollVisibility";
 
 const navLinks = [
     { to: APP_ROUTES.home, label: "Trang chủ" },
-    { to: "/hotels", label: "Nơi lưu trú" },
+    { to: APP_ROUTES.search, label: "Nơi lưu trú" },
     { to: "/blog", label: "Blog" },
     { to: "/news", label: "Liên hệ" },
-    { to: APP_ROUTES.login, label: "Đăng nhập" },
 ];
 
 const Header = () => {
     const show = useScrollVisibility({ threshold: 12, topOffset: 64, hideStartRatio: 0.5 });
     const location = useLocation();
     const [useDarkText, setUseDarkText] = useState(location.pathname !== APP_ROUTES.home);
-    const [mobileOpen, setMobileOpen] = useState(false);
+    const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
 
     useEffect(() => {
         const updateTextMode = () => {
@@ -33,25 +34,20 @@ const Header = () => {
         };
     }, [location.pathname]);
 
-    useEffect(() => {
-        // Close the mobile drawer after route transitions.
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setMobileOpen(false);
-    }, [location.pathname]);
-
     const desktopLinkClass = useDarkText
-        ? "transition-colors hover:text-cyan-700 hover:underline"
-        : "transition-colors hover:text-cyan-200 hover:underline";
+        ? "transition-colors hover:text-cyan-800"
+        : "transition-colors hover:text-cyan-200";
 
     const mobileButtonClass = useDarkText
-        ? "border-zinc-300 bg-white/80 text-zinc-900"
+        ? "border-slate-300 bg-white/85 text-slate-900"
         : "border-white/40 bg-black/20 text-white backdrop-blur [text-shadow:0_1px_2px_rgba(0,0,0,0.75)]";
 
+    const mobileOpen = mobileMenuPath === location.pathname;
     const isVisible = show || mobileOpen;
 
     return (
         <header
-            className={`fixed top-0 left-0 z-50 w-full py-3 transition-transform duration-[520ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] will-change-transform md:py-4 ${
+            className={`fixed left-0 top-0 z-50 w-full py-3 transition-transform duration-[520ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] will-change-transform md:py-4 ${
                 isVisible ? "translate-y-0" : "pointer-events-none -translate-y-[110%]"
             }`}
         >
@@ -62,40 +58,73 @@ const Header = () => {
 
                 <nav
                     className={`hidden items-center space-x-8 text-base font-medium md:flex ${
-                        useDarkText ? "text-zinc-900" : "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.75)]"
+                        useDarkText ? "text-slate-900" : "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.75)]"
                     }`}
                 >
-                    {navLinks.map(({ to, label }) => (
-                        <Link key={to} to={to} className={desktopLinkClass}>
-                            {label}
-                        </Link>
-                    ))}
+                    {navLinks.map(({ to, label }) => {
+                        const isActive = location.pathname === to;
+
+                        return (
+                            <Link
+                                key={to}
+                                to={to}
+                                className={`${desktopLinkClass} ${isActive ? "text-cyan-700" : ""}`}
+                            >
+                                {label}
+                            </Link>
+                        );
+                    })}
                 </nav>
 
-                <button
-                    type="button"
-                    aria-label="Toggle menu"
-                    onClick={() => setMobileOpen((prev) => !prev)}
-                    className={`md:hidden inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${mobileButtonClass}`}
-                >
-                    {mobileOpen ? <FaTimes /> : <FaBars />}
-                </button>
+                <div className="flex items-center gap-2 md:gap-3">
+                    <Link
+                        to={APP_ROUTES.ownerDashboard}
+                        className={`hidden min-h-11 items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 md:inline-flex ${
+                            useDarkText
+                                ? "border-cyan-300/50 bg-white text-cyan-800 hover:bg-cyan-300/10"
+                                : "border-white/30 bg-white/12 text-white backdrop-blur hover:bg-white/18"
+                        }`}
+                    >
+                        Trở thành host
+                    </Link>
+
+                    <AccountMenu key={location.pathname} user={mockAccountUser} />
+
+                    <button
+                        type="button"
+                        aria-label="Mở menu điều hướng"
+                        onClick={() =>
+                            setMobileMenuPath((current) => (current === location.pathname ? null : location.pathname))
+                        }
+                        className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors md:hidden ${mobileButtonClass}`}
+                    >
+                        {mobileOpen ? <LuX size={18} /> : <LuMenu size={18} />}
+                    </button>
+                </div>
             </div>
 
             {mobileOpen && (
                 <div className="px-4 pt-3 md:hidden">
-                    <div className="mx-auto max-w-7xl rounded-2xl border border-zinc-200 bg-white/95 p-2 shadow-xl backdrop-blur">
-                        <nav className="flex flex-col text-zinc-900">
+                    <div className="mx-auto max-w-7xl rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-md backdrop-blur">
+                        <nav className="flex flex-col text-slate-900">
                             {navLinks.map(({ to, label }) => (
                                 <Link
                                     key={to}
                                     to={to}
-                                    className="rounded-xl px-4 py-3 text-sm font-medium transition-colors hover:bg-zinc-100"
-                                    onClick={() => setMobileOpen(false)}
+                                    className="rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
+                                    onClick={() => setMobileMenuPath(null)}
                                 >
                                     {label}
                                 </Link>
                             ))}
+
+                            <Link
+                                to={APP_ROUTES.ownerDashboard}
+                                className="rounded-xl px-4 py-3 text-sm font-medium text-cyan-800 transition-all duration-200 hover:bg-cyan-300/10"
+                                onClick={() => setMobileMenuPath(null)}
+                            >
+                                Trở thành host
+                            </Link>
                         </nav>
                     </div>
                 </div>

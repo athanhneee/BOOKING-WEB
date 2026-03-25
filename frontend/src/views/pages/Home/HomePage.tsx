@@ -11,7 +11,7 @@ const HomePage = () => {
     return (
         <>
             <Hero />
-            <SearchBar forceHidden={isSearchBarHidden} forceVisible={shouldForceSearchBarVisible} />
+            <SearchBar variant="home" forceHidden={isSearchBarHidden} forceVisible={shouldForceSearchBarVisible} />
             <PopularDestinationsSection
                 onExpandedChange={setIsPopularExpanded}
                 onSearchBarHiddenChange={setIsSearchBarHidden}

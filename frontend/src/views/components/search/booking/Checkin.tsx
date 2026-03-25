@@ -63,13 +63,13 @@ const Checkin = ({
             <button
                 type="button"
                 onClick={onOpen}
-                className={`flex h-full w-full items-center gap-3 rounded-full px-3 py-2 text-left transition-[background-color,transform,box-shadow,padding] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.995] ${isOpen ? "bg-gray-100 pr-10 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.04)]" : "hover:bg-gray-50"}`}
+                className={`flex h-full w-full items-center gap-3 rounded-full px-4 py-3 text-left transition-[background-color,transform,box-shadow,padding] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.995] ${isOpen ? "bg-cyan-300/10 pr-10 shadow-[inset_0_0_0_1px_rgba(8,145,178,0.18)]" : "hover:bg-slate-50/80"}`}
                 aria-expanded={isOpen}
                 aria-label={"Ch\u1ecdn ng\u00e0y nh\u1eadn ph\u00f2ng"}
             >
-                <FaCalendarAlt className="text-gray-400" />
+                <FaCalendarAlt className={`${isOpen ? "text-cyan-700" : "text-gray-400"}`} />
                 <div className="min-w-0 text-left">
-                    <p className="text-[11px] font-semibold text-gray-700">{"Nh\u1eadn ph\u00f2ng"}</p>
+                    <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">{"Nh\u1eadn ph\u00f2ng"}</p>
                     <p className={`truncate text-sm ${value ? "font-semibold text-gray-900" : "text-gray-500"}`}>
                         {displayValue}
                     </p>
@@ -87,19 +87,17 @@ const Checkin = ({
                 </button>
             ) : null}
 
-            {isOpen ? (
-                <DatePickerPanel
-                    isOpen={isOpen}
-                    selectedDate={value}
-                    minDate={today}
-                    selectedNightOffset={nightOffset}
-                    onSelectDate={onChange}
-                    onNightOffsetChange={onNightOffsetChange}
-                    onClear={onClear}
-                    className={panelClassName ?? "left-1/2 -translate-x-[42%]"}
-                    style={panelStyle}
-                />
-            ) : null}
+            <DatePickerPanel
+                isOpen={isOpen}
+                selectedDate={value}
+                minDate={today}
+                selectedNightOffset={nightOffset}
+                onSelectDate={onChange}
+                onNightOffsetChange={onNightOffsetChange}
+                onClear={onClear}
+                className={panelClassName ?? "left-1/2 -translate-x-1/2"}
+                style={panelStyle}
+            />
         </div>
     );
 };

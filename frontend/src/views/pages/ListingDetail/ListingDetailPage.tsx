@@ -65,10 +65,10 @@ const serifHeadingStyle: CSSProperties = {
 };
 
 const sidebarCardClass =
-    "rounded-[28px] border border-[#e8ddd1] bg-white p-5 shadow-[0_30px_80px_-48px_rgba(71,47,23,0.38)] sm:p-6";
+    "rounded-2xl border border-[#e8ddd1] bg-white p-5 shadow-[0_30px_80px_-48px_rgba(71,47,23,0.38)] sm:p-6";
 
 const mobileCardClass =
-    "rounded-[28px] border border-[#e8ddd1] bg-white p-5 shadow-[0_28px_70px_-44px_rgba(71,47,23,0.32)] sm:p-6";
+    "rounded-2xl border border-[#e8ddd1] bg-white p-5 shadow-[0_28px_70px_-44px_rgba(71,47,23,0.32)] sm:p-6";
 
 const accentBadgeClass = "border border-cyan-100 bg-cyan-50 text-cyan-600";
 
@@ -259,7 +259,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                 <button
                     type="button"
                     onClick={() => navigate(APP_ROUTES.home)}
-                    className="mt-6 inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-6 py-3 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100"
+                    className="mt-6 inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white px-6 py-3 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100"
                 >
                     <FaArrowLeft />
                     Về trang chủ
@@ -499,7 +499,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                         <button
                             type="button"
                             onClick={() => openDateSelection("checkin")}
-                            className={`rounded-[20px] border px-4 py-3 text-left transition-colors ${activeDesktopField === "checkin" && isDesktop ? activeBookingFieldClass : inactiveBookingFieldClass
+                            className={`rounded-xl border px-4 py-3 text-left transition-colors ${activeDesktopField === "checkin" && isDesktop ? activeBookingFieldClass : inactiveBookingFieldClass
                                 }`}
                         >
                             <span className="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] text-black">
@@ -512,7 +512,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                         <button
                             type="button"
                             onClick={() => openDateSelection("checkout")}
-                            className={`rounded-[20px] border px-4 py-3 text-left transition-colors ${activeDesktopField === "checkout" && isDesktop ? activeBookingFieldClass : inactiveBookingFieldClass
+                            className={`rounded-xl border px-4 py-3 text-left transition-colors ${activeDesktopField === "checkout" && isDesktop ? activeBookingFieldClass : inactiveBookingFieldClass
                                 }`}
                         >
                             <span className="mb-2 flex items-center gap-2 text-[11px] font-semibold  tracking-[0.18em] text-black">
@@ -540,7 +540,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                     <button
                         type="button"
                         onClick={openGuestSelection}
-                        className={`w-full rounded-[20px] border px-4 py-3 text-left transition-colors ${showGuestPopover ? activeBookingFieldClass : inactiveBookingFieldClass
+                        className={`w-full rounded-xl border px-4 py-3 text-left transition-colors ${showGuestPopover ? activeBookingFieldClass : inactiveBookingFieldClass
                             }`}
                     >
                         <span className="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] text-black">
@@ -551,7 +551,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                     </button>
 
                     {showGuestPopover ? (
-                        <div className="absolute right-0 top-[calc(100%+12px)] z-40 w-full min-w-[320px] rounded-[28px] border border-cyan-100 bg-white p-5 shadow-2xl">
+                        <div className="absolute right-0 top-[calc(100%+12px)] z-40 w-full min-w-[320px] rounded-2xl border border-cyan-100 bg-white p-5 shadow-2xl">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
                                     <p className="text-sm font-semibold text-zinc-900">Bạn đi cùng ai?</p>
@@ -573,7 +573,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                             <button
                                 type="button"
                                 onClick={() => setActiveDesktopField(null)}
-                                className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-full bg-cyan-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-cyan-700"
+                                className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-xl bg-cyan-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-cyan-700"
                             >
                                 Áp dụng
                             </button>
@@ -581,7 +581,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                     ) : null}
                 </div>
 
-                <div className="mt-6 rounded-[24px] border border-cyan-100 bg-cyan-50/40 p-4">
+                <div className="mt-6 rounded-2xl border border-cyan-100 bg-cyan-50/40 p-4">
                     <div className="flex items-center justify-between gap-4 text-sm text-black">
                         <span>Kỳ nghỉ của bạn</span>
                         <span>{nights} đêm</span>
@@ -603,7 +603,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
 
                 <button
                     type="button"
-                    className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-full bg-cyan-600 px-6 text-base font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-700"
+                    className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-xl bg-cyan-600 px-6 text-base font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-700"
                 >
                     Đặt ngay
                 </button>
@@ -618,7 +618,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                         </span>
                     </div>
 
-                    <div className="mt-4 flex items-center gap-2 rounded-[18px] bg-cyan-50 px-3 py-3 text-xs font-medium text-zinc-600">
+                    <div className="mt-4 flex items-center gap-2 rounded-xl bg-cyan-50 px-3 py-3 text-xs font-medium text-zinc-600">
                         <FaCheckCircle className="shrink-0 text-cyan-600" />
                         Miễn phí hủy trong khung thời gian hỗ trợ
                     </div>
@@ -699,7 +699,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
 
                             <div className="mt-6">
                                 <div
-                                    className="group relative overflow-hidden rounded-[30px] bg-[#ded4c9] [touch-action:pan-y]"
+                                    className="group relative overflow-hidden rounded-2xl bg-[#ded4c9] [touch-action:pan-y]"
                                     onTouchStart={handleGalleryTouchStart}
                                     onTouchEnd={handleGalleryTouchEnd}
                                 >
@@ -761,7 +761,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                                 key={item.id}
                                                 type="button"
                                                 onClick={() => setSelectedImageIndex(index)}
-                                                className={`relative h-[88px] min-w-[112px] overflow-hidden rounded-[18px] border transition-all sm:h-24 sm:min-w-[138px] ${isActive ? "border-cyan-600 ring-2 ring-cyan-600/20" : "border-[#e0d1c1]"
+                                                className={`relative h-[88px] min-w-[112px] overflow-hidden rounded-xl border transition-all sm:h-24 sm:min-w-[138px] ${isActive ? "border-cyan-600 ring-2 ring-cyan-600/20" : "border-[#e0d1c1]"
                                                     }`}
                                             >
                                                 <img src={item.imageUrl} alt={item.label} className="h-full w-full object-cover" />
@@ -797,7 +797,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                     {amenities.map((amenity) => (
                                         <div
                                             key={amenity.label}
-                                            className="flex items-center gap-3 rounded-[18px] border border-[#ece2d7] bg-white px-4 py-4 text-sm font-medium text-zinc-700 shadow-[0_20px_50px_-45px_rgba(71,47,23,0.3)] sm:text-[15px]"
+                                            className="flex items-center gap-3 rounded-xl border border-[#ece2d7] bg-white px-4 py-4 text-sm font-medium text-zinc-700 shadow-[0_20px_50px_-45px_rgba(71,47,23,0.3)] sm:text-[15px]"
                                         >
                                             <span className="text-cyan-600">{amenity.icon}</span>
                                             {amenity.label}
@@ -811,7 +811,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                     Đánh giá khách lưu trú
                                 </h2>
 
-                                <div className="mt-5 rounded-[28px] border border-[#e8ddd1] bg-white p-5 shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:p-6">
+                                <div className="mt-5 rounded-2xl border border-[#e8ddd1] bg-white p-5 shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:p-6">
                                     <div className="grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
                                         <div className="border-b border-[#efe4d8] pb-6 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-6">
                                             <div className="flex items-center gap-1 text-cyan-600">
@@ -875,7 +875,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                 <div className="fixed inset-0 z-[80] xl:hidden">
                     <div className="absolute inset-0 bg-black/45" onClick={() => setMobileBookingSheet(null)} role="presentation" />
 
-                    <div className="absolute inset-x-0 bottom-0 top-0 overflow-y-auto rounded-t-[34px] bg-[#f4f0eb] px-4 pb-8 pt-4 shadow-2xl">
+                    <div className="absolute inset-x-0 bottom-0 top-0 overflow-y-auto rounded-t-2xl bg-[#f4f0eb] px-4 pb-8 pt-4 shadow-2xl">
                         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-zinc-300" />
 
                         <div className="flex items-center justify-between gap-4">
@@ -894,12 +894,12 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                         </div>
 
                         {mobileBookingSheet === "dates" ? (
-                            <div className="mt-5 rounded-[28px] border border-cyan-100 bg-white p-4 shadow-sm">
+                            <div className="mt-5 rounded-2xl border border-cyan-100 bg-white p-4 shadow-sm">
                                 <div className="mb-4 grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setMobileDateField("checkin")}
-                                        className={`rounded-2xl border px-3 py-3 text-left transition-colors ${mobileDateField === "checkin"
+                                        className={`rounded-xl border px-3 py-3 text-left transition-colors ${mobileDateField === "checkin"
                                                 ? "border-cyan-600 bg-cyan-600 text-white"
                                                 : "border-cyan-100 bg-white text-zinc-800 hover:border-cyan-300"
                                             }`}
@@ -911,7 +911,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                     <button
                                         type="button"
                                         onClick={() => setMobileDateField("checkout")}
-                                        className={`rounded-2xl border px-3 py-3 text-left transition-colors ${mobileDateField === "checkout"
+                                        className={`rounded-xl border px-3 py-3 text-left transition-colors ${mobileDateField === "checkout"
                                                 ? "border-cyan-600 bg-cyan-600 text-white"
                                                 : "border-cyan-100 bg-white text-zinc-800 hover:border-cyan-300"
                                             }`}
@@ -932,13 +932,13 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                 />
                             </div>
                         ) : (
-                            <div className="mt-5 rounded-[28px] border border-cyan-100 bg-white p-4 shadow-sm">{renderGuestControls(false)}</div>
+                            <div className="mt-5 rounded-2xl border border-cyan-100 bg-white p-4 shadow-sm">{renderGuestControls(false)}</div>
                         )}
 
                         <button
                             type="button"
                             onClick={() => setMobileBookingSheet(null)}
-                            className="mt-5 inline-flex min-h-14 w-full items-center justify-center rounded-full bg-cyan-600 px-6 text-base font-semibold text-white transition-colors hover:bg-cyan-700"
+                            className="mt-5 inline-flex min-h-14 w-full items-center justify-center rounded-xl bg-cyan-600 px-6 text-base font-semibold text-white transition-colors hover:bg-cyan-700"
                         >
                             Áp dụng
                         </button>
@@ -954,7 +954,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                         role="dialog"
                         aria-modal="true"
                     >
-                        <div className="w-full rounded-[32px] border border-white/10 bg-[#161616] p-4 text-white shadow-2xl sm:p-6">
+                        <div className="w-full rounded-2xl border border-white/10 bg-[#161616] p-4 text-white shadow-2xl sm:p-6">
                             <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
                                 <div>
                                     <p className="text-sm tracking-[0.18em] text-white/55">Thư viện ảnh</p>
@@ -973,7 +973,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
 
                             <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
                                 <div
-                                    className="relative overflow-hidden rounded-[28px] bg-black [touch-action:pan-y]"
+                                    className="relative overflow-hidden rounded-2xl bg-black [touch-action:pan-y]"
                                     onTouchStart={handleGalleryTouchStart}
                                     onTouchEnd={handleGalleryTouchEnd}
                                 >
@@ -1019,10 +1019,10 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                                 key={item.id}
                                                 type="button"
                                                 onClick={() => setSelectedImageIndex(index)}
-                                                className={`flex w-full items-center gap-3 rounded-[22px] border p-2 text-left transition-colors ${isActive ? "border-cyan-600 bg-white/10" : "border-white/10 bg-white/5 hover:bg-white/10"
+                                                className={`flex w-full items-center gap-3 rounded-xl border p-2 text-left transition-colors ${isActive ? "border-cyan-600 bg-white/10" : "border-white/10 bg-white/5 hover:bg-white/10"
                                                     }`}
                                             >
-                                                <img src={item.imageUrl} alt={item.label} className="h-20 w-24 rounded-[16px] object-cover" />
+                                                <img src={item.imageUrl} alt={item.label} className="h-20 w-24 rounded-xl object-cover" />
                                                 <div className="min-w-0">
                                                     <p className="truncate text-sm font-semibold text-white">{item.label}</p>
                                                     <p className="mt-1 text-xs text-white/65">

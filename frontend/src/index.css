@@ -4,6 +4,17 @@
     --font-sans: "Poppins", sans-serif;
 }
 
+:root {
+    --color-primary: #06b6d4;
+    --color-primary-dark: #0e7490;
+    --color-accent: #ff6b6b;
+    --color-bg: #f7f8fa;
+    --color-card: #ffffff;
+    --color-text-primary: #1a1a2e;
+    --color-text-secondary: #6b7280;
+    --color-border: #e5e7eb;
+}
+
 @font-face {
     font-family: "Poppins";
     src: url("./assets/fonts/Poppins/Poppins-Regular.ttf") format("truetype");
@@ -55,6 +66,8 @@
 body {
     margin: 0;
     font-family: "Poppins", sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
 }
 
 html,
@@ -65,4 +78,38 @@ input,
 select,
 textarea {
     font-family: "Poppins", sans-serif;
+}
+
+html,
+body,
+#root {
+    min-height: 100%;
+}
+
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* MinhThanhVilla - Global radius system */
+input:not(.rounded-none):not(.rounded-full):not(.rounded-2xl),
+textarea:not(.rounded-none):not(.rounded-full):not(.rounded-2xl),
+select:not(.rounded-none):not(.rounded-full):not(.rounded-2xl) {
+    border-radius: 0.75rem !important;
+}
+
+button:not(.rounded-none):not(.rounded-full):not(.rounded-2xl) {
+    border-radius: 0.75rem !important;
+}
+
+.modal-panel {
+    border-radius: 1rem !important;
+}
+
+.card {
+    border-radius: 1rem !important;
+}
+
+.dropdown-menu {
+    border-radius: 1rem !important;
 }
