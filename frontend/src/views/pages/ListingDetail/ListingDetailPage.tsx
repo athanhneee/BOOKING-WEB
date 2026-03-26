@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type TouchEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject, type TouchEvent } from "react";
 import {
     FaArrowLeft,
     FaCalendarAlt,
@@ -7,7 +7,9 @@ import {
     FaChevronLeft,
     FaChevronRight,
     FaFireAlt,
+    FaMinus,
     FaMapMarkerAlt,
+    FaPlus,
     FaSnowflake,
     FaStar,
     FaSwimmingPool,
@@ -16,6 +18,7 @@ import {
     FaUtensils,
     FaWifi,
 } from "react-icons/fa";
+import { FiCalendar, FiUsers } from "react-icons/fi";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { APP_ROUTES } from "../../../config/routes";
 import {
@@ -24,11 +27,16 @@ import {
     savePendingBookingDraft,
 } from "../../../services/bookingService";
 import { getListingById } from "../../../services/listingService";
+import SearchPopover from "../../components/search/SearchPopover";
 import DatePickerPanel from "../../components/search/booking/DatePickerPanel";
 import type { GuestSelection } from "../../components/search/booking/Guest";
 import {
+    buildGuestSummary as buildSearchGuestSummary,
+    defaultGuestSelection as defaultSearchGuestSelection,
+    guestFieldConfigs as sharedGuestFieldConfigs,
     parseBookingSearchParams,
     toIsoDate,
+    type GuestFieldConfig,
 } from "../../components/search/searchState";
 
 type ListingDetailLocationState = {
@@ -55,14 +63,6 @@ type GalleryItem = {
     placeholder: boolean;
 };
 
-type GuestFieldConfig = {
-    key: keyof GuestSelection;
-    label: string;
-    description: string;
-    min: number;
-    max: number;
-};
-
 
 const currencyFormatter = new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -75,7 +75,7 @@ const serifHeadingStyle: CSSProperties = {
 };
 
 const sidebarCardClass =
-    "rounded-2xl border border-[#e8ddd1] bg-white p-5 shadow-[0_30px_80px_-48px_rgba(71,47,23,0.38)] sm:p-6";
+    "rounded-2xl border border-[#e8ddd1] bg-white p-1 shadow-[0_30px_80px_-48px_rgba(71,47,23,0.38)] sm:p-4";
 
 const mobileCardClass =
     "rounded-2xl border border-[#e8ddd1] bg-white p-5 shadow-[0_28px_70px_-44px_rgba(71,47,23,0.32)] sm:p-6";
@@ -165,6 +165,46 @@ const getGuestSummary = (selection: GuestSelection) => {
 
 const isMobileViewport = () => window.matchMedia("(max-width: 1279.98px)").matches;
 
+type BookingSelectionFieldProps = {
+    label: string;
+    value: string;
+    icon: ReactNode;
+    isActive: boolean;
+    onClick: () => void;
+    buttonRef?: RefObject<HTMLButtonElement | null>;
+};
+
+const BookingSelectionField = ({
+    label,
+    value,
+    icon,
+    isActive,
+    onClick,
+    buttonRef,
+}: BookingSelectionFieldProps) => (
+    <button
+        ref={buttonRef}
+        type="button"
+        onClick={onClick}
+        className={`flex w-full items-start gap-3 rounded-[24px] border px-4 py-4 text-left transition-all duration-200 ${isActive
+                ? "border-cyan-300 bg-cyan-50/70 shadow-[0_18px_35px_-28px_rgba(15,23,42,0.32)] ring-1 ring-cyan-200"
+                : "border-slate-200 bg-white hover:border-cyan-200 hover:bg-slate-50/70"
+            }`}
+    >
+        <span
+            className={`mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${isActive ? "bg-cyan-100 text-cyan-700" : "bg-slate-50 text-slate-500"
+                }`}
+        >
+            {icon}
+        </span>
+
+        <span className="min-w-0 flex-1">
+            <span className="block text-xs font-semibold text-gray-800">{label}</span>
+            <span className="mt-1 block text-[1.05rem] font-semibold tracking-tight text-zinc-900">{value}</span>
+        </span>
+    </button>
+);
+
 type ListingDetailContentProps = {
     villaId?: string;
 };
@@ -179,7 +219,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
         return {
             checkIn: parsed.checkIn || createDateOffset(1),
             checkOut: parsed.checkOut || createDateOffset(4),
-            guests: parsed.guests.adults > 0 ? parsed.guests : defaultGuestSelection,
+            guests: parsed.guests.adults > 0 ? parsed.guests : defaultSearchGuestSelection,
         };
     }, [location.search]);
 
@@ -194,6 +234,11 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
     const [mobileDateField, setMobileDateField] = useState<"checkin" | "checkout">("checkin");
 
     const desktopBookingRef = useRef<HTMLDivElement | null>(null);
+    const desktopPopoverRef = useRef<HTMLDivElement | null>(null);
+    const desktopDateFieldsRef = useRef<HTMLDivElement | null>(null);
+    const checkInFieldRef = useRef<HTMLButtonElement | null>(null);
+    const checkOutFieldRef = useRef<HTMLButtonElement | null>(null);
+    const guestFieldRef = useRef<HTMLButtonElement | null>(null);
     const touchStartXRef = useRef<number | null>(null);
     const todayIso = useMemo(() => toIsoDate(new Date()), []);
 
@@ -215,14 +260,21 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
             return;
         }
 
-        const handlePointerDown = (event: PointerEvent) => {
-            if (desktopBookingRef.current && !desktopBookingRef.current.contains(event.target as Node)) {
-                setActiveDesktopField(null);
+        const handleMouseDown = (event: MouseEvent) => {
+            const target = event.target as Node;
+
+            if (
+                desktopBookingRef.current?.contains(target) ||
+                desktopPopoverRef.current?.contains(target)
+            ) {
+                return;
             }
+
+            setActiveDesktopField(null);
         };
 
-        document.addEventListener("pointerdown", handlePointerDown);
-        return () => document.removeEventListener("pointerdown", handlePointerDown);
+        document.addEventListener("mousedown", handleMouseDown);
+        return () => document.removeEventListener("mousedown", handleMouseDown);
     }, [activeDesktopField]);
 
     useEffect(() => {
@@ -315,7 +367,14 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
     const nightlyRate = destination.pricePerNight;
     const totalPrice = nightlyRate * nights;
     const stayingGuestCount = guestSelection.adults + guestSelection.children;
-    const guestSummary = getGuestSummary(guestSelection);
+    const guestSummary = buildSearchGuestSummary(guestSelection);
+    const activeDesktopAnchorRef = (
+        activeDesktopField === "checkin"
+            ? checkInFieldRef
+            : activeDesktopField === "checkout"
+                ? checkOutFieldRef
+                : guestFieldRef
+    ) as RefObject<HTMLElement | null>;
 
     const handleBookNow = () => {
         const bookingDraft = createBookingDraft(destination, {
@@ -452,7 +511,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
     };
 
     const renderGuestControls = (compact: boolean) => {
-        return guestFieldConfigs.map((field) => {
+        return sharedGuestFieldConfigs.map((field) => {
             const currentValue = guestSelection[field.key];
             const disableMinus = currentValue <= field.min;
             const disablePlus = currentValue >= field.max;
@@ -464,8 +523,8 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                         }`}
                 >
                     <div>
-                        <p className={`${compact ? "text-sm" : "text-base"} font-semibold text-zinc-900`}>{field.label}</p>
-                        <p className={`${compact ? "text-xs" : "text-sm"} text-black`}>{field.description}</p>
+                        <p className={`${compact ? "text-sm" : "text-base"} font-semibold text-gray-900`}>{field.label}</p>
+                        <p className={`${compact ? "text-xs" : "text-sm"} text-gray-500`}>{field.description}</p>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -473,22 +532,22 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                             type="button"
                             disabled={disableMinus}
                             onClick={() => handleAdjustGuest(field.key, -1, field.min, field.max)}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d5c5b2] text-base font-semibold text-zinc-700 transition-colors hover:border-cyan-600 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
+                            className={`inline-flex items-center justify-center rounded-full border border-gray-300 text-gray-600 transition-colors hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-35 ${compact ? "h-9 w-9" : "h-10 w-10"}`}
                             aria-label={`Giảm ${field.label}`}
                         >
-                            -
+                            <FaMinus size={10} />
                         </button>
 
-                        <span className="w-6 text-center text-sm font-semibold text-zinc-900">{currentValue}</span>
+                        <span className="w-6 text-center text-sm font-semibold text-gray-900">{currentValue}</span>
 
                         <button
                             type="button"
                             disabled={disablePlus}
                             onClick={() => handleAdjustGuest(field.key, 1, field.min, field.max)}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d5c5b2] text-base font-semibold text-zinc-700 transition-colors hover:border-cyan-600 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
+                            className={`inline-flex items-center justify-center rounded-full border border-gray-300 text-gray-600 transition-colors hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-35 ${compact ? "h-9 w-9" : "h-10 w-10"}`}
                             aria-label={`Tăng ${field.label}`}
                         >
-                            +
+                            <FaPlus size={10} />
                         </button>
                     </div>
                 </div>
@@ -496,7 +555,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
         });
     };
 
-    const renderBookingCard = (variant: "mobile" | "desktop") => {
+    const legacyRenderBookingCard = (variant: "mobile" | "desktop") => {
         const isDesktop = variant === "desktop";
         const showDatePopover = isDesktop && (activeDesktopField === "checkin" || activeDesktopField === "checkout");
         const showGuestPopover = isDesktop && activeDesktopField === "guest";
@@ -507,7 +566,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                 <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                            <p className="text-[2rem] font-semibold tracking-tight text-[#231a12]">
+                            <p className="text-[1.8rem] font-semibold tracking-tight text-[#231a12]">
                                 {currencyFormatter.format(nightlyRate)}
                             </p>
                             <span className="text-sm text-black">/ đêm</span>
@@ -517,7 +576,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                             Giá linh hoạt theo thời gian lưu trú.
                         </p>
                     </div>
-                    <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${accentBadgeClass}`}>
+                    <div className={`inline-flex gap-1 rounded-full px-1 py-1.5 text-xs font-bold ${accentBadgeClass}`}>
                         <FaUsers />
                         {stayingGuestCount} khách
                     </div>
@@ -576,7 +635,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                         className={`w-full rounded-xl border px-4 py-3 text-left transition-colors ${showGuestPopover ? activeBookingFieldClass : inactiveBookingFieldClass
                             }`}
                     >
-                        <span className="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] text-black">
+                        <span className="inline-flex items-center gap-2 rounded-full px-1 py-1.5 text-xs font-bold border border-cyan-100 bg-cyan-50 text-cyan-600">
                             <FaUsers />
                             Khách
                         </span>
@@ -628,7 +687,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                             </p>
                         </div>
 
-                        <div className={`rounded-full px-3 py-1.5 text-xs font-semibold ${accentBadgeClass}`}>
+                        <div className={`inline-flex items-center gap-2 rounded-full px-1 py-1.5 text-xs font-bold border border-cyan-100 bg-cyan-50 text-cyan-600 ${accentBadgeClass}`}>
                             {stayingGuestCount} khách
                         </div>
                     </div>
@@ -658,6 +717,158 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                     </div>
                 </div>
             </div>
+        );
+    };
+
+    const renderUnifiedBookingCard = (variant: "mobile" | "desktop") => {
+        const isDesktop = variant === "desktop";
+        const showDatePopover = isDesktop && (activeDesktopField === "checkin" || activeDesktopField === "checkout");
+        const showGuestPopover = isDesktop && activeDesktopField === "guest";
+        const cardClass = isDesktop ? sidebarCardClass : mobileCardClass;
+
+        return (
+            <>
+                <div ref={isDesktop ? desktopBookingRef : null} className={cardClass}>
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                <p className="text-[2rem] font-semibold tracking-tight text-[#231a12]">
+                                    {currencyFormatter.format(nightlyRate)}
+                                </p>
+                                <span className="text-sm text-black">/ đêm</span>
+                            </div>
+
+                            <p className="mt-1 whitespace-nowrap text-sm text-black">
+                                Giá linh hoạt theo thời gian lưu trú.
+                            </p>
+                        </div>
+
+                        <div className={`inline-flex items-center gap-2 rounded-full px-1 py-1.5 text-xs font-bold border border-cyan-100 bg-cyan-50 text-cyan-600 ${accentBadgeClass}`}>
+                            <FiUsers className="text-sm" />
+                            {stayingGuestCount} khách
+                        </div>
+                    </div>
+
+                    <div ref={isDesktop ? desktopDateFieldsRef : null} className="mt-3 grid gap-2 sm:grid-cols-1">
+                        <BookingSelectionField
+                            label="Nhận phòng"
+                            value={formatFieldDate(checkIn)}
+                            icon={<FiCalendar size={18} />}
+                            isActive={activeDesktopField === "checkin" && isDesktop}
+                            onClick={() => openDateSelection("checkin")}
+                            buttonRef={isDesktop ? checkInFieldRef : undefined}
+                        />
+
+                        <BookingSelectionField
+                            label="Trả phòng"
+                            value={formatFieldDate(checkOut)}
+                            icon={<FiCalendar size={18} />}
+                            isActive={activeDesktopField === "checkout" && isDesktop}
+                            onClick={() => openDateSelection("checkout")}
+                            buttonRef={isDesktop ? checkOutFieldRef : undefined}
+                        />
+                    </div>
+
+                    <div className="mt-3">
+                        <BookingSelectionField
+                            label="Khách"
+                            value={guestSummary}
+                            icon={<FiUsers size={18} />}
+                            isActive={showGuestPopover}
+                            onClick={openGuestSelection}
+                            buttonRef={isDesktop ? guestFieldRef : undefined}
+                        />
+                    </div>
+
+                    <div className="mt-6 rounded-2xl border border-cyan-100 bg-cyan-50/40 p-4">
+                        <div className="flex items-center justify-between gap-4 text-sm text-black">
+                            <span className="font-bold">Kỳ nghỉ của bạn</span>
+                            <span>{nights} đêm</span>
+                        </div>
+
+                        <div className="mt-5 flex items-end justify-between gap-4">
+                            <div>
+                                <p className="text-[1.9rem] font-semibold tracking-tight text-[#231a12]">{currencyFormatter.format(totalPrice)}</p>
+                                <p className="mt-1 text-xs text-black">
+                                    {currencyFormatter.format(nightlyRate)} x {nights} đêm
+                                </p>
+                            </div>
+
+                            <div className={`inline-flex items-center gap-2 rounded-full px-1 py-1.5 text-xs font-bold border border-cyan-100 bg-cyan-50 text-cyan-600 ${accentBadgeClass}`}>
+                                <FiUsers className="text-sm" />
+                                {stayingGuestCount} khách
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={handleBookNow}
+                        className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-xl bg-cyan-600 px-6 text-base font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-700"
+                    >
+                        Đặt ngay
+                    </button>
+
+                    <p className="mt-3 text-center text-sm text-black">Chưa trừ tiền ngay</p>
+
+                    <div className="mt-6 border-t border-[#ece2d8] pt-4">
+                        <div className="flex items-center justify-between gap-4">
+                            <span className="text-sm text-black">Tổng {nights} đêm</span>
+                            <span className="text-[1.75rem] font-semibold tracking-tight text-[#231a12]">
+                                {currencyFormatter.format(totalPrice)}
+                            </span>
+                        </div>
+
+                        <div className="mt-4 flex items-center gap-2 rounded-xl bg-cyan-50 px-3 py-3 text-xs font-medium text-zinc-600">
+                            <FaCheckCircle className="shrink-0 text-cyan-600" />
+                            Miễn phí hủy trong khung thời gian hỗ trợ
+                        </div>
+                    </div>
+                </div>
+
+                {showDatePopover ? (
+                    <SearchPopover
+                        ref={desktopPopoverRef}
+                        isOpen
+                        anchorRef={desktopDateFieldsRef as RefObject<HTMLElement | null>}
+                        align="end"
+                        offset={12}
+                        className="w-[min(860px,calc(100vw-2rem))]"
+                    >
+                        <DatePickerPanel
+                            key={`desktop-shared-${activeDesktopField}-${checkIn}-${checkOut}`}
+                            isOpen
+                            selectedDate={activeDesktopField === "checkin" ? checkIn : checkOut}
+                            minDate={activeDesktopField === "checkin" ? todayIso : checkIn || todayIso}
+                            rangeStartDate={checkIn}
+                            rangeEndDate={checkOut}
+                            activeField={activeDesktopField === "checkout" ? "checkOut" : "checkIn"}
+                            selectedNightOffset={nightOffset}
+                            onSelectDate={activeDesktopField === "checkin" ? handleCheckInChange : handleCheckoutChange}
+                            onNightOffsetChange={handleNightOffsetChange}
+                            variant="popover"
+                        />
+                    </SearchPopover>
+                ) : null}
+
+                {showGuestPopover ? (
+                    <SearchPopover
+                        ref={desktopPopoverRef}
+                        isOpen
+                        anchorRef={activeDesktopAnchorRef}
+                        align="end"
+                        offset={14}
+                        className="w-[min(390px,calc(100vw-2rem))]"
+                    >
+                        <div className="rounded-[30px] border border-black/5 bg-white p-5 shadow-[0_36px_85px_-46px_rgba(15,23,42,0.38)]">
+                            <p className="text-base font-semibold text-gray-900">Bạn đi cùng ai?</p>
+                            <p className="mt-1 text-sm text-gray-500">Tối đa 16 khách, chưa tính em bé và thú cưng.</p>
+
+                            <div className="mt-5 space-y-4">{renderGuestControls(true)}</div>
+                        </div>
+                    </SearchPopover>
+                ) : null}
+            </>
         );
     };
 
@@ -811,7 +1022,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                 </div>
                             </div>
 
-                            <div className="mt-8 xl:hidden">{renderBookingCard("mobile")}</div>
+                            <div className="mt-8 xl:hidden">{renderUnifiedBookingCard("mobile")}</div>
 
                             <section className="mt-10">
                                 <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]" style={serifHeadingStyle}>
@@ -898,7 +1109,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                         </div>
 
                         <aside className="hidden space-y-6 xl:sticky xl:top-28 xl:block xl:self-start">
-                            {renderBookingCard("desktop")}
+                            {renderUnifiedBookingCard("desktop")}
                             {renderPoliciesCard()}
                         </aside>
                     </div>
@@ -934,8 +1145,8 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                         type="button"
                                         onClick={() => setMobileDateField("checkin")}
                                         className={`rounded-xl border px-3 py-3 text-left transition-colors ${mobileDateField === "checkin"
-                                                ? "border-cyan-600 bg-cyan-600 text-white"
-                                                : "border-cyan-100 bg-white text-zinc-800 hover:border-cyan-300"
+                                            ? "border-cyan-600 bg-cyan-600 text-white"
+                                            : "border-cyan-100 bg-white text-zinc-800 hover:border-cyan-300"
                                             }`}
                                     >
                                         <p className={`text-xs ${mobileDateField === "checkin" ? "text-white/75" : "text-black"}`}>Nhận phòng</p>
@@ -946,8 +1157,8 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                         type="button"
                                         onClick={() => setMobileDateField("checkout")}
                                         className={`rounded-xl border px-3 py-3 text-left transition-colors ${mobileDateField === "checkout"
-                                                ? "border-cyan-600 bg-cyan-600 text-white"
-                                                : "border-cyan-100 bg-white text-zinc-800 hover:border-cyan-300"
+                                            ? "border-cyan-600 bg-cyan-600 text-white"
+                                            : "border-cyan-100 bg-white text-zinc-800 hover:border-cyan-300"
                                             }`}
                                     >
                                         <p className={`text-xs ${mobileDateField === "checkout" ? "text-white/75" : "text-black"}`}>Trả phòng</p>
