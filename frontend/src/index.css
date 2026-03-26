@@ -113,3 +113,63 @@ button:not(.rounded-none):not(.rounded-full):not(.rounded-2xl) {
 .dropdown-menu {
     border-radius: 1rem !important;
 }
+
+/* ── Calendar panel: fade + slide in ── */
+.calendar-panel {
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
+    animation: calFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes calFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ── Month grid: slide in on month change ── */
+.month-grid-enter {
+    animation: monthIn 0.18s ease-out both;
+}
+
+@keyframes monthIn {
+    from {
+        opacity: 0;
+        transform: translateX(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ── Date cell hover: subtle scale ── */
+.cal-date-btn {
+    transition:
+        background-color 120ms ease,
+        transform 120ms ease,
+        color 120ms ease,
+        box-shadow 120ms ease;
+}
+
+.cal-date-btn:hover:not(:disabled):not(.selected) {
+    transform: scale(1.1);
+}
+
+/* ── Range highlight: smooth fade ── */
+.range-cell-bg {
+    transition: background-color 80ms ease;
+}
+
+/* ── Search bar field hover ── */
+.search-field-btn {
+    transition:
+        background-color 150ms ease,
+        box-shadow 150ms ease;
+}

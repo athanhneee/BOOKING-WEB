@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiCheckCircle, FiMinus, FiPlus, FiUploadCloud, FiX } from "react-icons/fi";
 import { properties } from "../../../../data/mockData.ts";
-import { PageHeader, ToggleSwitch, createTimeOptions, inputClassName, labelClassName, pageWrapperClass, primaryButtonClass, secondaryButtonClass, textareaClassName } from "../shared";
+import { PageHeader, ToggleSwitch } from "../shared";
+import { createTimeOptions, inputClassName, labelClassName, pageWrapperClass, primaryButtonClass, secondaryButtonClass, textareaClassName } from "../sharedStyles";
 
 type Step = 1 | 2 | 3 | 4;
 type UploadItem = { id: string; url: string };

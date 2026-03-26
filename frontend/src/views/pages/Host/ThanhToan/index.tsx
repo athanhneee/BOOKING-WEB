@@ -5,6 +5,8 @@ import Badge from "../../../components/ui/Badge";
 import {
     PageHeader,
     StatCard,
+} from "../shared";
+import {
     downloadTextFile,
     formatCurrency,
     formatDate,
@@ -13,7 +15,7 @@ import {
     pageWrapperClass,
     primaryButtonClass,
     tableClassName,
-} from "../shared";
+} from "../sharedStyles";
 
 const ThanhToan = () => {
     const [month, setMonth] = useState("2026-03");

@@ -6,6 +6,7 @@ import {
     useState,
     type CSSProperties,
     type ReactNode,
+    type RefObject,
 } from "react";
 import { createPortal } from "react-dom";
 
@@ -13,12 +14,13 @@ type SearchPopoverAlign = "start" | "center" | "end";
 
 type SearchPopoverProps = {
     isOpen: boolean;
-    anchorEl: HTMLElement | null;
+    anchorRef: RefObject<HTMLElement | null>;
     children: ReactNode;
     className?: string;
     align?: SearchPopoverAlign;
     offset?: number;
     viewportPadding?: number;
+    matchAnchorWidth?: boolean;
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
@@ -27,12 +29,13 @@ const SearchPopover = forwardRef<HTMLDivElement, SearchPopoverProps>(
     (
         {
             isOpen,
-            anchorEl,
+            anchorRef,
             children,
             className = "",
             align = "center",
             offset = 12,
             viewportPadding = 16,
+            matchAnchorWidth = false,
         },
         forwardedRef,
     ) => {
@@ -48,6 +51,7 @@ const SearchPopover = forwardRef<HTMLDivElement, SearchPopoverProps>(
         useImperativeHandle(forwardedRef, () => localRef.current as HTMLDivElement, []);
 
         useLayoutEffect(() => {
+            const anchorEl = anchorRef.current;
             if (!isOpen || !anchorEl || !localRef.current) {
                 return;
             }
@@ -59,8 +63,9 @@ const SearchPopover = forwardRef<HTMLDivElement, SearchPopoverProps>(
 
                 const anchorRect = anchorEl.getBoundingClientRect();
                 const panelRect = localRef.current.getBoundingClientRect();
-                const panelWidth = panelRect.width;
+                const panelWidth = matchAnchorWidth ? anchorRect.width : panelRect.width;
                 const panelHeight = panelRect.height;
+                const anchoredWidth = matchAnchorWidth ? anchorRect.width : undefined;
 
                 let left = anchorRect.left;
 
@@ -83,6 +88,7 @@ const SearchPopover = forwardRef<HTMLDivElement, SearchPopoverProps>(
                     position: "fixed",
                     left,
                     top,
+                    width: anchoredWidth,
                     visibility: "visible",
                     pointerEvents: "auto",
                 });
@@ -97,17 +103,18 @@ const SearchPopover = forwardRef<HTMLDivElement, SearchPopoverProps>(
                 window.removeEventListener("resize", updatePosition);
                 window.removeEventListener("scroll", updatePosition, true);
             };
-        }, [align, anchorEl, isOpen, offset, viewportPadding]);
+        }, [align, anchorRef, isOpen, matchAnchorWidth, offset, viewportPadding]);
 
-        if (!isOpen || !anchorEl) {
+        if (!isOpen) {
             return null;
         }
 
         return createPortal(
             <div
                 ref={localRef}
-                className={`z-[90] ${className}`}
+                className={`z-[99999] ${className}`}
                 style={panelStyle}
+                onMouseDown={(event) => event.stopPropagation()}
             >
                 {children}
             </div>,

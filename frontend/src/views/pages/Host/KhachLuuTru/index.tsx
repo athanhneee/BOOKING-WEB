@@ -4,6 +4,8 @@ import Modal from "../../../components/ui/Modal";
 import {
     FilterTabs,
     PageHeader,
+} from "../shared";
+import {
     formatCurrency,
     formatDate,
     getInitials,
@@ -14,7 +16,7 @@ import {
     pageWrapperClass,
     primaryButtonClass,
     tableClassName,
-} from "../shared";
+} from "../sharedStyles";
 
 type GuestFilter = "all" | "vip" | "moi" | "thuong-xuyen";
 

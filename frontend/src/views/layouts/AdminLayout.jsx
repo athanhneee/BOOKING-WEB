@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
     FiBell,
     FiClipboard,
     FiGrid,
-    FiLock,
     FiLogOut,
     FiMenu,
     FiShield,
@@ -21,7 +20,12 @@ import {
 } from "react-router-dom";
 import logo from "../../assets/img/logo_mau.svg";
 import { APP_ROUTES } from "../../config/routes";
-import { adminActivityLog, adminListings, adminUsers } from "../../data/mockData.ts";
+import {
+    adminActivityLog,
+    adminListings,
+    adminUsers,
+    hostApplications as initialHostApplications,
+} from "../../data/mockData.ts";
 import { clearCurrentUser, getCurrentUser, isAdminUser } from "../../store/authStore";
 import { cn } from "../../utils";
 
@@ -45,8 +49,8 @@ const pageMeta = [
     },
     {
         path: APP_ROUTES.adminModeration,
-        title: "Kiểm duyệt bài đăng",
-        subtitle: "Rà soát bài đăng mới, đánh dấu ưu tiên và xử lý các trường hợp cần xác minh.",
+        title: "Trung tâm kiểm duyệt",
+        subtitle: "Rà soát bài đăng mới và hồ sơ xác minh Host trên cùng một màn hình.",
     },
     {
         path: APP_ROUTES.adminRoles,
@@ -65,20 +69,27 @@ const buildLogEntry = (currentAdmin, action, targetUser, targetId, reason = "") 
     reason,
 });
 
+const reviewDate = () => new Date().toISOString().slice(0, 10);
+
+const syncCollectionItem = (collection, itemId, updater) => {
+    const targetIndex = collection.findIndex((item) => item.id === itemId);
+
+    if (targetIndex >= 0) {
+        collection[targetIndex] = updater(collection[targetIndex]);
+    }
+};
+
 export const useAdminOutletContext = () => useOutletContext();
 
 const AdminLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [users, setUsers] = useState(adminUsers);
     const [listings, setListings] = useState(adminListings);
+    const [hostApplications, setHostApplications] = useState(initialHostApplications);
     const [logs, setLogs] = useState(adminActivityLog);
     const location = useLocation();
     const navigate = useNavigate();
     const currentAdmin = getCurrentUser();
-
-    useEffect(() => {
-        setSidebarOpen(false);
-    }, [location.pathname]);
 
     if (!isAdminUser(currentAdmin)) {
         return <Navigate to={APP_ROUTES.login} replace />;
@@ -99,6 +110,7 @@ const AdminLayout = () => {
         setUsers((currentUsers) =>
             currentUsers.map((user) => (user.id === userId ? { ...user, status: "locked" } : user)),
         );
+        syncCollectionItem(adminUsers, userId, (user) => ({ ...user, status: "locked" }));
         addLog("Khóa tài khoản", targetUser.name, targetUser.id, reason);
     };
 
@@ -108,11 +120,12 @@ const AdminLayout = () => {
             return;
         }
 
+        const nextStatus = targetUser.role === "Host new" ? "pending" : "active";
+
         setUsers((currentUsers) =>
-            currentUsers.map((user) =>
-                user.id === userId ? { ...user, status: user.role === "Host new" ? "pending" : "active" } : user,
-            ),
+            currentUsers.map((user) => (user.id === userId ? { ...user, status: nextStatus } : user)),
         );
+        syncCollectionItem(adminUsers, userId, (user) => ({ ...user, status: nextStatus }));
         addLog("Mở khóa", targetUser.name, targetUser.id, reason);
     };
 
@@ -138,6 +151,12 @@ const AdminLayout = () => {
                     : listing,
             ),
         );
+        syncCollectionItem(adminListings, listingId, (listing) => ({
+            ...listing,
+            status: "approved",
+            rejectReason: "",
+            locationMatch: listing.locationMatch,
+        }));
         addLog("Phê duyệt bài đăng", targetListing.hostName, targetListing.id, "");
     };
 
@@ -152,6 +171,11 @@ const AdminLayout = () => {
                 listing.id === listingId ? { ...listing, status: "rejected", rejectReason: reason } : listing,
             ),
         );
+        syncCollectionItem(adminListings, listingId, (listing) => ({
+            ...listing,
+            status: "rejected",
+            rejectReason: reason,
+        }));
         addLog("Từ chối bài đăng", targetListing.hostName, targetListing.id, reason);
     };
 
@@ -166,6 +190,10 @@ const AdminLayout = () => {
                 listing.id === listingId ? { ...listing, status: "pending" } : listing,
             ),
         );
+        syncCollectionItem(adminListings, listingId, (listing) => ({
+            ...listing,
+            status: "pending",
+        }));
         addLog("Thu hồi phê duyệt", targetListing.hostName, targetListing.id, "");
     };
 
@@ -175,17 +203,24 @@ const AdminLayout = () => {
             return;
         }
 
+        const nextStatus = nextRole === "Host new" ? "pending" : targetUser.status === "pending" ? "active" : targetUser.status;
+
         setUsers((currentUsers) =>
             currentUsers.map((user) =>
                 user.id === userId
                     ? {
                           ...user,
                           role: nextRole,
-                          status: nextRole === "Host new" ? "pending" : user.status === "pending" ? "active" : user.status,
+                          status: nextStatus,
                       }
                     : user,
             ),
         );
+        syncCollectionItem(adminUsers, userId, (user) => ({
+            ...user,
+            role: nextRole,
+            status: nextStatus,
+        }));
         addLog("Thay đổi quyền", targetUser.name, targetUser.id, reason);
     };
 
@@ -201,6 +236,10 @@ const AdminLayout = () => {
                 listing.id === listingId ? { ...listing, isPriority: nextValue } : listing,
             ),
         );
+        syncCollectionItem(adminListings, listingId, (listing) => ({
+            ...listing,
+            isPriority: nextValue,
+        }));
         addLog(nextValue ? "Đánh dấu ưu tiên" : "Bỏ ưu tiên", targetListing.hostName, targetListing.id, "");
     };
 
@@ -216,7 +255,69 @@ const AdminLayout = () => {
                 listing.id === listingId ? { ...listing, isFeatured: nextValue } : listing,
             ),
         );
+        syncCollectionItem(adminListings, listingId, (listing) => ({
+            ...listing,
+            isFeatured: nextValue,
+        }));
         addLog(nextValue ? "Đánh dấu villa đặc sắc" : "Bỏ villa đặc sắc", targetListing.hostName, targetListing.id, "");
+    };
+
+    const updateHostApplication = (applicationId, nextStatus, reason = "") => {
+        const targetApplication = hostApplications.find((application) => application.id === applicationId);
+        if (!targetApplication) {
+            return;
+        }
+
+        const reviewedAt = nextStatus === "pending" ? null : reviewDate();
+        const reviewedBy = nextStatus === "pending" ? null : currentAdmin.name;
+        const rejectReason = nextStatus === "rejected" ? reason : null;
+
+        setHostApplications((currentApplications) =>
+            currentApplications.map((application) =>
+                application.id === applicationId
+                    ? {
+                          ...application,
+                          status: nextStatus,
+                          reviewedAt,
+                          reviewedBy,
+                          rejectReason,
+                      }
+                    : application,
+            ),
+        );
+
+        syncCollectionItem(initialHostApplications, applicationId, (application) => ({
+            ...application,
+            status: nextStatus,
+            reviewedAt,
+            reviewedBy,
+            rejectReason,
+        }));
+
+        if (nextStatus === "approved") {
+            setUsers((currentUsers) =>
+                currentUsers.map((user) =>
+                    user.id === targetApplication.userId
+                        ? {
+                              ...user,
+                              role: "Host",
+                              status: "active",
+                          }
+                        : user,
+                ),
+            );
+            syncCollectionItem(adminUsers, targetApplication.userId, (user) => ({
+                ...user,
+                role: "Host",
+                status: "active",
+            }));
+            addLog("Phê duyệt xác minh Host", targetApplication.userName, targetApplication.id, "");
+            return;
+        }
+
+        if (nextStatus === "rejected") {
+            addLog("Từ chối xác minh Host", targetApplication.userName, targetApplication.id, reason);
+        }
     };
 
     const handleLogout = () => {
@@ -275,6 +376,7 @@ const AdminLayout = () => {
                                     key={item.id}
                                     to={item.to}
                                     end={item.to === APP_ROUTES.adminOverview}
+                                    onClick={() => setSidebarOpen(false)}
                                     className={({ isActive }) =>
                                         cn(
                                             "flex items-center gap-3 rounded-xl border-l-2 px-3 py-3 text-sm transition-colors",
@@ -359,6 +461,7 @@ const AdminLayout = () => {
                                 currentAdmin,
                                 users,
                                 listings,
+                                hostApplications,
                                 logs,
                                 lockUser,
                                 unlockUser,
@@ -369,6 +472,7 @@ const AdminLayout = () => {
                                 changeRole,
                                 togglePriority,
                                 toggleFeatured,
+                                updateHostApplication,
                             }}
                         />
                     </main>

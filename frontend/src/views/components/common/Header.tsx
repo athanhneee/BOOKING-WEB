@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { LuMenu, LuX } from "react-icons/lu";
 import { Link, useLocation } from "react-router-dom";
 import logo from "../../../assets/img/logo_mau.svg";
-import AccountMenu from "../navbar/AccountMenu";
 import { APP_ROUTES } from "../../../config/routes";
+import { hostApplications } from "../../../data/mockData";
 import { mockAccountUser } from "../../../data/mockAccountUser";
 import useScrollVisibility from "../../../hooks/useScrollVisibility";
+import { getCurrentUser } from "../../../store/authStore";
+import AccountMenu from "../navbar/AccountMenu";
 
 const navLinks = [
     { to: APP_ROUTES.home, label: "Trang chủ" },
@@ -14,9 +16,21 @@ const navLinks = [
     { to: "/news", label: "Liên hệ" },
 ];
 
+const getLatestApplicationForUser = (userId?: string | null) => {
+    if (!userId) {
+        return null;
+    }
+
+    return hostApplications
+        .filter((application) => application.userId === userId)
+        .sort((left, right) => right.submittedAt.localeCompare(left.submittedAt))[0] ?? null;
+};
+
 const Header = () => {
     const show = useScrollVisibility({ threshold: 12, topOffset: 64, hideStartRatio: 0.5 });
     const location = useLocation();
+    const currentUser = getCurrentUser();
+    const currentUserApplication = getLatestApplicationForUser(currentUser?.id);
     const [useDarkText, setUseDarkText] = useState(location.pathname !== APP_ROUTES.home);
     const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
 
@@ -44,6 +58,70 @@ const Header = () => {
 
     const mobileOpen = mobileMenuPath === location.pathname;
     const isVisible = show || mobileOpen;
+    const accountMenuUser = currentUser
+        ? {
+              ...mockAccountUser,
+              id: currentUser.id,
+              displayName: currentUser.name,
+          }
+        : mockAccountUser;
+
+    const hostAction =
+        currentUserApplication?.status === "approved"
+            ? { label: "Khu vực Host", to: APP_ROUTES.ownerDashboard }
+            : currentUserApplication?.status === "pending"
+              ? { label: "Đang xét duyệt Host", to: APP_ROUTES.hostStatus }
+              : currentUserApplication?.status === "rejected"
+                ? { label: "Gửi lại hồ sơ Host", to: APP_ROUTES.hostStatus }
+                : { label: "Trở thành Host", to: APP_ROUTES.hostLanding };
+
+    const renderBecomeHostLink = (mobile = false) => {
+        if (currentUserApplication?.status === "approved") {
+            return null;
+        }
+
+        if (currentUserApplication?.status === "pending") {
+            return (
+                <Link to={APP_ROUTES.hostStatus} className={mobile ? "rounded-xl px-4 py-3" : undefined}>
+                    <span className="inline-flex items-center rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-sm font-medium text-yellow-700">
+                        ⏳ Đang xét duyệt
+                    </span>
+                </Link>
+            );
+        }
+
+        if (currentUserApplication?.status === "rejected") {
+            return (
+                <Link
+                    to={APP_ROUTES.hostStatus}
+                    className={
+                        mobile
+                            ? "rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
+                            : "text-sm font-medium text-red-600 transition-colors hover:text-red-700"
+                    }
+                >
+                    Gửi lại hồ sơ
+                </Link>
+            );
+        }
+
+        return (
+            <Link
+                to={APP_ROUTES.hostLanding}
+                className={
+                    mobile
+                        ? "rounded-xl px-4 py-3 text-sm font-medium text-cyan-800 transition-all duration-200 hover:bg-cyan-300/10"
+                        : `hidden min-h-11 items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 md:inline-flex ${
+                              useDarkText
+                                  ? "border-cyan-300/50 bg-white text-cyan-800 hover:bg-cyan-300/10"
+                                  : "border-white/30 bg-white/12 text-white backdrop-blur hover:bg-white/18"
+                          }`
+                }
+            >
+                Trở thành Host
+            </Link>
+        );
+    };
 
     return (
         <header
@@ -77,18 +155,9 @@ const Header = () => {
                 </nav>
 
                 <div className="flex items-center gap-2 md:gap-3">
-                    <Link
-                        to={APP_ROUTES.ownerDashboard}
-                        className={`hidden min-h-11 items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 md:inline-flex ${
-                            useDarkText
-                                ? "border-cyan-300/50 bg-white text-cyan-800 hover:bg-cyan-300/10"
-                                : "border-white/30 bg-white/12 text-white backdrop-blur hover:bg-white/18"
-                        }`}
-                    >
-                        Trở thành host
-                    </Link>
+                    {renderBecomeHostLink()}
 
-                    <AccountMenu key={location.pathname} user={mockAccountUser} />
+                    <AccountMenu key={location.pathname} user={accountMenuUser} hostAction={hostAction} />
 
                     <button
                         type="button"
@@ -118,13 +187,7 @@ const Header = () => {
                                 </Link>
                             ))}
 
-                            <Link
-                                to={APP_ROUTES.ownerDashboard}
-                                className="rounded-xl px-4 py-3 text-sm font-medium text-cyan-800 transition-all duration-200 hover:bg-cyan-300/10"
-                                onClick={() => setMobileMenuPath(null)}
-                            >
-                                Trở thành host
-                            </Link>
+                            {renderBecomeHostLink(true)}
                         </nav>
                     </div>
                 </div>

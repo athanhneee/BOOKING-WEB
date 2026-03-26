@@ -18,8 +18,8 @@ export const getStayPriceBounds = (stays: PopularDestination[]): PriceBounds => 
 
 export const createDefaultStayFilters = (bounds: PriceBounds): StayFilterState => ({
     categories: [],
-    priceMin: bounds.min,
-    priceMax: bounds.max,
+    priceMin: null,
+    priceMax: null,
     guests: 0,
     bedrooms: 0,
     beds: 0,
@@ -30,6 +30,28 @@ export const createDefaultStayFilters = (bounds: PriceBounds): StayFilterState =
     quickChoices: [],
     sortBy: null,
 });
+
+export const normalizePriceRangeSelection = (
+    bounds: PriceBounds,
+    selection: { min: number | null; max: number | null },
+) => {
+    const normalizedMin =
+        selection.min === null || selection.min <= bounds.min ? null : Math.min(selection.min, bounds.max);
+    const normalizedMax =
+        selection.max === null || selection.max >= bounds.max ? null : Math.max(selection.max, bounds.min);
+
+    if (normalizedMin !== null && normalizedMax !== null && normalizedMin > normalizedMax) {
+        return {
+            priceMin: normalizedMax,
+            priceMax: normalizedMax,
+        };
+    }
+
+    return {
+        priceMin: normalizedMin,
+        priceMax: normalizedMax,
+    };
+};
 
 const hasEverySelectedValue = <T,>(selectedValues: T[], stayValues: T[]) => {
     if (selectedValues.length === 0) {
@@ -49,8 +71,10 @@ const matchesQuickChoices = (selectedQuickChoices: StayQuickChoice[], stay: Popu
 
 export const filterAndSortStays = (stays: PopularDestination[], filters: StayFilterState): PopularDestination[] => {
     const filtered = stays.filter((stay) => {
+        const effectivePriceMin = filters.priceMin ?? Number.NEGATIVE_INFINITY;
+        const effectivePriceMax = filters.priceMax ?? Number.POSITIVE_INFINITY;
         const matchesCategory = filters.categories.length === 0 || filters.categories.includes(stay.category);
-        const matchesPrice = stay.pricePerNight >= filters.priceMin && stay.pricePerNight <= filters.priceMax;
+        const matchesPrice = stay.pricePerNight >= effectivePriceMin && stay.pricePerNight <= effectivePriceMax;
         const matchesGuests = filters.guests === 0 || stay.guests >= filters.guests;
         const matchesBedrooms = filters.bedrooms === 0 || stay.bedrooms >= filters.bedrooms;
         const matchesBeds = filters.beds === 0 || stay.beds >= filters.beds;

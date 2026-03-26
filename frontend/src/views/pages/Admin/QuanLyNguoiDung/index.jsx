@@ -6,6 +6,8 @@ import { useAdminOutletContext } from "../../../layouts/AdminLayout.jsx";
 import {
     FilterTabs,
     PageHeader,
+} from "../../Host/shared";
+import {
     getInitials,
     hostCardClass,
     inputClassName,
@@ -14,7 +16,7 @@ import {
     primaryButtonClass,
     secondaryButtonClass,
     tableClassName,
-} from "../../Host/shared";
+} from "../../Host/sharedStyles";
 
 const roleOptions = [
     { label: "Tất cả", value: "all" },

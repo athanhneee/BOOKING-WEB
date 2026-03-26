@@ -18,9 +18,18 @@ import {
 } from "react-icons/fa";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { APP_ROUTES } from "../../../config/routes";
-import { popularDestinations } from "../../../config/popularDestinations";
+import {
+    buildGuestPaymentPath,
+    createBookingDraft,
+    savePendingBookingDraft,
+} from "../../../services/bookingService";
+import { getListingById } from "../../../services/listingService";
 import DatePickerPanel from "../../components/search/booking/DatePickerPanel";
 import type { GuestSelection } from "../../components/search/booking/Guest";
+import {
+    parseBookingSearchParams,
+    toIsoDate,
+} from "../../components/search/searchState";
 
 type ListingDetailLocationState = {
     returnTo?: string;
@@ -54,6 +63,7 @@ type GuestFieldConfig = {
     max: number;
 };
 
+
 const currencyFormatter = new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
@@ -76,12 +86,6 @@ const activeBookingFieldClass = "border-cyan-600 bg-cyan-50";
 
 const inactiveBookingFieldClass = "border-cyan-100 bg-white hover:border-cyan-300";
 
-const defaultGuestSelection: GuestSelection = {
-    adults: 2,
-    children: 0,
-    infants: 0,
-    pets: 0,
-};
 
 const guestFieldConfigs: GuestFieldConfig[] = [
     { key: "adults", label: "Người lớn", description: "Từ 13 tuổi trở lên", min: 1, max: 16 },
@@ -168,12 +172,21 @@ type ListingDetailContentProps = {
 const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const destination = popularDestinations.find((item) => item.id === villaId);
+    const destination = getListingById(villaId);
+    const initialBookingState = useMemo(() => {
+        const parsed = parseBookingSearchParams(location.search);
 
-    const [checkIn, setCheckIn] = useState(createDateOffset(1));
-    const [checkOut, setCheckOut] = useState(createDateOffset(4));
+        return {
+            checkIn: parsed.checkIn || createDateOffset(1),
+            checkOut: parsed.checkOut || createDateOffset(4),
+            guests: parsed.guests.adults > 0 ? parsed.guests : defaultGuestSelection,
+        };
+    }, [location.search]);
+
+    const [checkIn, setCheckIn] = useState(initialBookingState.checkIn);
+    const [checkOut, setCheckOut] = useState(initialBookingState.checkOut);
     const [nightOffset, setNightOffset] = useState(0);
-    const [guestSelection, setGuestSelection] = useState<GuestSelection>(defaultGuestSelection);
+    const [guestSelection, setGuestSelection] = useState<GuestSelection>(initialBookingState.guests);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
     const [activeDesktopField, setActiveDesktopField] = useState<BookingField>(null);
@@ -182,7 +195,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
 
     const desktopBookingRef = useRef<HTMLDivElement | null>(null);
     const touchStartXRef = useRef<number | null>(null);
-    const todayIso = useMemo(() => formatDateInput(new Date()), []);
+    const todayIso = useMemo(() => toIsoDate(new Date()), []);
 
     useEffect(() => {
         const shouldLockScroll = isGalleryModalOpen || mobileBookingSheet !== null;
@@ -303,6 +316,22 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
     const totalPrice = nightlyRate * nights;
     const stayingGuestCount = guestSelection.adults + guestSelection.children;
     const guestSummary = getGuestSummary(guestSelection);
+
+    const handleBookNow = () => {
+        const bookingDraft = createBookingDraft(destination, {
+            location: destination.address,
+            checkIn,
+            checkOut,
+            guests: guestSelection,
+        });
+
+        savePendingBookingDraft(bookingDraft);
+        navigate(buildGuestPaymentPath(bookingDraft.bookingId), {
+            state: {
+                returnTo: `${location.pathname}${location.search}`,
+            },
+        });
+    };
 
     const closeAllBookingPanels = () => {
         setActiveDesktopField(null);
@@ -525,9 +554,13 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
 
                     {showDatePopover ? (
                         <DatePickerPanel
+                            key={`desktop-${activeDesktopField}-${checkIn}-${checkOut}`}
                             isOpen
                             selectedDate={activeDesktopField === "checkin" ? checkIn : checkOut}
                             minDate={activeDesktopField === "checkin" ? todayIso : checkIn || todayIso}
+                            rangeStartDate={checkIn}
+                            rangeEndDate={checkOut}
+                            activeField={activeDesktopField === "checkout" ? "checkOut" : "checkIn"}
                             selectedNightOffset={nightOffset}
                             onSelectDate={activeDesktopField === "checkin" ? handleCheckInChange : handleCheckoutChange}
                             onNightOffsetChange={handleNightOffsetChange}
@@ -603,6 +636,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
 
                 <button
                     type="button"
+                    onClick={handleBookNow}
                     className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-xl bg-cyan-600 px-6 text-base font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-700"
                 >
                     Đặt ngay
@@ -922,9 +956,13 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                 </div>
 
                                 <DatePickerPanel
+                                    key={`mobile-${mobileDateField}-${checkIn}-${checkOut}`}
                                     isOpen
                                     selectedDate={mobileDateField === "checkin" ? checkIn : checkOut}
                                     minDate={mobileDateField === "checkin" ? todayIso : checkIn || todayIso}
+                                    rangeStartDate={checkIn}
+                                    rangeEndDate={checkOut}
+                                    activeField={mobileDateField === "checkout" ? "checkOut" : "checkIn"}
                                     selectedNightOffset={nightOffset}
                                     onSelectDate={mobileDateField === "checkin" ? handleCheckInChange : handleCheckoutChange}
                                     onNightOffsetChange={handleNightOffsetChange}
@@ -1043,9 +1081,10 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
 };
 
 const ListingDetailPage = () => {
+    const location = useLocation();
     const { villaId } = useParams();
 
-    return <ListingDetailContent key={villaId ?? "listing-detail"} villaId={villaId} />;
+    return <ListingDetailContent key={`${villaId ?? "listing-detail"}-${location.search}`} villaId={villaId} />;
 };
 
 export default ListingDetailPage;

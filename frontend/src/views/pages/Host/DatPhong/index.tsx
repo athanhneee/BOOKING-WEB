@@ -6,6 +6,8 @@ import Modal from "../../../components/ui/Modal";
 import {
     PageHeader,
     StatCard,
+} from "../shared";
+import {
     downloadTextFile,
     formatCurrency,
     formatDate,
@@ -15,7 +17,7 @@ import {
     pageWrapperClass,
     primaryButtonClass,
     tableClassName,
-} from "../shared";
+} from "../sharedStyles";
 
 const DatPhong = () => {
     const [statusFilter, setStatusFilter] = useState("all");

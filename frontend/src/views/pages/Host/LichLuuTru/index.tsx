@@ -4,7 +4,8 @@ import { Link } from "react-router-dom";
 import { bookings, properties } from "../../../../data/mockData.ts";
 import Badge from "../../../components/ui/Badge";
 import { APP_ROUTES } from "../../../../config/routes";
-import { FilterTabs, PageHeader, formatDate, pageWrapperClass } from "../shared";
+import { FilterTabs, PageHeader } from "../shared";
+import { formatDate, pageWrapperClass } from "../sharedStyles";
 
 const dayLabels = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 const statusColors = {

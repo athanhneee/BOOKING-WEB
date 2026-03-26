@@ -3,7 +3,8 @@ import { FiInfo } from "react-icons/fi";
 import Badge from "../../../components/ui/Badge";
 import Modal from "../../../components/ui/Modal";
 import { useAdminOutletContext } from "../../../layouts/AdminLayout.jsx";
-import { FilterTabs, inputClassName, labelClassName, pageWrapperClass, primaryButtonClass, secondaryButtonClass, tableClassName } from "../../Host/shared";
+import { FilterTabs } from "../../Host/shared";
+import { inputClassName, labelClassName, pageWrapperClass, primaryButtonClass, secondaryButtonClass, tableClassName } from "../../Host/sharedStyles";
 
 const logFilterOptions = [
     { label: "Tất cả", value: "all" },

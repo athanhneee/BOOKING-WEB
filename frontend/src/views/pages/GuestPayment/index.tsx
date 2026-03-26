@@ -1,24 +1,24 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { FiCalendar, FiCheckCircle, FiCopy, FiHelpCircle, FiLoader } from "react-icons/fi";
 import { Link, useParams } from "react-router-dom";
 import logo from "../../../assets/img/logo_mau.svg";
-import { properties } from "../../../data/mockData.ts";
-import { daysBetween, formatCurrency, formatDate } from "../Host/shared";
+import { getPendingBookingDraft } from "../../../services/bookingService";
+import { daysBetween, formatCurrency, formatDate } from "../Host/sharedStyles";
 
 const GuestPayment = () => {
     const { bookingId } = useParams();
     const [remaining, setRemaining] = useState(15 * 60);
     const [confirmed, setConfirmed] = useState(false);
-    const generatedId = useMemo(() => bookingId ?? String(Math.floor(10000 + Math.random() * 90000)), [bookingId]);
-    const property = properties[0];
-    const checkIn = "2026-03-26";
-    const checkOut = "2026-03-29";
+    const [bookingDraft] = useState(() => getPendingBookingDraft(bookingId));
+    const generatedId = bookingDraft?.bookingId ?? bookingId ?? "preview";
+    const checkIn = bookingDraft?.checkIn ?? "2026-03-26";
+    const checkOut = bookingDraft?.checkOut ?? "2026-03-29";
     const nights = daysBetween(checkIn, checkOut);
-    const pricePerNight = 2400000;
-    const serviceFee = Math.round(pricePerNight * nights * 0.1);
-    const vat = Math.round((pricePerNight * nights + serviceFee) * 0.08);
-    const totalAmount = pricePerNight * nights + serviceFee + vat;
-    const sepayUrl = `https://qr.sepay.vn/img?bank=MBBank&acc=0123456789&template=compact&amount=${totalAmount}&des=BK${generatedId}`;
+    const pricePerNight = bookingDraft?.pricePerNight ?? 2400000;
+    const serviceFee = bookingDraft?.serviceFee ?? Math.round(pricePerNight * nights * 0.1);
+    const vat = bookingDraft?.vatAmount ?? Math.round((pricePerNight * nights + serviceFee) * 0.08);
+    const totalAmount = bookingDraft?.totalAmount ?? pricePerNight * nights + serviceFee + vat;
+    const sepayUrl = `https://qr.sepay.vn/img?bank=MBBank&acc=0123456789&template=compact&amount=${totalAmount}&des=${generatedId}`;
 
     useEffect(() => {
         if (confirmed) return;
@@ -37,6 +37,33 @@ const GuestPayment = () => {
     const minutes = String(Math.floor(remaining / 60)).padStart(2, "0");
     const seconds = String(remaining % 60).padStart(2, "0");
 
+    if (!bookingDraft) {
+        return (
+            <div className="min-h-screen bg-[#F7F8FA] px-4 py-16">
+                <div className="mx-auto max-w-3xl rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+                    <h1 className="text-2xl font-semibold text-gray-900">Không tìm thấy thông tin đặt chỗ</h1>
+                    <p className="mt-3 text-sm leading-7 text-gray-500">
+                        Phiên thanh toán này đã hết hạn hoặc chưa nhận được dữ liệu từ trang chi tiết nơi lưu trú.
+                    </p>
+                    <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+                        <Link
+                            to="/"
+                            className="inline-flex items-center justify-center rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-cyan-700"
+                        >
+                            Về trang chủ
+                        </Link>
+                        <Link
+                            to="/noi-luu-tru"
+                            className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+                        >
+                            Xem danh sách lưu trú
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-[#F7F8FA]">
             <header className="border-b border-gray-200 bg-white">
@@ -54,12 +81,16 @@ const GuestPayment = () => {
 
             <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-2">
                 <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                    <img src={property.image} alt={property.name} className="aspect-video w-full rounded-2xl object-cover" />
+                    <img src={bookingDraft.listingImage} alt={bookingDraft.listingName} className="aspect-video w-full rounded-2xl object-cover" />
                     <div className="mt-5">
                         <div className="flex flex-wrap items-center gap-3">
-                            <h1 className="text-2xl font-bold text-gray-900">{property.name}</h1>
-                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">{property.type}</span>
+                            <h1 className="text-2xl font-bold text-gray-900">{bookingDraft.listingName}</h1>
+                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                                {bookingDraft.guestSummary}
+                            </span>
                         </div>
+
+                        <p className="mt-2 text-sm text-gray-500">{bookingDraft.listingAddress}</p>
 
                         <div className="mt-5 grid gap-4 md:grid-cols-2">
                             <div className="rounded-xl bg-gray-50 p-4">
@@ -104,7 +135,7 @@ const GuestPayment = () => {
                                     <div className="flex items-center justify-between gap-3"><span>Ngân hàng</span><strong className="text-gray-900">MB Bank</strong></div>
                                     <div className="flex items-center justify-between gap-3"><span>Số tài khoản</span><button type="button" onClick={() => copyText("0123456789")} className="inline-flex items-center gap-2 rounded-full font-semibold text-gray-900"><span>0123456789</span><FiCopy size={14} /></button></div>
                                     <div className="flex items-center justify-between gap-3"><span>Chủ tài khoản</span><strong className="text-gray-900">BLUESTAY VIETNAM</strong></div>
-                                    <div className="flex items-center justify-between gap-3"><span>Nội dung CK</span><button type="button" onClick={() => copyText(`BK-${generatedId}`)} className="inline-flex items-center gap-2 rounded-full font-semibold text-gray-900"><span>BK-{generatedId}</span><FiCopy size={14} /></button></div>
+                                    <div className="flex items-center justify-between gap-3"><span>Nội dung CK</span><button type="button" onClick={() => copyText(generatedId)} className="inline-flex items-center gap-2 rounded-full font-semibold text-gray-900"><span>{generatedId}</span><FiCopy size={14} /></button></div>
                                     <div className="flex items-center justify-between gap-3"><span>Số tiền</span><button type="button" onClick={() => copyText(String(totalAmount))} className="inline-flex items-center gap-2 rounded-full font-semibold text-gray-900"><span>{formatCurrency(totalAmount)}</span><FiCopy size={14} /></button></div>
                                 </div>
                             </div>
@@ -127,7 +158,7 @@ const GuestPayment = () => {
                             <FiCheckCircle size={54} className="text-cyan-600" />
                             <h2 className="mt-4 text-2xl font-bold text-gray-900">Đã nhận yêu cầu xác nhận</h2>
                             <p className="mt-3 max-w-md text-sm leading-7 text-gray-500">Chúng tôi sẽ xác nhận thanh toán của bạn trong vòng 5 phút.</p>
-                            <p className="mt-6 rounded-full bg-cyan-300/15 px-4 py-2 text-sm font-semibold text-cyan-700">Mã đặt phòng: BK-{generatedId}</p>
+                            <p className="mt-6 rounded-full bg-cyan-300/15 px-4 py-2 text-sm font-semibold text-cyan-700">Mã đặt phòng: {generatedId}</p>
                         </div>
                     )}
                 </section>

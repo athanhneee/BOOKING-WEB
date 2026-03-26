@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { bookings, monthlyRevenue, properties } from "../../../../data/mockData.ts";
-import { PageHeader, formatCompactCurrency, formatCurrency, pageWrapperClass, secondaryButtonClass, tableClassName } from "../shared";
+import { PageHeader } from "../shared";
+import { formatCompactCurrency, formatCurrency, pageWrapperClass, secondaryButtonClass, tableClassName } from "../sharedStyles";
 
 const rangeTabs = ["Tháng này", "Tháng trước", "3 tháng", "1 năm", "Tùy chỉnh"];
 const pieColors = ["#00B4B4", "#FF6B6B", "#FDBA74", "#818CF8"];

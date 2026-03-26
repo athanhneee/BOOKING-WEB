@@ -15,9 +15,10 @@ import {
     LuUserRound,
     LuX,
 } from "react-icons/lu";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { APP_ROUTES } from "../../../config/routes";
 import type { AccountUserProfile } from "../../../data/mockAccountUser";
+import { logout } from "../../../services/authService";
 import { cn } from "../../../utils";
 
 type MenuItem = {
@@ -25,6 +26,7 @@ type MenuItem = {
     label: string;
     icon: IconType;
     to?: string;
+    action?: () => void;
 };
 
 type MenuGroup = {
@@ -34,9 +36,13 @@ type MenuGroup = {
 
 type AccountMenuProps = {
     user: AccountUserProfile;
+    hostAction?: {
+        label: string;
+        to: string;
+    };
 };
 
-const menuGroups: MenuGroup[] = [
+const createMenuGroups = (hostAction: AccountMenuProps["hostAction"], onLogout: () => void): MenuGroup[] => [
     {
         key: "personal",
         items: [
@@ -57,14 +63,14 @@ const menuGroups: MenuGroup[] = [
     {
         key: "host",
         items: [
-            { key: "become-host", label: "Trở thành host", icon: LuHouse, to: APP_ROUTES.ownerDashboard },
-            { key: "host-referral", label: "Giới thiệu host", icon: LuHandshake, to: APP_ROUTES.ownerDashboard },
-            { key: "host-support", label: "Tìm host hỗ trợ", icon: LuSearch, to: APP_ROUTES.ownerDashboard },
+            { key: "become-host", label: hostAction?.label ?? "Trở thành Host", icon: LuHouse, to: hostAction?.to ?? APP_ROUTES.hostLanding },
+            { key: "host-referral", label: "Giới thiệu Host", icon: LuHandshake, to: APP_ROUTES.ownerDashboard },
+            { key: "host-support", label: "Tìm hỗ trợ Host", icon: LuSearch, to: APP_ROUTES.ownerDashboard },
         ],
     },
     {
         key: "logout",
-        items: [{ key: "logout", label: "Đăng xuất", icon: LuLogOut, to: APP_ROUTES.login }],
+        items: [{ key: "logout", label: "Đăng xuất", icon: LuLogOut, action: onLogout }],
     },
 ];
 
@@ -79,12 +85,22 @@ const getInitials = (displayName: string) =>
         .map((part) => part.charAt(0).toUpperCase())
         .join("");
 
-const AccountMenu = ({ user }: AccountMenuProps) => {
+const AccountMenu = ({ user, hostAction }: AccountMenuProps) => {
+    const navigate = useNavigate();
     const desktopRef = useRef<HTMLDivElement | null>(null);
     const [isDesktopOpen, setIsDesktopOpen] = useState(false);
     const [isMobileMounted, setIsMobileMounted] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const closeTimerRef = useRef<number | null>(null);
+
+    const handleLogout = () => {
+        logout();
+        setIsDesktopOpen(false);
+        setIsMobileOpen(false);
+        navigate(APP_ROUTES.login, { replace: true });
+    };
+
+    const menuGroups = createMenuGroups(hostAction, handleLogout);
 
     useEffect(() => {
         if (!isDesktopOpen) {
@@ -227,7 +243,10 @@ const AccountMenu = ({ user }: AccountMenuProps) => {
             <button
                 key={item.key}
                 type="button"
-                onClick={close}
+                onClick={() => {
+                    item.action?.();
+                    close();
+                }}
                 className="group flex min-h-11 w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-cyan-300/10 hover:text-cyan-800"
             >
                 {content}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FiChevronDown, FiChevronUp, FiMail, FiMessageCircle, FiPhoneCall } from "react-icons/fi";
-import { PageHeader, hostCardClass, inputClassName, pageWrapperClass, primaryButtonClass, tableClassName, textareaClassName } from "../shared";
+import { PageHeader } from "../shared";
+import { hostCardClass, inputClassName, pageWrapperClass, primaryButtonClass, tableClassName, textareaClassName } from "../sharedStyles";
 
 const faqGroups = [
     {

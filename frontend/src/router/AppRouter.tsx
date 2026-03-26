@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { APP_ROUTES } from "../config/routes";
+import ProtectedRoute from "../router/ProtectedRoute";
 import AuthLayout from "../views/layouts/AuthLayout";
 import AdminLayout from "../views/layouts/AdminLayout.jsx";
 import HostLayout from "../views/layouts/HostLayout";
@@ -26,7 +27,11 @@ import HomePage from "../views/pages/Home/HomePage";
 import ListingDetailPage from "../views/pages/ListingDetail/ListingDetailPage";
 import NotFoundPage from "../views/pages/NotFound/NotFoundPage";
 import SearchPage from "../views/pages/Search/SearchPage";
+import DangKyHost from "../views/pages/TroThanhHost/DangKyHost.jsx";
+import TrangThaiHost from "../views/pages/TroThanhHost/TrangThai.jsx";
+import TroThanhHostLanding from "../views/pages/TroThanhHost/index.jsx";
 import ProfilePage from "../views/pages/Trips";
+import HostRoute from "./HostRoute";
 
 const AppRouter = () => {
     return (
@@ -34,8 +39,13 @@ const AppRouter = () => {
             <Route path={APP_ROUTES.home} element={<MainLayout />}>
                 <Route index element={<HomePage />} />
                 <Route path={APP_ROUTES.search.slice(1)} element={<SearchPage />} />
-                <Route path={APP_ROUTES.accountProfile.slice(1)} element={<ProfilePage />} />
-                <Route path={APP_ROUTES.accountTrips.slice(1)} element={<ProfilePage />} />
+                <Route path={APP_ROUTES.hostLanding.slice(1)} element={<TroThanhHostLanding />} />
+                <Route element={<ProtectedRoute />}>
+                    <Route path={APP_ROUTES.accountProfile.slice(1)} element={<ProfilePage />} />
+                    <Route path={APP_ROUTES.accountTrips.slice(1)} element={<ProfilePage />} />
+                    <Route path={APP_ROUTES.hostRegister.slice(1)} element={<DangKyHost />} />
+                    <Route path={APP_ROUTES.hostStatus.slice(1)} element={<TrangThaiHost />} />
+                </Route>
                 <Route path="villa/:villaId" element={<ListingDetailPage />} />
             </Route>
 
@@ -45,25 +55,29 @@ const AppRouter = () => {
                 <Route path={APP_ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
             </Route>
 
-            <Route path="/chu-nha" element={<HostLayout />}>
-                <Route index element={<Navigate to={APP_ROUTES.hostProperties} replace />} />
-                <Route path="cho-nghi" element={<ChoNghi />} />
-                <Route path="cho-nghi/them-moi" element={<ThemChoNghi />} />
-                <Route path="dat-phong" element={<DatPhong />} />
-                <Route path="lich-luu-tru" element={<LichLuuTru />} />
-                <Route path="khach-luu-tru" element={<KhachLuuTru />} />
-                <Route path="thanh-toan" element={<ThanhToan />} />
-                <Route path="danh-gia" element={<DanhGia />} />
-                <Route path="bao-cao" element={<BaoCao />} />
-                <Route path="ho-tro" element={<HoTro />} />
-                <Route path="cai-dat" element={<CaiDat />} />
+            <Route element={<HostRoute />}>
+                <Route path="/chu-nha" element={<HostLayout />}>
+                    <Route index element={<Navigate to={APP_ROUTES.hostProperties} replace />} />
+                    <Route path="cho-nghi" element={<ChoNghi />} />
+                    <Route path="cho-nghi/them-moi" element={<ThemChoNghi />} />
+                    <Route path="dat-phong" element={<DatPhong />} />
+                    <Route path="lich-luu-tru" element={<LichLuuTru />} />
+                    <Route path="khach-luu-tru" element={<KhachLuuTru />} />
+                    <Route path="thanh-toan" element={<ThanhToan />} />
+                    <Route path="danh-gia" element={<DanhGia />} />
+                    <Route path="bao-cao" element={<BaoCao />} />
+                    <Route path="ho-tro" element={<HoTro />} />
+                    <Route path="cai-dat" element={<CaiDat />} />
+                </Route>
             </Route>
 
-            <Route path={APP_ROUTES.adminOverview} element={<AdminLayout />}>
-                <Route index element={<AdminOverview />} />
-                <Route path="nguoi-dung" element={<QuanLyNguoiDung />} />
-                <Route path="kiem-duyet" element={<KiemDuyetBaiDang />} />
-                <Route path="phan-quyen" element={<PhanQuyenHeThong />} />
+            <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
+                <Route path={APP_ROUTES.adminOverview} element={<AdminLayout />}>
+                    <Route index element={<AdminOverview />} />
+                    <Route path="nguoi-dung" element={<QuanLyNguoiDung />} />
+                    <Route path="kiem-duyet" element={<KiemDuyetBaiDang />} />
+                    <Route path="phan-quyen" element={<PhanQuyenHeThong />} />
+                </Route>
             </Route>
 
             <Route path={APP_ROUTES.hostOverviewLegacy} element={<Navigate to={APP_ROUTES.ownerDashboard} replace />} />

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { getInitials, inputClassName, pageWrapperClass, primaryButtonClass, secondaryButtonClass, ToggleSwitch, PageHeader, hostCardClass } from "../shared";
+import { PageHeader, ToggleSwitch } from "../shared";
+import { getInitials, hostCardClass, inputClassName, pageWrapperClass, primaryButtonClass, secondaryButtonClass } from "../sharedStyles";
 
 type SettingsTab = "profile" | "security" | "notifications" | "bank" | "locale";
 

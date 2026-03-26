@@ -20,8 +20,8 @@ export type PriceBounds = {
 
 export type StayFilterState = {
     categories: StayCategory[];
-    priceMin: number;
-    priceMax: number;
+    priceMin: number | null;
+    priceMax: number | null;
     guests: number;
     bedrooms: number;
     beds: number;

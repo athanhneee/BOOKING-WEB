@@ -1,9 +1,10 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { LuArrowRight, LuEye, LuEyeOff, LuLock, LuUserRound } from "react-icons/lu";
 import { APP_ROUTES } from "../../../config/routes";
+import { loginWithCredentials, resolvePostAuthRoute } from "../../../services/authService";
 import AuthCard from "../../components/auth/AuthCard";
 import AuthInput from "../../components/auth/AuthInput";
 
@@ -14,18 +15,35 @@ const secondaryButtonClass =
     "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white px-6 py-4 text-lg font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50";
 
 const LoginPage = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
     const [identifier, setIdentifier] = useState("athanhnee@gmail.com");
-    const [password, setPassword] = useState("123");
+    const [password, setPassword] = useState("123456");
     const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+
+        setIsSubmitting(true);
+        setError("");
+
+        try {
+            const user = loginWithCredentials({ identifier, password });
+            const redirectTo = new URLSearchParams(location.search).get("redirectTo");
+            navigate(resolvePostAuthRoute(user, redirectTo), { replace: true });
+        } catch (submissionError) {
+            setError(submissionError instanceof Error ? submissionError.message : "Không thể đăng nhập lúc này.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
         <AuthCard
             title="Đăng nhập tài khoản"
-            description="Đăng nhập để trải nghiệm ưu đãi riêng, quản lý đặt phòng và theo dõi kỳ nghỉ của bạn."
+            description="Đăng nhập để tiếp tục quản lý đặt phòng, theo dõi chuyến đi và truy cập khu vực host hoặc admin khi cần."
         >
             <form className="space-y-5" onSubmit={handleSubmit}>
                 <AuthInput
@@ -73,8 +91,14 @@ const LoginPage = () => {
                     </div>
                 </div>
 
-                <button type="submit" className={primaryButtonClass}>
-                    Đăng nhập
+                {error ? <p className="text-sm font-medium text-rose-500">{error}</p> : null}
+
+                <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`${primaryButtonClass} ${isSubmitting ? "cursor-not-allowed opacity-70 hover:translate-y-0" : ""}`}
+                >
+                    {isSubmitting ? "Đang đăng nhập" : "Đăng nhập"}
                     <LuArrowRight className="text-xl" />
                 </button>
             </form>

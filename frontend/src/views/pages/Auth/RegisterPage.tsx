@@ -1,9 +1,10 @@
 import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { LuArrowRight, LuEye, LuEyeOff, LuLock, LuMail, LuPhone, LuUserRound } from "react-icons/lu";
 import { APP_ROUTES } from "../../../config/routes";
+import { registerAccount, resolvePostAuthRoute } from "../../../services/authService";
 import AuthCard from "../../components/auth/AuthCard";
 import AuthInput from "../../components/auth/AuthInput";
 
@@ -48,20 +49,35 @@ const getPasswordStrength = (password: string) => {
 };
 
 const RegisterPage = () => {
+    const navigate = useNavigate();
     const [fullName, setFullName] = useState("Đặng Minh Thành");
     const [phoneNumber, setPhoneNumber] = useState("0929399893");
     const [email, setEmail] = useState("athanhnee@gmail.com");
-    const [password, setPassword] = useState("123");
+    const [password, setPassword] = useState("123456");
     const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+
+        setIsSubmitting(true);
+        setError("");
+
+        try {
+            const user = registerAccount({ fullName, phoneNumber, email, password });
+            navigate(resolvePostAuthRoute(user), { replace: true });
+        } catch (submissionError) {
+            setError(submissionError instanceof Error ? submissionError.message : "Không thể tạo tài khoản lúc này.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
-        <AuthCard title="Đăng ký tài khoản" description="Tạo tài khoản để tận hưởng tối đa ưu đãi.">
+        <AuthCard title="Đăng ký tài khoản" description="Tạo tài khoản để bắt đầu đặt chỗ, theo dõi chuyến đi và lưu lại các nơi ở bạn yêu thích.">
             <form className="space-y-5" onSubmit={handleSubmit}>
                 <AuthInput
                     label="Họ và tên"
@@ -138,8 +154,14 @@ const RegisterPage = () => {
                     </div>
                 </div>
 
-                <button type="submit" className={primaryButtonClass}>
-                    Đăng ký
+                {error ? <p className="text-sm font-medium text-rose-500">{error}</p> : null}
+
+                <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`${primaryButtonClass} ${isSubmitting ? "cursor-not-allowed opacity-70 hover:translate-y-0" : ""}`}
+                >
+                    {isSubmitting ? "Đang tạo tài khoản" : "Đăng ký"}
                     <LuArrowRight className="text-xl" />
                 </button>
             </form>

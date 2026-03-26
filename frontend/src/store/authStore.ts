@@ -9,23 +9,16 @@ export type AuthUser = {
 
 const AUTH_STORAGE_KEY = "minhthanhvilla_current_user";
 
-const fallbackAdminUser: AuthUser = {
-    id: "u006",
-    name: "Hoàng Văn Nam",
-    email: "nam@gmail.com",
-    role: "Admin",
-};
-
 const canUseStorage = () => typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
 
-export const getCurrentUser = (): AuthUser => {
+export const getCurrentUser = (): AuthUser | null => {
     if (!canUseStorage()) {
-        return fallbackAdminUser;
+        return null;
     }
 
     const rawValue = window.sessionStorage.getItem(AUTH_STORAGE_KEY);
     if (!rawValue) {
-        return fallbackAdminUser;
+        return null;
     }
 
     try {
@@ -39,10 +32,10 @@ export const getCurrentUser = (): AuthUser => {
             };
         }
     } catch {
-        return fallbackAdminUser;
+        return null;
     }
 
-    return fallbackAdminUser;
+    return null;
 };
 
 export const setCurrentUser = (user: AuthUser) => {
@@ -61,4 +54,7 @@ export const clearCurrentUser = () => {
     window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
 };
 
+export const isAuthenticated = (user: AuthUser | null | undefined): user is AuthUser => Boolean(user);
 export const isAdminUser = (user: Pick<AuthUser, "role"> | null | undefined) => user?.role === "Admin";
+export const isHostUser = (user: Pick<AuthUser, "role"> | null | undefined) =>
+    user?.role === "Host" || user?.role === "Host new" || user?.role === "Admin";

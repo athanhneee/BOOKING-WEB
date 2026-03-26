@@ -3,13 +3,15 @@ import { properties, reviews } from "../../../../data/mockData.ts";
 import {
     FilterTabs,
     PageHeader,
+} from "../shared";
+import {
     formatDate,
     getInitials,
     hostCardClass,
     inputClassName,
     pageWrapperClass,
     primaryButtonClass,
-} from "../shared";
+} from "../sharedStyles";
 
 type ReviewFilter = "all" | "pending" | "replied";
 

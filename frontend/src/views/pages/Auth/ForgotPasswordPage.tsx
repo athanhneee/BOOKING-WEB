@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LuArrowLeft, LuLock, LuUserRound } from "react-icons/lu";
 import { APP_ROUTES } from "../../../config/routes";
+import { requestPasswordResetOtp, verifyPasswordResetOtp } from "../../../services/authService";
 import AuthCard from "../../components/auth/AuthCard";
 import AuthInput from "../../components/auth/AuthInput";
 
@@ -16,12 +17,14 @@ const createEmptyOtpDigits = () => Array.from({ length: OTP_LENGTH }, () => "");
 
 const ForgotPasswordPage = () => {
     const [identifier, setIdentifier] = useState("athanhnee@gmail.com");
-    const [step, setStep] = useState<"request" | "otp">("request");
+    const [step, setStep] = useState<"request" | "otp" | "success">("request");
     const [otpDigits, setOtpDigits] = useState<string[]>(createEmptyOtpDigits);
     const [resendCountdown, setResendCountdown] = useState(OTP_RESEND_SECONDS);
+    const [error, setError] = useState("");
     const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
 
     const isOtpStep = step === "otp";
+    const isSuccessStep = step === "success";
     const isOtpComplete = otpDigits.every((digit) => digit.length === 1);
 
     useEffect(() => {
@@ -102,31 +105,66 @@ const ForgotPasswordPage = () => {
 
         setOtpDigits(createEmptyOtpDigits());
         setResendCountdown(OTP_RESEND_SECONDS);
+        setError("");
         focusOtpField(0);
     };
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        setStep("otp");
-        setOtpDigits(createEmptyOtpDigits());
-        setResendCountdown(OTP_RESEND_SECONDS);
+        setError("");
+
+        try {
+            requestPasswordResetOtp({ identifier });
+            setStep("otp");
+            setOtpDigits(createEmptyOtpDigits());
+            setResendCountdown(OTP_RESEND_SECONDS);
+        } catch (submissionError) {
+            setError(submissionError instanceof Error ? submissionError.message : "Không thể gửi mã xác thực.");
+        }
     };
 
     const handleOtpSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        setError("");
+
+        try {
+            verifyPasswordResetOtp({ identifier, otp: otpDigits.join("") });
+            setStep("success");
+        } catch (submissionError) {
+            setError(submissionError instanceof Error ? submissionError.message : "Không thể xác thực mã OTP.");
+        }
     };
 
     return (
         <AuthCard
-            title={isOtpStep ? "Xác thực mã OTP" : "Đặt lại mật khẩu"}
+            title={isSuccessStep ? "Xác nhận thành công" : isOtpStep ? "Xác thực mã OTP" : "Đặt lại mật khẩu"}
             description={
-                isOtpStep
-                    ? `Nhập mã OTP gồm 6 chữ số đã được gửi đến ${identifier} để tiếp tục đặt lại mật khẩu.`
-                    : "Nhập email hoặc số điện thoại đã đăng ký, chúng tôi sẽ gửi mã xác thực để bạn tạo mật khẩu mới một cách an toàn."
+                isSuccessStep
+                    ? "Hệ thống đã xác thực yêu cầu của bạn. Hãy quay lại đăng nhập để tiếp tục."
+                    : isOtpStep
+                      ? `Nhập mã OTP gồm 6 chữ số đã được gửi đến ${identifier} để tiếp tục đặt lại mật khẩu.`
+                      : "Nhập email hoặc số điện thoại đã đăng ký, chúng tôi sẽ gửi mã xác thực để bạn tạo mật khẩu mới một cách an toàn."
             }
-            align={isOtpStep ? "left" : "center"}
+            align={isOtpStep || isSuccessStep ? "left" : "center"}
         >
-            {isOtpStep ? (
+            {isSuccessStep ? (
+                <div className="space-y-6 font-sans">
+                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
+                        <p className="text-base font-semibold text-emerald-800">Mã OTP đã được xác thực</p>
+                        <p className="mt-2 text-sm leading-6 text-emerald-700">
+                            Bạn có thể quay lại màn hình đăng nhập và tiếp tục với phiên tài khoản vừa được xác nhận.
+                        </p>
+                    </div>
+
+                    <Link
+                        to={APP_ROUTES.login}
+                        className="inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-xl bg-[#5d53f7] px-6 py-4 font-sans text-lg font-semibold text-white shadow-[0_18px_40px_-18px_rgba(93,83,247,0.8)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-[#4b40ef]"
+                    >
+                        Quay lại đăng nhập
+                        <LuArrowLeft className="text-xl" />
+                    </Link>
+                </div>
+            ) : isOtpStep ? (
                 <>
                     <form className="space-y-6 font-sans" onSubmit={handleOtpSubmit}>
                         <div className="grid grid-cols-6 gap-2 sm:gap-3" onPaste={handleOtpPaste}>
@@ -150,6 +188,8 @@ const ForgotPasswordPage = () => {
                             ))}
                         </div>
 
+                        {error ? <p className="text-sm font-medium text-rose-500">{error}</p> : null}
+
                         <button
                             type="submit"
                             disabled={!isOtpComplete}
@@ -157,7 +197,7 @@ const ForgotPasswordPage = () => {
                                 isOtpComplete ? "" : "cursor-not-allowed opacity-60 hover:translate-y-0 hover:bg-[#5d53f7]"
                             }`}
                         >
-                            Đặt lại mật khẩu
+                            Xác nhận OTP
                             <LuLock className="text-xl" />
                         </button>
                     </form>
@@ -191,6 +231,8 @@ const ForgotPasswordPage = () => {
                             placeholder="Email hoặc số điện thoại"
                             required
                         />
+
+                        {error ? <p className="text-sm font-medium text-rose-500">{error}</p> : null}
 
                         <button type="submit" className={primaryButtonClass}>
                             Gửi mã xác thực

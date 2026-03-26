@@ -3,7 +3,7 @@ import { FiCheckCircle, FiClipboard, FiLock, FiUsers } from "react-icons/fi";
 import { APP_ROUTES } from "../../../config/routes";
 import Badge from "../../components/ui/Badge";
 import { useAdminOutletContext } from "../../layouts/AdminLayout.jsx";
-import { formatDate, getInitials, pageWrapperClass } from "../Host/shared";
+import { formatDate, getInitials, pageWrapperClass } from "../Host/sharedStyles";
 
 const activityDotClass = (action) => {
     if (action.includes("Khóa")) {

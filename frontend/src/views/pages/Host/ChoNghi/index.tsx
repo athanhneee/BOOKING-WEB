@@ -7,12 +7,13 @@ import { APP_ROUTES } from "../../../../config/routes";
 import {
     FilterTabs,
     PageHeader,
-    formatCurrency,
-    hostCardClass,
-    pageWrapperClass,
-    secondaryButtonClass,
-    primaryButtonClass,
 } from "../shared";
+import {
+    formatCurrency,
+    pageWrapperClass,
+    primaryButtonClass,
+    secondaryButtonClass,
+} from "../sharedStyles";
 
 type PropertyFilter = "all" | "Villa" | "Căn hộ" | "Homestay";
 

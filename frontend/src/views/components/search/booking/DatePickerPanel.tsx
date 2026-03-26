@@ -1,10 +1,14 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { FaCalendarAlt, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { useEffect, useMemo, useState, type CSSProperties, type MouseEvent } from "react";
+import { FaCalendarAlt, FaChevronRight } from "react-icons/fa";
+import { cn } from "../../../../utils";
 
 type DatePickerPanelProps = {
     isOpen: boolean;
     selectedDate: string;
     minDate: string;
+    rangeStartDate?: string;
+    rangeEndDate?: string;
+    activeField?: "checkIn" | "checkOut";
     selectedNightOffset?: number;
     onSelectDate: (nextDate: string) => void;
     onNightOffsetChange?: (nextOffset: number) => void;
@@ -14,66 +18,294 @@ type DatePickerPanelProps = {
     variant?: "popover" | "inline";
 };
 
-type ExactnessOption = { label: string; nights: number };
+type CalendarMode = "day" | "month" | "flexible";
 type FlexDurationOption = "Cuối tuần" | "1 tuần" | "1 tháng";
-type PanelMode = "exact" | "flex";
+type ExactnessOption = { label: string; nights: number };
+
+const exactnessOptions: ExactnessOption[] = [
+    { label: "Chính xác", nights: 0 },
+    { label: "+/- 1 ngày", nights: 1 },
+    { label: "+/- 2 ngày", nights: 2 },
+    { label: "+/- 3 ngày", nights: 3 },
+    { label: "+/- 7 ngày", nights: 7 },
+    { label: "+/- 14 ngày", nights: 14 },
+];
 
 const weekdayLabels = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-const exactnessOptions: ExactnessOption[] = [
-    { label: "Ngày chính xác", nights: 0 },
-    { label: "± 1 ngày", nights: 1 },
-    { label: "± 2 ngày", nights: 2 },
-    { label: "± 3 ngày", nights: 3 },
-    { label: "± 7 ngày", nights: 7 },
-    { label: "± 14 ngày", nights: 14 },
-];
 const flexibleDurationOptions: FlexDurationOption[] = ["Cuối tuần", "1 tuần", "1 tháng"];
 
 const toIsoDate = (date: Date) => {
-    const year = date.getFullYear();
-    const month = `${date.getMonth() + 1}`.padStart(2, "0");
-    const day = `${date.getDate()}`.padStart(2, "0");
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(12, 0, 0, 0);
+
+    const year = normalizedDate.getFullYear();
+    const month = `${normalizedDate.getMonth() + 1}`.padStart(2, "0");
+    const day = `${normalizedDate.getDate()}`.padStart(2, "0");
+
     return `${year}-${month}-${day}`;
 };
 
 const parseIsoDate = (isoDate: string) => {
     if (!isoDate) return null;
+
     const parsed = new Date(`${isoDate}T00:00:00`);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-};
-
-const asMonthStart = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
-const addMonths = (baseMonth: Date, amount: number) => new Date(baseMonth.getFullYear(), baseMonth.getMonth() + amount, 1);
-const monthKey = (month: Date) => month.getFullYear() * 12 + month.getMonth();
-
-const buildMonthCells = (monthStart: Date): Array<string | null> => {
-    const firstWeekDay = (monthStart.getDay() + 6) % 7;
-    const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
-    const cells: Array<string | null> = [];
-
-    for (let index = 0; index < firstWeekDay; index += 1) cells.push(null);
-    for (let day = 1; day <= daysInMonth; day += 1) cells.push(toIsoDate(new Date(monthStart.getFullYear(), monthStart.getMonth(), day)));
-    while (cells.length < 42) cells.push(null);
-
-    return cells;
-};
-
-const formatMonthTitle = (monthStart: Date) => `Tháng ${monthStart.getMonth() + 1} năm ${monthStart.getFullYear()}`;
-
-const formatSelectedSummary = (selectedDate: string, selectedNightOffset: number) => {
-    const parsed = parseIsoDate(selectedDate);
-    if (parsed) {
-        const baseLabel = new Intl.DateTimeFormat("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit" }).format(parsed);
-        return selectedNightOffset > 0 ? `${baseLabel} • ± ${selectedNightOffset} ngày` : baseLabel;
+    if (Number.isNaN(parsed.getTime())) {
+        return null;
     }
 
-    return selectedNightOffset > 0 ? `± ${selectedNightOffset} ngày` : "Chưa chọn ngày";
+    parsed.setHours(0, 0, 0, 0);
+    return parsed;
 };
+
+function formatMonthYear(year: number, month: number) {
+    const date = new Date(year, month, 1);
+    const label = date.toLocaleDateString("vi-VN", {
+        month: "long",
+        year: "numeric",
+    });
+
+    return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function formatDateDisplay(date: Date | null) {
+    if (!date) return "";
+
+    return date.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    });
+}
+
+function isSameDay(firstDate: Date | null, secondDate: Date | null) {
+    if (!firstDate || !secondDate) return false;
+
+    return (
+        firstDate.getFullYear() === secondDate.getFullYear() &&
+        firstDate.getMonth() === secondDate.getMonth() &&
+        firstDate.getDate() === secondDate.getDate()
+    );
+}
+
+function buildDays(year: number, month: number) {
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    let startOffset = firstDay.getDay() - 1;
+
+    if (startOffset < 0) {
+        startOffset = 6;
+    }
+
+    const days: Array<Date | null> = [];
+    for (let index = 0; index < startOffset; index += 1) {
+        days.push(null);
+    }
+
+    for (let day = 1; day <= lastDay.getDate(); day += 1) {
+        days.push(new Date(year, month, day));
+    }
+
+    return days;
+}
+
+const getMonthSeed = (value?: string) => parseIsoDate(value ?? "") ?? new Date();
+
+const handleMouseSelect = (event: MouseEvent, callback: () => void) => {
+    event.preventDefault();
+    event.stopPropagation();
+    callback();
+};
+
+type CalendarMonthProps = {
+    year: number;
+    month: number;
+    today: Date;
+    minSelectableDate: Date;
+    checkIn: Date | null;
+    checkOut: Date | null;
+    activeField: "checkIn" | "checkOut";
+    hoveredDate: Date | null;
+    onDateSelect: (date: Date) => void;
+    onDateHover: (date: Date | null) => void;
+    showPrev: boolean;
+    showNext: boolean;
+    onPrev: () => void;
+    onNext: () => void;
+};
+
+function CalendarMonth({
+    year,
+    month,
+    today,
+    minSelectableDate,
+    checkIn,
+    checkOut,
+    activeField,
+    hoveredDate,
+    onDateSelect,
+    onDateHover,
+    showPrev,
+    showNext,
+    onPrev,
+    onNext,
+}: CalendarMonthProps) {
+    const days = buildDays(year, month);
+
+    const getEndDate = () => {
+        if (checkOut) {
+            return checkOut;
+        }
+
+        if (activeField === "checkOut" && hoveredDate && checkIn && hoveredDate > checkIn) {
+            return hoveredDate;
+        }
+
+        return null;
+    };
+
+    const endDate = getEndDate();
+
+    const getCellState = (date: Date | null) => {
+        if (!date) return "empty";
+        if (date < minSelectableDate) return "disabled";
+        if (isSameDay(date, checkIn)) return "start";
+        if (isSameDay(date, checkOut)) return "end";
+        if (checkIn && endDate && date > checkIn && date < endDate) return "range";
+        if (isSameDay(date, today)) return "today";
+        if (activeField === "checkOut" && checkIn && date <= checkIn) return "disabled";
+        return "normal";
+    };
+
+    const weeks: Array<Array<Date | null>> = [];
+    for (let index = 0; index < days.length; index += 7) {
+        weeks.push(days.slice(index, index + 7));
+    }
+
+    return (
+        <div className="min-w-0 flex-1">
+            <div className="mb-6 flex items-center justify-between">
+                {showPrev ? (
+                    <button
+                        type="button"
+                        onMouseDown={(event) => handleMouseSelect(event, onPrev)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-lg font-light text-gray-500 transition-all duration-150 hover:border-gray-400 hover:bg-gray-50 hover:text-gray-800"
+                    >
+                        ‹
+                    </button>
+                ) : (
+                    <div className="w-9" />
+                )}
+
+                <h3 className="text-base font-semibold tracking-tight text-gray-900">
+                    {formatMonthYear(year, month)}
+                </h3>
+
+                {showNext ? (
+                    <button
+                        type="button"
+                        onMouseDown={(event) => handleMouseSelect(event, onNext)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-lg font-light text-gray-500 transition-all duration-150 hover:border-gray-400 hover:bg-gray-50 hover:text-gray-800"
+                    >
+                        ›
+                    </button>
+                ) : (
+                    <div className="w-9" />
+                )}
+            </div>
+
+            <div className="mb-2 grid grid-cols-7">
+                {weekdayLabels.map((dayLabel) => (
+                    <div key={dayLabel} className="pb-2 text-center text-xs font-semibold text-gray-400">
+                        {dayLabel}
+                    </div>
+                ))}
+            </div>
+
+            <div className="space-y-1">
+                {weeks.map((week, weekIndex) => (
+                    <div key={`${year}-${month}-week-${weekIndex}`} className="grid grid-cols-7">
+                        {week.map((date, dayIndex) => {
+                            const state = getCellState(date);
+                            const isRange = state === "range";
+                            const isStart = state === "start";
+                            const isEnd = state === "end";
+                            const hasEnd = Boolean(endDate);
+
+                            let cellBgClass = "";
+                            if (isRange) {
+                                cellBgClass = "range-cell-bg bg-cyan-50";
+                            }
+                            if (isStart && hasEnd) {
+                                cellBgClass = "range-cell-bg bg-gradient-to-r from-transparent to-cyan-50";
+                            }
+                            if (isEnd && checkIn) {
+                                cellBgClass = "range-cell-bg bg-gradient-to-l from-transparent to-cyan-50";
+                            }
+
+                            let buttonClassName =
+                                "cal-date-btn relative z-10 flex h-10 w-10 items-center justify-center rounded-full text-sm transition-all duration-150";
+
+                            if (state === "disabled") {
+                                buttonClassName += " cursor-not-allowed text-gray-300";
+                            } else if (state === "start" || state === "end") {
+                                buttonClassName += " selected cursor-pointer bg-teal-600 font-semibold text-white shadow-sm hover:bg-teal-700";
+                            } else if (state === "today") {
+                                buttonClassName += " cursor-pointer font-semibold text-gray-900 ring-2 ring-cyan-400 hover:bg-cyan-50";
+                            } else if (state === "range") {
+                                buttonClassName += " cursor-pointer text-gray-800 hover:bg-cyan-100 hover:text-cyan-800";
+                            } else if (state === "normal") {
+                                buttonClassName += " cursor-pointer text-gray-800 hover:bg-cyan-50 hover:text-cyan-700";
+                            } else {
+                                buttonClassName += " invisible";
+                            }
+
+                            return (
+                                <div
+                                    key={`${year}-${month}-${weekIndex}-${dayIndex}`}
+                                    className={cn(
+                                        "relative flex h-10 items-center justify-center transition-colors duration-100",
+                                        cellBgClass,
+                                    )}
+                                >
+                                    {date ? (
+                                        <button
+                                            type="button"
+                                            disabled={state === "disabled"}
+                                            onMouseDown={(event) =>
+                                                handleMouseSelect(event, () => {
+                                                    if (state !== "disabled") {
+                                                        onDateSelect(date);
+                                                    }
+                                                })
+                                            }
+                                            onMouseEnter={() => {
+                                                if (state !== "disabled") {
+                                                    onDateHover(date);
+                                                }
+                                            }}
+                                            onMouseLeave={() => onDateHover(null)}
+                                            className={buttonClassName}
+                                        >
+                                            {date.getDate()}
+                                        </button>
+                                    ) : null}
+                                </div>
+                            );
+                        })}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
 
 const DatePickerPanel = ({
     isOpen,
     selectedDate,
     minDate,
+    rangeStartDate = "",
+    rangeEndDate = "",
+    activeField = "checkIn",
     selectedNightOffset = 0,
     onSelectDate,
     onNightOffsetChange,
@@ -83,166 +315,266 @@ const DatePickerPanel = ({
     variant = "popover",
 }: DatePickerPanelProps) => {
     const isInline = variant === "inline";
-    const todayIso = useMemo(() => toIsoDate(new Date()), []);
-    const minDateValue = useMemo(() => parseIsoDate(minDate) ?? new Date(), [minDate]);
-    const minMonth = useMemo(() => asMonthStart(minDateValue), [minDateValue]);
-    const [mode, setMode] = useState<PanelMode>("exact");
+    const activeDate = useMemo(() => parseIsoDate(selectedDate), [selectedDate]);
+    const today = useMemo(() => {
+        const nextToday = new Date();
+        nextToday.setHours(0, 0, 0, 0);
+        return nextToday;
+    }, []);
+    const minSelectableDate = useMemo(() => parseIsoDate(minDate) ?? today, [minDate, today]);
+    const checkIn = useMemo(
+        () => parseIsoDate(rangeStartDate) ?? (activeField === "checkIn" ? activeDate : null),
+        [activeDate, activeField, rangeStartDate],
+    );
+    const checkOut = useMemo(
+        () => parseIsoDate(rangeEndDate) ?? (activeField === "checkOut" ? activeDate : null),
+        [activeDate, activeField, rangeEndDate],
+    );
+    const [calendarMode, setCalendarMode] = useState<CalendarMode>("day");
+    const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
     const [flexDuration, setFlexDuration] = useState<FlexDurationOption>("Cuối tuần");
-    const [currentMonth, setCurrentMonth] = useState<Date>(asMonthStart(parseIsoDate(selectedDate) ?? minDateValue));
-    const flexScrollerRef = useRef<HTMLDivElement | null>(null);
+    const [baseMonth, setBaseMonth] = useState(() => {
+        const seed = getMonthSeed(rangeStartDate || selectedDate || minDate);
+        return { year: seed.getFullYear(), month: seed.getMonth() };
+    });
 
     useEffect(() => {
-        const nextMonth = asMonthStart(parseIsoDate(selectedDate) ?? minDateValue);
-        setCurrentMonth((current) => (monthKey(current) === monthKey(nextMonth) ? current : nextMonth));
-    }, [minDateValue, selectedDate]);
+        if (!isOpen) {
+            return;
+        }
 
-    const canMovePrevious = monthKey(addMonths(currentMonth, -1)) >= monthKey(minMonth);
-    const hasClearableSelection = Boolean(selectedDate) || selectedNightOffset > 0;
-    const clearSummary = useMemo(() => formatSelectedSummary(selectedDate, selectedNightOffset), [selectedDate, selectedNightOffset]);
-    const flexibleMonths = useMemo(() => Array.from({ length: 12 }, (_, index) => addMonths(asMonthStart(minDateValue), index)), [minDateValue]);
+        const seed = getMonthSeed(rangeStartDate || selectedDate || minDate);
+        setBaseMonth({ year: seed.getFullYear(), month: seed.getMonth() });
+    }, [isOpen, minDate, rangeStartDate, selectedDate]);
 
-    const scrollFlexibleMonths = () => {
-        flexScrollerRef.current?.scrollBy({ left: 420, behavior: "smooth" });
-    };
+    useEffect(() => {
+        if (activeField !== "checkOut") {
+            setHoveredDate(null);
+        }
+    }, [activeField, rangeEndDate, rangeStartDate, selectedDate]);
 
-    const placementClass = className ?? "left-1/2 -translate-x-1/2";
-    const containerClass = isInline
-        ? "relative z-0 w-full rounded-2xl border border-gray-200 bg-[#f5f5f5] p-4 shadow-sm md:p-6"
-        : `absolute top-[calc(100%+12px)] z-50 w-[min(860px,calc(100vw-2rem))] max-w-[95vw] transform-gpu rounded-2xl border border-gray-200 bg-[#f5f5f5] p-6 shadow-2xl transition-[transform,opacity] duration-300 ${placementClass} ${isOpen ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0"}`;
+    const leftYear = baseMonth.year;
+    const leftMonth = baseMonth.month;
+    const rightDate = new Date(baseMonth.year, baseMonth.month + 1, 1);
+    const rightYear = rightDate.getFullYear();
+    const rightMonth = rightDate.getMonth();
 
-    const renderMonth = (monthStart: Date) => {
-        const cells = buildMonthCells(monthStart);
+    const clearSummary = useMemo(() => {
+        if (!checkIn && !checkOut) {
+            return "Chưa chọn ngày";
+        }
 
-        return (
-            <div>
-                <h3 className="mb-4 text-center text-2xl font-bold text-gray-800">{formatMonthTitle(monthStart)}</h3>
-                <div className="mb-3 grid grid-cols-7 text-center text-sm font-semibold text-gray-500">
-                    {weekdayLabels.map((weekday) => <span key={`${monthStart.toISOString()}-${weekday}`}>{weekday}</span>)}
+        if (checkIn && !checkOut && activeField === "checkOut") {
+            return "Đang chọn ngày trả phòng";
+        }
+
+        if (checkIn && !checkOut) {
+            return "Đang chọn ngày nhận phòng";
+        }
+
+        return `${formatDateDisplay(checkIn)} → ${formatDateDisplay(checkOut)}`;
+    }, [activeField, checkIn, checkOut]);
+
+    const flexibleMonths = useMemo(() => {
+        const seed = new Date(baseMonth.year, baseMonth.month, 1);
+        return Array.from({ length: 8 }, (_, index) => new Date(seed.getFullYear(), seed.getMonth() + index, 1));
+    }, [baseMonth.month, baseMonth.year]);
+
+    const containerClassName = cn(
+        "calendar-panel w-full bg-white",
+        isInline
+            ? "rounded-[28px] border border-gray-200 p-5 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.24)]"
+            : "rounded-3xl border border-gray-200 p-7",
+        !isInline && !isOpen && "pointer-events-none opacity-0",
+        className,
+    );
+
+    if (!isOpen && !isInline) {
+        return null;
+    }
+
+    return (
+        <div className={containerClassName} style={style} onMouseDown={(event) => event.stopPropagation()}>
+            <div className="mb-7 flex justify-center">
+                <div className="flex gap-1 rounded-full bg-gray-100 p-1">
+                    {[
+                        { key: "day", label: "Ngày" },
+                        { key: "month", label: "Tháng" },
+                        { key: "flexible", label: "Linh hoạt" },
+                    ].map((tab) => (
+                        <button
+                            key={tab.key}
+                            type="button"
+                            onMouseDown={(event) =>
+                                handleMouseSelect(event, () => setCalendarMode(tab.key as CalendarMode))
+                            }
+                            className={cn(
+                                "rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-200 ease-out",
+                                calendarMode === tab.key
+                                    ? "bg-white font-semibold text-gray-900 shadow-sm"
+                                    : "text-gray-500 hover:bg-white/60 hover:text-gray-700",
+                            )}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
+            </div>
 
-                <div className="grid grid-cols-7 gap-y-1 text-center">
-                    {cells.map((isoDate, index) => {
-                        if (!isoDate) return <span key={`${monthStart.toISOString()}-empty-${index}`} className="h-11 w-11" />;
-
-                        const parsed = parseIsoDate(isoDate);
-                        const isDisabled = isoDate < minDate;
-                        const isSelected = isoDate === selectedDate;
-                        const isToday = isoDate === todayIso;
+            {calendarMode === "day" ? (
+                <div key={`${baseMonth.year}-${baseMonth.month}`} className="month-grid-enter grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
+                    <CalendarMonth
+                        year={leftYear}
+                        month={leftMonth}
+                        today={today}
+                        minSelectableDate={minSelectableDate}
+                        checkIn={checkIn}
+                        checkOut={checkOut}
+                        activeField={activeField}
+                        hoveredDate={hoveredDate}
+                        onDateSelect={(date) => onSelectDate(toIsoDate(date))}
+                        onDateHover={setHoveredDate}
+                        showPrev
+                        showNext={false}
+                        onPrev={() => {
+                            const previousMonth = new Date(baseMonth.year, baseMonth.month - 1, 1);
+                            setBaseMonth({ year: previousMonth.getFullYear(), month: previousMonth.getMonth() });
+                        }}
+                        onNext={() => undefined}
+                    />
+                    <CalendarMonth
+                        year={rightYear}
+                        month={rightMonth}
+                        today={today}
+                        minSelectableDate={minSelectableDate}
+                        checkIn={checkIn}
+                        checkOut={checkOut}
+                        activeField={activeField}
+                        hoveredDate={hoveredDate}
+                        onDateSelect={(date) => onSelectDate(toIsoDate(date))}
+                        onDateHover={setHoveredDate}
+                        showPrev={false}
+                        showNext
+                        onPrev={() => undefined}
+                        onNext={() => {
+                            const nextMonth = new Date(baseMonth.year, baseMonth.month + 1, 1);
+                            setBaseMonth({ year: nextMonth.getFullYear(), month: nextMonth.getMonth() });
+                        }}
+                    />
+                </div>
+            ) : calendarMode === "month" ? (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    {flexibleMonths.map((monthStart) => {
+                        const monthIso = toIsoDate(monthStart);
+                        const isActive = (rangeStartDate || selectedDate).startsWith(monthIso.slice(0, 7));
 
                         return (
                             <button
-                                key={`${monthStart.toISOString()}-${isoDate}`}
+                                key={monthIso}
                                 type="button"
-                                disabled={isDisabled}
-                                onClick={() => onSelectDate(isoDate)}
-                                className={`mx-auto h-11 w-11 rounded-full text-lg font-medium transition-all ${
-                                    isSelected
-                                        ? "bg-gray-900 text-white"
-                                        : isDisabled
-                                          ? "cursor-not-allowed text-gray-300"
-                                          : isToday
-                                            ? "border border-gray-300 text-gray-900 hover:bg-gray-200"
-                                            : "text-gray-900 hover:bg-gray-200"
-                                }`}
+                                onMouseDown={(event) => handleMouseSelect(event, () => onSelectDate(monthIso))}
+                                className={cn(
+                                    "rounded-[24px] border px-5 py-7 text-center transition-all",
+                                    isActive
+                                        ? "border-cyan-300 bg-cyan-50 text-cyan-700"
+                                        : "border-gray-200 bg-white text-gray-700 hover:border-cyan-200 hover:bg-cyan-50/60",
+                                )}
                             >
-                                {parsed?.getDate()}
+                                <FaCalendarAlt className="mx-auto mb-4 text-3xl" />
+                                <p className="text-lg font-semibold">{formatMonthYear(monthStart.getFullYear(), monthStart.getMonth())}</p>
                             </button>
                         );
                     })}
                 </div>
-            </div>
-        );
-    };
-
-    return (
-        <div className={containerClass} style={style}>
-            <div className="mb-8 flex justify-center">
-                <div className={`flex max-w-full rounded-full bg-gray-300 p-1 ${isInline ? "w-full" : "w-96"}`}>
-                    <button type="button" onClick={() => setMode("exact")} className={`w-1/2 rounded-full py-2 text-base font-semibold transition-all ${mode === "exact" ? "bg-white text-gray-900" : "text-gray-700"}`}>Ngày</button>
-                    <button type="button" onClick={() => setMode("flex")} className={`w-1/2 rounded-full py-2 text-base font-semibold transition-all ${mode === "flex" ? "bg-white text-gray-900" : "text-gray-700"}`}>Linh hoạt</button>
-                </div>
-            </div>
-
-            {mode === "exact" ? (
-                <>
-                    <div className="mb-6 flex items-start gap-3">
-                        <button type="button" onClick={() => setCurrentMonth((current) => addMonths(current, -1))} disabled={!canMovePrevious} className="mt-16 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-200 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Tháng trước">
-                            <FaChevronLeft />
-                        </button>
-
-                        <div className="grid flex-1 grid-cols-1 gap-8 lg:grid-cols-2">
-                            {renderMonth(currentMonth)}
-                            {renderMonth(addMonths(currentMonth, 1))}
-                        </div>
-
-                        <button type="button" onClick={() => setCurrentMonth((current) => addMonths(current, 1))} className="mt-16 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-200 hover:text-gray-900" aria-label="Tháng sau">
-                            <FaChevronRight />
-                        </button>
-                    </div>
-
-                    {onNightOffsetChange ? (
-                        <div className="flex flex-wrap gap-2">
-                            {exactnessOptions.map((option) => {
-                                const isActive = selectedNightOffset === option.nights;
-                                return (
-                                    <button key={option.label} type="button" onClick={() => onNightOffsetChange(option.nights)} className={`rounded-full border px-5 py-2 text-sm font-medium transition-all ${isActive ? "border-gray-900 bg-white text-gray-900" : "border-gray-300 bg-transparent text-gray-700 hover:border-gray-400"}`}>
-                                        {option.label}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    ) : null}
-                </>
             ) : (
                 <div className="pb-2">
-                    <div className="mb-10 text-center">
-                        <h3 className="mb-4 text-[24px] font-bold leading-tight text-gray-900 md:text-[28px]">Bạn muốn ở trong bao lâu?</h3>
-                        <div className="flex flex-wrap justify-center gap-3">
+                    <div className="mb-8 text-center">
+                        <h3 className="text-2xl font-semibold tracking-tight text-gray-900">Bạn muốn ở trong bao lâu?</h3>
+                        <div className="mt-4 flex flex-wrap justify-center gap-3">
                             {flexibleDurationOptions.map((option) => (
-                                <button key={option} type="button" onClick={() => setFlexDuration(option)} className={`rounded-full border px-7 py-2.5 text-[18px] font-medium transition-all md:text-[20px] ${flexDuration === option ? "border-gray-900 bg-white text-gray-900" : "border-gray-300 bg-transparent text-gray-700 hover:border-gray-400"}`}>
+                                <button
+                                    key={option}
+                                    type="button"
+                                    onMouseDown={(event) => handleMouseSelect(event, () => setFlexDuration(option))}
+                                    className={cn(
+                                        "rounded-full border px-6 py-2.5 text-sm font-semibold transition-all",
+                                        flexDuration === option
+                                            ? "border-teal-600 bg-teal-600 text-white"
+                                            : "border-gray-300 bg-white text-gray-700 hover:border-cyan-300 hover:text-cyan-700",
+                                    )}
+                                >
                                     {option}
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    <div className="mb-6 text-center">
-                        <h3 className="text-[24px] font-bold leading-tight text-gray-900 md:text-[28px]">Bạn muốn đi khi nào?</h3>
-                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        {flexibleMonths.map((monthStart) => {
+                            const monthIso = toIsoDate(monthStart);
+                            const isActive = (rangeStartDate || selectedDate).startsWith(monthIso.slice(0, 7));
 
-                    <div className="relative">
-                        <div ref={flexScrollerRef} className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                            {flexibleMonths.map((monthStart) => {
-                                const monthIso = toIsoDate(monthStart);
-                                const isActive = selectedDate.startsWith(monthIso.slice(0, 7));
-
-                                return (
-                                    <button key={monthIso} type="button" onClick={() => onSelectDate(monthIso)} className={`min-w-[190px] rounded-2xl border px-6 py-9 text-center transition-all ${isActive ? "border-gray-900 bg-white" : "border-gray-300 bg-transparent hover:border-gray-400"}`}>
-                                        <FaCalendarAlt className="mx-auto mb-4 text-4xl text-gray-500" />
-                                        <p className="text-[22px] font-bold leading-none text-gray-900 md:text-[24px]">{`Tháng ${monthStart.getMonth() + 1}`}</p>
-                                        <p className="mt-2 text-[20px] font-medium leading-none text-gray-900 md:text-[22px]">{monthStart.getFullYear()}</p>
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        <button type="button" onClick={scrollFlexibleMonths} className="absolute right-0 top-1/2 z-10 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-800 shadow transition hover:bg-gray-50" aria-label="Xem các tháng tiếp theo">
-                            <FaChevronRight />
-                        </button>
+                            return (
+                                <button
+                                    key={`${monthIso}-flex`}
+                                    type="button"
+                                    onMouseDown={(event) => handleMouseSelect(event, () => onSelectDate(monthIso))}
+                                    className={cn(
+                                        "flex min-h-[156px] flex-col items-center justify-center rounded-[24px] border px-5 py-6 text-center transition-all",
+                                        isActive
+                                            ? "border-cyan-300 bg-cyan-50 text-cyan-700"
+                                            : "border-gray-200 bg-white text-gray-700 hover:border-cyan-200 hover:bg-cyan-50/60",
+                                    )}
+                                >
+                                    <FaCalendarAlt className="mb-4 text-3xl" />
+                                    <p className="text-lg font-semibold">{formatMonthYear(monthStart.getFullYear(), monthStart.getMonth())}</p>
+                                    <span className="mt-2 inline-flex items-center gap-2 text-xs font-medium text-gray-500">
+                                        {flexDuration}
+                                        <FaChevronRight className="text-[10px]" />
+                                    </span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             )}
 
-            {onClear ? (
-                <div className="mt-6 flex items-center justify-between gap-4 border-t border-gray-200 pt-4">
-                    <div className="text-left">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Lựa chọn</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-900">{clearSummary}</p>
-                    </div>
+            <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-5">
+                <div>
+                    <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">Lựa chọn</p>
+                    <p className="text-sm font-semibold text-gray-900">{clearSummary}</p>
+                </div>
 
-                    <button type="button" onClick={onClear} disabled={!hasClearableSelection} className="shrink-0 rounded-xl px-1 py-2 text-sm font-semibold text-gray-800 underline decoration-2 underline-offset-4 transition-opacity disabled:cursor-not-allowed disabled:opacity-40">
+                {onClear ? (
+                    <button
+                        type="button"
+                        onMouseDown={(event) => handleMouseSelect(event, onClear)}
+                        className="text-sm font-semibold text-gray-600 underline underline-offset-2 transition-colors duration-150 hover:text-gray-900"
+                    >
                         Xóa tất cả
                     </button>
+                ) : null}
+            </div>
+
+            {onNightOffsetChange ? (
+                <div className="mt-5 flex flex-wrap gap-2 border-t border-gray-100 pt-5">
+                    {exactnessOptions.map((option) => (
+                        <button
+                            key={option.label}
+                            type="button"
+                            onMouseDown={(event) =>
+                                handleMouseSelect(event, () => onNightOffsetChange(option.nights))
+                            }
+                            className={cn(
+                                "rounded-full border px-4 py-2 text-sm font-medium transition-all",
+                                selectedNightOffset === option.nights
+                                    ? "border-cyan-300 bg-cyan-50 text-cyan-700"
+                                    : "border-gray-300 bg-white text-gray-700 hover:border-cyan-200 hover:text-cyan-700",
+                            )}
+                        >
+                            {option.label}
+                        </button>
+                    ))}
                 </div>
             ) : null}
         </div>

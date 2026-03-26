@@ -3,9 +3,9 @@ import type { PriceBounds } from "./types";
 
 type PriceRangeFilterProps = {
     bounds: PriceBounds;
-    minValue: number;
-    maxValue: number;
-    onChange: (nextValues: { min: number; max: number }) => void;
+    minValue: number | null;
+    maxValue: number | null;
+    onChange: (nextValues: { min: number | null; max: number | null }) => void;
 };
 
 const STEP = 500000;
@@ -21,12 +21,18 @@ const PriceRangeFilter = ({ bounds, minValue, maxValue, onChange }: PriceRangeFi
         [],
     );
 
+    const effectiveMinValue = minValue ?? bounds.min;
+    const effectiveMaxValue = maxValue ?? bounds.max;
     const range = Math.max(bounds.max - bounds.min, 1);
-    const startPercent = ((minValue - bounds.min) / range) * 100;
-    const endPercent = ((maxValue - bounds.min) / range) * 100;
+    const startPercent = ((effectiveMinValue - bounds.min) / range) * 100;
+    const endPercent = ((effectiveMaxValue - bounds.min) / range) * 100;
 
-    const clampMin = (value: number) => Math.max(bounds.min, Math.min(value, maxValue - STEP));
-    const clampMax = (value: number) => Math.min(bounds.max, Math.max(value, minValue + STEP));
+    const clampMin = (value: number) => Math.max(bounds.min, Math.min(value, effectiveMaxValue - STEP));
+    const clampMax = (value: number) => Math.min(bounds.max, Math.max(value, effectiveMinValue + STEP));
+    const normalizeSelection = (nextMin: number, nextMax: number) => ({
+        min: nextMin <= bounds.min ? null : nextMin,
+        max: nextMax >= bounds.max ? null : nextMax,
+    });
 
     return (
         <div className="space-y-5">
@@ -43,8 +49,10 @@ const PriceRangeFilter = ({ bounds, minValue, maxValue, onChange }: PriceRangeFi
                         min={bounds.min}
                         max={bounds.max}
                         step={STEP}
-                        value={minValue}
-                        onChange={(event) => onChange({ min: clampMin(Number(event.target.value)), max: maxValue })}
+                        value={effectiveMinValue}
+                        onChange={(event) =>
+                            onChange(normalizeSelection(clampMin(Number(event.target.value)), effectiveMaxValue))
+                        }
                         className="pointer-events-none absolute inset-0 h-8 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-cyan-600 [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-4 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-cyan-600 [&::-moz-range-thumb]:shadow-md"
                     />
 
@@ -53,8 +61,10 @@ const PriceRangeFilter = ({ bounds, minValue, maxValue, onChange }: PriceRangeFi
                         min={bounds.min}
                         max={bounds.max}
                         step={STEP}
-                        value={maxValue}
-                        onChange={(event) => onChange({ min: minValue, max: clampMax(Number(event.target.value)) })}
+                        value={effectiveMaxValue}
+                        onChange={(event) =>
+                            onChange(normalizeSelection(effectiveMinValue, clampMax(Number(event.target.value))))
+                        }
                         className="pointer-events-none absolute inset-0 h-8 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-cyan-600 [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-4 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:bg-cyan-600 [&::-moz-range-thumb]:shadow-md"
                     />
                 </div>
@@ -67,8 +77,10 @@ const PriceRangeFilter = ({ bounds, minValue, maxValue, onChange }: PriceRangeFi
                             min={bounds.min}
                             max={bounds.max}
                             step={STEP}
-                            value={minValue}
-                            onChange={(event) => onChange({ min: clampMin(Number(event.target.value || bounds.min)), max: maxValue })}
+                            value={effectiveMinValue}
+                            onChange={(event) =>
+                                onChange(normalizeSelection(clampMin(Number(event.target.value || bounds.min)), effectiveMaxValue))
+                            }
                             className="mt-2 w-full border-none bg-transparent text-lg font-semibold text-zinc-900 outline-none"
                         />
                     </label>
@@ -80,8 +92,10 @@ const PriceRangeFilter = ({ bounds, minValue, maxValue, onChange }: PriceRangeFi
                             min={bounds.min}
                             max={bounds.max}
                             step={STEP}
-                            value={maxValue}
-                            onChange={(event) => onChange({ min: minValue, max: clampMax(Number(event.target.value || bounds.max)) })}
+                            value={effectiveMaxValue}
+                            onChange={(event) =>
+                                onChange(normalizeSelection(effectiveMinValue, clampMax(Number(event.target.value || bounds.max))))
+                            }
                             className="mt-2 w-full border-none bg-transparent text-lg font-semibold text-zinc-900 outline-none"
                         />
                     </label>
@@ -91,11 +105,15 @@ const PriceRangeFilter = ({ bounds, minValue, maxValue, onChange }: PriceRangeFi
             <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-500">
                 <span>VNĐ / đêm</span>
                 <span>
-                    {currencyFormatter.format(minValue)} - {currencyFormatter.format(maxValue)}
+                    {minValue === null && maxValue === null
+                        ? "Tất cả mức giá"
+                        : `${currencyFormatter.format(effectiveMinValue)} - ${currencyFormatter.format(effectiveMaxValue)}`}
                 </span>
             </div>
 
-            <p className="text-sm leading-6 text-zinc-500">Giá mỗi đêm, chưa bao gồm phí dịch vụ và thuế nếu có.</p>
+            <p className="text-sm leading-6 text-zinc-500">
+                Giá mỗi đêm, chưa bao gồm phí dịch vụ và thuế nếu có.
+            </p>
         </div>
     );
 };
