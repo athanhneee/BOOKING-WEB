@@ -5,23 +5,51 @@
   "license": "ISC",
   "author": "",
   "type": "commonjs",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "scripts": {
+    "search:reindex": "ts-node src/scripts/reindex-semantic-search.ts",
     "dev": "nodemon --exec ts-node src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "db:check": "ts-node src/scripts/check-db-connection.ts",
+    "db:ensure-runtime-schema": "ts-node src/scripts/ensure-runtime-schema.ts",
+    "db:ensure-final-modules": "ts-node src/scripts/ensure-final-modules-schema.ts",
+    "db:migrate": "npm run db:migrate:safe",
+    "db:migrate:safe": "node database/migrations/20260509_safe_schema_expansion.js && node database/migrations/20260510_security_schema_completion.js",
+    "db:seed": "npm run db:seed:amenities && npm run db:seed:admin",
+    "db:seed:amenities": "node database/seeds/20260509_default_amenities.js",
+    "db:seed:admin": "node database/seeds/20260510_default_admin.js",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.tests.json",
+    "test": "npm run build && node --test --require ts-node/register --test-concurrency=1 tests/auth-flow.test.ts tests/auth-token-security.test.ts tests/host-onboarding-verification-flow.test.ts tests/listings-endpoints.test.ts tests/bookings-endpoints.test.ts tests/users-rbac-verification.test.ts tests/security-middleware.test.ts tests/trust-safety-uc09.test.ts tests/payments-coupons-payouts-reports.test.ts"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "mongodb": "^7.1.0",
-    "mongoose": "^9.2.4"
+    "express-rate-limit": "^8.3.1",
+    "express-session": "^1.19.0",
+    "express-validator": "^7.3.2",
+    "google-auth-library": "^10.6.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+  
+    "mysql2": "^3.22.2",
+    "nodemailer": "^8.0.7",
+    "sequelize": "^6.37.8",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.3.3",
+    "@types/nodemailer": "^8.0.0",
+    "@types/supertest": "^6.0.3",
     "nodemon": "^3.1.14",
+    "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
