@@ -87,6 +87,7 @@ const Checkout = ({
             ) : null}
 
             <DatePickerPanel
+                key={`checkout-${isOpen ? "open" : "closed"}-${checkinDate}-${value}-${minDate}`}
                 isOpen={isOpen}
                 selectedDate={value}
                 minDate={minDate}

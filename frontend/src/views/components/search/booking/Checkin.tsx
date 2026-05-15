@@ -88,6 +88,7 @@ const Checkin = ({
             ) : null}
 
             <DatePickerPanel
+                key={`checkin-${isOpen ? "open" : "closed"}-${value}-${today}`}
                 isOpen={isOpen}
                 selectedDate={value}
                 minDate={today}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type MouseEvent } from "react";
+import { useMemo, useState, type CSSProperties, type MouseEvent } from "react";
 import { FaCalendarAlt, FaChevronRight } from "react-icons/fa";
 import { cn } from "../../../../utils";
 
@@ -337,21 +337,6 @@ const DatePickerPanel = ({
         const seed = getMonthSeed(rangeStartDate || selectedDate || minDate);
         return { year: seed.getFullYear(), month: seed.getMonth() };
     });
-
-    useEffect(() => {
-        if (!isOpen) {
-            return;
-        }
-
-        const seed = getMonthSeed(rangeStartDate || selectedDate || minDate);
-        setBaseMonth({ year: seed.getFullYear(), month: seed.getMonth() });
-    }, [isOpen, minDate, rangeStartDate, selectedDate]);
-
-    useEffect(() => {
-        if (activeField !== "checkOut") {
-            setHoveredDate(null);
-        }
-    }, [activeField, rangeEndDate, rangeStartDate, selectedDate]);
 
     const leftYear = baseMonth.year;
     const leftMonth = baseMonth.month;
