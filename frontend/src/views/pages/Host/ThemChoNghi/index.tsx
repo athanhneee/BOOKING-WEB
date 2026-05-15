@@ -1,189 +1,225 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import { FiArrowLeft, FiArrowRight, FiCheck, FiCheckCircle, FiMinus, FiPlus, FiUploadCloud, FiX } from "react-icons/fi";
-import { properties } from "../../../../data/mockData.ts";
-import { PageHeader, ToggleSwitch } from "../shared";
-import { createTimeOptions, inputClassName, labelClassName, pageWrapperClass, primaryButtonClass, secondaryButtonClass, textareaClassName } from "../sharedStyles";
+import { useState, type FormEvent } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { APP_ROUTES } from "../../../../config/routes";
+import {
+    addHostListingImages,
+    createHostListing,
+    type CreateHostListingPayload,
+} from "../../../../services/hostService";
+import { PageHeader } from "../shared";
+import { inputClassName, labelClassName, pageWrapperClass, primaryButtonClass, secondaryButtonClass, textareaClassName } from "../sharedStyles";
 
-type Step = 1 | 2 | 3 | 4;
-type UploadItem = { id: string; url: string };
-type Policy = "Linh hoạt" | "Vừa phải" | "Nghiêm ngặt";
-type Season = { id: string; from: string; to: string; price: number };
+type FormState = {
+    title: string;
+    description: string;
+    addressLine: string;
+    ward: string;
+    district: string;
+    city: string;
+    latitude: string;
+    longitude: string;
+    propertyType: CreateHostListingPayload["propertyType"];
+    roomType: CreateHostListingPayload["roomType"];
+    maxGuests: string;
+    bedrooms: string;
+    beds: string;
+    bathrooms: string;
+    basePrice: string;
+    weekendPrice: string;
+    cleaningFee: string;
+    serviceFeePct: string;
+    minNights: string;
+    maxNights: string;
+    checkInFrom: string;
+    checkOutBefore: string;
+    cancellationPolicy: CreateHostListingPayload["cancellationPolicy"];
+    instantBookEnabled: boolean;
+    imageUrls: string;
+    status: "draft" | "pending_approval";
+};
 
-const stepList = ["Thông tin cơ bản", "Hình ảnh & tiện nghi", "Giá & chính sách", "Xem lại & đăng"];
-const typeList = [
-    { value: "Villa", icon: "🏖️" },
-    { value: "Căn hộ", icon: "🏢" },
-    { value: "Homestay", icon: "🏡" },
-    { value: "Phòng đơn", icon: "🛏️" },
-] as const;
-const amenityList = ["WiFi", "Điều hòa", "Máy giặt", "Bếp", "Hồ bơi", "Bãi đỗ xe", "TV", "Ban công", "Lò sưởi", "Tủ lạnh", "Máy sấy tóc", "Bàn ủi"];
-const policyList: Array<{ value: Policy; description: string }> = [
-    { value: "Linh hoạt", description: "Hủy trước 24 giờ để hoàn tiền gần như toàn bộ." },
-    { value: "Vừa phải", description: "Hoàn tiền 50% khi hủy trước 5 ngày." },
-    { value: "Nghiêm ngặt", description: "Phù hợp với mùa cao điểm." },
-];
+const initialForm: FormState = {
+    title: "",
+    description: "",
+    addressLine: "",
+    ward: "",
+    district: "Vũng Tàu",
+    city: "Vũng Tàu",
+    latitude: "10.345",
+    longitude: "107.084",
+    propertyType: "villa",
+    roomType: "entire_place",
+    maxGuests: "8",
+    bedrooms: "4",
+    beds: "4",
+    bathrooms: "4",
+    basePrice: "3000000",
+    weekendPrice: "",
+    cleaningFee: "0",
+    serviceFeePct: "10",
+    minNights: "1",
+    maxNights: "14",
+    checkInFrom: "14:00",
+    checkOutBefore: "12:00",
+    cancellationPolicy: "moderate",
+    instantBookEnabled: false,
+    imageUrls: "",
+    status: "pending_approval",
+};
 
-const createId = () => Math.random().toString(36).slice(2, 9);
-const formatNumber = (value: number) => new Intl.NumberFormat("vi-VN").format(value);
+const toNumber = (value: string, fallback = 0) => Number(value || fallback);
+const toNullableNumber = (value: string) => (value.trim() ? Number(value) : null);
 
 const ThemChoNghi = () => {
-    const fileRef = useRef<HTMLInputElement | null>(null);
-    const [step, setStep] = useState<Step>(1);
-    const [toast, setToast] = useState<string | null>(null);
-    const [uploads, setUploads] = useState<UploadItem[]>([]);
-    const [form, setForm] = useState({
-        propertyType: "Villa" as "Villa" | "Căn hộ" | "Homestay" | "Phòng đơn",
-        name: "",
-        address: "",
-        city: "Đà Nẵng",
-        description: "",
-        bedrooms: 2,
-        bathrooms: 2,
-        maxGuests: 4,
-        amenities: ["WiFi", "Điều hòa", "Bếp"],
-        pricePerNight: 2500000,
-        weekendEnabled: false,
-        weekendPrice: 3200000,
-        seasons: [{ id: createId(), from: "", to: "", price: 0 }] as Season[],
-        policy: "Vừa phải" as Policy,
-        checkIn: "14:00",
-        checkOut: "12:00",
-        minNights: 1,
-        maxNights: 14,
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const [form, setForm] = useState<FormState>(initialForm);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+
+    const listingIdForEdit = searchParams.get("listingId");
+
+    const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+        setForm((current) => ({ ...current, [key]: value }));
+    };
+
+    const buildPayload = (): CreateHostListingPayload => ({
+        title: form.title.trim(),
+        description: form.description.trim(),
+        addressLine: form.addressLine.trim(),
+        ward: form.ward.trim(),
+        district: form.district.trim(),
+        city: form.city.trim(),
+        stateRegion: null,
+        country: "VN",
+        postalCode: null,
+        latitude: toNumber(form.latitude),
+        longitude: toNumber(form.longitude),
+        propertyType: form.propertyType,
+        roomType: form.roomType,
+        maxGuests: toNumber(form.maxGuests, 1),
+        bedrooms: toNumber(form.bedrooms, 0),
+        beds: toNumber(form.beds, 1),
+        bathrooms: toNumber(form.bathrooms, 1),
+        basePrice: toNumber(form.basePrice, 0),
+        weekendPrice: toNullableNumber(form.weekendPrice),
+        cleaningFee: toNullableNumber(form.cleaningFee),
+        serviceFeePct: toNullableNumber(form.serviceFeePct),
+        currency: "VND",
+        minNights: toNumber(form.minNights, 1),
+        maxNights: toNullableNumber(form.maxNights),
+        checkInFrom: form.checkInFrom,
+        checkOutBefore: form.checkOutBefore,
+        cancellationPolicy: form.cancellationPolicy,
+        instantBookEnabled: form.instantBookEnabled,
+        amenityIds: [],
+        status: form.status,
     });
 
-    useEffect(() => {
-        if (!toast) return;
-        const timer = window.setTimeout(() => setToast(null), 3000);
-        return () => window.clearTimeout(timer);
-    }, [toast]);
-
-    const previewImage = uploads[0]?.url ?? properties[0].image;
-    const timeOptions = useMemo(() => createTimeOptions(), []);
-    const setField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((current) => ({ ...current, [key]: value }));
-    const updateCounter = (key: "bedrooms" | "bathrooms" | "maxGuests", delta: number) => setField(key, Math.max(1, form[key] + delta));
-    const parseMoney = (value: string) => Number(value.replace(/\D/g, "") || 0);
-
-    const pushFiles = (files: FileList | File[]) => {
-        const next = Array.from(files).slice(0, Math.max(0, 10 - uploads.length)).map((file) => ({ id: createId(), url: URL.createObjectURL(file) }));
-        if (next.length) setUploads((current) => [...current, ...next].slice(0, 10));
-    };
-
-    const onDrop = (event: DragEvent<HTMLButtonElement>) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        pushFiles(event.dataTransfer.files);
-    };
+        setSaving(true);
+        setError("");
+        setSuccess("");
 
-    const onUpload = (event: ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files) pushFiles(event.target.files);
-        event.target.value = "";
+        try {
+            if (listingIdForEdit) {
+                setError("Trang sửa chi tiết đang chuyển về bản tạo mới. Để sửa listing, dùng nút Ẩn/Hiện/Gửi duyệt ở trang Chỗ nghỉ.");
+                return;
+            }
+
+            const created = await createHostListing(buildPayload());
+            const urls = form.imageUrls
+                .split("\n")
+                .map((url) => url.trim())
+                .filter(Boolean);
+
+            if (urls.length > 0) {
+                await addHostListingImages(
+                    created.listingId,
+                    urls.map((url, index) => ({ url, sortOrder: index, isCover: index === 0 })),
+                );
+            }
+
+            setSuccess("Đã tạo chỗ nghỉ thành công. Nếu chọn Chờ duyệt, admin cần approve trước khi hiển thị public.");
+            setForm(initialForm);
+        } catch (submitError) {
+            setError(submitError instanceof Error ? submitError.message : "Không thể tạo chỗ nghỉ.");
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
         <div className={pageWrapperClass}>
-            <div className="mx-auto max-w-6xl space-y-6">
-                <PageHeader title="Thêm chỗ nghỉ mới" subtitle="Hoàn thành 4 bước để đăng chỗ nghỉ lên BlueStay." />
+            <div className="mx-auto max-w-5xl space-y-6">
+                <PageHeader
+                    title="Thêm chỗ nghỉ mới"
+                    subtitle="Form này gọi API thật /api/host/listings và /api/host/listings/:listingId/images, không còn lưu local/mock."
+                    actions={<button type="button" onClick={() => navigate(APP_ROUTES.hostProperties)} className={secondaryButtonClass}>Quay lại danh sách</button>}
+                />
 
-                <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                    <div className="grid gap-4 md:grid-cols-4">
-                        {stepList.map((label, index) => {
-                            const done = step > index + 1;
-                            const active = step === index + 1;
-                            return (
-                                <div key={label}>
-                                    <div className="flex items-center gap-3">
-                                        <div className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold ${done || active ? "bg-cyan-600 text-white" : "bg-gray-100 text-gray-500"}`}>
-                                            {done ? <FiCheck size={16} /> : index + 1}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-semibold text-gray-900">{label}</p>
-                                            <p className="text-xs text-gray-500">Bước {index + 1}/4</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+                {success ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{success}</div> : null}
+
+                <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                    <div className="grid gap-5 md:grid-cols-2">
+                        <label><span className={labelClassName}>Tiêu đề</span><input required value={form.title} onChange={(e) => setField("title", e.target.value)} className={inputClassName} /></label>
+                        <label><span className={labelClassName}>Loại chỗ nghỉ</span><select value={form.propertyType} onChange={(e) => setField("propertyType", e.target.value as FormState["propertyType"])} className={inputClassName}><option value="villa">Villa</option><option value="apartment">Căn hộ</option><option value="homestay">Homestay</option><option value="hotel">Khách sạn</option></select></label>
                     </div>
-                </div>
 
-                <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                    {step === 1 ? (
-                        <div className="space-y-6">
-                            <div>
-                                <label className={labelClassName}>Loại chỗ nghỉ</label>
-                                <div className="grid gap-4 md:grid-cols-4">
-                                    {typeList.map((item) => (
-                                        <button key={item.value} type="button" onClick={() => setField("propertyType", item.value)} className={`rounded-2xl border p-5 text-left ${form.propertyType === item.value ? "border-cyan-500 bg-cyan-300/15" : "border-gray-200 hover:bg-gray-50"}`}>
-                                            <div className="text-3xl">{item.icon}</div>
-                                            <p className="mt-3 font-semibold text-gray-900">{item.value}</p>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="grid gap-5 md:grid-cols-2">
-                                <div><label className={labelClassName}>Tên chỗ nghỉ</label><input value={form.name} onChange={(e) => setField("name", e.target.value)} className={inputClassName} /></div>
-                                <div><label className={labelClassName}>Địa chỉ</label><input value={form.address} onChange={(e) => setField("address", e.target.value)} className={inputClassName} /></div>
-                            </div>
-                            <div className="max-w-md"><label className={labelClassName}>Thành phố</label><select value={form.city} onChange={(e) => setField("city", e.target.value)} className={inputClassName}>{["Đà Nẵng", "TP.HCM", "Đà Lạt", "Nha Trang", "Hà Nội"].map((city) => <option key={city}>{city}</option>)}</select></div>
-                            <div><label className={labelClassName}>Mô tả ngắn</label><textarea maxLength={500} value={form.description} onChange={(e) => setField("description", e.target.value)} className={textareaClassName} /><p className="mt-2 text-right text-xs text-gray-400">{form.description.length}/500</p></div>
-                            <div className="grid gap-4 md:grid-cols-3">{(["bedrooms", "bathrooms", "maxGuests"] as const).map((key) => <div key={key} className="rounded-2xl border border-gray-200 p-4"><p className="text-sm font-medium text-gray-500">{key === "bedrooms" ? "Phòng ngủ" : key === "bathrooms" ? "Phòng tắm" : "Số khách tối đa"}</p><div className="mt-4 flex items-center justify-between"><button type="button" onClick={() => updateCounter(key, -1)} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200"><FiMinus size={16} /></button><span className="text-2xl font-semibold text-gray-900">{form[key]}</span><button type="button" onClick={() => updateCounter(key, 1)} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200"><FiPlus size={16} /></button></div></div>)}</div>
-                        </div>
-                    ) : null}
+                    <label><span className={labelClassName}>Mô tả</span><textarea required value={form.description} onChange={(e) => setField("description", e.target.value)} className={textareaClassName} /></label>
 
-                    {step === 2 ? (
-                        <div className="space-y-6">
-                            <div>
-                                <label className={labelClassName}>Hình ảnh chỗ nghỉ</label>
-                                <button type="button" onClick={() => fileRef.current?.click()} onDragOver={(e) => e.preventDefault()} onDrop={onDrop} className="flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center hover:border-cyan-300 hover:bg-cyan-300/10">
-                                    <FiUploadCloud size={30} className="text-cyan-600" />
-                                    <p className="mt-4 font-medium text-gray-900">Kéo thả ảnh vào đây hoặc click để chọn</p>
-                                    <p className="mt-1 text-sm text-gray-500">Tối đa 10 ảnh.</p>
-                                </button>
-                                <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={onUpload} />
-                            </div>
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{uploads.length ? uploads.map((item) => <div key={item.id} className="relative overflow-hidden rounded-2xl border border-gray-200"><img src={item.url} alt="Ảnh tải lên" className="aspect-square w-full object-cover" /><button type="button" onClick={() => setUploads((current) => current.filter((upload) => upload.id !== item.id))} className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90"><FiX size={15} /></button></div>) : <div className="flex aspect-square items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-400">Chưa có ảnh</div>}</div>
-                            <div>
-                                <label className={labelClassName}>Tiện nghi</label>
-                                <div className="grid gap-4 md:grid-cols-3">{amenityList.map((item) => <label key={item} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 ${form.amenities.includes(item) ? "border-cyan-300/35 bg-cyan-300/12" : "border-gray-200 hover:bg-gray-50"}`}><input type="checkbox" checked={form.amenities.includes(item)} onChange={() => setField("amenities", form.amenities.includes(item) ? form.amenities.filter((value) => value !== item) : [...form.amenities, item])} className="h-4 w-4 rounded border-gray-300 text-cyan-600" /><span className="text-sm font-medium text-gray-700">{item}</span></label>)}</div>
-                            </div>
-                        </div>
-                    ) : null}
+                    <div className="grid gap-5 md:grid-cols-2">
+                        <label><span className={labelClassName}>Địa chỉ</span><input required value={form.addressLine} onChange={(e) => setField("addressLine", e.target.value)} className={inputClassName} /></label>
+                        <label><span className={labelClassName}>Phường/xã</span><input required value={form.ward} onChange={(e) => setField("ward", e.target.value)} className={inputClassName} /></label>
+                        <label><span className={labelClassName}>Quận/huyện</span><input required value={form.district} onChange={(e) => setField("district", e.target.value)} className={inputClassName} /></label>
+                        <label><span className={labelClassName}>Thành phố</span><input required value={form.city} onChange={(e) => setField("city", e.target.value)} className={inputClassName} /></label>
+                        <label><span className={labelClassName}>Latitude</span><input required type="number" step="any" value={form.latitude} onChange={(e) => setField("latitude", e.target.value)} className={inputClassName} /></label>
+                        <label><span className={labelClassName}>Longitude</span><input required type="number" step="any" value={form.longitude} onChange={(e) => setField("longitude", e.target.value)} className={inputClassName} /></label>
+                    </div>
 
-                    {step === 3 ? (
-                        <div className="space-y-6">
-                            <div className="grid gap-5 md:grid-cols-2">
-                                <div><label className={labelClassName}>Giá theo đêm</label><input value={formatNumber(form.pricePerNight)} onChange={(e) => setField("pricePerNight", parseMoney(e.target.value))} className={inputClassName} /></div>
-                                <div className="flex items-end"><ToggleSwitch checked={form.weekendEnabled} onChange={(value) => setField("weekendEnabled", value)} label="Giá cuối tuần khác" /></div>
-                            </div>
-                            {form.weekendEnabled ? <div className="max-w-md"><label className={labelClassName}>Giá cuối tuần</label><input value={formatNumber(form.weekendPrice)} onChange={(e) => setField("weekendPrice", parseMoney(e.target.value))} className={inputClassName} /></div> : null}
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between"><label className={labelClassName}>Giá theo mùa</label><button type="button" onClick={() => setField("seasons", [...form.seasons, { id: createId(), from: "", to: "", price: 0 }])} className={secondaryButtonClass}>+ Thêm khoảng</button></div>
-                                {form.seasons.map((season) => <div key={season.id} className="grid gap-3 rounded-xl border border-gray-200 p-4 md:grid-cols-[1fr_1fr_1fr_auto]"><input type="date" value={season.from} onChange={(e) => setField("seasons", form.seasons.map((item) => item.id === season.id ? { ...item, from: e.target.value } : item))} className={inputClassName} /><input type="date" value={season.to} onChange={(e) => setField("seasons", form.seasons.map((item) => item.id === season.id ? { ...item, to: e.target.value } : item))} className={inputClassName} /><input value={formatNumber(season.price)} onChange={(e) => setField("seasons", form.seasons.map((item) => item.id === season.id ? { ...item, price: parseMoney(e.target.value) } : item))} className={inputClassName} /><button type="button" onClick={() => setField("seasons", form.seasons.filter((item) => item.id !== season.id))} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600">Xóa</button></div>)}
-                            </div>
-                            <div><label className={labelClassName}>Chính sách hủy phòng</label><div className="grid gap-4 md:grid-cols-3">{policyList.map((item) => <button key={item.value} type="button" onClick={() => setField("policy", item.value)} className={`rounded-2xl border p-5 text-left ${form.policy === item.value ? "border-cyan-500 bg-cyan-300/15" : "border-gray-200 hover:bg-gray-50"}`}><p className="font-semibold text-gray-900">{item.value}</p><p className="mt-2 text-sm text-gray-500">{item.description}</p></button>)}</div></div>
-                            <div className="grid gap-5 md:grid-cols-2"><div><label className={labelClassName}>Giờ nhận phòng</label><select value={form.checkIn} onChange={(e) => setField("checkIn", e.target.value)} className={inputClassName}>{timeOptions.map((time) => <option key={time}>{time}</option>)}</select></div><div><label className={labelClassName}>Giờ trả phòng</label><select value={form.checkOut} onChange={(e) => setField("checkOut", e.target.value)} className={inputClassName}>{timeOptions.map((time) => <option key={time}>{time}</option>)}</select></div></div>
-                            <div className="grid gap-5 md:grid-cols-2"><div><label className={labelClassName}>Số đêm tối thiểu</label><input type="number" min={1} value={form.minNights} onChange={(e) => setField("minNights", Number(e.target.value))} className={inputClassName} /></div><div><label className={labelClassName}>Số đêm tối đa</label><input type="number" min={1} value={form.maxNights} onChange={(e) => setField("maxNights", Number(e.target.value))} className={inputClassName} /></div></div>
-                        </div>
-                    ) : null}
+                    <div className="grid gap-5 md:grid-cols-4">
+                        <label><span className={labelClassName}>Khách tối đa</span><input required type="number" min={1} value={form.maxGuests} onChange={(e) => setField("maxGuests", e.target.value)} className={inputClassName} /></label>
+                        <label><span className={labelClassName}>Phòng ngủ</span><input required type="number" min={0} value={form.bedrooms} onChange={(e) => setField("bedrooms", e.target.value)} className={inputClassName} /></label>
+                        <label><span className={labelClassName}>Giường</span><input required type="number" min={1} value={form.beds} onChange={(e) => setField("beds", e.target.value)} className={inputClassName} /></label>
+                        <label><span className={labelClassName}>WC</span><input required type="number" min={0.5} step="0.5" value={form.bathrooms} onChange={(e) => setField("bathrooms", e.target.value)} className={inputClassName} /></label>
+                    </div>
 
-                    {step === 4 ? (
-                        <div className="space-y-6">
-                            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-                                <div className="overflow-hidden rounded-2xl border border-gray-100"><img src={previewImage} alt="Xem trước" className="aspect-video w-full object-cover" /><div className="space-y-4 p-6"><p className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">{form.propertyType}</p><h2 className="text-2xl font-semibold text-gray-900">{form.name || "Tên chỗ nghỉ"}</h2><p className="text-sm text-gray-500">{form.address || "Địa chỉ đang cập nhật"}, {form.city}</p><p className="text-sm leading-6 text-gray-600">{form.description || "Mô tả sẽ hiển thị tại đây sau khi bạn nhập ở bước 1."}</p><p className="text-lg font-semibold text-cyan-700">{formatNumber(form.pricePerNight)}đ/đêm</p><div className="flex flex-wrap gap-2">{form.amenities.map((amenity) => <span key={amenity} className="rounded-full bg-cyan-300/15 px-3 py-1 text-xs font-medium text-cyan-700">{amenity}</span>)}</div><p className="text-sm text-gray-500">Chính sách {form.policy} · Nhận phòng {form.checkIn} · Trả phòng {form.checkOut}</p></div></div>
-                                <div className="rounded-2xl border border-gray-100 bg-white p-6"><h3 className="text-lg font-semibold text-gray-900">Checklist hoàn thành</h3><div className="mt-5 space-y-4">{[`Thông tin cơ bản`, `Hình ảnh (${uploads.length} ảnh)`, `Tiện nghi (${form.amenities.length})`, `Giá & chính sách`].map((item) => <div key={item} className="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3"><FiCheckCircle className="text-cyan-600" /><span className="text-sm font-medium text-gray-700">{item}</span></div>)}</div></div>
-                            </div>
-                            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={() => setToast("Đã lưu nháp chỗ nghỉ thành công.")} className={secondaryButtonClass}>Lưu nháp</button><button type="button" onClick={() => setToast("Đăng chỗ nghỉ thành công.")} className={primaryButtonClass}>Đăng ngay</button></div>
-                        </div>
-                    ) : null}
-                </div>
+                    <div className="grid gap-5 md:grid-cols-4">
+                        <label><span className={labelClassName}>Giá cơ bản</span><input required type="number" min={0} value={form.basePrice} onChange={(e) => setField("basePrice", e.target.value)} className={inputClassName} /></label>
+                        <label><span className={labelClassName}>Giá cuối tuần</span><input type="number" min={0} value={form.weekendPrice} onChange={(e) => setField("weekendPrice", e.target.value)} className={inputClassName} /></label>
+                        <label><span className={labelClassName}>Phí dọn dẹp</span><input type="number" min={0} value={form.cleaningFee} onChange={(e) => setField("cleaningFee", e.target.value)} className={inputClassName} /></label>
+                        <label><span className={labelClassName}>Phí nền tảng %</span><input type="number" min={0} max={100} value={form.serviceFeePct} onChange={(e) => setField("serviceFeePct", e.target.value)} className={inputClassName} /></label>
+                    </div>
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
-                    <button type="button" onClick={() => setStep((current) => Math.max(1, current - 1) as Step)} disabled={step === 1} className={`${secondaryButtonClass} ${step === 1 ? "cursor-not-allowed opacity-50" : ""}`}><span className="inline-flex items-center gap-2"><FiArrowLeft size={16} />Quay lại</span></button>
-                    {step < 4 ? <button type="button" onClick={() => setStep((current) => Math.min(4, current + 1) as Step)} className={primaryButtonClass}><span className="inline-flex items-center gap-2">Tiếp theo<FiArrowRight size={16} /></span></button> : null}
-                </div>
+                    <div className="grid gap-5 md:grid-cols-4">
+                        <label><span className={labelClassName}>Số đêm tối thiểu</span><input required type="number" min={1} value={form.minNights} onChange={(e) => setField("minNights", e.target.value)} className={inputClassName} /></label>
+                        <label><span className={labelClassName}>Số đêm tối đa</span><input type="number" min={1} value={form.maxNights} onChange={(e) => setField("maxNights", e.target.value)} className={inputClassName} /></label>
+                        <label><span className={labelClassName}>Nhận phòng từ</span><input required value={form.checkInFrom} onChange={(e) => setField("checkInFrom", e.target.value)} className={inputClassName} placeholder="14:00" /></label>
+                        <label><span className={labelClassName}>Trả phòng trước</span><input required value={form.checkOutBefore} onChange={(e) => setField("checkOutBefore", e.target.value)} className={inputClassName} placeholder="12:00" /></label>
+                    </div>
+
+                    <div className="grid gap-5 md:grid-cols-3">
+                        <label><span className={labelClassName}>Loại phòng</span><select value={form.roomType} onChange={(e) => setField("roomType", e.target.value as FormState["roomType"])} className={inputClassName}><option value="entire_place">Nguyên căn</option><option value="private_room">Phòng riêng</option><option value="shared_room">Phòng chung</option></select></label>
+                        <label><span className={labelClassName}>Chính sách hủy</span><select value={form.cancellationPolicy} onChange={(e) => setField("cancellationPolicy", e.target.value as FormState["cancellationPolicy"])} className={inputClassName}><option value="flexible">Linh hoạt</option><option value="moderate">Vừa phải</option><option value="strict">Nghiêm ngặt</option></select></label>
+                        <label><span className={labelClassName}>Trạng thái</span><select value={form.status} onChange={(e) => setField("status", e.target.value as FormState["status"])} className={inputClassName}><option value="draft">Lưu nháp</option><option value="pending_approval">Gửi admin duyệt</option></select></label>
+                    </div>
+
+                    <label><span className={labelClassName}>URL ảnh thật, mỗi dòng 1 URL</span><textarea value={form.imageUrls} onChange={(e) => setField("imageUrls", e.target.value)} className={textareaClassName} placeholder="https://..." /></label>
+
+                    <label className="flex items-center gap-3 rounded-2xl border border-gray-100 p-4">
+                        <input type="checkbox" checked={form.instantBookEnabled} onChange={(e) => setField("instantBookEnabled", e.target.checked)} />
+                        <span className="text-sm font-medium text-gray-700">Cho phép đặt nhanh</span>
+                    </label>
+
+                    <div className="flex justify-end gap-3">
+                        <button type="button" onClick={() => setForm(initialForm)} className={secondaryButtonClass}>Xóa form</button>
+                        <button type="submit" disabled={saving} className={primaryButtonClass}>{saving ? "Đang lưu..." : "Lưu chỗ nghỉ"}</button>
+                    </div>
+                </form>
             </div>
-
-            {toast ? <div className="fixed right-4 top-24 z-[95] rounded-2xl bg-gray-900 px-4 py-3 text-sm font-medium text-white shadow-lg">{toast}</div> : null}
         </div>
     );
 };
