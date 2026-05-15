@@ -1,5 +1,5 @@
 import { FaMapMarkerAlt, FaStar } from "react-icons/fa";
-import type { PopularDestination } from "../../../config/popularDestinations";
+import type { PopularDestination } from "../../../models/entities/Listing";
 
 type PopularDestinationCardProps = {
     destination: PopularDestination;
@@ -57,7 +57,7 @@ const PopularDestinationCard = ({ destination, onClick }: PopularDestinationCard
             <button
                 type="button"
                 onClick={onClick}
-                className="group min-w-0 w-full appearance-none border-0 bg-transparent p-0 text-left"
+                className="group min-w-0 w-full cursor-pointer appearance-none border-0 bg-transparent p-0 text-left"
             >
                 {content}
             </button>
