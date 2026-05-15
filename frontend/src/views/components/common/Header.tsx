@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LuMenu, LuX } from "react-icons/lu";
 import { Link, useLocation } from "react-router-dom";
 import logo from "../../../assets/img/logo_mau.svg";
 import { APP_ROUTES } from "../../../config/routes";
 import { hostApplications } from "../../../data/mockData";
-import { mockAccountUser } from "../../../data/mockAccountUser";
+import { createGuestMenuProfile, getAccountProfileForUser } from "../../../features/account/accountProfileStorage";
 import useScrollVisibility from "../../../hooks/useScrollVisibility";
 import { getCurrentUser } from "../../../store/authStore";
 import AccountMenu from "../navbar/AccountMenu";
@@ -12,8 +12,8 @@ import AccountMenu from "../navbar/AccountMenu";
 const navLinks = [
     { to: APP_ROUTES.home, label: "Trang chủ" },
     { to: APP_ROUTES.search, label: "Nơi lưu trú" },
-    { to: "/blog", label: "Blog" },
-    { to: "/news", label: "Liên hệ" },
+    { to: APP_ROUTES.blog, label: "Blog" },
+    { to: APP_ROUTES.contact, label: "Liên hệ" },
 ];
 
 const getLatestApplicationForUser = (userId?: string | null) => {
@@ -33,6 +33,7 @@ const Header = () => {
     const currentUserApplication = getLatestApplicationForUser(currentUser?.id);
     const [useDarkText, setUseDarkText] = useState(location.pathname !== APP_ROUTES.home);
     const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
+    const [profileRevision, setProfileRevision] = useState(0);
 
     useEffect(() => {
         const updateTextMode = () => {
@@ -48,6 +49,13 @@ const Header = () => {
         };
     }, [location.pathname]);
 
+    useEffect(() => {
+        const handleProfileUpdate = () => setProfileRevision((current) => current + 1);
+
+        window.addEventListener("account-profile-updated", handleProfileUpdate);
+        return () => window.removeEventListener("account-profile-updated", handleProfileUpdate);
+    }, []);
+
     const desktopLinkClass = useDarkText
         ? "transition-colors hover:text-cyan-800"
         : "transition-colors hover:text-cyan-200";
@@ -58,13 +66,10 @@ const Header = () => {
 
     const mobileOpen = mobileMenuPath === location.pathname;
     const isVisible = show || mobileOpen;
-    const accountMenuUser = currentUser
-        ? {
-              ...mockAccountUser,
-              id: currentUser.id,
-              displayName: currentUser.name,
-          }
-        : mockAccountUser;
+    const accountMenuUser = useMemo(
+        () => (currentUser ? getAccountProfileForUser(currentUser) : createGuestMenuProfile()),
+        [currentUser, profileRevision],
+    );
 
     const hostAction =
         currentUserApplication?.status === "approved"
