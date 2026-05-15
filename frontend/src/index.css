@@ -5,6 +5,7 @@
 }
 
 :root {
+    font-family: "Poppins", sans-serif;
     --color-primary: #06b6d4;
     --color-primary-dark: #0e7490;
     --color-accent: #ff6b6b;
@@ -63,32 +64,77 @@
     font-display: swap;
 }
 
-body {
-    margin: 0;
-    font-family: "Poppins", sans-serif;
-    background-color: var(--color-bg);
-    color: var(--color-text-primary);
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
-html,
-#root,
-*,
+html {
+    min-height: 100%;
+    overflow-x: hidden;
+    font-family: "Poppins", sans-serif;
+    line-height: 1.5;
+    text-size-adjust: 100%;
+}
+
+body {
+    min-width: 320px;
+    min-height: 100%;
+    margin: 0;
+    overflow-x: hidden;
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: "Poppins", sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+#root {
+    min-height: 100vh;
+}
+
 button,
 input,
 select,
 textarea {
     font-family: "Poppins", sans-serif;
+    line-height: inherit;
 }
 
-html,
-body,
-#root {
-    min-height: 100%;
+button,
+input,
+select,
+textarea {
+    color: inherit;
 }
 
-body {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+button {
+    cursor: pointer;
+}
+
+a,
+summary,
+[role="button"] {
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: not-allowed;
+}
+
+[aria-disabled="true"] {
+    cursor: not-allowed;
+}
+
+img,
+svg,
+video,
+canvas {
+    display: block;
+    max-width: 100%;
 }
 
 /* MinhThanhVilla - Global radius system */
