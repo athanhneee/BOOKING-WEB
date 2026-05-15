@@ -16,20 +16,24 @@ export const getStayPriceBounds = (stays: PopularDestination[]): PriceBounds => 
     };
 };
 
-export const createDefaultStayFilters = (bounds: PriceBounds): StayFilterState => ({
-    categories: [],
-    priceMin: null,
-    priceMax: null,
-    guests: 0,
-    bedrooms: 0,
-    beds: 0,
-    bathrooms: 0,
-    amenities: [],
-    highlights: [],
-    policies: [],
-    quickChoices: [],
-    sortBy: null,
-});
+export const createDefaultStayFilters = (bounds: PriceBounds): StayFilterState => {
+    void bounds;
+
+    return {
+        categories: [],
+        priceMin: null,
+        priceMax: null,
+        guests: 0,
+        bedrooms: 0,
+        beds: 0,
+        bathrooms: 0,
+        amenities: [],
+        highlights: [],
+        policies: [],
+        quickChoices: [],
+        sortBy: null,
+    };
+};
 
 export const normalizePriceRangeSelection = (
     bounds: PriceBounds,

@@ -7,7 +7,7 @@ import {
     staySortOptions,
 } from "./filterOptions";
 import { normalizePriceRangeSelection } from "./stayFilterUtils";
-import type { PriceBounds, StayFilterState } from "./types";
+import type { PriceBounds, StayFilterState, StaySortOption } from "./types";
 
 const FILTER_PARAM_KEYS = [
     "categories",
@@ -25,6 +25,9 @@ const FILTER_PARAM_KEYS = [
 ] as const;
 
 const staySortValues = new Set(staySortOptions.map((option) => option.value));
+
+const isStaySortOption = (value: string | null): value is StaySortOption =>
+    Boolean(value && staySortValues.has(value as StaySortOption));
 
 const parseList = <T extends string>(value: string | null, allowedValues: readonly T[]) => {
     if (!value) {
@@ -126,7 +129,7 @@ export const parseStayFiltersFromSearchParams = (
         highlights: parseList(params.get("highlights"), stayHighlightOptions),
         policies: parseList(params.get("policies"), stayPolicyOptions),
         quickChoices: parseList(params.get("quickChoices"), stayQuickChoiceOptions),
-        sortBy: staySortValues.has(nextSortBy as StayFilterState["sortBy"]) ? (nextSortBy as StayFilterState["sortBy"]) : defaults.sortBy,
+        sortBy: isStaySortOption(nextSortBy) ? nextSortBy : defaults.sortBy,
     };
 };
 
