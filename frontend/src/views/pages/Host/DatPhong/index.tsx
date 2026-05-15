@@ -1,196 +1,187 @@
-import { useMemo, useState } from "react";
-import { FiCalendar, FiClock, FiDownload, FiHome, FiUsers } from "react-icons/fi";
-import { bookings, properties } from "../../../../data/mockData.ts";
-import Badge from "../../../components/ui/Badge";
-import Modal from "../../../components/ui/Modal";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FiCheckCircle, FiClock, FiRefreshCw, FiXCircle } from "react-icons/fi";
+import type { ApiBooking } from "../../../../models/entities/Booking";
 import {
-    PageHeader,
-    StatCard,
-} from "../shared";
-import {
-    downloadTextFile,
-    formatCurrency,
-    formatDate,
-    getInitials,
-    hostCardClass,
-    inputClassName,
-    pageWrapperClass,
-    primaryButtonClass,
-    tableClassName,
-} from "../sharedStyles";
+    cancelHostBooking,
+    checkInHostBooking,
+    checkOutHostBooking,
+    confirmHostBooking,
+    getHostBookings,
+} from "../../../../services/hostService";
+import { PageHeader } from "../shared";
+import { formatCurrency, formatDate, pageWrapperClass, primaryButtonClass, secondaryButtonClass, tableClassName } from "../sharedStyles";
+
+type BookingFilter = "all" | "pending_host_confirmation" | "confirmed" | "checked_in" | "completed" | "cancelled_by_guest" | "cancelled_by_host";
+
+const filters: Array<{ label: string; value: BookingFilter }> = [
+    { label: "Tất cả", value: "all" },
+    { label: "Chờ xác nhận", value: "pending_host_confirmation" },
+    { label: "Đã xác nhận", value: "confirmed" },
+    { label: "Đang lưu trú", value: "checked_in" },
+    { label: "Hoàn tất", value: "completed" },
+    { label: "Đã hủy", value: "cancelled_by_guest" },
+];
+
+const statusLabels: Record<string, string> = {
+    pending_payment: "Chờ thanh toán",
+    pending_host_confirmation: "Chờ host xác nhận",
+    confirmed: "Đã xác nhận",
+    checked_in: "Đang lưu trú",
+    completed: "Hoàn tất",
+    cancelled_by_guest: "Khách hủy",
+    cancelled_by_host: "Host hủy",
+    expired: "Hết hạn",
+    rejected: "Từ chối",
+};
+
+const canConfirm = (booking: ApiBooking) => ["pending_host_confirmation", "pending_payment"].includes(booking.status);
+const canCheckIn = (booking: ApiBooking) => booking.status === "confirmed";
+const canCheckOut = (booking: ApiBooking) => booking.status === "checked_in";
+const canCancel = (booking: ApiBooking) => ["pending_host_confirmation", "pending_payment", "confirmed"].includes(booking.status);
 
 const DatPhong = () => {
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [propertyFilter, setPropertyFilter] = useState("all");
-    const [keyword, setKeyword] = useState("");
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [notes, setNotes] = useState<Record<string, string>>(
-        Object.fromEntries(bookings.map((booking) => [booking.id, booking.notes])),
-    );
+    const [filter, setFilter] = useState<BookingFilter>("all");
+    const [bookings, setBookings] = useState<ApiBooking[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [actionId, setActionId] = useState<number | null>(null);
 
-    const filteredBookings = useMemo(
-        () =>
-            bookings.filter((booking) => {
-                const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
-                const matchesProperty = propertyFilter === "all" || booking.propertyId === propertyFilter;
-                const normalizedKeyword = keyword.trim().toLowerCase();
-                const matchesKeyword =
-                    !normalizedKeyword ||
-                    booking.guestName.toLowerCase().includes(normalizedKeyword) ||
-                    booking.code.toLowerCase().includes(normalizedKeyword);
-                return matchesStatus && matchesProperty && matchesKeyword;
-            }),
-        [keyword, propertyFilter, statusFilter],
-    );
+    const fetchBookings = useCallback(async () => {
+        setLoading(true);
+        setError("");
 
-    const selectedBooking = filteredBookings.find((booking) => booking.id === selectedId) ?? bookings.find((booking) => booking.id === selectedId) ?? null;
-    const selectedProperty = properties.find((property) => property.id === selectedBooking?.propertyId);
+        try {
+            const result = await getHostBookings({ status: filter, page: 1, limit: 100 });
+            setBookings(result.items ?? []);
+        } catch (fetchError) {
+            setError(fetchError instanceof Error ? fetchError.message : "Không thể tải danh sách đặt phòng.");
+        } finally {
+            setLoading(false);
+        }
+    }, [filter]);
 
-    const exportCsv = () => {
-        const csv = [
-            "Khach,Ma,Cho nghi,Nhan phong,Tra phong,Tong tien,Trang thai,Thanh toan",
-            ...filteredBookings.map((booking) =>
-                [
-                    booking.guestName,
-                    booking.code,
-                    properties.find((property) => property.id === booking.propertyId)?.name ?? "",
-                    booking.checkIn,
-                    booking.checkOut,
-                    booking.totalAmount,
-                    booking.status,
-                    booking.paymentStatus,
-                ].join(","),
-            ),
-        ].join("\n");
+    useEffect(() => {
+        void fetchBookings();
+    }, [fetchBookings]);
 
-        downloadTextFile("dat-phong.csv", csv, "text/csv;charset=utf-8");
+    const summary = useMemo(() => {
+        const totalRevenue = bookings
+            .filter((booking) => ["confirmed", "checked_in", "completed"].includes(booking.status))
+            .reduce((sum, booking) => sum + Number(booking.totalAmount || booking.totalPrice || 0), 0);
+
+        return [
+            { label: "Tổng đơn", value: String(bookings.length), icon: <FiClock /> },
+            { label: "Chờ xác nhận", value: String(bookings.filter((booking) => booking.status === "pending_host_confirmation").length), icon: <FiClock /> },
+            { label: "Đã xác nhận", value: String(bookings.filter((booking) => booking.status === "confirmed").length), icon: <FiCheckCircle /> },
+            { label: "Doanh thu dự kiến", value: formatCurrency(totalRevenue), icon: <FiCheckCircle /> },
+        ];
+    }, [bookings]);
+
+    const runAction = async (bookingId: number, action: () => Promise<unknown>) => {
+        setActionId(bookingId);
+        setError("");
+
+        try {
+            await action();
+            await fetchBookings();
+        } catch (actionError) {
+            setError(actionError instanceof Error ? actionError.message : "Không thể cập nhật booking.");
+        } finally {
+            setActionId(null);
+        }
     };
 
     return (
         <div className={pageWrapperClass}>
             <div className="mx-auto max-w-7xl space-y-6">
                 <PageHeader
-                    title="Quản lý đặt phòng"
-                    subtitle="Theo dõi đơn mới, khách đang lưu trú và những booking đã hoàn thành."
-                    actions={
-                        <button type="button" onClick={exportCsv} className={primaryButtonClass}>
-                            <span className="inline-flex items-center gap-2">
-                                <FiDownload size={16} />
-                                Xuất CSV
-                            </span>
-                        </button>
-                    }
+                    title="Đặt phòng"
+                    subtitle="Danh sách booking lấy trực tiếp từ /api/host/bookings, không còn mock data."
+                    actions={<button type="button" onClick={fetchBookings} className={secondaryButtonClass}><FiRefreshCw className="mr-2 inline" />Tải lại</button>}
                 />
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <StatCard label="Tổng đặt phòng" value={String(bookings.length)} icon={<FiCalendar size={18} />} />
-                    <StatCard label="Chờ xác nhận" value={String(bookings.filter((item) => item.status === "sap-nhan").length)} icon={<FiClock size={18} />} accentClassName="bg-blue-50 text-blue-600" />
-                    <StatCard label="Đang lưu trú" value={String(bookings.filter((item) => item.status === "dang-luu-tru").length)} icon={<FiUsers size={18} />} accentClassName="bg-emerald-50 text-emerald-600" />
-                    <StatCard label="Đã hoàn thành" value={String(bookings.filter((item) => item.status === "da-tra").length)} icon={<FiHome size={18} />} accentClassName="bg-gray-100 text-gray-600" />
+                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+
+                <div className="grid gap-4 md:grid-cols-4">
+                    {summary.map((item) => (
+                        <article key={item.label} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                            <div className="flex items-center justify-between gap-4">
+                                <div>
+                                    <p className="text-sm text-gray-500">{item.label}</p>
+                                    <p className="mt-2 text-2xl font-bold text-gray-900">{item.value}</p>
+                                </div>
+                                <span className="rounded-full bg-cyan-50 p-3 text-cyan-700">{item.icon}</span>
+                            </div>
+                        </article>
+                    ))}
                 </div>
 
-                <div className={`${hostCardClass} space-y-4`}>
-                    <div className="grid gap-4 lg:grid-cols-[180px_220px_minmax(0,1fr)]">
-                        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className={inputClassName}>
-                            <option value="all">Tất cả trạng thái</option>
-                            <option value="sap-nhan">Sắp nhận phòng</option>
-                            <option value="dang-luu-tru">Đang lưu trú</option>
-                            <option value="sap-tra">Sắp trả phòng</option>
-                            <option value="da-tra">Đã hoàn thành</option>
-                        </select>
-                        <select value={propertyFilter} onChange={(event) => setPropertyFilter(event.target.value)} className={inputClassName}>
-                            <option value="all">Tất cả chỗ nghỉ</option>
-                            {properties.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}
-                        </select>
-                        <input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Tìm theo tên khách hoặc mã đặt phòng" className={inputClassName} />
-                    </div>
+                <div className="flex flex-wrap gap-2 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
+                    {filters.map((item) => (
+                        <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={`rounded-xl px-4 py-2 text-sm font-medium ${filter === item.value ? "bg-cyan-50 text-cyan-700" : "text-gray-500 hover:bg-gray-50"}`}>
+                            {item.label}
+                        </button>
+                    ))}
+                </div>
 
-                    <div className={tableClassName}>
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-gray-50 text-gray-500">
-                                <tr>
-                                    {["Khách", "Mã", "Chỗ nghỉ", "Nhận phòng", "Trả phòng", "Tổng tiền", "Trạng thái", "Thanh toán", "..."].map((column) => (
-                                        <th key={column} className="px-4 py-3 font-medium">{column}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100 bg-white">
-                                {filteredBookings.map((booking) => (
-                                    <tr key={booking.id} className="cursor-pointer hover:bg-gray-50" onClick={() => setSelectedId(booking.id)}>
-                                        <td className="px-4 py-4 font-medium text-gray-900">{booking.guestName}</td>
-                                        <td className="px-4 py-4 text-gray-500">{booking.code}</td>
-                                        <td className="px-4 py-4 text-gray-500">{properties.find((property) => property.id === booking.propertyId)?.name}</td>
-                                        <td className="px-4 py-4 text-gray-500">{formatDate(booking.checkIn)}</td>
-                                        <td className="px-4 py-4 text-gray-500">{formatDate(booking.checkOut)}</td>
-                                        <td className="px-4 py-4 font-medium text-gray-900">{formatCurrency(booking.totalAmount)}</td>
-                                        <td className="px-4 py-4"><Badge status={booking.status} /></td>
-                                        <td className="px-4 py-4"><Badge status={booking.paymentStatus} /></td>
-                                        <td className="px-4 py-4 text-gray-400">Xem</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                    <table className={`${tableClassName} text-left text-sm`}>
+                        <thead className="bg-gray-50 text-gray-500">
+                            <tr>
+                                <th className="px-4 py-3 font-medium">Booking</th>
+                                <th className="px-4 py-3 font-medium">Chỗ nghỉ</th>
+                                <th className="px-4 py-3 font-medium">Ngày</th>
+                                <th className="px-4 py-3 font-medium">Khách</th>
+                                <th className="px-4 py-3 font-medium">Tổng tiền</th>
+                                <th className="px-4 py-3 font-medium">Trạng thái</th>
+                                <th className="px-4 py-3 font-medium">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 bg-white">
+                            {loading ? (
+                                <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-500">Đang tải booking...</td></tr>
+                            ) : bookings.length === 0 ? (
+                                <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-500">Chưa có booking phù hợp.</td></tr>
+                            ) : (
+                                bookings.map((booking) => {
+                                    const isBusy = actionId === booking.bookingId;
+
+                                    return (
+                                        <tr key={booking.bookingId}>
+                                            <td className="px-4 py-4 font-semibold text-gray-900">#{booking.bookingId}</td>
+                                            <td className="px-4 py-4 text-gray-600">{booking.listing?.title ?? `Listing #${booking.listingId}`}</td>
+                                            <td className="px-4 py-4 text-gray-600">{formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)}</td>
+                                            <td className="px-4 py-4 text-gray-600">{booking.guestCount ?? booking.guestsCount} khách</td>
+                                            <td className="px-4 py-4 text-gray-600">{formatCurrency(Number(booking.totalAmount || booking.totalPrice || 0))}</td>
+                                            <td className="px-4 py-4"><span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">{statusLabels[booking.status] ?? booking.status}</span></td>
+                                            <td className="px-4 py-4">
+                                                <div className="flex flex-wrap gap-2">
+                                                    {canConfirm(booking) ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => confirmHostBooking(booking.bookingId))} className={primaryButtonClass}>Xác nhận</button> : null}
+                                                    {canCheckIn(booking) ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => checkInHostBooking(booking.bookingId))} className={secondaryButtonClass}>Check-in</button> : null}
+                                                    {canCheckOut(booking) ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => checkOutHostBooking(booking.bookingId))} className={secondaryButtonClass}>Check-out</button> : null}
+                                                    {canCancel(booking) ? (
+                                                        <button
+                                                            disabled={isBusy}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const reason = window.prompt("Lý do hủy/từ chối booking?") || "Host từ chối hoặc hủy booking";
+                                                                void runAction(booking.bookingId, () => cancelHostBooking(booking.bookingId, reason));
+                                                            }}
+                                                            className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm text-rose-600 transition-colors hover:bg-rose-50"
+                                                        >
+                                                            <FiXCircle className="mr-1 inline" /> Hủy/Từ chối
+                                                        </button>
+                                                    ) : null}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-
-            <Modal
-                isOpen={Boolean(selectedBooking)}
-                onClose={() => setSelectedId(null)}
-                title={selectedBooking ? `Chi tiết booking ${selectedBooking.code}` : ""}
-                description="Kiểm tra thông tin khách, thời gian lưu trú và cập nhật ghi chú nội bộ."
-                showCloseButton
-                bodyClassName="p-6"
-            >
-                {selectedBooking ? (
-                    <div className="space-y-6">
-                        <div className="flex flex-col gap-4 rounded-2xl bg-gray-50 p-5 sm:flex-row sm:items-center">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-cyan-600 text-lg font-semibold text-white">
-                                {getInitials(selectedBooking.guestName)}
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-gray-900">{selectedBooking.guestName}</h3>
-                                <p className="text-sm text-gray-500">{selectedProperty?.name}</p>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                <Badge status={selectedBooking.status} />
-                                <Badge status={selectedBooking.paymentStatus} />
-                            </div>
-                        </div>
-
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <div className="rounded-2xl border border-gray-100 p-5">
-                                <p className="text-sm text-gray-500">Nhận phòng</p>
-                                <p className="mt-2 font-semibold text-gray-900">{formatDate(selectedBooking.checkIn)}</p>
-                            </div>
-                            <div className="rounded-2xl border border-gray-100 p-5">
-                                <p className="text-sm text-gray-500">Trả phòng</p>
-                                <p className="mt-2 font-semibold text-gray-900">{formatDate(selectedBooking.checkOut)}</p>
-                            </div>
-                            <div className="rounded-2xl border border-gray-100 p-5">
-                                <p className="text-sm text-gray-500">Số đêm</p>
-                                <p className="mt-2 font-semibold text-gray-900">{selectedBooking.nights} đêm</p>
-                            </div>
-                            <div className="rounded-2xl border border-gray-100 p-5">
-                                <p className="text-sm text-gray-500">Tổng tiền</p>
-                                <p className="mt-2 font-semibold text-gray-900">{formatCurrency(selectedBooking.totalAmount)}</p>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-gray-700">Ghi chú nội bộ</label>
-                            <textarea
-                                value={notes[selectedBooking.id] ?? ""}
-                                onChange={(event) => setNotes((current) => ({ ...current, [selectedBooking.id]: event.target.value }))}
-                                className="min-h-[140px] w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
-                            />
-                            <div className="mt-4 flex justify-end">
-                                <button type="button" className={primaryButtonClass}>Lưu ghi chú</button>
-                            </div>
-                        </div>
-                    </div>
-                ) : null}
-            </Modal>
         </div>
     );
 };
