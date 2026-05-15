@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LuArrowLeft, LuLock, LuUserRound } from "react-icons/lu";
 import { APP_ROUTES } from "../../../config/routes";
-import { requestPasswordResetOtp, verifyPasswordResetOtp } from "../../../services/authService";
+import { requestPasswordResetOtp, resetPasswordWithOtp } from "../../../services/authService";
 import AuthCard from "../../components/auth/AuthCard";
 import AuthInput from "../../components/auth/AuthInput";
 
@@ -19,8 +19,11 @@ const ForgotPasswordPage = () => {
     const [identifier, setIdentifier] = useState("athanhnee@gmail.com");
     const [step, setStep] = useState<"request" | "otp" | "success">("request");
     const [otpDigits, setOtpDigits] = useState<string[]>(createEmptyOtpDigits);
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [resendCountdown, setResendCountdown] = useState(OTP_RESEND_SECONDS);
     const [error, setError] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
 
     const isOtpStep = step === "otp";
@@ -98,40 +101,67 @@ const ForgotPasswordPage = () => {
         focusOtpField(Math.min(pastedValue.length, OTP_LENGTH) - 1);
     };
 
-    const handleResendOtp = () => {
+    const handleResendOtp = async () => {
         if (resendCountdown > 0) {
             return;
         }
 
-        setOtpDigits(createEmptyOtpDigits());
-        setResendCountdown(OTP_RESEND_SECONDS);
-        setError("");
-        focusOtpField(0);
-    };
-
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
         setError("");
 
         try {
-            requestPasswordResetOtp({ identifier });
-            setStep("otp");
+            setIsSubmitting(true);
+            await requestPasswordResetOtp({ identifier });
             setOtpDigits(createEmptyOtpDigits());
             setResendCountdown(OTP_RESEND_SECONDS);
+            focusOtpField(0);
         } catch (submissionError) {
-            setError(submissionError instanceof Error ? submissionError.message : "Không thể gửi mã xác thực.");
+            setError(submissionError instanceof Error ? submissionError.message : "Không thể gửi lại mã OTP.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    const handleOtpSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setError("");
 
         try {
-            verifyPasswordResetOtp({ identifier, otp: otpDigits.join("") });
+            setIsSubmitting(true);
+            await requestPasswordResetOtp({ identifier });
+            setStep("otp");
+            setOtpDigits(createEmptyOtpDigits());
+            setNewPassword("");
+            setConfirmPassword("");
+            setResendCountdown(OTP_RESEND_SECONDS);
+        } catch (submissionError) {
+            setError(submissionError instanceof Error ? submissionError.message : "Không thể gửi mã xác thực.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleOtpSubmit = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setError("");
+
+        if (newPassword.length < 8) {
+            setError("Mật khẩu mới cần ít nhất 8 ký tự.");
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            setError("Mật khẩu xác nhận không khớp.");
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+            await resetPasswordWithOtp({ identifier, otp: otpDigits.join(""), newPassword });
             setStep("success");
         } catch (submissionError) {
             setError(submissionError instanceof Error ? submissionError.message : "Không thể xác thực mã OTP.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -188,13 +218,37 @@ const ForgotPasswordPage = () => {
                             ))}
                         </div>
 
+                        <AuthInput
+                            label="Mật khẩu mới"
+                            type="password"
+                            name="newPassword"
+                            autoComplete="new-password"
+                            value={newPassword}
+                            onChange={(event) => setNewPassword(event.target.value)}
+                            icon={<LuLock />}
+                            placeholder="Tối thiểu 8 ký tự"
+                            required
+                        />
+
+                        <AuthInput
+                            label="Xác nhận mật khẩu"
+                            type="password"
+                            name="confirmPassword"
+                            autoComplete="new-password"
+                            value={confirmPassword}
+                            onChange={(event) => setConfirmPassword(event.target.value)}
+                            icon={<LuLock />}
+                            placeholder="Nhập lại mật khẩu mới"
+                            required
+                        />
+
                         {error ? <p className="text-sm font-medium text-rose-500">{error}</p> : null}
 
                         <button
                             type="submit"
-                            disabled={!isOtpComplete}
+                            disabled={!isOtpComplete || isSubmitting}
                             className={`${primaryButtonClass} ${
-                                isOtpComplete ? "" : "cursor-not-allowed opacity-60 hover:translate-y-0 hover:bg-[#5d53f7]"
+                                isOtpComplete && !isSubmitting ? "" : "cursor-not-allowed opacity-60 hover:translate-y-0 hover:bg-[#5d53f7]"
                             }`}
                         >
                             Xác nhận OTP

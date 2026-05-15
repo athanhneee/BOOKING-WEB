@@ -50,10 +50,11 @@ const getPasswordStrength = (password: string) => {
 
 const RegisterPage = () => {
     const navigate = useNavigate();
-    const [fullName, setFullName] = useState("Đặng Minh Thành");
-    const [phoneNumber, setPhoneNumber] = useState("0929399893");
-    const [email, setEmail] = useState("athanhnee@gmail.com");
-    const [password, setPassword] = useState("123456");
+
+    const [fullName, setFullName] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,7 +68,13 @@ const RegisterPage = () => {
         setError("");
 
         try {
-            const user = registerAccount({ fullName, phoneNumber, email, password });
+            const user = await registerAccount({
+                fullName,
+                phoneNumber,
+                email,
+                password,
+            });
+
             navigate(resolvePostAuthRoute(user), { replace: true });
         } catch (submissionError) {
             setError(submissionError instanceof Error ? submissionError.message : "Không thể tạo tài khoản lúc này.");
@@ -77,7 +84,10 @@ const RegisterPage = () => {
     };
 
     return (
-        <AuthCard title="Đăng ký tài khoản" description="Tạo tài khoản để bắt đầu đặt chỗ, theo dõi chuyến đi và lưu lại các nơi ở bạn yêu thích.">
+        <AuthCard
+            title="Đăng ký tài khoản"
+            description="Tạo tài khoản để bắt đầu đặt chỗ, theo dõi chuyến đi và lưu lại các nơi ở bạn yêu thích."
+        >
             <form className="space-y-5" onSubmit={handleSubmit}>
                 <AuthInput
                     label="Họ và tên"
@@ -144,12 +154,15 @@ const RegisterPage = () => {
                             {Array.from({ length: 4 }, (_, index) => (
                                 <span
                                     key={index}
-                                    className={`h-1.5 rounded-full ${index < passwordStrength.score ? passwordStrength.color : "bg-slate-200"}`}
+                                    className={`h-1.5 rounded-full ${index < passwordStrength.score ? passwordStrength.color : "bg-slate-200"
+                                        }`}
                                 />
                             ))}
                         </div>
+
                         <p className="text-sm text-slate-500">
-                            Độ mạnh mật khẩu: <span className="font-semibold text-slate-700">{passwordStrength.label}</span>
+                            Độ mạnh mật khẩu:{" "}
+                            <span className="font-semibold text-slate-700">{passwordStrength.label}</span>
                         </p>
                     </div>
                 </div>
@@ -159,7 +172,8 @@ const RegisterPage = () => {
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className={`${primaryButtonClass} ${isSubmitting ? "cursor-not-allowed opacity-70 hover:translate-y-0" : ""}`}
+                    className={`${primaryButtonClass} ${isSubmitting ? "cursor-not-allowed opacity-70 hover:translate-y-0" : ""
+                        }`}
                 >
                     {isSubmitting ? "Đang tạo tài khoản" : "Đăng ký"}
                     <LuArrowRight className="text-xl" />

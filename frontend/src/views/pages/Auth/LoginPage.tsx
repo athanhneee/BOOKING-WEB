@@ -4,9 +4,29 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { LuArrowRight, LuEye, LuEyeOff, LuLock, LuUserRound } from "react-icons/lu";
 import { APP_ROUTES } from "../../../config/routes";
-import { loginWithCredentials, resolvePostAuthRoute } from "../../../services/authService";
+import {
+    loginWithCredentials,
+    loginWithGoogleIdToken,
+    resolvePostAuthRoute,
+} from "../../../services/authService";
 import AuthCard from "../../components/auth/AuthCard";
 import AuthInput from "../../components/auth/AuthInput";
+
+declare global {
+    interface Window {
+        google?: {
+            accounts: {
+                id: {
+                    initialize: (options: {
+                        client_id: string;
+                        callback: (response: { credential?: string }) => void;
+                    }) => void;
+                    prompt: () => void;
+                };
+            };
+        };
+    }
+}
 
 const primaryButtonClass =
     "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-full bg-[#5d53f7] px-6 py-4 text-lg font-semibold text-white shadow-[0_18px_40px_-18px_rgba(93,83,247,0.8)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-[#4b40ef] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5d53f7]";
@@ -17,11 +37,17 @@ const secondaryButtonClass =
 const LoginPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const [identifier, setIdentifier] = useState("athanhnee@gmail.com");
-    const [password, setPassword] = useState("123456");
+
+    const [identifier, setIdentifier] = useState("");
+    const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const redirectAfterLogin = (user: Parameters<typeof resolvePostAuthRoute>[0]) => {
+        const redirectTo = new URLSearchParams(location.search).get("redirectTo");
+        navigate(resolvePostAuthRoute(user, redirectTo), { replace: true });
+    };
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -30,14 +56,52 @@ const LoginPage = () => {
         setError("");
 
         try {
-            const user = loginWithCredentials({ identifier, password });
-            const redirectTo = new URLSearchParams(location.search).get("redirectTo");
-            navigate(resolvePostAuthRoute(user, redirectTo), { replace: true });
+            const user = await loginWithCredentials({ identifier, password });
+            redirectAfterLogin(user);
         } catch (submissionError) {
             setError(submissionError instanceof Error ? submissionError.message : "Không thể đăng nhập lúc này.");
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleGoogleLogin = () => {
+        const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+
+        if (!googleClientId) {
+            setError("Thiếu VITE_GOOGLE_CLIENT_ID trong frontend .env.local.");
+            return;
+        }
+
+        if (!window.google?.accounts?.id) {
+            setError("Chưa nạp Google Identity script trong index.html.");
+            return;
+        }
+
+        setError("");
+
+        window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: async (response) => {
+                if (!response.credential) {
+                    setError("Google không trả về idToken hợp lệ.");
+                    return;
+                }
+
+                setIsSubmitting(true);
+
+                try {
+                    const user = await loginWithGoogleIdToken(response.credential);
+                    redirectAfterLogin(user);
+                } catch (googleError) {
+                    setError(googleError instanceof Error ? googleError.message : "Không thể đăng nhập Google.");
+                } finally {
+                    setIsSubmitting(false);
+                }
+            },
+        });
+
+        window.google.accounts.id.prompt();
     };
 
     return (
@@ -116,7 +180,7 @@ const LoginPage = () => {
                 <span className="h-px flex-1 bg-slate-200" />
             </div>
 
-            <button type="button" className={secondaryButtonClass}>
+            <button type="button" disabled={isSubmitting} onClick={handleGoogleLogin} className={secondaryButtonClass}>
                 <FcGoogle className="text-[28px]" />
                 Đăng nhập với Google
             </button>
