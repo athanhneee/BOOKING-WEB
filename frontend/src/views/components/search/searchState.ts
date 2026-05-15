@@ -1,4 +1,4 @@
-import type { PopularDestination } from "../../../config/popularDestinations";
+import type { PopularDestination } from "../../../models/entities/Listing";
 import type { GuestSelection } from "./booking/Guest";
 
 export type BookingSearchState = {
