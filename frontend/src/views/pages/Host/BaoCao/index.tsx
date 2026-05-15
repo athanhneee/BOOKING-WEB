@@ -1,144 +1,153 @@
-import { useMemo, useState } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { bookings, monthlyRevenue, properties } from "../../../../data/mockData.ts";
+import { useEffect, useMemo, useState } from "react";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { getHostRevenueReport, type HostRevenueReport } from "../../../../services/hostService";
 import { PageHeader } from "../shared";
 import { formatCompactCurrency, formatCurrency, pageWrapperClass, secondaryButtonClass, tableClassName } from "../sharedStyles";
 
-const rangeTabs = ["Tháng này", "Tháng trước", "3 tháng", "1 năm", "Tùy chỉnh"];
-const pieColors = ["#00B4B4", "#FF6B6B", "#FDBA74", "#818CF8"];
+type RangeKey = "30d" | "90d" | "year";
+
+const getRange = (range: RangeKey) => {
+    const to = new Date();
+    const from = new Date();
+
+    if (range === "90d") from.setDate(to.getDate() - 89);
+    else if (range === "year") from.setFullYear(to.getFullYear() - 1);
+    else from.setDate(to.getDate() - 29);
+
+    return {
+        from: from.toISOString().slice(0, 10),
+        to: to.toISOString().slice(0, 10),
+        group: range === "year" ? "month" : "day",
+    } as const;
+};
+
+const emptyReport: HostRevenueReport = {
+    range: { from: "", to: "" },
+    group: "day",
+    totals: { grossRevenue: 0, platformRevenue: 0, hostRevenue: 0, bookingCount: 0, paymentCount: 0 },
+    series: [],
+};
 
 const BaoCao = () => {
-    const [range, setRange] = useState("Tháng này");
+    const [range, setRange] = useState<RangeKey>("30d");
+    const [report, setReport] = useState<HostRevenueReport>(emptyReport);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    const occupancyData = properties.map((property) => ({ name: property.name, occupancy: property.occupancy, revenue: property.revenueMonth }));
-    const typeRevenue = Object.values(
-        properties.reduce<Record<string, { name: string; value: number }>>((acc, property) => {
-            acc[property.type] = { name: property.type, value: (acc[property.type]?.value ?? 0) + property.revenueMonth };
-            return acc;
-        }, {}),
-    );
-    const weeklyBookings = ["Tuần 1", "Tuần 2", "Tuần 3", "Tuần 4"].map((label, index) => ({ name: label, bookings: 4 + index * 2 }));
+    useEffect(() => {
+        const loadReport = async () => {
+            setLoading(true);
+            setError("");
 
-    const summaryRows = useMemo(
+            try {
+                const query = getRange(range);
+                const result = await getHostRevenueReport(query);
+                setReport(result);
+            } catch (fetchError) {
+                setError(fetchError instanceof Error ? fetchError.message : "Không thể tải báo cáo doanh thu.");
+                setReport(emptyReport);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void loadReport();
+    }, [range]);
+
+    const chartData = useMemo(
         () =>
-            properties.map((property) => ({
-                ...property,
-                avgNights: (
-                    bookings.filter((booking) => booking.propertyId === property.id).reduce((sum, booking) => sum + booking.nights, 0) /
-                        Math.max(1, bookings.filter((booking) => booking.propertyId === property.id).length)
-                ).toFixed(1),
+            report.series.map((item) => ({
+                period: item.period,
+                hostRevenue: item.hostRevenue,
+                grossRevenue: item.grossRevenue,
+                bookings: item.bookingCount,
             })),
-        [],
+        [report],
     );
 
     return (
         <div className={pageWrapperClass}>
             <div className="mx-auto max-w-7xl space-y-6">
                 <PageHeader
-                    title="Báo cáo"
-                    subtitle="Xem nhanh xu hướng doanh thu, công suất và hiệu quả theo từng chỗ nghỉ."
+                    title="Báo cáo doanh thu"
+                    subtitle="Dữ liệu lấy trực tiếp từ /api/host/reports/revenue, không còn dùng monthlyRevenue/properties mock."
                     actions={
-                        <>
-                            <button type="button" className={secondaryButtonClass}>Xuất PDF</button>
-                            <button type="button" className={secondaryButtonClass}>Xuất Excel</button>
-                        </>
+                        <div className="flex flex-wrap gap-2">
+                            {([
+                                ["30d", "30 ngày"],
+                                ["90d", "90 ngày"],
+                                ["year", "1 năm"],
+                            ] as Array<[RangeKey, string]>).map(([value, label]) => (
+                                <button key={value} type="button" onClick={() => setRange(value)} className={`${secondaryButtonClass} ${range === value ? "border-cyan-500 bg-cyan-50 text-cyan-700" : ""}`}>
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
                     }
                 />
 
-                <div className="flex flex-wrap gap-2 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
-                    {rangeTabs.map((item) => (
-                        <button key={item} type="button" onClick={() => setRange(item)} className={`rounded-xl px-4 py-2.5 text-sm font-medium ${range === item ? "bg-cyan-300/15 text-cyan-700" : "text-gray-500 hover:bg-gray-50"}`}>
-                            {item}
-                        </button>
-                    ))}
+                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+
+                <div className="grid gap-4 md:grid-cols-4">
+                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Doanh thu gộp</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(report.totals.grossRevenue)}</p></article>
+                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Doanh thu host</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(report.totals.hostRevenue)}</p></article>
+                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Phí nền tảng</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(report.totals.platformRevenue)}</p></article>
+                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Số booking</p><p className="mt-2 text-2xl font-bold text-gray-900">{report.totals.bookingCount}</p></article>
                 </div>
 
-                <div className="grid gap-6 lg:grid-cols-2">
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <h2 className="text-lg font-semibold text-gray-900">Doanh thu theo tháng</h2>
-                        <div className="mt-6 h-72">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={monthlyRevenue}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                    <XAxis dataKey="month" />
-                                    <YAxis tickFormatter={(value) => formatCompactCurrency(value)} />
-                                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                                    <Line type="monotone" dataKey="revenue" stroke="#0891b2" strokeWidth={3} dot={{ r: 4 }} />
-                                </LineChart>
-                            </ResponsiveContainer>
+                <div className="grid gap-6 xl:grid-cols-2">
+                    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                        <h2 className="text-lg font-semibold text-gray-900">Doanh thu host theo kỳ</h2>
+                        <div className="mt-6 h-80">
+                            {loading ? (
+                                <div className="flex h-full items-center justify-center text-sm text-gray-500">Đang tải biểu đồ...</div>
+                            ) : (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={chartData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                        <XAxis dataKey="period" />
+                                        <YAxis tickFormatter={(value) => formatCompactCurrency(Number(value))} />
+                                        <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0))} />
+                                        <Line type="monotone" dataKey="hostRevenue" name="Doanh thu host" stroke="#0891b2" strokeWidth={3} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            )}
                         </div>
-                    </div>
+                    </section>
 
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <h2 className="text-lg font-semibold text-gray-900">Tỷ lệ lấp đầy theo chỗ nghỉ</h2>
-                        <div className="mt-6 h-72">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={occupancyData}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                    <XAxis dataKey="name" hide />
-                                    <YAxis />
-                                    <Tooltip formatter={(value: number) => `${value}%`} />
-                                    <Legend />
-                                    <Bar dataKey="occupancy" fill="#06b6d4" name="Lấp đầy (%)" radius={[6, 6, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                        <h2 className="text-lg font-semibold text-gray-900">Số booking theo kỳ</h2>
+                        <div className="mt-6 h-80">
+                            {loading ? (
+                                <div className="flex h-full items-center justify-center text-sm text-gray-500">Đang tải biểu đồ...</div>
+                            ) : (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={chartData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                                        <XAxis dataKey="period" />
+                                        <YAxis />
+                                        <Tooltip />
+                                        <Bar dataKey="bookings" name="Booking" fill="#06b6d4" radius={[6, 6, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
                         </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <h2 className="text-lg font-semibold text-gray-900">Phân bổ doanh thu theo loại</h2>
-                        <div className="mt-6 h-72">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie data={typeRevenue} dataKey="value" nameKey="name" innerRadius={60} outerRadius={90} paddingAngle={3}>
-                                        {typeRevenue.map((entry, index) => <Cell key={entry.name} fill={pieColors[index % pieColors.length]} />)}
-                                    </Pie>
-                                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <h2 className="text-lg font-semibold text-gray-900">Lượt đặt phòng theo tuần</h2>
-                        <div className="mt-6 h-72">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={weeklyBookings}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                    <XAxis dataKey="name" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Line type="monotone" dataKey="bookings" stroke="#0e7490" strokeWidth={3} dot={{ r: 4 }} />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
+                    </section>
                 </div>
 
-                <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                    <h2 className="text-lg font-semibold text-gray-900">Tổng hợp theo chỗ nghỉ</h2>
+                <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                    <h2 className="text-lg font-semibold text-gray-900">Chi tiết theo kỳ</h2>
                     <div className="mt-4 overflow-hidden rounded-2xl border border-gray-100">
                         <table className={`${tableClassName} text-left text-sm`}>
-                            <thead className="bg-gray-50 text-gray-500">
-                                <tr>
-                                    {["Chỗ nghỉ", "Lấp đầy", "Doanh thu", "TB đêm/đặt", "Đánh giá TB"].map((column) => <th key={column} className="px-4 py-3 font-medium">{column}</th>)}
-                                </tr>
-                            </thead>
+                            <thead className="bg-gray-50 text-gray-500"><tr><th className="px-4 py-3">Kỳ</th><th className="px-4 py-3">Booking</th><th className="px-4 py-3">Doanh thu gộp</th><th className="px-4 py-3">Phí nền tảng</th><th className="px-4 py-3">Doanh thu host</th></tr></thead>
                             <tbody className="divide-y divide-gray-100 bg-white">
-                                {summaryRows.map((row) => (
-                                    <tr key={row.id}>
-                                        <td className="px-4 py-4 font-medium text-gray-900">{row.name}</td>
-                                        <td className="px-4 py-4 text-gray-500">{row.occupancy}%</td>
-                                        <td className="px-4 py-4 text-gray-500">{formatCurrency(row.revenueMonth)}</td>
-                                        <td className="px-4 py-4 text-gray-500">{row.avgNights}</td>
-                                        <td className="px-4 py-4 text-gray-500">{row.rating}</td>
-                                    </tr>
+                                {chartData.length === 0 ? <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu.</td></tr> : report.series.map((row) => (
+                                    <tr key={row.period}><td className="px-4 py-4 font-medium text-gray-900">{row.period}</td><td className="px-4 py-4 text-gray-600">{row.bookingCount}</td><td className="px-4 py-4 text-gray-600">{formatCurrency(row.grossRevenue)}</td><td className="px-4 py-4 text-gray-600">{formatCurrency(row.platformRevenue)}</td><td className="px-4 py-4 text-gray-600">{formatCurrency(row.hostRevenue)}</td></tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
-                </div>
+                </section>
             </div>
         </div>
     );

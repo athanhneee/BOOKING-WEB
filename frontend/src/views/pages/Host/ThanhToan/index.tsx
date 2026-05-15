@@ -1,127 +1,75 @@
-import { useMemo, useState } from "react";
-import { FiAlertCircle, FiCheckCircle, FiClock, FiDownload, FiTrendingUp } from "react-icons/fi";
-import { properties, transactions } from "../../../../data/mockData.ts";
-import Badge from "../../../components/ui/Badge";
-import {
-    PageHeader,
-    StatCard,
-} from "../shared";
-import {
-    downloadTextFile,
-    formatCurrency,
-    formatDate,
-    hostCardClass,
-    inputClassName,
-    pageWrapperClass,
-    primaryButtonClass,
-    tableClassName,
-} from "../sharedStyles";
+import { useEffect, useMemo, useState } from "react";
+import { getHostPayouts, getPayoutAccounts, type HostPayout, type PayoutAccount } from "../../../../services/payoutService";
+import { PageHeader } from "../shared";
+import { formatCurrency, formatDate, pageWrapperClass, tableClassName } from "../sharedStyles";
 
 const ThanhToan = () => {
-    const [month, setMonth] = useState("2026-03");
-    const [status, setStatus] = useState("all");
-    const [propertyId, setPropertyId] = useState("all");
+    const [accounts, setAccounts] = useState<PayoutAccount[]>([]);
+    const [payouts, setPayouts] = useState<HostPayout[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    const filteredTransactions = useMemo(
-        () =>
-            transactions.filter((transaction) => {
-                const matchesMonth = transaction.bookedAt.startsWith(month);
-                const matchesStatus = status === "all" || transaction.status === status;
-                const matchesProperty = propertyId === "all" || transaction.propertyId === propertyId;
-                return matchesMonth && matchesStatus && matchesProperty;
-            }),
-        [month, propertyId, status],
-    );
+    useEffect(() => {
+        const loadData = async () => {
+            setLoading(true);
+            setError("");
 
-    const totals = {
-        month: filteredTransactions.reduce((sum, item) => sum + item.amount, 0),
-        paid: filteredTransactions.filter((item) => item.status === "da-tt").reduce((sum, item) => sum + item.amount, 0),
-        waiting: filteredTransactions.filter((item) => item.status === "cho-tt" || item.status === "coc-50").reduce((sum, item) => sum + item.amount, 0),
-        overdue: filteredTransactions.filter((item) => item.status === "qua-han").reduce((sum, item) => sum + item.amount, 0),
-    };
+            try {
+                const [accountResult, payoutResult] = await Promise.all([
+                    getPayoutAccounts(),
+                    getHostPayouts({ page: 1, limit: 50 }),
+                ]);
+                setAccounts(accountResult.items ?? []);
+                setPayouts(payoutResult.items ?? []);
+            } catch (fetchError) {
+                setError(fetchError instanceof Error ? fetchError.message : "Không thể tải dữ liệu thanh toán.");
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    const exportReport = () => {
-        const rows = [
-            "Ma giao dich,Khach,Cho nghi,Ngay dat,Ngay thanh toan,So tien,Trang thai",
-            ...filteredTransactions.map((transaction) =>
-                [
-                    transaction.id,
-                    transaction.guestName,
-                    transaction.propertyName,
-                    transaction.bookedAt,
-                    transaction.paidAt ?? "",
-                    transaction.amount,
-                    transaction.status,
-                ].join(","),
-            ),
-        ];
-        downloadTextFile("thanh-toan.csv", rows.join("\n"), "text/csv;charset=utf-8");
-    };
+        void loadData();
+    }, []);
+
+    const totalPaid = useMemo(() => payouts.filter((payout) => payout.status === "paid").reduce((sum, payout) => sum + Number(payout.amount || 0), 0), [payouts]);
+    const pending = useMemo(() => payouts.filter((payout) => payout.status !== "paid").reduce((sum, payout) => sum + Number(payout.amount || 0), 0), [payouts]);
 
     return (
         <div className={pageWrapperClass}>
             <div className="mx-auto max-w-7xl space-y-6">
-                <PageHeader
-                    title="Thanh toán"
-                    subtitle="Quản lý doanh thu, đối soát giao dịch và theo dõi các khoản còn chờ xác nhận."
-                    actions={
-                        <button type="button" onClick={exportReport} className={primaryButtonClass}>
-                            <span className="inline-flex items-center gap-2">
-                                <FiDownload size={16} />
-                                Xuất báo cáo
-                            </span>
-                        </button>
-                    }
-                />
+                <PageHeader title="Thanh toán & đối soát" subtitle="Dữ liệu lấy từ /api/host/payout-accounts và /api/host/payouts." />
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <StatCard label="Doanh thu tháng này" value={formatCurrency(totals.month)} icon={<FiTrendingUp size={18} />} />
-                    <StatCard label="Đã thanh toán" value={formatCurrency(totals.paid)} icon={<FiCheckCircle size={18} />} accentClassName="bg-emerald-50 text-emerald-600" />
-                    <StatCard label="Chờ thanh toán" value={formatCurrency(totals.waiting)} icon={<FiClock size={18} />} accentClassName="bg-amber-50 text-amber-600" />
-                    <StatCard label="Quá hạn" value={formatCurrency(totals.overdue)} icon={<FiAlertCircle size={18} />} accentClassName="bg-rose-50 text-rose-600" />
+                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+
+                <div className="grid gap-4 md:grid-cols-3">
+                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Tài khoản nhận tiền</p><p className="mt-2 text-3xl font-bold text-gray-900">{accounts.length}</p></article>
+                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Đã thanh toán</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(totalPaid)}</p></article>
+                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Chờ xử lý</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(pending)}</p></article>
                 </div>
 
-                <div className={`${hostCardClass} space-y-4`}>
-                    <div className="grid gap-4 lg:grid-cols-[180px_220px_220px]">
-                        <input type="month" value={month} onChange={(event) => setMonth(event.target.value)} className={inputClassName} />
-                        <select value={status} onChange={(event) => setStatus(event.target.value)} className={inputClassName}>
-                            <option value="all">Tất cả trạng thái</option>
-                            <option value="da-tt">Đã thanh toán</option>
-                            <option value="coc-50">Cọc 50%</option>
-                            <option value="cho-tt">Chờ thanh toán</option>
-                            <option value="qua-han">Quá hạn</option>
-                        </select>
-                        <select value={propertyId} onChange={(event) => setPropertyId(event.target.value)} className={inputClassName}>
-                            <option value="all">Tất cả chỗ nghỉ</option>
-                            {properties.map((property) => <option key={property.id} value={property.id}>{property.name}</option>)}
-                        </select>
+                <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                    <h2 className="text-lg font-semibold text-gray-900">Tài khoản ngân hàng</h2>
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        {accounts.length === 0 ? <p className="text-sm text-gray-500">Chưa có tài khoản nhận tiền.</p> : accounts.map((account) => (
+                            <article key={account.payoutAccountId} className="rounded-2xl border border-gray-100 p-4">
+                                <p className="font-semibold text-gray-900">{account.bankName}</p>
+                                <p className="mt-1 text-sm text-gray-500">{account.accountName} • {account.accountNumberMasked}</p>
+                                {account.isDefault ? <span className="mt-3 inline-block rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">Mặc định</span> : null}
+                            </article>
+                        ))}
                     </div>
+                </section>
 
-                    <div className={tableClassName}>
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-gray-50 text-gray-500">
-                                <tr>
-                                    {["Mã giao dịch", "Khách", "Chỗ nghỉ", "Ngày đặt", "Ngày thanh toán", "Số tiền", "Trạng thái"].map((column) => (
-                                        <th key={column} className="px-4 py-3 font-medium">{column}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100 bg-white">
-                                {filteredTransactions.map((transaction) => (
-                                    <tr key={transaction.id}>
-                                        <td className="px-4 py-4 font-medium text-gray-900">{transaction.id}</td>
-                                        <td className="px-4 py-4 text-gray-500">{transaction.guestName}</td>
-                                        <td className="px-4 py-4 text-gray-500">{transaction.propertyName}</td>
-                                        <td className="px-4 py-4 text-gray-500">{formatDate(transaction.bookedAt)}</td>
-                                        <td className="px-4 py-4 text-gray-500">{transaction.paidAt ? formatDate(transaction.paidAt) : "Chưa thanh toán"}</td>
-                                        <td className="px-4 py-4 font-medium text-gray-900">{formatCurrency(transaction.amount)}</td>
-                                        <td className="px-4 py-4"><Badge status={transaction.status} /></td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                    <table className={`${tableClassName} text-left text-sm`}>
+                        <thead className="bg-gray-50 text-gray-500"><tr><th className="px-4 py-3">Mã payout</th><th className="px-4 py-3">Số tiền</th><th className="px-4 py-3">Trạng thái</th><th className="px-4 py-3">Ngày tạo</th><th className="px-4 py-3">Ngày trả</th></tr></thead>
+                        <tbody className="divide-y divide-gray-100 bg-white">
+                            {loading ? <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-500">Đang tải...</td></tr> : null}
+                            {!loading && payouts.length === 0 ? <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-500">Chưa có payout.</td></tr> : null}
+                            {payouts.map((payout) => <tr key={payout.payoutId}><td className="px-4 py-4 font-semibold text-gray-900">#{payout.payoutId}</td><td className="px-4 py-4 text-gray-600">{formatCurrency(Number(payout.amount || 0))}</td><td className="px-4 py-4"><span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">{payout.status}</span></td><td className="px-4 py-4 text-gray-600">{formatDate(payout.createdAt.slice(0, 10))}</td><td className="px-4 py-4 text-gray-600">{payout.paidAt ? formatDate(payout.paidAt.slice(0, 10)) : "-"}</td></tr>)}
+                        </tbody>
+                    </table>
+                </section>
             </div>
         </div>
     );

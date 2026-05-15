@@ -1,124 +1,254 @@
-import { useState } from "react";
-import { FiChevronDown, FiChevronUp, FiMail, FiMessageCircle, FiPhoneCall } from "react-icons/fi";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FiEdit2, FiEye, FiEyeOff, FiPlus, FiRefreshCw, FiTrash2 } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { APP_ROUTES } from "../../../../config/routes";
+import {
+    deleteHostListing,
+    getMyHostListings,
+    hideHostListing,
+    publishHostListing,
+    submitHostListingForApproval,
+    type HostListingStatus,
+    type HostListingSummary,
+} from "../../../../services/hostService";
 import { PageHeader } from "../shared";
-import { hostCardClass, inputClassName, pageWrapperClass, primaryButtonClass, tableClassName, textareaClassName } from "../sharedStyles";
+import { formatCurrency, pageWrapperClass, primaryButtonClass, secondaryButtonClass, tableClassName } from "../sharedStyles";
 
-const faqGroups = [
-    {
-        title: "Quản lý đặt phòng",
-        items: [
-            { q: "Làm sao để xác nhận booking nhanh?", a: "Bạn có thể kiểm tra mục Đặt phòng và cập nhật ghi chú nội bộ ngay khi khách vừa đặt." },
-            { q: "Có thể chỉnh giờ check-in không?", a: "Có. Hãy cập nhật trong chỗ nghỉ hoặc nhắn trực tiếp cho khách để thống nhất." },
-            { q: "Cách xử lý khách no-show?", a: "Đánh dấu tình trạng booking và liên hệ đội hỗ trợ nếu cần xử lý hoàn tiền." },
-        ],
-    },
-    {
-        title: "Thanh toán",
-        items: [
-            { q: "Bao lâu thì nhận được tiền?", a: "Thông thường BlueStay đối soát và chuyển tiền theo chu kỳ đã cấu hình trong tài khoản ngân hàng." },
-            { q: "Vì sao giao dịch bị quá hạn?", a: "Thường do khách chưa chuyển khoản đúng nội dung hoặc còn thiếu số tiền." },
-            { q: "Lấy báo cáo doanh thu ở đâu?", a: "Bạn có thể vào mục Báo cáo hoặc Thanh toán để xuất file đối soát." },
-        ],
-    },
-    {
-        title: "Chính sách",
-        items: [
-            { q: "Nên chọn chính sách hủy nào?", a: "Nếu chỗ nghỉ có tỷ lệ lấp đầy cao, bạn có thể dùng mức Vừa phải hoặc Nghiêm ngặt." },
-            { q: "Có thể ẩn tạm chỗ nghỉ không?", a: "Có. Bạn có thể dùng nút Ẩn tại trang Chỗ nghỉ." },
-            { q: "BlueStay hỗ trợ VAT thế nào?", a: "Bạn có thể ghi chú booking cần xuất VAT để đội vận hành phối hợp xử lý." },
-        ],
-    },
-    {
-        title: "Kỹ thuật",
-        items: [
-            { q: "Không tải được ảnh lên thì làm sao?", a: "Hãy thử giảm dung lượng ảnh hoặc đổi trình duyệt, sau đó gửi ticket nếu lỗi còn lặp lại." },
-            { q: "QR thanh toán không hiển thị?", a: "Kiểm tra lại kết nối mạng và làm mới trang, hoặc chuyển qua trình duyệt khác." },
-            { q: "Tài khoản đăng nhập bị khóa?", a: "Liên hệ hỗ trợ để xác minh và mở lại quyền truy cập." },
-        ],
-    },
+const statusLabels: Record<HostListingStatus, string> = {
+    draft: "Bản nháp",
+    pending_approval: "Chờ duyệt",
+    published: "Đang hiển thị",
+    hidden: "Đang ẩn",
+};
+
+const statusClassNames: Record<HostListingStatus, string> = {
+    draft: "bg-slate-100 text-slate-700",
+    pending_approval: "bg-amber-100 text-amber-700",
+    published: "bg-emerald-100 text-emerald-700",
+    hidden: "bg-gray-100 text-gray-700",
+};
+
+const filterOptions: Array<{ label: string; value: HostListingStatus | "all" }> = [
+    { label: "Tất cả", value: "all" },
+    { label: "Đang hiển thị", value: "published" },
+    { label: "Chờ duyệt", value: "pending_approval" },
+    { label: "Bản nháp", value: "draft" },
+    { label: "Đang ẩn", value: "hidden" },
 ];
 
-const tickets = [
-    { id: "TK-2401", title: "Cần hỗ trợ đối soát giao dịch tháng 3", status: "Mở", createdAt: "2026-03-21", updatedAt: "2026-03-24" },
-    { id: "TK-2402", title: "Ảnh chỗ nghỉ tải lên chậm", status: "Đang xử lý", createdAt: "2026-03-18", updatedAt: "2026-03-23" },
-    { id: "TK-2403", title: "Cập nhật thông tin ngân hàng", status: "Đã giải quyết", createdAt: "2026-03-11", updatedAt: "2026-03-12" },
-];
+const getListingStatus = (listing: HostListingSummary): HostListingStatus => listing.status ?? "draft";
 
-const HoTro = () => {
-    const [openKey, setOpenKey] = useState<string | null>("Quản lý đặt phòng-0");
+const ChoNghi = () => {
+    const navigate = useNavigate();
+    const [status, setStatus] = useState<HostListingStatus | "all">("all");
+    const [items, setItems] = useState<HostListingSummary[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [actionId, setActionId] = useState<number | null>(null);
+
+    const fetchListings = useCallback(async () => {
+        setLoading(true);
+        setError("");
+
+        try {
+            const result = await getMyHostListings({ status, page: 1, limit: 100 });
+            setItems(result.items ?? []);
+        } catch (fetchError) {
+            setError(fetchError instanceof Error ? fetchError.message : "Không thể tải danh sách chỗ nghỉ.");
+        } finally {
+            setLoading(false);
+        }
+    }, [status]);
+
+    useEffect(() => {
+        void fetchListings();
+    }, [fetchListings]);
+
+    const summary = useMemo(() => {
+        const counts = items.reduce(
+            (acc, item) => {
+                acc[getListingStatus(item)] += 1;
+                return acc;
+            },
+            { draft: 0, pending_approval: 0, published: 0, hidden: 0 } as Record<HostListingStatus, number>,
+        );
+
+        return [
+            { label: "Tổng chỗ nghỉ", value: items.length },
+            { label: "Đang hiển thị", value: counts.published },
+            { label: "Chờ duyệt", value: counts.pending_approval },
+            { label: "Bản nháp/ẩn", value: counts.draft + counts.hidden },
+        ];
+    }, [items]);
+
+    const runAction = async (listingId: number, action: () => Promise<unknown>) => {
+        setActionId(listingId);
+        setError("");
+
+        try {
+            await action();
+            await fetchListings();
+        } catch (actionError) {
+            setError(actionError instanceof Error ? actionError.message : "Không thể cập nhật chỗ nghỉ.");
+        } finally {
+            setActionId(null);
+        }
+    };
 
     return (
         <div className={pageWrapperClass}>
             <div className="mx-auto max-w-7xl space-y-6">
-                <PageHeader title="Hỗ trợ" subtitle="Tìm câu trả lời nhanh hoặc gửi yêu cầu hỗ trợ đến đội ngũ BlueStay." />
+                <PageHeader
+                    title="Chỗ nghỉ của tôi"
+                    subtitle="Danh sách này lấy trực tiếp từ backend /api/host/listings/mine, không còn dùng mock data."
+                    actions={
+                        <>
+                            <button type="button" onClick={fetchListings} className={secondaryButtonClass}>
+                                <FiRefreshCw className="mr-2 inline" /> Tải lại
+                            </button>
+                            <button type="button" onClick={() => navigate(APP_ROUTES.hostNewProperty)} className={primaryButtonClass}>
+                                <FiPlus className="mr-2 inline" /> Thêm chỗ nghỉ
+                            </button>
+                        </>
+                    }
+                />
 
-                <div className="grid gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm md:grid-cols-3">
-                    <div className="flex items-center gap-3 rounded-2xl bg-gray-50 p-4"><FiPhoneCall className="text-cyan-600" /><span className="font-medium text-gray-700">1900-xxxx</span></div>
-                    <div className="flex items-center gap-3 rounded-2xl bg-gray-50 p-4"><FiMail className="text-cyan-600" /><span className="font-medium text-gray-700">host@bluestay.vn</span></div>
-                    <button type="button" className="flex items-center justify-center gap-3 rounded-xl bg-cyan-600 p-4 font-medium text-white"><FiMessageCircle />Live chat</button>
+                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+
+                <div className="grid gap-4 md:grid-cols-4">
+                    {summary.map((item) => (
+                        <article key={item.label} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                            <p className="text-sm text-gray-500">{item.label}</p>
+                            <p className="mt-2 text-3xl font-bold text-gray-900">{item.value}</p>
+                        </article>
+                    ))}
                 </div>
 
-                <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-                    <section className="space-y-5">
-                        {faqGroups.map((group) => (
-                            <div key={group.title} className={hostCardClass}>
-                                <h2 className="text-lg font-semibold text-gray-900">{group.title}</h2>
-                                <div className="mt-4 space-y-3">
-                                    {group.items.map((item, index) => {
-                                        const key = `${group.title}-${index}`;
-                                        const isOpen = openKey === key;
-                                        return (
-                                            <div key={key} className="overflow-hidden rounded-xl border border-gray-100">
-                                                <button type="button" onClick={() => setOpenKey(isOpen ? null : key)} className="flex w-full items-center justify-between gap-4 rounded-xl px-4 py-4 text-left">
-                                                    <span className="font-medium text-gray-800">{item.q}</span>
-                                                    {isOpen ? <FiChevronUp /> : <FiChevronDown />}
-                                                </button>
-                                                {isOpen ? <div className="rounded-b-xl px-4 pb-4 text-sm leading-7 text-gray-500">{item.a}</div> : null}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ))}
-                    </section>
+                <div className="flex flex-wrap gap-2 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
+                    {filterOptions.map((option) => (
+                        <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setStatus(option.value)}
+                            className={`rounded-xl px-4 py-2 text-sm font-medium ${status === option.value ? "bg-cyan-50 text-cyan-700" : "text-gray-500 hover:bg-gray-50"}`}
+                        >
+                            {option.label}
+                        </button>
+                    ))}
+                </div>
 
-                    <section className="space-y-6">
-                        <div className={hostCardClass}>
-                            <h2 className="text-lg font-semibold text-gray-900">Gửi yêu cầu hỗ trợ</h2>
-                            <div className="mt-5 space-y-4">
-                                <select className={inputClassName}>
-                                    <option>Chọn chủ đề</option>
-                                    <option>Quản lý đặt phòng</option>
-                                    <option>Thanh toán</option>
-                                    <option>Kỹ thuật</option>
-                                </select>
-                                <input placeholder="Tiêu đề" className={inputClassName} />
-                                <textarea placeholder="Mô tả chi tiết vấn đề của bạn" className={textareaClassName} />
-                                <input type="file" className={inputClassName} />
-                                <button type="button" className={primaryButtonClass}>Gửi yêu cầu</button>
-                            </div>
-                        </div>
+                <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                    <table className={`${tableClassName} text-left text-sm`}>
+                        <thead className="bg-gray-50 text-gray-500">
+                            <tr>
+                                <th className="px-4 py-3 font-medium">Chỗ nghỉ</th>
+                                <th className="px-4 py-3 font-medium">Loại</th>
+                                <th className="px-4 py-3 font-medium">Giá/đêm</th>
+                                <th className="px-4 py-3 font-medium">Sức chứa</th>
+                                <th className="px-4 py-3 font-medium">Trạng thái</th>
+                                <th className="px-4 py-3 font-medium">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 bg-white">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={6} className="px-4 py-10 text-center text-gray-500">Đang tải chỗ nghỉ...</td>
+                                </tr>
+                            ) : items.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} className="px-4 py-10 text-center text-gray-500">Chưa có chỗ nghỉ phù hợp bộ lọc.</td>
+                                </tr>
+                            ) : (
+                                items.map((listing) => {
+                                    const listingStatus = getListingStatus(listing);
+                                    const isBusy = actionId === listing.listingId;
 
-                        <div className={hostCardClass}>
-                            <h2 className="text-lg font-semibold text-gray-900">Lịch sử ticket</h2>
-                            <div className="mt-4 overflow-hidden rounded-2xl border border-gray-100">
-                                <table className={`${tableClassName} text-left text-sm`}>
-                                    <thead className="bg-gray-50 text-gray-500">
-                                        <tr>
-                                            {["Mã", "Tiêu đề", "Trạng thái", "Ngày tạo", "Cập nhật"].map((column) => <th key={column} className="px-4 py-3 font-medium">{column}</th>)}
+                                    return (
+                                        <tr key={listing.listingId}>
+                                            <td className="px-4 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <img
+                                                        src={listing.imageUrl || "https://placehold.co/160x100?text=Villa"}
+                                                        alt={listing.title}
+                                                        className="h-16 w-24 rounded-xl object-cover"
+                                                    />
+                                                    <div>
+                                                        <p className="font-semibold text-gray-900">{listing.title}</p>
+                                                        <p className="mt-1 text-xs text-gray-500">{[listing.addressLine, listing.ward, listing.district, listing.city].filter(Boolean).join(", ")}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4 text-gray-600">{listing.propertyType}</td>
+                                            <td className="px-4 py-4 text-gray-600">{formatCurrency(Number(listing.basePrice || 0))}</td>
+                                            <td className="px-4 py-4 text-gray-600">{listing.maxGuests} khách</td>
+                                            <td className="px-4 py-4">
+                                                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClassNames[listingStatus]}`}>
+                                                    {statusLabels[listingStatus]}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <div className="flex flex-wrap gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate(`${APP_ROUTES.hostNewProperty}?listingId=${listing.listingId}`)}
+                                                        className={secondaryButtonClass}
+                                                    >
+                                                        <FiEdit2 className="mr-1 inline" /> Sửa
+                                                    </button>
+                                                    {listingStatus === "draft" ? (
+                                                        <button
+                                                            type="button"
+                                                            disabled={isBusy}
+                                                            onClick={() => runAction(listing.listingId, () => submitHostListingForApproval(listing.listingId))}
+                                                            className={primaryButtonClass}
+                                                        >
+                                                            Gửi duyệt
+                                                        </button>
+                                                    ) : null}
+                                                    {listingStatus === "published" ? (
+                                                        <button
+                                                            type="button"
+                                                            disabled={isBusy}
+                                                            onClick={() => runAction(listing.listingId, () => hideHostListing(listing.listingId))}
+                                                            className={secondaryButtonClass}
+                                                        >
+                                                            <FiEyeOff className="mr-1 inline" /> Ẩn
+                                                        </button>
+                                                    ) : null}
+                                                    {listingStatus === "hidden" ? (
+                                                        <button
+                                                            type="button"
+                                                            disabled={isBusy}
+                                                            onClick={() => runAction(listing.listingId, () => publishHostListing(listing.listingId))}
+                                                            className={secondaryButtonClass}
+                                                        >
+                                                            <FiEye className="mr-1 inline" /> Hiện
+                                                        </button>
+                                                    ) : null}
+                                                    <button
+                                                        type="button"
+                                                        disabled={isBusy}
+                                                        onClick={() => {
+                                                            if (window.confirm("Bạn chắc chắn muốn xóa chỗ nghỉ này?")) {
+                                                                void runAction(listing.listingId, () => deleteHostListing(listing.listingId));
+                                                            }
+                                                        }}
+                                                        className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm text-rose-600 transition-colors hover:bg-rose-50"
+                                                    >
+                                                        <FiTrash2 className="mr-1 inline" /> Xóa
+                                                    </button>
+                                                </div>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100 bg-white">
-                                        {tickets.map((ticket) => <tr key={ticket.id}><td className="px-4 py-4 font-medium text-gray-900">{ticket.id}</td><td className="px-4 py-4 text-gray-500">{ticket.title}</td><td className="px-4 py-4 text-gray-500">{ticket.status}</td><td className="px-4 py-4 text-gray-500">{ticket.createdAt}</td><td className="px-4 py-4 text-gray-500">{ticket.updatedAt}</td></tr>)}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </section>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     );
 };
 
-export default HoTro;
+export default ChoNghi;
