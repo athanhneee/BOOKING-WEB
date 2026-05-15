@@ -1,6 +1,8 @@
 export const APP_ROUTES = {
     home: "/",
     search: "/noi-luu-tru",
+    blog: "/blog",
+    contact: "/lien-he",
     login: "/dang-nhap",
     register: "/dang-ky",
     forgotPassword: "/quen-mat-khau",
@@ -27,5 +29,7 @@ export const APP_ROUTES = {
     adminRoles: "/admin/phan-quyen",
     guestPayment: "/thanh-toan/:bookingId",
     guestPaymentDetail: (bookingId: string) => `/thanh-toan/${bookingId}`,
+    guestPaymentResult: "/thanh-toan/ket-qua",
     villaDetail: (villaId: string) => `/villa/${villaId}`,
+    villaHostMessage: (villaId: string) => `/villa/${villaId}/nhan-tin-host`,
 } as const;
