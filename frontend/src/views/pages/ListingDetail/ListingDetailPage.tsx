@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject, type TouchEvent } from "react";
 import {
     FaArrowLeft,
-    FaCalendarAlt,
     FaCarSide,
     FaCheckCircle,
     FaChevronLeft,
@@ -14,19 +13,22 @@ import {
     FaStar,
     FaSwimmingPool,
     FaTimes,
-    FaUsers,
     FaUtensils,
     FaWifi,
 } from "react-icons/fa";
-import { FiCalendar, FiUsers } from "react-icons/fi";
+import { FiCalendar, FiHeart, FiMessageCircle, FiShare2, FiShoppingBag, FiUsers } from "react-icons/fi";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import type { ApiListingDetail, PopularDestination } from "../../../models/entities/Listing";
 import { APP_ROUTES } from "../../../config/routes";
 import {
-    buildGuestPaymentPath,
-    createBookingDraft,
-    savePendingBookingDraft,
-} from "../../../services/bookingService";
-import { getListingById } from "../../../services/listingService";
+    createBookingQueueItem,
+} from "../../../features/bookingQueue/bookingQueueStorage";
+import { useBookingQueue } from "../../../features/bookingQueue/useBookingQueue";
+import { addRecentlyViewedListing } from "../../../features/recentlyViewed/recentlyViewedStorage";
+import NearbyRecommendationsSection from "../../../features/recommendations/NearbyRecommendationsSection";
+import { useSavedListings } from "../../../features/wishlist/useSavedListings";
+import { createBooking } from "../../../services/bookingService";
+import { getListingById, getListingReviews, getListingRules } from "../../../services/listingService";
 import SearchPopover from "../../components/search/SearchPopover";
 import DatePickerPanel from "../../components/search/booking/DatePickerPanel";
 import type { GuestSelection } from "../../components/search/booking/Guest";
@@ -36,7 +38,7 @@ import {
     guestFieldConfigs as sharedGuestFieldConfigs,
     parseBookingSearchParams,
     toIsoDate,
-    type GuestFieldConfig,
+    type BookingSearchState,
 } from "../../components/search/searchState";
 
 type ListingDetailLocationState = {
@@ -63,6 +65,23 @@ type GalleryItem = {
     placeholder: boolean;
 };
 
+type HostProfile = {
+    name: string;
+    avatarUrl?: string;
+    verified: boolean;
+    listingCount: number;
+    joinedYear: number;
+    bio: string;
+};
+
+type GuestReview = {
+    id: string;
+    guestName: string;
+    date: string;
+    rating: number;
+    content: string;
+};
+
 
 const currencyFormatter = new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -82,17 +101,82 @@ const mobileCardClass =
 
 const accentBadgeClass = "border border-cyan-100 bg-cyan-50 text-cyan-600";
 
-const activeBookingFieldClass = "border-cyan-600 bg-cyan-50";
+const bookingQueueLimitMessage =
+    "Bạn chỉ có thể thêm tối đa 5 chỗ ở vào danh sách chờ đặt. Bạn có thể lưu chỗ ở này để xem sau.";
 
-const inactiveBookingFieldClass = "border-cyan-100 bg-white hover:border-cyan-300";
-
-
-const guestFieldConfigs: GuestFieldConfig[] = [
-    { key: "adults", label: "Người lớn", description: "Từ 13 tuổi trở lên", min: 1, max: 16 },
-    { key: "children", label: "Trẻ em", description: "Từ 2 - 12 tuổi", min: 0, max: 8 },
-    { key: "infants", label: "Em bé", description: "Dưới 2 tuổi", min: 0, max: 5 },
-    { key: "pets", label: "Thú cưng", description: "Mang theo thú cưng", min: 0, max: 5 },
+const hostProfiles: HostProfile[] = [
+    {
+        name: "Minh Thành",
+        verified: true,
+        listingCount: 12,
+        joinedYear: 2021,
+        bio: "Chủ nhà tại Vũng Tàu, ưu tiên phản hồi nhanh và chuẩn bị không gian nghỉ dưỡng riêng tư cho gia đình, nhóm bạn.",
+    },
+    {
+        name: "Thư Host",
+        verified: true,
+        listingCount: 8,
+        joinedYear: 2022,
+        bio: "Yêu thích những căn villa gần biển, luôn gửi hướng dẫn check-in rõ ràng và gợi ý địa điểm ăn uống quanh chỗ ở.",
+    },
+    {
+        name: "Yến Villa",
+        verified: false,
+        listingCount: 5,
+        joinedYear: 2023,
+        bio: "Tập trung vào các căn nghỉ sáng thoáng, tiện nghi đủ cho kỳ nghỉ ngắn ngày hoặc chuyến đi cùng gia đình.",
+    },
 ];
+
+const getListingSeedNumber = (listingId: string) => {
+    const matchedNumber = listingId.match(/\d+/)?.[0];
+    const parsed = Number.parseInt(matchedNumber ?? "1", 10);
+    return Number.isFinite(parsed) ? parsed : 1;
+};
+
+const getHostProfile = (listing: PopularDestination): HostProfile => {
+    const seedNumber = getListingSeedNumber(listing.id);
+    const profile = hostProfiles[seedNumber % hostProfiles.length];
+
+    return {
+        ...profile,
+        listingCount: Math.max(profile.listingCount, Math.min(18, listing.bedrooms + seedNumber + 2)),
+        verified: profile.verified || listing.rating >= 4.8,
+    };
+};
+
+const getInitials = (name: string) =>
+    name
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase() || "H";
+
+const buildGuestReviews = (listing: PopularDestination): GuestReview[] => {
+    if (listing.rating <= 0) {
+        return [];
+    }
+
+    return [
+        {
+            id: `${listing.id}-review-1`,
+            guestName: "Minh Anh",
+            date: "2026-03-18",
+            rating: Math.min(5, Math.round(listing.rating)),
+            content: `${listing.name} sạch sẽ, dễ di chuyển và khu sinh hoạt chung rất hợp cho nhóm đông người. Host phản hồi nhanh trước giờ nhận phòng.`,
+        },
+        {
+            id: `${listing.id}-review-2`,
+            guestName: "Gia Huy",
+            date: "2026-02-24",
+            rating: Math.max(4, Math.round(listing.rating - 0.2)),
+            content: "Không gian đúng như mô tả, bếp và khu nghỉ ngơi đủ tiện nghi. Nhóm mình thích nhất phần sân và vị trí gần các điểm ăn uống.",
+        },
+    ];
+};
+
 
 const formatDateInput = (date: Date) => {
     const safeDate = new Date(date);
@@ -148,21 +232,6 @@ const getOverview = (name: string, address: string) => {
     return `${name} là villa nghỉ dưỡng riêng tư tại ${address}, nổi bật với hồ bơi riêng, khoảng sân thoáng, khu bếp tiện nghi và không gian sinh hoạt phù hợp cho gia đình hoặc nhóm bạn. Thiết kế ưu tiên ánh sáng tự nhiên, cảm giác thư giãn và sự riêng tư để mỗi kỳ nghỉ luôn trọn vẹn và dễ chịu hơn.`;
 };
 
-const getGuestSummary = (selection: GuestSelection) => {
-    const stayingGuests = selection.adults + selection.children;
-    const fragments: string[] = [`${stayingGuests} khách`];
-
-    if (selection.infants > 0) {
-        fragments.push(`${selection.infants} em bé`);
-    }
-
-    if (selection.pets > 0) {
-        fragments.push(`${selection.pets} thú cưng`);
-    }
-
-    return fragments.join(", ");
-};
-
 const isMobileViewport = () => window.matchMedia("(max-width: 1279.98px)").matches;
 
 type BookingSelectionFieldProps = {
@@ -187,8 +256,8 @@ const BookingSelectionField = ({
         type="button"
         onClick={onClick}
         className={`flex w-full items-start gap-3 rounded-[24px] border px-4 py-4 text-left transition-all duration-200 ${isActive
-                ? "border-cyan-300 bg-cyan-50/70 shadow-[0_18px_35px_-28px_rgba(15,23,42,0.32)] ring-1 ring-cyan-200"
-                : "border-slate-200 bg-white hover:border-cyan-200 hover:bg-slate-50/70"
+            ? "border-cyan-300 bg-cyan-50/70 shadow-[0_18px_35px_-28px_rgba(15,23,42,0.32)] ring-1 ring-cyan-200"
+            : "border-slate-200 bg-white hover:border-cyan-200 hover:bg-slate-50/70"
             }`}
     >
         <span
@@ -212,16 +281,21 @@ type ListingDetailContentProps = {
 const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const destination = getListingById(villaId);
+    const [destination, setDestination] = useState<PopularDestination | null>(null);
+    const [rawListing, setRawListing] = useState<ApiListingDetail | null>(null);
+    const [guestReviews, setGuestReviews] = useState<GuestReview[]>([]);
+    const [policyItems, setPolicyItems] = useState<PolicyItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState("");
+    const [isBooking, setIsBooking] = useState(false);
+    const bookingSearchState = useMemo(() => parseBookingSearchParams(location.search), [location.search]);
     const initialBookingState = useMemo(() => {
-        const parsed = parseBookingSearchParams(location.search);
-
         return {
-            checkIn: parsed.checkIn || createDateOffset(1),
-            checkOut: parsed.checkOut || createDateOffset(4),
-            guests: parsed.guests.adults > 0 ? parsed.guests : defaultSearchGuestSelection,
+            checkIn: bookingSearchState.checkIn || createDateOffset(1),
+            checkOut: bookingSearchState.checkOut || createDateOffset(4),
+            guests: bookingSearchState.guests.adults > 0 ? bookingSearchState.guests : defaultSearchGuestSelection,
         };
-    }, [location.search]);
+    }, [bookingSearchState]);
 
     const [checkIn, setCheckIn] = useState(initialBookingState.checkIn);
     const [checkOut, setCheckOut] = useState(initialBookingState.checkOut);
@@ -232,6 +306,9 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
     const [activeDesktopField, setActiveDesktopField] = useState<BookingField>(null);
     const [mobileBookingSheet, setMobileBookingSheet] = useState<MobileBookingSheet>(null);
     const [mobileDateField, setMobileDateField] = useState<"checkin" | "checkout">("checkin");
+    const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+    const { isSaved, toggleSaved } = useSavedListings();
+    const bookingQueue = useBookingQueue();
 
     const desktopBookingRef = useRef<HTMLDivElement | null>(null);
     const desktopPopoverRef = useRef<HTMLDivElement | null>(null);
@@ -239,8 +316,94 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
     const checkInFieldRef = useRef<HTMLButtonElement | null>(null);
     const checkOutFieldRef = useRef<HTMLButtonElement | null>(null);
     const guestFieldRef = useRef<HTMLButtonElement | null>(null);
+    const feedbackTimerRef = useRef<number | null>(null);
     const touchStartXRef = useRef<number | null>(null);
     const todayIso = useMemo(() => toIsoDate(new Date()), []);
+    const recommendationSearchState = useMemo<BookingSearchState>(() => ({
+        location: bookingSearchState.location,
+        checkIn,
+        checkOut,
+        guests: guestSelection,
+    }), [bookingSearchState.location, checkIn, checkOut, guestSelection]);
+    useEffect(() => {
+        if (!villaId) {
+            setIsLoading(false);
+            setLoadError("Thiếu mã chỗ nghỉ.");
+            return;
+        }
+
+        let ignore = false;
+
+        const loadDetail = async () => {
+            setIsLoading(true);
+            setLoadError("");
+
+            try {
+                const [listingResult, reviewResult, rules] = await Promise.all([
+                    getListingById(villaId),
+                    getListingReviews(villaId, { page: 1, limit: 10 }),
+                    getListingRules(villaId),
+                ]);
+
+                if (ignore) return;
+
+                if (!listingResult) {
+                    setDestination(null);
+                    setRawListing(null);
+                    return;
+                }
+
+                setDestination(listingResult.destination);
+                setRawListing(listingResult.raw);
+
+                const mappedReviews = reviewResult.items.map((review) => ({
+                        id: String(review.reviewId),
+                        guestName: review.reviewerName || "Khách lưu trú",
+                        date: String(review.createdAt).slice(0, 10),
+                        rating: review.rating,
+                        content: review.comment || "Khách hàng đã để lại đánh giá cho chỗ nghỉ này.",
+                    }));
+
+                setGuestReviews(mappedReviews.length > 0 ? mappedReviews : buildGuestReviews(listingResult.destination));
+
+                setPolicyItems([
+                    { label: "Nhận phòng sau", value: rules.checkInFrom },
+                    { label: "Trả phòng trước", value: rules.checkOutBefore },
+                    { label: "Cho hút thuốc", value: rules.smokingAllowed ? "Có" : "Không" },
+                    { label: "Cho thú cưng", value: rules.petsAllowed ? "Có" : "Không" },
+                    { label: "Tổ chức tiệc", value: rules.partyAllowed ? "Có" : "Không" },
+                    ...(rules.quietHours ? [{ label: "Giờ yên tĩnh", value: rules.quietHours }] : []),
+                ]);
+            } catch (error) {
+                if (ignore) return;
+
+                setLoadError(error instanceof Error ? error.message : "Không tải được chi tiết chỗ nghỉ.");
+            } finally {
+                if (!ignore) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        void loadDetail();
+
+        return () => {
+            ignore = true;
+        };
+    }, [villaId]);
+    useEffect(() => {
+        if (destination) {
+            addRecentlyViewedListing(destination);
+        }
+    }, [destination]);
+
+    useEffect(() => {
+        return () => {
+            if (feedbackTimerRef.current !== null) {
+                window.clearTimeout(feedbackTimerRef.current);
+            }
+        };
+    }, []);
 
     useEffect(() => {
         const shouldLockScroll = isGalleryModalOpen || mobileBookingSheet !== null;
@@ -317,6 +480,33 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
         navigate(APP_ROUTES.home);
     };
 
+    const showActionFeedback = (message: string) => {
+        setActionFeedback(message);
+
+        if (feedbackTimerRef.current !== null) {
+            window.clearTimeout(feedbackTimerRef.current);
+        }
+
+        feedbackTimerRef.current = window.setTimeout(() => {
+            setActionFeedback(null);
+        }, 3200);
+    };
+    if (isLoading) {
+        return (
+            <section className="mx-auto max-w-3xl px-4 py-28 text-center sm:px-6">
+                <h1 className="text-3xl font-bold text-zinc-900">Đang tải chỗ nghỉ...</h1>
+            </section>
+        );
+    }
+
+    if (loadError) {
+        return (
+            <section className="mx-auto max-w-3xl px-4 py-28 text-center sm:px-6">
+                <h1 className="text-3xl font-bold text-zinc-900">Không tải được chỗ nghỉ </h1>
+                <p className="mt-3 text-sm text-zinc-500">{loadError}</p>
+            </section>
+        );
+    }
     if (!destination) {
         return (
             <section className="mx-auto max-w-3xl px-4 py-28 text-center sm:px-6">
@@ -357,17 +547,35 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
         { icon: <FaCarSide />, label: "Chỗ đậu xe miễn phí" },
     ];
 
-    const policyItems: PolicyItem[] = [
-        { label: "Nhận phòng sau", value: "14:00" },
-        { label: "Trả phòng trước", value: "12:00" },
-        { label: "Tổ chức tiệc hoặc sự kiện" },
-    ];
+
 
     const nights = getNightCount(checkIn, checkOut);
     const nightlyRate = destination.pricePerNight;
     const totalPrice = nightlyRate * nights;
     const stayingGuestCount = guestSelection.adults + guestSelection.children;
     const guestSummary = buildSearchGuestSummary(guestSelection);
+    const hostProfile: HostProfile = rawListing?.host
+        ? {
+            name: rawListing.host.name || "Chủ nhà",
+            verified: true,
+            listingCount: 1,
+            joinedYear: new Date().getFullYear(),
+            bio: "Chủ nhà.",
+        }
+        : getHostProfile(destination);
+
+    const reviewCount = guestReviews.length;
+    const averageReviewScore = reviewCount > 0
+        ? guestReviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount
+        : destination.rating;
+    const currentQueueItem = createBookingQueueItem(destination, {
+        checkIn,
+        checkOut,
+        guests: stayingGuestCount,
+        guestSummary,
+    });
+    const isListingSaved = isSaved(destination.id);
+    const isListingInQueue = bookingQueue.hasItem(destination.id);
     const activeDesktopAnchorRef = (
         activeDesktopField === "checkin"
             ? checkInFieldRef
@@ -376,20 +584,93 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                 : guestFieldRef
     ) as RefObject<HTMLElement | null>;
 
-    const handleBookNow = () => {
-        const bookingDraft = createBookingDraft(destination, {
-            location: destination.address,
-            checkIn,
-            checkOut,
-            guests: guestSelection,
-        });
+    const handleShare = async () => {
+        const shareUrl = window.location.href;
 
-        savePendingBookingDraft(bookingDraft);
-        navigate(buildGuestPaymentPath(bookingDraft.bookingId), {
+        try {
+            if ("share" in navigator && typeof navigator.share === "function") {
+                await navigator.share({
+                    title: destination.name,
+                    text: `Xem ${destination.name} trên BlueStay`,
+                    url: shareUrl,
+                });
+                showActionFeedback("Đã mở chia sẻ cho villa này.");
+                return;
+            }
+
+            await navigator.clipboard.writeText(shareUrl);
+            showActionFeedback("Đã sao chép liên kết villa.");
+        } catch (error) {
+            if (error instanceof DOMException && error.name === "AbortError") {
+                return;
+            }
+
+            showActionFeedback("Chưa thể chia sẻ lúc này. Bạn thử sao chép lại liên kết sau nhé.");
+        }
+    };
+
+    const handleToggleSaved = () => {
+        const nextSaved = toggleSaved(destination.id);
+        showActionFeedback(nextSaved ? "Đã lưu villa vào danh sách xem sau." : "Đã bỏ lưu villa này.");
+    };
+
+    const handleToggleBookingQueue = () => {
+        if (isListingInQueue) {
+            bookingQueue.removeItem(destination.id);
+            showActionFeedback("Đã xóa villa khỏi danh sách chờ đặt.");
+            return;
+        }
+
+        const result = bookingQueue.addItem(currentQueueItem);
+        if (result.status === "full") {
+            showActionFeedback(bookingQueueLimitMessage);
+            return;
+        }
+
+        if (result.status === "exists") {
+            showActionFeedback("Villa này đã có trong danh sách chờ đặt.");
+            return;
+        }
+
+        showActionFeedback("Đã thêm villa vào danh sách chờ đặt.");
+    };
+
+    const openHostMessage = () => {
+        navigate(APP_ROUTES.villaHostMessage(destination.id), {
             state: {
                 returnTo: `${location.pathname}${location.search}`,
+                checkIn,
+                checkOut,
+                guests: stayingGuestCount,
+                guestSummary,
             },
         });
+    };
+
+    const handleBookNow = async () => {
+        if (!destination) return;
+
+        setIsBooking(true);
+        setActionFeedback(null);
+
+        try {
+            const booking = await createBooking({
+                listingId: Number(destination.id),
+                checkInDate: checkIn,
+                checkOutDate: checkOut,
+                guestCount: guestSelection.adults + guestSelection.children,
+            });
+
+            navigate(APP_ROUTES.guestPaymentDetail(String(booking.bookingId)), {
+                state: {
+                    returnTo: `${location.pathname}${location.search}`,
+                },
+            });
+        } catch (error) {
+            showActionFeedback(error instanceof Error ? error.message : "Không thể tạo đặt phòng.");
+        } finally {
+            setIsBooking(false);
+        }
     };
 
     const closeAllBookingPanels = () => {
@@ -555,171 +836,6 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
         });
     };
 
-    const legacyRenderBookingCard = (variant: "mobile" | "desktop") => {
-        const isDesktop = variant === "desktop";
-        const showDatePopover = isDesktop && (activeDesktopField === "checkin" || activeDesktopField === "checkout");
-        const showGuestPopover = isDesktop && activeDesktopField === "guest";
-        const cardClass = isDesktop ? sidebarCardClass : mobileCardClass;
-
-        return (
-            <div ref={isDesktop ? desktopBookingRef : null} className={cardClass}>
-                <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                            <p className="text-[1.8rem] font-semibold tracking-tight text-[#231a12]">
-                                {currencyFormatter.format(nightlyRate)}
-                            </p>
-                            <span className="text-sm text-black">/ đêm</span>
-                        </div>
-
-                        <p className="mt-1 text-sm text-black whitespace-nowrap">
-                            Giá linh hoạt theo thời gian lưu trú.
-                        </p>
-                    </div>
-                    <div className={`inline-flex gap-1 rounded-full px-1 py-1.5 text-xs font-bold ${accentBadgeClass}`}>
-                        <FaUsers />
-                        {stayingGuestCount} khách
-                    </div>
-                </div>
-
-                <div className="relative mt-6">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        <button
-                            type="button"
-                            onClick={() => openDateSelection("checkin")}
-                            className={`rounded-xl border px-4 py-3 text-left transition-colors ${activeDesktopField === "checkin" && isDesktop ? activeBookingFieldClass : inactiveBookingFieldClass
-                                }`}
-                        >
-                            <span className="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] text-black">
-                                <FaCalendarAlt />
-                                Nhận phòng
-                            </span>
-                            <span className="block text-sm font-semibold text-zinc-900">{formatFieldDate(checkIn)}</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => openDateSelection("checkout")}
-                            className={`rounded-xl border px-4 py-3 text-left transition-colors ${activeDesktopField === "checkout" && isDesktop ? activeBookingFieldClass : inactiveBookingFieldClass
-                                }`}
-                        >
-                            <span className="mb-2 flex items-center gap-2 text-[11px] font-semibold  tracking-[0.18em] text-black">
-                                <FaCalendarAlt />
-                                Trả phòng
-                            </span>
-                            <span className="block text-sm font-semibold text-zinc-900">{formatFieldDate(checkOut)}</span>
-                        </button>
-                    </div>
-
-                    {showDatePopover ? (
-                        <DatePickerPanel
-                            key={`desktop-${activeDesktopField}-${checkIn}-${checkOut}`}
-                            isOpen
-                            selectedDate={activeDesktopField === "checkin" ? checkIn : checkOut}
-                            minDate={activeDesktopField === "checkin" ? todayIso : checkIn || todayIso}
-                            rangeStartDate={checkIn}
-                            rangeEndDate={checkOut}
-                            activeField={activeDesktopField === "checkout" ? "checkOut" : "checkIn"}
-                            selectedNightOffset={nightOffset}
-                            onSelectDate={activeDesktopField === "checkin" ? handleCheckInChange : handleCheckoutChange}
-                            onNightOffsetChange={handleNightOffsetChange}
-                            className="left-auto right-0 w-[min(860px,calc(100vw-2rem))] translate-x-0"
-                        />
-                    ) : null}
-                </div>
-
-                <div className="relative mt-3">
-                    <button
-                        type="button"
-                        onClick={openGuestSelection}
-                        className={`w-full rounded-xl border px-4 py-3 text-left transition-colors ${showGuestPopover ? activeBookingFieldClass : inactiveBookingFieldClass
-                            }`}
-                    >
-                        <span className="inline-flex items-center gap-2 rounded-full px-1 py-1.5 text-xs font-bold border border-cyan-100 bg-cyan-50 text-cyan-600">
-                            <FaUsers />
-                            Khách
-                        </span>
-                        <span className="block text-sm font-semibold text-zinc-900">{guestSummary}</span>
-                    </button>
-
-                    {showGuestPopover ? (
-                        <div className="absolute right-0 top-[calc(100%+12px)] z-40 w-full min-w-[320px] rounded-2xl border border-cyan-100 bg-white p-5 shadow-2xl">
-                            <div className="flex items-start justify-between gap-4">
-                                <div>
-                                    <p className="text-sm font-semibold text-zinc-900">Bạn đi cùng ai?</p>
-                                    <p className="mt-1 text-xs text-black">Tối đa 16 khách, không tính em bé và thú cưng.</p>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveDesktopField(null)}
-                                    className="inline-flex h-8 w-8 items-center justify-center rounded-full text-black transition-colors hover:bg-zinc-100 hover:text-zinc-900"
-                                    aria-label="Đóng khách"
-                                >
-                                    <FaTimes className="text-sm" />
-                                </button>
-                            </div>
-
-                            <div className="mt-4 space-y-2">{renderGuestControls(true)}</div>
-
-                            <button
-                                type="button"
-                                onClick={() => setActiveDesktopField(null)}
-                                className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-xl bg-cyan-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-cyan-700"
-                            >
-                                Áp dụng
-                            </button>
-                        </div>
-                    ) : null}
-                </div>
-
-                <div className="mt-6 rounded-2xl border border-cyan-100 bg-cyan-50/40 p-4">
-                    <div className="flex items-center justify-between gap-4 text-sm text-black">
-                        <span>Kỳ nghỉ của bạn</span>
-                        <span>{nights} đêm</span>
-                    </div>
-
-                    <div className="mt-4 flex items-end justify-between gap-4">
-                        <div>
-                            <p className="text-[1.9rem] font-semibold tracking-tight text-[#231a12]">{currencyFormatter.format(totalPrice)}</p>
-                            <p className="mt-1 text-xs text-black">
-                                {currencyFormatter.format(nightlyRate)} x {nights} đêm
-                            </p>
-                        </div>
-
-                        <div className={`inline-flex items-center gap-2 rounded-full px-1 py-1.5 text-xs font-bold border border-cyan-100 bg-cyan-50 text-cyan-600 ${accentBadgeClass}`}>
-                            {stayingGuestCount} khách
-                        </div>
-                    </div>
-                </div>
-
-                <button
-                    type="button"
-                    onClick={handleBookNow}
-                    className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-xl bg-cyan-600 px-6 text-base font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-700"
-                >
-                    Đặt ngay
-                </button>
-
-                <p className="mt-3 text-center text-sm text-black">Chưa trừ tiền ngay</p>
-
-                <div className="mt-6 border-t border-[#ece2d8] pt-4">
-                    <div className="flex items-center justify-between gap-4">
-                        <span className="text-sm text-black">Tổng {nights} đêm</span>
-                        <span className="text-[1.75rem] font-semibold tracking-tight text-[#231a12]">
-                            {currencyFormatter.format(totalPrice)}
-                        </span>
-                    </div>
-
-                    <div className="mt-4 flex items-center gap-2 rounded-xl bg-cyan-50 px-3 py-3 text-xs font-medium text-zinc-600">
-                        <FaCheckCircle className="shrink-0 text-cyan-600" />
-                        Miễn phí hủy trong khung thời gian hỗ trợ
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
     const renderUnifiedBookingCard = (variant: "mobile" | "desktop") => {
         const isDesktop = variant === "desktop";
         const showDatePopover = isDesktop && (activeDesktopField === "checkin" || activeDesktopField === "checkout");
@@ -804,9 +920,10 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                     <button
                         type="button"
                         onClick={handleBookNow}
+                        disabled={isBooking}
                         className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-xl bg-cyan-600 px-6 text-base font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-700"
                     >
-                        Đặt ngay
+                        {isBooking ? "Đang tạo đặt phòng..." : "Đặt ngay"}
                     </button>
 
                     <p className="mt-3 text-center text-sm text-black">Chưa trừ tiền ngay</p>
@@ -940,6 +1057,45 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                         {destination.address}
                                     </span>
                                 </div>
+
+                                <div className="flex flex-wrap items-center gap-3 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleShare}
+                                        className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#e0d1c1] bg-white/90 px-4 py-2.5 text-sm font-semibold text-zinc-900 transition-colors hover:border-cyan-300 hover:text-cyan-700"
+                                    >
+                                        <FiShare2 />
+                                        Chia sẻ
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleToggleSaved}
+                                        className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-colors ${isListingSaved
+                                            ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
+                                            : "border-[#e0d1c1] bg-white/90 text-zinc-900 hover:border-rose-200 hover:text-rose-600"
+                                            }`}
+                                    >
+                                        <FiHeart className={isListingSaved ? "fill-current" : undefined} />
+                                        {isListingSaved ? "Đã lưu" : "Lưu"}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleToggleBookingQueue}
+                                        className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-colors ${isListingInQueue
+                                            ? "border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100"
+                                            : "border-[#e0d1c1] bg-white/90 text-zinc-900 hover:border-cyan-300 hover:text-cyan-700"
+                                            }`}
+                                    >
+                                        <FiShoppingBag />
+                                        {isListingInQueue ? "Đã chờ đặt" : "Danh sách chờ đặt"}
+                                    </button>
+                                </div>
+
+                                {actionFeedback ? (
+                                    <p className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-700">
+                                        {actionFeedback}
+                                    </p>
+                                ) : null}
                             </header>
 
                             <div className="mt-6">
@@ -1035,6 +1191,147 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
 
                             <section className="mt-12">
                                 <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]" style={serifHeadingStyle}>
+                                    Thông tin host
+                                </h2>
+
+                                <div className="mt-5 rounded-2xl border border-[#e8ddd1] bg-white p-5 shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:p-6">
+                                    <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+                                        {hostProfile.avatarUrl ? (
+                                            <img
+                                                src={hostProfile.avatarUrl}
+                                                alt={hostProfile.name}
+                                                className="h-20 w-20 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-xl font-bold text-white">
+                                                {getInitials(hostProfile.name)}
+                                            </div>
+                                        )}
+
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <h3 className="text-xl font-semibold text-zinc-900">{hostProfile.name}</h3>
+                                                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${hostProfile.verified ? "bg-cyan-50 text-cyan-700" : "bg-amber-50 text-amber-700"}`}>
+                                                    {hostProfile.verified ? "Đã xác minh" : "Đang xác minh"}
+                                                </span>
+                                            </div>
+                                            <p className="mt-2 text-sm text-zinc-500">
+                                                {hostProfile.listingCount} chỗ ở đang quản lý · Tham gia từ {hostProfile.joinedYear}
+                                            </p>
+                                            <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-600 sm:text-[15px]">{hostProfile.bio}</p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={openHostMessage}
+                                            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-semibold text-cyan-700 transition-colors hover:bg-cyan-100 sm:self-start"
+                                        >
+                                            <FiMessageCircle />
+                                            Nhắn tin cho host
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="mt-12">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                                    <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]" style={serifHeadingStyle}>
+                                        Đánh giá của khách
+                                    </h2>
+                                    <p className="text-sm font-semibold text-zinc-600">
+                                        Điểm trung bình {averageReviewScore.toFixed(1)} · {reviewCount} đánh giá
+                                    </p>
+                                </div>
+
+                                <div className="mt-5 rounded-2xl border border-[#e8ddd1] bg-white p-5 shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:p-6">
+                                    {reviewCount > 0 ? (
+                                        <div className="grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
+                                            <div className="border-b border-[#efe4d8] pb-6 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-6">
+                                                <div className="flex items-center gap-1 text-cyan-600">
+                                                    {Array.from({ length: 5 }).map((_, index) => (
+                                                        <FaStar key={index} />
+                                                    ))}
+                                                </div>
+
+                                                <p className="mt-4 text-[2.25rem] font-semibold tracking-tight text-[#231a12]">
+                                                    {averageReviewScore.toFixed(1)}
+                                                </p>
+                                                <p className="mt-1 text-sm text-black">{reviewCount} khách đã để lại đánh giá cho chỗ ở này.</p>
+
+                                                <div className="mt-6 space-y-4">
+                                                    {reviewMetrics.map((metric) => (
+                                                        <div key={metric.label} className="grid gap-2 sm:grid-cols-[72px_minmax(0,1fr)_36px] sm:items-center lg:grid-cols-1">
+                                                            <span className="text-sm font-semibold text-zinc-700">{metric.label}</span>
+                                                            <div className="h-2 rounded-full bg-[#eadfd2]">
+                                                                <div
+                                                                    className="h-2 rounded-full bg-cyan-600"
+                                                                    style={{ width: `${Math.min(100, (metric.score / 5) * 100)}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-sm font-semibold text-zinc-800">{metric.score.toFixed(1)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                {guestReviews.map((review) => (
+                                                    <article key={review.id} className="rounded-2xl border border-[#efe4d8] bg-[#fffaf5] p-4">
+                                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-cyan-600 text-sm font-bold text-white">
+                                                                    {getInitials(review.guestName)}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-semibold text-zinc-900">{review.guestName}</p>
+                                                                    <p className="text-xs text-zinc-500">{formatFieldDate(review.date)}</p>
+                                                                </div>
+                                                            </div>
+                                                            <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-sm font-semibold text-cyan-700">
+                                                                <FaStar className="text-xs" />
+                                                                {review.rating.toFixed(1)}
+                                                            </span>
+                                                        </div>
+                                                        <p className="mt-3 text-sm leading-7 text-zinc-600">{review.content}</p>
+                                                    </article>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-2xl border border-dashed border-[#e4d7c8] bg-[#fffaf5] px-5 py-10 text-center">
+                                            <p className="text-base font-semibold text-zinc-900">Chưa có đánh giá</p>
+                                            <p className="mt-2 text-sm text-zinc-500">Những đánh giá đầu tiên của khách sẽ hiển thị tại đây.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+
+                            <section className="mt-12">
+                                <div className="rounded-2xl border border-[#e8ddd1] bg-white p-5 shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:p-6">
+                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                        <div className="min-w-0">
+                                            <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]" style={serifHeadingStyle}>
+                                                Nhắn tin cho host
+                                            </h2>
+                                            <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-600">
+                                                Mở trang nhắn tin riêng để trao đổi về lịch trống, nhận phòng hoặc nhu cầu riêng của nhóm bạn.
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={openHostMessage}
+                                            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-cyan-700"
+                                        >
+                                            <FiMessageCircle />
+                                            Nhắn tin cho host
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="mt-12">
+                                <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]" style={serifHeadingStyle}>
                                     Tiện nghi
                                 </h2>
 
@@ -1051,60 +1348,6 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                 </div>
                             </section>
 
-                            <section className="mt-12">
-                                <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]" style={serifHeadingStyle}>
-                                    Đánh giá khách lưu trú
-                                </h2>
-
-                                <div className="mt-5 rounded-2xl border border-[#e8ddd1] bg-white p-5 shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:p-6">
-                                    <div className="grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
-                                        <div className="border-b border-[#efe4d8] pb-6 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-6">
-                                            <div className="flex items-center gap-1 text-cyan-600">
-                                                {Array.from({ length: 5 }).map((_, index) => (
-                                                    <FaStar key={index} />
-                                                ))}
-                                            </div>
-
-                                            <p className="mt-4 text-[2.25rem] font-semibold tracking-tight text-[#231a12]">
-                                                {destination.rating.toFixed(1)}
-                                            </p>
-                                            <p className="mt-1 text-sm text-black">Đánh giá tổng thể từ khách đã lưu trú.</p>
-
-                                            <div className="mt-6 flex items-center gap-3">
-                                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cyan-600 text-sm font-bold text-white">
-                                                    ER
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-zinc-900">Emily R.</p>
-                                                    <p className="text-sm text-black">15/02/2024</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            {reviewMetrics.map((metric) => (
-                                                <div key={metric.label} className="grid gap-2 sm:grid-cols-[96px_minmax(0,1fr)_40px_16px] sm:items-center">
-                                                    <span className="text-sm font-semibold text-zinc-700">{metric.label}</span>
-                                                    <div className="h-2 rounded-full bg-[#eadfd2]">
-                                                        <div
-                                                            className="h-2 rounded-full bg-cyan-600"
-                                                            style={{ width: `${Math.min(100, (metric.score / 5) * 100)}%` }}
-                                                        />
-                                                    </div>
-                                                    <span className="text-sm font-semibold text-zinc-800">{metric.score.toFixed(1)}</span>
-                                                    <FaChevronRight className="text-xs text-zinc-400" />
-                                                </div>
-                                            ))}
-
-                                            <p className="pt-2 text-sm leading-7 text-zinc-600 sm:text-[15px]">
-                                                Villa sạch sẽ, hồ bơi đẹp và không gian rộng rãi cho nhóm bạn hoặc gia đình. Khu vực bếp, phòng ngủ và sân ngoài trời đều
-                                                tạo cảm giác thư giãn như một kỳ nghỉ đúng nghĩa.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
-
                             <div className="mt-8 xl:hidden">{renderPoliciesCard()}</div>
                         </div>
 
@@ -1115,6 +1358,11 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                     </div>
                 </div>
             </section>
+
+            <NearbyRecommendationsSection
+                currentListing={destination}
+                searchState={recommendationSearchState}
+            />
 
             {mobileBookingSheet ? (
                 <div className="fixed inset-0 z-[80] xl:hidden">

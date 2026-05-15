@@ -3,7 +3,8 @@ import { FiSliders } from "react-icons/fi";
 import { useSearchParams } from "react-router-dom";
 import Pagination from "../../components/common/Pagination";
 import SearchBar from "../../components/search/SearchBar";
-import { getPopularDestinations } from "../../../services/listingService";
+import { getListings, semanticSearchListingsMapped } from "../../../services/listingService";
+import type { PopularDestination } from "../../../models/entities/Listing";
 import {
     buildGuestSummary,
     filterStaysByBookingSearch,
@@ -43,10 +44,81 @@ const SearchPage = () => {
     const resultsRef = useRef<HTMLElement | null>(null);
     const firstRenderRef = useRef(true);
 
-    const stays = useMemo(() => getPopularDestinations(), []);
+    const [stays, setStays] = useState<PopularDestination[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: ITEMS_PER_PAGE,
+        totalItems: 0,
+        totalPages: 1,
+    });
     const priceBounds = useMemo(() => getStayPriceBounds(stays), [stays]);
     const defaultFilters = useMemo(() => createDefaultStayFilters(priceBounds), [priceBounds]);
     const bookingSearchState = useMemo(() => parseBookingSearchParams(searchParams), [searchParams]);
+    const requestedPage = Number.parseInt(searchParams.get("page") ?? "1", 10);
+    const apiPage = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+
+    useEffect(() => {
+        let ignore = false;
+
+        const loadListings = async () => {
+            setIsLoading(true);
+            setError("");
+
+            try {
+                const totalGuests = bookingSearchState.guests.adults + bookingSearchState.guests.children;
+                const trimmedLocation = bookingSearchState.location.trim();
+
+                const result = trimmedLocation
+                    ? await semanticSearchListingsMapped({
+                        query: trimmedLocation,
+                        city: "Vũng Tàu",
+                        checkIn: bookingSearchState.checkIn || undefined,
+                        checkOut: bookingSearchState.checkOut || undefined,
+                        guests: totalGuests > 0 ? totalGuests : undefined,
+                        page: apiPage,
+                        limit: ITEMS_PER_PAGE,
+                    })
+                    : await getListings({
+                        city: "Vũng Tàu",
+                        checkIn: bookingSearchState.checkIn || undefined,
+                        checkOut: bookingSearchState.checkOut || undefined,
+                        guests: totalGuests > 0 ? totalGuests : undefined,
+                        page: apiPage,
+                        limit: ITEMS_PER_PAGE,
+                    });
+
+                if (ignore) return;
+
+                setStays(result.items);
+                setPagination(result.pagination);
+            } catch (loadError) {
+                if (ignore) return;
+
+                setError(loadError instanceof Error ? loadError.message : "Không tải được danh sách chỗ nghỉ.");
+            } finally {
+                if (!ignore) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        void loadListings();
+
+        return () => {
+            ignore = true;
+        };
+    }, [
+        apiPage,
+        bookingSearchState.location,
+        bookingSearchState.checkIn,
+        bookingSearchState.checkOut,
+        bookingSearchState.guests.adults,
+        bookingSearchState.guests.children,
+    ]);
+
+
     const appliedFilters = useMemo(
         () => parseStayFiltersFromSearchParams(searchParams, defaultFilters, priceBounds),
         [defaultFilters, priceBounds, searchParams],
@@ -61,9 +133,9 @@ const SearchPage = () => {
         [appliedFilters, searchMatchedDestinations],
     );
 
-    const totalPages = Math.max(1, Math.ceil(filteredDestinations.length / ITEMS_PER_PAGE));
+    const totalPages = pagination.totalPages;
     const currentPage = parsePage(searchParams.get("page"), totalPages);
-    const currentItems = filteredDestinations.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const currentItems = filteredDestinations;
     const activeFilterCount = countActiveFilters(appliedFilters, defaultFilters);
     const hasSearchCriteria =
         Boolean(bookingSearchState.location) ||
@@ -182,9 +254,22 @@ const SearchPage = () => {
                 </div>
 
                 <div className="mt-6">
-                    <StayGrid stays={currentItems} />
+                    {isLoading ? (
+                        <div className="rounded-2xl bg-white p-8 text-center text-sm font-semibold text-gray-500 shadow-sm">
+                            Đang tải danh sách chỗ nghỉ...
+                        </div>
+                    ) : error ? (
+                        <div className="rounded-2xl border border-rose-100 bg-rose-50 p-8 text-center text-sm font-semibold text-rose-600">
+                            {error}
+                        </div>
+                    ) : currentItems.length === 0 ? (
+                        <div className="rounded-2xl bg-white p-8 text-center text-sm font-semibold text-gray-500 shadow-sm">
+                            Không tìm thấy chỗ nghỉ phù hợp.
+                        </div>
+                    ) : (
+                        <StayGrid stays={currentItems} />
+                    )}
                 </div>
-
                 <div className="mt-10 border-t border-gray-100 pt-6">
                     <Pagination page={currentPage} totalPages={totalPages} onChange={handlePageChange} />
                 </div>
