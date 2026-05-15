@@ -8,11 +8,14 @@ import MainLayout from "../views/layouts/MainLayout";
 import ForgotPasswordPage from "../views/pages/Auth/ForgotPasswordPage";
 import LoginPage from "../views/pages/Auth/LoginPage";
 import RegisterPage from "../views/pages/Auth/RegisterPage";
+import BlogPage from "../views/pages/Blog/BlogPage";
+import ContactPage from "../views/pages/Contact/ContactPage";
 import AdminOverview from "../views/pages/Admin/index.jsx";
 import KiemDuyetBaiDang from "../views/pages/Admin/KiemDuyetBaiDang/index.jsx";
 import PhanQuyenHeThong from "../views/pages/Admin/PhanQuyenHeThong/index.jsx";
 import QuanLyNguoiDung from "../views/pages/Admin/QuanLyNguoiDung/index.jsx";
 import GuestPayment from "../views/pages/GuestPayment";
+import PaymentResultPage from "../views/pages/GuestPayment/PaymentResultPage";
 import CaiDat from "../views/pages/Host/CaiDat";
 import BaoCao from "../views/pages/Host/BaoCao";
 import DanhGia from "../views/pages/Host/DanhGia";
@@ -24,6 +27,7 @@ import ChoNghi from "../views/pages/Host/ChoNghi";
 import ThemChoNghi from "../views/pages/Host/ThemChoNghi";
 import ThanhToan from "../views/pages/Host/ThanhToan";
 import HomePage from "../views/pages/Home/HomePage";
+import HostMessagePage from "../views/pages/HostMessage/HostMessagePage";
 import ListingDetailPage from "../views/pages/ListingDetail/ListingDetailPage";
 import NotFoundPage from "../views/pages/NotFound/NotFoundPage";
 import SearchPage from "../views/pages/Search/SearchPage";
@@ -39,6 +43,9 @@ const AppRouter = () => {
             <Route path={APP_ROUTES.home} element={<MainLayout />}>
                 <Route index element={<HomePage />} />
                 <Route path={APP_ROUTES.search.slice(1)} element={<SearchPage />} />
+                <Route path={APP_ROUTES.blog.slice(1)} element={<BlogPage />} />
+                <Route path={APP_ROUTES.contact.slice(1)} element={<ContactPage />} />
+                <Route path="news" element={<Navigate to={APP_ROUTES.contact} replace />} />
                 <Route path={APP_ROUTES.hostLanding.slice(1)} element={<TroThanhHostLanding />} />
                 <Route element={<ProtectedRoute />}>
                     <Route path={APP_ROUTES.accountProfile.slice(1)} element={<ProfilePage />} />
@@ -47,6 +54,7 @@ const AppRouter = () => {
                     <Route path={APP_ROUTES.hostStatus.slice(1)} element={<TrangThaiHost />} />
                 </Route>
                 <Route path="villa/:villaId" element={<ListingDetailPage />} />
+                <Route path="villa/:villaId/nhan-tin-host" element={<HostMessagePage />} />
             </Route>
 
             <Route element={<AuthLayout />}>
@@ -81,6 +89,8 @@ const AppRouter = () => {
             </Route>
 
             <Route path={APP_ROUTES.hostOverviewLegacy} element={<Navigate to={APP_ROUTES.ownerDashboard} replace />} />
+            
+            <Route path={APP_ROUTES.guestPaymentResult} element={<PaymentResultPage />} />
             <Route path={APP_ROUTES.guestPayment} element={<GuestPayment />} />
             <Route path="*" element={<NotFoundPage />} />
         </Routes>

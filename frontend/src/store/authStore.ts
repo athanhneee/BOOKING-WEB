@@ -8,6 +8,7 @@ export type AuthUser = {
 };
 
 const AUTH_STORAGE_KEY = "minhthanhvilla_current_user";
+const AUTH_TOKEN_STORAGE_KEY = "minhthanhvilla_access_token";
 
 const canUseStorage = () => typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
 
@@ -46,12 +47,37 @@ export const setCurrentUser = (user: AuthUser) => {
     window.sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
 };
 
+export const getAccessToken = () => {
+    if (!canUseStorage()) {
+        return null;
+    }
+
+    return window.sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+};
+
+export const setAccessToken = (token: string) => {
+    if (!canUseStorage()) {
+        return;
+    }
+
+    window.sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+};
+
+export const setAuthSession = (user: AuthUser, token?: string | null) => {
+    setCurrentUser(user);
+
+    if (token) {
+        setAccessToken(token);
+    }
+};
+
 export const clearCurrentUser = () => {
     if (!canUseStorage()) {
         return;
     }
 
     window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    window.sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
 };
 
 export const isAuthenticated = (user: AuthUser | null | undefined): user is AuthUser => Boolean(user);
