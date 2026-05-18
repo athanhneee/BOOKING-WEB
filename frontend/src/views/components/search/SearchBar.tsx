@@ -657,9 +657,7 @@ const SearchBarInner = ({
                     <div className="mb-4 flex items-center justify-between gap-3">
                         <div>
                             <p className="text-base font-semibold text-gray-900">Điểm đến được đề xuất</p>
-                            <p className="mt-1 text-sm text-gray-500">
-                                Chọn nhanh một nơi nổi bật hoặc nhập từ khóa riêng của bạn.
-                            </p>
+                           
                         </div>
 
                         {draftState.location ? (

@@ -44,7 +44,7 @@ const KhachLuuTru = () => {
     return (
         <div className={pageWrapperClass}>
             <div className="mx-auto max-w-7xl space-y-6">
-                <PageHeader title="Khách lưu trú" subtitle="Dữ liệu tổng hợp từ booking thật của host, không còn mock khách." />
+                <PageHeader title="Khách lưu trú" subtitle="" />
 
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FiSliders, FiX } from "react-icons/fi";
 import { LuCircleCheckBig } from "react-icons/lu";
-import type { PopularDestination } from "../../../../config/popularDestinations";
+import type { PopularDestination } from "../../../../models/entities/Listing";
 import Modal from "../../ui/Modal";
 import CounterFilter from "./CounterFilter";
 import FilterChipGroup from "./FilterChipGroup";
@@ -93,7 +93,7 @@ const StayFilterModal = ({ isOpen, onClose, stays, value, bounds, onApply }: Sta
                         </div>
                         <h2 className="mt-4 text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">Tìm nơi lưu trú phù hợp với nhu cầu của bạn</h2>
                         <p className="mt-2 text-sm leading-6 text-zinc-500">
-                            Chọn loại chỗ nghỉ, khoảng giá, tiện nghi và chính sách đặt phòng để rút gọn kết quả nhanh hơn.
+                            Chọn loại chỗ nghỉ, khoảng giá, tiện nghi và chính sách đặt phòng.
                         </p>
                     </div>
 
@@ -186,16 +186,14 @@ const StayFilterModal = ({ isOpen, onClose, stays, value, bounds, onApply }: Sta
                                     key={option.value}
                                     type="button"
                                     onClick={() => handleSortChange(option.value)}
-                                    className={`flex w-full items-start gap-3 rounded-xl border-2 p-4 text-left transition-all duration-150 ${
-                                        isSelected
+                                    className={`flex w-full items-start gap-3 rounded-xl border-2 p-4 text-left transition-all duration-150 ${isSelected
                                             ? "border-cyan-500 bg-cyan-50"
                                             : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
-                                    }`}
+                                        }`}
                                 >
                                     <div
-                                        className={`flex-shrink-0 rounded-xl p-2 transition-colors ${
-                                            isSelected ? "bg-cyan-100 text-cyan-600" : "bg-gray-100 text-gray-500"
-                                        }`}
+                                        className={`flex-shrink-0 rounded-xl p-2 transition-colors ${isSelected ? "bg-cyan-100 text-cyan-600" : "bg-gray-100 text-gray-500"
+                                            }`}
                                     >
                                         <Icon size={16} />
                                     </div>

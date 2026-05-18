@@ -100,7 +100,7 @@ const ChoNghi = () => {
             <div className="mx-auto max-w-7xl space-y-6">
                 <PageHeader
                     title="Chỗ nghỉ của tôi"
-                    subtitle="Danh sách này lấy trực tiếp từ backend /api/host/listings/mine, không còn dùng mock data."
+                    subtitle="Danh sách chỗ nghỉ"
                     actions={
                         <>
                             <button type="button" onClick={fetchListings} className={secondaryButtonClass}>

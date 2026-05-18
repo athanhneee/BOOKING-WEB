@@ -4,7 +4,7 @@ import type {
     StayHighlight,
     StayPolicy,
     StayQuickChoice,
-} from "../../../../config/popularDestinations";
+} from "../../../../models/entities/Listing";
 import {
     LuMapPin,
     LuStar,
@@ -14,7 +14,7 @@ import {
 } from "react-icons/lu";
 import type { CounterFilterItem, StaySortOption } from "./types";
 
-export const stayCategoryOptions: StayCategory[] = ["Villa", "Căn hộ", "Homestay", "Nhà nguyên căn", "Resort", "Khách sạn"];
+export const stayCategoryOptions: StayCategory[] = ["Villa", "Căn hộ", "Homestay", "Nhà nguyên căn", "Khách sạn"];
 
 export const stayAmenityOptions: StayAmenity[] = [
     "Hồ bơi",

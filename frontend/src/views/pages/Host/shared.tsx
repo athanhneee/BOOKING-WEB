@@ -4,7 +4,7 @@ import { hostCardClass } from "./sharedStyles";
 
 type PageHeaderProps = {
     title: string;
-    subtitle: string;
+    subtitle?: string;
     actions?: ReactNode;
 };
 
@@ -13,7 +13,7 @@ export const PageHeader = ({ title, subtitle, actions }: PageHeaderProps) => {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
                 <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-                <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
+                {subtitle ? <p className="mt-1 text-sm text-gray-500">{subtitle}</p> : null}
             </div>
             {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
         </div>

@@ -1,4 +1,4 @@
-import type { PopularDestination } from "../../config/popularDestinations";
+import type { PopularDestination } from "../../models/entities/Listing";
 
 export const BOOKING_QUEUE_STORAGE_KEY = "booking_queue_items";
 export const BOOKING_QUEUE_LIMIT = 5;
@@ -20,7 +20,7 @@ type BookingQueueMutationResult = {
     items: BookingQueueItem[];
 };
 
-const canUseLocalStorage = () => typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+const canUseSessionStorage = () => typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
 
 const notifyBookingQueueUpdated = () => {
     if (typeof window !== "undefined") {
@@ -37,11 +37,11 @@ const isValidQueueItem = (value: Partial<BookingQueueItem> | null | undefined): 
     );
 
 export const readBookingQueueItems = (): BookingQueueItem[] => {
-    if (!canUseLocalStorage()) {
+    if (!canUseSessionStorage()) {
         return [];
     }
 
-    const rawValue = window.localStorage.getItem(BOOKING_QUEUE_STORAGE_KEY);
+    const rawValue = window.sessionStorage.getItem(BOOKING_QUEUE_STORAGE_KEY);
     if (!rawValue) {
         return [];
     }
@@ -59,11 +59,11 @@ export const readBookingQueueItems = (): BookingQueueItem[] => {
 };
 
 export const writeBookingQueueItems = (items: BookingQueueItem[]) => {
-    if (!canUseLocalStorage()) {
+    if (!canUseSessionStorage()) {
         return;
     }
 
-    window.localStorage.setItem(BOOKING_QUEUE_STORAGE_KEY, JSON.stringify(items.slice(0, BOOKING_QUEUE_LIMIT)));
+    window.sessionStorage.setItem(BOOKING_QUEUE_STORAGE_KEY, JSON.stringify(items.slice(0, BOOKING_QUEUE_LIMIT)));
     notifyBookingQueueUpdated();
 };
 

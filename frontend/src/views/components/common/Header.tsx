@@ -3,9 +3,9 @@ import { LuMenu, LuX } from "react-icons/lu";
 import { Link, useLocation } from "react-router-dom";
 import logo from "../../../assets/img/logo_mau.svg";
 import { APP_ROUTES } from "../../../config/routes";
-import { hostApplications } from "../../../data/mockData";
 import { createGuestMenuProfile, getAccountProfileForUser } from "../../../features/account/accountProfileStorage";
 import useScrollVisibility from "../../../hooks/useScrollVisibility";
+import { getHostApplicationMe, type HostApplicationStatus } from "../../../services/hostService";
 import { getCurrentUser } from "../../../store/authStore";
 import AccountMenu from "../navbar/AccountMenu";
 
@@ -16,21 +16,11 @@ const navLinks = [
     { to: APP_ROUTES.contact, label: "Liên hệ" },
 ];
 
-const getLatestApplicationForUser = (userId?: string | null) => {
-    if (!userId) {
-        return null;
-    }
-
-    return hostApplications
-        .filter((application) => application.userId === userId)
-        .sort((left, right) => right.submittedAt.localeCompare(left.submittedAt))[0] ?? null;
-};
-
 const Header = () => {
     const show = useScrollVisibility({ threshold: 12, topOffset: 64, hideStartRatio: 0.5 });
     const location = useLocation();
     const currentUser = getCurrentUser();
-    const currentUserApplication = getLatestApplicationForUser(currentUser?.id);
+    const [hostApplicationStatus, setHostApplicationStatus] = useState<HostApplicationStatus>(null);
     const [useDarkText, setUseDarkText] = useState(location.pathname !== APP_ROUTES.home);
     const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
     const [profileRevision, setProfileRevision] = useState(0);
@@ -56,6 +46,39 @@ const Header = () => {
         return () => window.removeEventListener("account-profile-updated", handleProfileUpdate);
     }, []);
 
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadHostStatus = async () => {
+            if (!currentUser) {
+                setHostApplicationStatus(null);
+                return;
+            }
+
+            if (currentUser.role === "Admin" || currentUser.role === "Host") {
+                setHostApplicationStatus("approved");
+                return;
+            }
+
+            try {
+                const result = await getHostApplicationMe();
+                if (!cancelled) {
+                    setHostApplicationStatus(result.hostApplicationStatus ?? result.status ?? null);
+                }
+            } catch {
+                if (!cancelled) {
+                    setHostApplicationStatus(null);
+                }
+            }
+        };
+
+        void loadHostStatus();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentUser]);
+
     const desktopLinkClass = useDarkText
         ? "transition-colors hover:text-cyan-800"
         : "transition-colors hover:text-cyan-200";
@@ -72,20 +95,20 @@ const Header = () => {
     );
 
     const hostAction =
-        currentUserApplication?.status === "approved"
+        hostApplicationStatus === "approved"
             ? { label: "Khu vực Host", to: APP_ROUTES.ownerDashboard }
-            : currentUserApplication?.status === "pending"
+            : hostApplicationStatus === "pending"
               ? { label: "Đang xét duyệt Host", to: APP_ROUTES.hostStatus }
-              : currentUserApplication?.status === "rejected"
+              : hostApplicationStatus === "rejected"
                 ? { label: "Gửi lại hồ sơ Host", to: APP_ROUTES.hostStatus }
                 : { label: "Trở thành Host", to: APP_ROUTES.hostLanding };
 
     const renderBecomeHostLink = (mobile = false) => {
-        if (currentUserApplication?.status === "approved") {
+        if (hostApplicationStatus === "approved") {
             return null;
         }
 
-        if (currentUserApplication?.status === "pending") {
+        if (hostApplicationStatus === "pending") {
             return (
                 <Link to={APP_ROUTES.hostStatus} className={mobile ? "rounded-xl px-4 py-3" : undefined}>
                     <span className="inline-flex items-center rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-sm font-medium text-yellow-700">
@@ -95,7 +118,7 @@ const Header = () => {
             );
         }
 
-        if (currentUserApplication?.status === "rejected") {
+        if (hostApplicationStatus === "rejected") {
             return (
                 <Link
                     to={APP_ROUTES.hostStatus}

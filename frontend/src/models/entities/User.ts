@@ -15,6 +15,13 @@ export type ApiUser = {
     dob?: string | null;
     bio?: string | null;
     avatarUrl?: string | null;
+    location?: string | null;
+    job?: string | null;
+    dreamDestination?: string | null;
+    school?: string | null;
+    languages?: string[] | null;
+    isVerified?: boolean;
+    joinedYear?: number | null;
     status: ApiUserStatus;
     roles: ApiUserRole[];
     role: ApiUserRole;

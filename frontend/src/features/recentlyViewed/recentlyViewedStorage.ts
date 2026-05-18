@@ -1,19 +1,19 @@
-import type { PopularDestination } from "../../config/popularDestinations";
+import type { PopularDestination } from "../../models/entities/Listing";
 
 export const RECENTLY_VIEWED_STORAGE_KEY = "recently_viewed_listings";
 export const RECENTLY_VIEWED_LIMIT = 8;
 
-const canUseLocalStorage = () => typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+const canUseSessionStorage = () => typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
 
 const isValidListing = (value: Partial<PopularDestination> | null | undefined): value is PopularDestination =>
     Boolean(value?.id && value.name && value.address && typeof value.rating === "number" && typeof value.pricePerNight === "number");
 
 export const readRecentlyViewedListings = (): PopularDestination[] => {
-    if (!canUseLocalStorage()) {
+    if (!canUseSessionStorage()) {
         return [];
     }
 
-    const rawValue = window.localStorage.getItem(RECENTLY_VIEWED_STORAGE_KEY);
+    const rawValue = window.sessionStorage.getItem(RECENTLY_VIEWED_STORAGE_KEY);
     if (!rawValue) {
         return [];
     }
@@ -31,11 +31,11 @@ export const readRecentlyViewedListings = (): PopularDestination[] => {
 };
 
 export const writeRecentlyViewedListings = (items: PopularDestination[]) => {
-    if (!canUseLocalStorage()) {
+    if (!canUseSessionStorage()) {
         return;
     }
 
-    window.localStorage.setItem(RECENTLY_VIEWED_STORAGE_KEY, JSON.stringify(items.slice(0, RECENTLY_VIEWED_LIMIT)));
+    window.sessionStorage.setItem(RECENTLY_VIEWED_STORAGE_KEY, JSON.stringify(items.slice(0, RECENTLY_VIEWED_LIMIT)));
 };
 
 export const addRecentlyViewedListing = (listing: PopularDestination) => {

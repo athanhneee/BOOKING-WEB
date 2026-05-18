@@ -2,6 +2,9 @@
 export default {
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Be Vietnam Pro"', '"Inter"', '"Noto Sans"', "Arial", "sans-serif"],
+      },
       borderRadius: {
         none: "0",
         sm: "0.125rem",

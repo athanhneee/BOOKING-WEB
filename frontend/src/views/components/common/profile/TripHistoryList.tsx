@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { LuCompass, LuPlane } from "react-icons/lu";
 import { APP_ROUTES } from "../../../../config/routes";
-import type { TripHistory } from "../../../../data/mockTripHistory";
+import type { TripHistory } from "../../../../models/entities/TripHistory";
 import TripHistoryCard from "./TripHistoryCard";
 
 type TripHistoryListProps = {

@@ -70,7 +70,7 @@ const BaoCao = () => {
             <div className="mx-auto max-w-7xl space-y-6">
                 <PageHeader
                     title="Báo cáo doanh thu"
-                    subtitle="Dữ liệu lấy trực tiếp từ /api/host/reports/revenue, không còn dùng monthlyRevenue/properties mock."
+                    subtitle="Doanh thu của bạn"
                     actions={
                         <div className="flex flex-wrap gap-2">
                             {([

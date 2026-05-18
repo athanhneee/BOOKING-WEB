@@ -83,8 +83,15 @@ export type AdminHostsReport = {
     }>;
 };
 
+export const ADMIN_LISTINGS_MAX_PAGE_LIMIT = 50;
+
 export const getPendingListings = (query: { page?: number; limit?: number } = {}) =>
-    apiClient.get<PaginatedListings>("/api/admin/listings/pending", { query });
+    apiClient.get<PaginatedListings>("/api/admin/listings/pending", {
+        query: {
+            ...query,
+            limit: query.limit ? Math.min(query.limit, ADMIN_LISTINGS_MAX_PAGE_LIMIT) : undefined,
+        },
+    });
 
 export const approveListing = (listingId: string | number) =>
     apiClient.patch<{ listingId: number; status: string }>(`/api/admin/listings/${listingId}/approve`);
@@ -168,4 +175,3 @@ export const getAdminVerifications = (
             verificationType: query.verificationType === "all" ? undefined : query.verificationType,
         },
     });
-

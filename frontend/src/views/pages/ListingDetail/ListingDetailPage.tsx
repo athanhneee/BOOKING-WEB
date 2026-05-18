@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject, type TouchEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject, type TouchEvent } from "react";
 import {
     FaArrowLeft,
     FaCarSide,
@@ -88,10 +88,6 @@ const currencyFormatter = new Intl.NumberFormat("vi-VN", {
     currency: "VND",
     maximumFractionDigits: 0,
 });
-
-const serifHeadingStyle: CSSProperties = {
-    fontFamily: '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif',
-};
 
 const sidebarCardClass =
     "rounded-2xl border border-[#e8ddd1] bg-white p-1 shadow-[0_30px_80px_-48px_rgba(71,47,23,0.38)] sm:p-4";
@@ -357,12 +353,12 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                 setRawListing(listingResult.raw);
 
                 const mappedReviews = reviewResult.items.map((review) => ({
-                        id: String(review.reviewId),
-                        guestName: review.reviewerName || "Khách lưu trú",
-                        date: String(review.createdAt).slice(0, 10),
-                        rating: review.rating,
-                        content: review.comment || "Khách hàng đã để lại đánh giá cho chỗ nghỉ này.",
-                    }));
+                    id: String(review.reviewId),
+                    guestName: review.reviewerName || "Khách lưu trú",
+                    date: String(review.createdAt).slice(0, 10),
+                    rating: review.rating,
+                    content: review.comment || "Khách hàng đã để lại đánh giá cho chỗ nghỉ này.",
+                }));
 
                 setGuestReviews(mappedReviews.length > 0 ? mappedReviews : buildGuestReviews(listingResult.destination));
 
@@ -591,7 +587,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
             if ("share" in navigator && typeof navigator.share === "function") {
                 await navigator.share({
                     title: destination.name,
-                    text: `Xem ${destination.name} trên BlueStay`,
+                    text: `Xem ${destination.name} trên minh thanh villa`,
                     url: shareUrl,
                 });
                 showActionFeedback("Đã mở chia sẻ cho villa này.");
@@ -992,7 +988,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
     const renderPoliciesCard = () => {
         return (
             <div className={sidebarCardClass}>
-                <h2 className="text-[2.1rem] leading-none tracking-tight text-[#231a12]" style={serifHeadingStyle}>
+                <h2 className="text-[2.1rem] leading-none tracking-tight text-[#231a12]">
                     Chính sách villa
                 </h2>
 
@@ -1037,7 +1033,6 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                             <header className="space-y-3">
                                 <h1
                                     className="text-[2.75rem] leading-none tracking-tight text-[#231a12] sm:text-[3.35rem]"
-                                    style={serifHeadingStyle}
                                 >
                                     {destination.name}
                                 </h1>
@@ -1181,7 +1176,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                             <div className="mt-8 xl:hidden">{renderUnifiedBookingCard("mobile")}</div>
 
                             <section className="mt-10">
-                                <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]" style={serifHeadingStyle}>
+                                <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]">
                                     Tổng quan
                                 </h2>
                                 <p className="mt-4 max-w-4xl text-base leading-8 text-zinc-600 sm:text-[17px]">
@@ -1190,7 +1185,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                             </section>
 
                             <section className="mt-12">
-                                <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]" style={serifHeadingStyle}>
+                                <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]">
                                     Thông tin host
                                 </h2>
 
@@ -1235,7 +1230,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
 
                             <section className="mt-12">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                                    <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]" style={serifHeadingStyle}>
+                                    <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]">
                                         Đánh giá của khách
                                     </h2>
                                     <p className="text-sm font-semibold text-zinc-600">
@@ -1310,7 +1305,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                 <div className="rounded-2xl border border-[#e8ddd1] bg-white p-5 shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:p-6">
                                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                         <div className="min-w-0">
-                                            <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]" style={serifHeadingStyle}>
+                                            <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]">
                                                 Nhắn tin cho host
                                             </h2>
                                             <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-600">
@@ -1331,7 +1326,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                             </section>
 
                             <section className="mt-12">
-                                <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]" style={serifHeadingStyle}>
+                                <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]">
                                     Tiện nghi
                                 </h2>
 

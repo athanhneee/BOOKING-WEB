@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LuPlus, LuX } from "react-icons/lu";
-import type { AccountUserProfile, EditableProfileField } from "../../../../data/mockAccountUser";
+import type { AccountUserProfile, EditableProfileField } from "../../../../models/entities/AccountProfile";
 import { cn } from "../../../../utils";
 import Modal from "../../ui/Modal";
 
@@ -11,7 +11,7 @@ type EditProfileModalProps = {
     user: AccountUserProfile;
     languageOptions: string[];
     onClose: () => void;
-    onSave: (nextUser: AccountUserProfile) => void;
+    onSave: (nextUser: AccountUserProfile) => void | Promise<void>;
 };
 
 type FieldConfig = {
@@ -106,6 +106,7 @@ const EditProfileModal = ({
 }: EditProfileModalProps) => {
     const [draftUser, setDraftUser] = useState<AccountUserProfile>(() => user);
     const [customLanguage, setCustomLanguage] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
 
     const visibleFields = useMemo<EditableProfileField[]>(
         () => (mode === "all" ? editableFields : field ? [field] : ["displayName"]),
@@ -116,6 +117,14 @@ const EditProfileModal = ({
         () => JSON.stringify(normalizeUser(draftUser)) !== JSON.stringify(normalizeUser(user)),
         [draftUser, user],
     );
+
+    useEffect(() => {
+        if (isOpen) {
+            setDraftUser(user);
+            setCustomLanguage("");
+            setIsSaving(false);
+        }
+    }, [field, isOpen, mode, user]);
 
     const updateField = <T extends EditableProfileField>(key: T, value: AccountUserProfile[T]) => {
         setDraftUser((current) => ({
@@ -147,6 +156,19 @@ const EditProfileModal = ({
         }
 
         setCustomLanguage("");
+    };
+
+    const handleSave = async () => {
+        if (!hasChanged || isSaving) {
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            await onSave(draftUser);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const renderInput = (fieldKey: EditableProfileField) => {
@@ -316,11 +338,11 @@ const EditProfileModal = ({
                         </button>
                         <button
                             type="button"
-                            disabled={!hasChanged}
-                            onClick={() => onSave(draftUser)}
+                            disabled={!hasChanged || isSaving}
+                            onClick={handleSave}
                             className="inline-flex min-h-11 items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-cyan-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                         >
-                            Lưu
+                            {isSaving ? "Đang lưu..." : "Lưu"}
                         </button>
                     </div>
                 </div>

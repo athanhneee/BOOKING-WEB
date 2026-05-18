@@ -4,7 +4,7 @@ import type {
     StayHighlight,
     StayPolicy,
     StayQuickChoice,
-} from "../../../../config/popularDestinations";
+} from "../../../../models/entities/Listing";
 
 export type StaySortOption =
     | "gia-thap-den-cao"

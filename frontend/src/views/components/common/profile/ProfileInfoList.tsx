@@ -7,7 +7,7 @@ import {
     LuLanguages,
     LuMapPinned,
 } from "react-icons/lu";
-import type { AccountUserProfile, EditableProfileField } from "../../../../data/mockAccountUser";
+import type { AccountUserProfile, EditableProfileField } from "../../../../models/entities/AccountProfile";
 import { cn } from "../../../../utils";
 
 type ProfileInfoListProps = {

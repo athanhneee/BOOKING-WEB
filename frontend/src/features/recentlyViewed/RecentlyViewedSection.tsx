@@ -28,7 +28,7 @@ const RecentlyViewedSection = () => {
                         <h2 className="mt-2 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">Đã xem gần đây</h2>
                     </div>
                     <p className="max-w-xl text-sm leading-6 text-zinc-500">
-                        Những villa bạn vừa mở sẽ được giữ lại trên thiết bị này để quay lại nhanh hơn.
+
                     </p>
                 </div>
 

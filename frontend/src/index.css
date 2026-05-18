@@ -1,11 +1,12 @@
+@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
 @theme {
-    --font-sans: "Poppins", sans-serif;
+    --font-sans: "Be Vietnam Pro", "Inter", "Noto Sans", Arial, sans-serif;
 }
 
 :root {
-    font-family: "Poppins", sans-serif;
+    --font-sans: "Be Vietnam Pro", "Inter", "Noto Sans", Arial, sans-serif;
     --color-primary: #06b6d4;
     --color-primary-dark: #0e7490;
     --color-accent: #ff6b6b;
@@ -14,54 +15,6 @@
     --color-text-primary: #1a1a2e;
     --color-text-secondary: #6b7280;
     --color-border: #e5e7eb;
-}
-
-@font-face {
-    font-family: "Poppins";
-    src: url("./assets/fonts/Poppins/Poppins-Regular.ttf") format("truetype");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "Poppins";
-    src: url("./assets/fonts/Poppins/Poppins-Medium.ttf") format("truetype");
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "Poppins";
-    src: url("./assets/fonts/Poppins/Poppins-SemiBold.ttf") format("truetype");
-    font-weight: 600;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "Poppins";
-    src: url("./assets/fonts/Poppins/Poppins-Bold.ttf") format("truetype");
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "Poppins";
-    src: url("./assets/fonts/Poppins/Poppins-ExtraBold.ttf") format("truetype");
-    font-weight: 800;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "Poppins";
-    src: url("./assets/fonts/Poppins/Poppins-Black.ttf") format("truetype");
-    font-weight: 900;
-    font-style: normal;
-    font-display: swap;
 }
 
 *,
@@ -73,7 +26,7 @@
 html {
     min-height: 100%;
     overflow-x: hidden;
-    font-family: "Poppins", sans-serif;
+    font-family: var(--font-sans);
     line-height: 1.5;
     text-size-adjust: 100%;
 }
@@ -85,7 +38,7 @@ body {
     overflow-x: hidden;
     background-color: var(--color-bg);
     color: var(--color-text-primary);
-    font-family: "Poppins", sans-serif;
+    font-family: var(--font-sans);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -100,7 +53,7 @@ button,
 input,
 select,
 textarea {
-    font-family: "Poppins", sans-serif;
+    font-family: var(--font-sans);
     line-height: inherit;
 }
 
@@ -160,7 +113,7 @@ button:not(.rounded-none):not(.rounded-full):not(.rounded-2xl) {
     border-radius: 1rem !important;
 }
 
-/* ── Calendar panel: fade + slide in ── */
+/* Calendar panel: fade + slide in */
 .calendar-panel {
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
     animation: calFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -178,7 +131,7 @@ button:not(.rounded-none):not(.rounded-full):not(.rounded-2xl) {
     }
 }
 
-/* ── Month grid: slide in on month change ── */
+/* Month grid: slide in on month change */
 .month-grid-enter {
     animation: monthIn 0.18s ease-out both;
 }
@@ -195,7 +148,7 @@ button:not(.rounded-none):not(.rounded-full):not(.rounded-2xl) {
     }
 }
 
-/* ── Date cell hover: subtle scale ── */
+/* Date cell hover: subtle scale */
 .cal-date-btn {
     transition:
         background-color 120ms ease,
@@ -208,12 +161,12 @@ button:not(.rounded-none):not(.rounded-full):not(.rounded-2xl) {
     transform: scale(1.1);
 }
 
-/* ── Range highlight: smooth fade ── */
+/* Range highlight: smooth fade */
 .range-cell-bg {
     transition: background-color 80ms ease;
 }
 
-/* ── Search bar field hover ── */
+/* Search bar field hover */
 .search-field-btn {
     transition:
         background-color 150ms ease,

@@ -45,7 +45,7 @@ const PhanQuyenHeThong = () => {
     return (
         <div className={pageWrapperClass}>
             <div className="mx-auto max-w-7xl space-y-6">
-                <div><h1 className="text-2xl font-bold text-gray-900">Phân quyền hệ thống</h1><p className="mt-1 text-sm text-gray-500">Cập nhật role bằng API /api/users/:userId. Backend vẫn enforce requireRole nên FE không tự quyết quyền.</p></div>
+                
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
                 <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                     <table className={`${tableClassName} text-left text-sm`}>

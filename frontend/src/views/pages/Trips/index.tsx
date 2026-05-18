@@ -1,190 +1,365 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { FiRefreshCw, FiStar, FiXCircle } from "react-icons/fi";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { LuPencilLine } from "react-icons/lu";
+import { useLocation, useNavigate } from "react-router-dom";
+import { APP_ROUTES } from "../../../config/routes";
+import type { AccountUserProfile, EditableProfileField } from "../../../models/entities/AccountProfile";
+import { profileLanguageOptions } from "../../../models/entities/AccountProfile";
+import type { TripHistory } from "../../../models/entities/TripHistory";
 import type { ApiBooking } from "../../../models/entities/Booking";
 import type { ApiUser } from "../../../models/entities/User";
-import { cancelBooking, getMyBookings } from "../../../services/bookingService";
-import { createReview } from "../../../services/reviewService";
+import { getMyBookings } from "../../../services/bookingService";
 import { getMe, updateMe } from "../../../services/userService";
-import { formatCurrency, formatDate } from "../Host/sharedStyles";
+import { cn } from "../../../utils";
+import EditProfileModal from "../../components/common/profile/EditProfileModal";
+import ProfileInfoList from "../../components/common/profile/ProfileInfoList";
+import ProfileSidebar, { type AccountTab } from "../../components/common/profile/ProfileSidebar";
+import ProfileSummaryCard from "../../components/common/profile/ProfileSummaryCard";
+import TripHistoryList from "../../components/common/profile/TripHistoryList";
 
-const canCancel = (booking: ApiBooking) => ["pending_payment", "pending_host_confirmation", "confirmed"].includes(booking.status);
-const canReview = (booking: ApiBooking) => booking.status === "completed";
+type EditModalState =
+    | {
+          mode: "all";
+          field?: undefined;
+      }
+    | {
+          mode: "single";
+          field: EditableProfileField;
+      };
+
+type UpdateMePayload = Parameters<typeof updateMe>[0];
+
+const fallbackTripImageUrl = new URL("../../../assets/img/mocnhien.jpg", import.meta.url).href;
+
+const pageCopy: Record<AccountTab, { title: string; description: string }> = {
+    profile: {
+        title: "Giới thiệu bản thân",
+        description:
+            "Cập nhật hồ sơ để khách và host dễ kết nối hơn, đồng thời giữ cho thông tin cá nhân của bạn luôn rõ ràng và đáng tin cậy.",
+    },
+    trips: {
+        title: "Chuyến đi trước đây",
+        description:
+            "Xem lại các chuyến đi đã đặt, trạng thái hoàn tất và các thao tác tiếp theo cho từng kỳ nghỉ.",
+    },
+};
+
+const normalizeProfile = (profile: AccountUserProfile): AccountUserProfile => ({
+    ...profile,
+    displayName: profile.displayName.trim(),
+    location: profile.location.trim(),
+    job: profile.job.trim(),
+    dreamDestination: profile.dreamDestination.trim(),
+    school: profile.school.trim(),
+    bio: profile.bio.trim(),
+    languages: [...new Set(profile.languages.map((language) => language.trim()).filter(Boolean))],
+});
+
+const getJoinedYear = (createdAt?: string, fallbackYear?: number | null) => {
+    if (fallbackYear) {
+        return fallbackYear;
+    }
+
+    if (!createdAt) {
+        return new Date().getFullYear();
+    }
+
+    const parsed = new Date(createdAt);
+    return Number.isNaN(parsed.getTime()) ? new Date().getFullYear() : parsed.getFullYear();
+};
+
+const getUserId = (user: ApiUser) => String(user.userId || user.id);
+
+const createProfileFromApiUser = (user: ApiUser): AccountUserProfile => {
+    const id = getUserId(user);
+    const displayName = user.fullName?.trim() || user.name?.trim() || user.email;
+    const isHost = user.role === "host" || user.roles?.includes("host");
+
+    return {
+        id,
+        displayName,
+        location: user.location?.trim() ?? "",
+        avatarUrl: user.avatarUrl?.trim() ?? "",
+        job: user.job?.trim() ?? (isHost ? "Chủ nhà trên Minh Thanh Villa" : ""),
+        dreamDestination: user.dreamDestination?.trim() ?? "",
+        school: user.school?.trim() ?? "",
+        languages: user.languages?.filter(Boolean) ?? [],
+        bio: user.bio?.trim() ?? "",
+        isVerified: user.isVerified ?? Boolean(user.isHostVerified || user.isEmailVerified),
+        joinedYear: getJoinedYear(user.createdAt, user.joinedYear),
+    };
+};
+
+const getPersistableAvatarUrl = (avatarUrl: string) => {
+    const value = avatarUrl.trim();
+    if (!value) {
+        return null;
+    }
+
+    try {
+        const parsedUrl = new URL(value);
+        return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:" ? value : undefined;
+    } catch {
+        return undefined;
+    }
+};
+
+const buildCurrentBackendPayload = (profile: AccountUserProfile): UpdateMePayload => {
+    const avatarUrl = getPersistableAvatarUrl(profile.avatarUrl);
+
+    return {
+        fullName: profile.displayName,
+        bio: profile.bio || null,
+        ...(avatarUrl !== undefined ? { avatarUrl } : {}),
+    };
+};
+
+const calculateNights = (checkIn: string, checkOut: string) => {
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        return 0;
+    }
+
+    return Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000));
+};
+
+const mapBookingStatusToTripStatus = (booking: ApiBooking): TripHistory["status"] => {
+    const normalizedStatus = booking.status.toLowerCase();
+
+    if (normalizedStatus.includes("cancel")) {
+        return "cancelled";
+    }
+
+    if (normalizedStatus === "completed" || normalizedStatus === "checked_out") {
+        return "completed";
+    }
+
+    return "active";
+};
+
+const mapBookingToTrip = (booking: ApiBooking): TripHistory => {
+    const totalPrice = Number(booking.totalAmount || booking.totalPrice || 0);
+    const status = mapBookingStatusToTripStatus(booking);
+    const location = [booking.listing?.city, booking.listing?.district].filter(Boolean).join(", ");
+
+    return {
+        id: String(booking.bookingId),
+        propertyName: booking.listing?.title ?? `Chỗ nghỉ #${booking.listingId}`,
+        location: location || "Chưa cập nhật",
+        imageUrl: booking.listing?.imageUrl || fallbackTripImageUrl,
+        checkIn: booking.checkInDate,
+        checkOut: booking.checkOutDate,
+        nights: booking.nights || calculateNights(booking.checkInDate, booking.checkOutDate),
+        totalPrice,
+        currency: booking.currency || "VND",
+        status,
+        canReview: status === "completed",
+        canRebook: status === "completed" || status === "cancelled",
+    };
+};
+
+const AboutMeCard = ({
+    bio,
+    onEdit,
+}: {
+    bio: string;
+    onEdit: () => void;
+}) => (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <h2 className="text-2xl font-semibold text-slate-900">Về tôi</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                    Hãy chia sẻ một vài dòng ngắn gọn về bạn.
+                </p>
+            </div>
+
+            <button
+                type="button"
+                onClick={onEdit}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-all duration-200 hover:border-cyan-300/50 hover:bg-cyan-300/10 hover:text-cyan-800"
+            >
+                <LuPencilLine size={16} />
+                Chỉnh sửa
+            </button>
+        </div>
+
+        <p
+            className={cn(
+                "mt-5 max-w-3xl whitespace-pre-line text-[15px] leading-8",
+                bio ? "text-slate-700" : "text-slate-400",
+            )}
+        >
+            {bio || "Chưa cập nhật phần giới thiệu."}
+        </p>
+    </section>
+);
 
 const ProfilePage = () => {
-    const [user, setUser] = useState<ApiUser | null>(null);
+    const location = useLocation();
+    const navigate = useNavigate();
+    const activeTab: AccountTab = location.pathname === APP_ROUTES.accountTrips ? "trips" : "profile";
+    const [profile, setProfile] = useState<AccountUserProfile | null>(null);
     const [bookings, setBookings] = useState<ApiBooking[]>([]);
-    const [profileDraft, setProfileDraft] = useState({ fullName: "", phone: "", bio: "" });
-    const [reviewDrafts, setReviewDrafts] = useState<Record<number, { rating: number; comment: string }>>({});
     const [loading, setLoading] = useState(true);
-    const [savingProfile, setSavingProfile] = useState(false);
-    const [actionId, setActionId] = useState<number | null>(null);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const [editModal, setEditModal] = useState<EditModalState | null>(null);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         setError("");
 
         try {
-            const [meResult, bookingResult] = await Promise.all([
+            const [meResult, bookingResult] = await Promise.allSettled([
                 getMe(),
                 getMyBookings({ page: 1, limit: 100 }),
             ]);
-            setUser(meResult.user);
-            setProfileDraft({
-                fullName: meResult.user.fullName || meResult.user.name || "",
-                phone: meResult.user.phone || "",
-                bio: meResult.user.bio || "",
-            });
-            setBookings(bookingResult.items ?? []);
+
+            if (meResult.status === "rejected") {
+                throw meResult.reason;
+            }
+
+            setProfile(createProfileFromApiUser(meResult.value.user));
+            setBookings(bookingResult.status === "fulfilled" ? (bookingResult.value.items ?? []) : []);
+
+            if (bookingResult.status === "rejected") {
+                setError("Đã tải hồ sơ, nhưng chưa tải được lịch sử chuyến đi.");
+            }
         } catch (fetchError) {
-            setError(fetchError instanceof Error ? fetchError.message : "Không thể tải tài khoản/chuyến đi.");
+            setError(fetchError instanceof Error ? fetchError.message : "Không thể tải thông tin tài khoản.");
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         void fetchData();
-    }, []);
+    }, [fetchData]);
 
-    const stats = useMemo(() => {
-        const paidAmount = bookings
-            .filter((booking) => !booking.status.startsWith("cancelled"))
-            .reduce((sum, booking) => sum + Number(booking.totalAmount || booking.totalPrice || 0), 0);
+    const trips = useMemo(() => bookings.map(mapBookingToTrip), [bookings]);
+    const copy = pageCopy[activeTab];
 
-        return [
-            { label: "Tổng chuyến đi", value: bookings.length },
-            { label: "Đã hoàn tất", value: bookings.filter((booking) => booking.status === "completed").length },
-            { label: "Đang hiệu lực", value: bookings.filter((booking) => ["confirmed", "checked_in"].includes(booking.status)).length },
-            { label: "Tổng chi tiêu", value: formatCurrency(paidAmount) },
-        ];
-    }, [bookings]);
+    const handleTabChange = (nextTab: AccountTab) => {
+        navigate(nextTab === "profile" ? APP_ROUTES.accountProfile : APP_ROUTES.accountTrips);
+    };
 
-    const submitProfile = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setSavingProfile(true);
+    const saveProfile = async (nextProfile: AccountUserProfile) => {
+        const normalizedProfile = normalizeProfile(nextProfile);
         setError("");
         setSuccess("");
 
         try {
-            const result = await updateMe({
-                fullName: profileDraft.fullName,
-                phone: profileDraft.phone || null,
-                bio: profileDraft.bio || null,
-            });
-            setUser(result.user);
-            setSuccess("Đã cập nhật hồ sơ cá nhân.");
-        } catch (submitError) {
-            setError(submitError instanceof Error ? submitError.message : "Không thể cập nhật hồ sơ.");
-        } finally {
-            setSavingProfile(false);
+            const result = await updateMe(buildCurrentBackendPayload(normalizedProfile));
+            setProfile(createProfileFromApiUser(result.user));
+            setSuccess("Đã cập nhật hồ sơ từ database thật.");
+            setEditModal(null);
+        } catch (saveError) {
+            const message = saveError instanceof Error ? saveError.message : "Không thể cập nhật hồ sơ.";
+            setError(message);
+            throw saveError;
         }
     };
 
-    const cancelMyBooking = async (bookingId: number) => {
-        const reason = window.prompt("Lý do hủy booking?") || "Khách hủy từ trang cá nhân";
-        setActionId(bookingId);
-        setError("");
-        setSuccess("");
-
-        try {
-            await cancelBooking(bookingId, reason);
-            await fetchData();
-            setSuccess("Đã hủy booking.");
-        } catch (cancelError) {
-            setError(cancelError instanceof Error ? cancelError.message : "Không thể hủy booking.");
-        } finally {
-            setActionId(null);
+    const handleAvatarUpload = (file: File) => {
+        if (!profile) {
+            return;
         }
-    };
 
-    const submitReview = async (bookingId: number) => {
-        const draft = reviewDrafts[bookingId] ?? { rating: 5, comment: "" };
-        setActionId(bookingId);
-        setError("");
-        setSuccess("");
-
-        try {
-            await createReview({ bookingId, rating: draft.rating, comment: draft.comment || undefined });
-            setReviewDrafts((current) => ({ ...current, [bookingId]: { rating: 5, comment: "" } }));
-            setSuccess("Đã gửi đánh giá.");
-        } catch (reviewError) {
-            setError(reviewError instanceof Error ? reviewError.message : "Không thể gửi đánh giá.");
-        } finally {
-            setActionId(null);
-        }
+        setError(`Ảnh ${file.name} chưa được lưu. Hãy upload ảnh lên R2 hoặc dịch vụ lưu trữ rồi dán URL ảnh thật vào hồ sơ.`);
     };
 
     return (
-        <div className="min-h-screen bg-[#F7F8FA] px-4 py-8">
-            <div className="mx-auto max-w-7xl space-y-6">
-                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="min-h-screen bg-[#F6F8FA] px-4 pb-12 pt-28 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-[1680px]">
+                <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Tài khoản & chuyến đi</h1>
-                        <p className="mt-1 text-sm text-gray-500">Trang này dùng API thật /api/users/me, /api/bookings/mine, /api/reviews.</p>
+                        <p className="text-sm font-semibold text-cyan-700 sm:text-base">Khu vực tài khoản</p>
+                        <h1 className="mt-2 text-4xl font-semibold tracking-normal text-slate-950 sm:text-5xl">
+                            {copy.title}
+                        </h1>
+                        <p className="mt-4 max-w-3xl text-base leading-8 text-slate-500">{copy.description}</p>
                     </div>
-                    <button type="button" onClick={fetchData} className="rounded-xl border border-gray-200 px-4 py-2.5 text-gray-700 hover:bg-white"><FiRefreshCw className="mr-2 inline" />Tải lại</button>
-                </div>
 
-                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
-                {success ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{success}</div> : null}
+                    {activeTab === "profile" ? (
+                        <button
+                            type="button"
+                            onClick={() => setEditModal({ mode: "all" })}
+                            disabled={!profile}
+                            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-cyan-300/70 bg-white px-5 py-3 text-sm font-semibold text-cyan-800 transition-all duration-200 hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                        >
+                            <LuPencilLine size={17} />
+                            Chỉnh sửa
+                        </button>
+                    ) : null}
+                </header>
 
-                <div className="grid gap-4 md:grid-cols-4">
-                    {stats.map((item) => <article key={item.label} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">{item.label}</p><p className="mt-2 text-2xl font-bold text-gray-900">{loading ? "..." : item.value}</p></article>)}
-                </div>
+                {error || success ? (
+                    <div
+                        className={cn(
+                            "mt-6 rounded-2xl border px-5 py-4 text-sm font-medium",
+                            error
+                                ? "border-rose-200 bg-rose-50 text-rose-700"
+                                : "border-emerald-200 bg-emerald-50 text-emerald-700",
+                        )}
+                    >
+                        {error || success}
+                    </div>
+                ) : null}
 
-                <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
-                    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <h2 className="text-lg font-semibold text-gray-900">Thông tin cá nhân</h2>
-                        {loading ? <p className="mt-4 text-sm text-gray-500">Đang tải hồ sơ...</p> : null}
-                        {user ? (
-                            <form onSubmit={submitProfile} className="mt-5 space-y-4">
-                                <div><label className="text-sm font-medium text-gray-700">Email</label><input disabled value={user.email} className="mt-2 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-gray-500" /></div>
-                                <div><label className="text-sm font-medium text-gray-700">Họ tên</label><input value={profileDraft.fullName} onChange={(e) => setProfileDraft((current) => ({ ...current, fullName: e.target.value }))} className="mt-2 w-full rounded-xl border border-gray-200 px-3 py-2.5" /></div>
-                                <div><label className="text-sm font-medium text-gray-700">Số điện thoại</label><input value={profileDraft.phone} onChange={(e) => setProfileDraft((current) => ({ ...current, phone: e.target.value }))} className="mt-2 w-full rounded-xl border border-gray-200 px-3 py-2.5" /></div>
-                                <div><label className="text-sm font-medium text-gray-700">Giới thiệu</label><textarea value={profileDraft.bio} onChange={(e) => setProfileDraft((current) => ({ ...current, bio: e.target.value }))} className="mt-2 min-h-[100px] w-full rounded-xl border border-gray-200 px-3 py-2.5" /></div>
-                                <button disabled={savingProfile} type="submit" className="w-full rounded-xl bg-cyan-600 px-4 py-2.5 font-medium text-white hover:bg-cyan-700">{savingProfile ? "Đang lưu..." : "Lưu hồ sơ"}</button>
-                            </form>
-                        ) : null}
-                    </section>
+                <main className="mt-9 grid gap-7 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]">
+                    <ProfileSidebar activeTab={activeTab} onTabChange={handleTabChange} />
 
-                    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <h2 className="text-lg font-semibold text-gray-900">Lịch sử đặt phòng</h2>
-                        <div className="mt-5 space-y-4">
-                            {loading ? <p className="text-sm text-gray-500">Đang tải chuyến đi...</p> : null}
-                            {!loading && bookings.length === 0 ? <div className="rounded-2xl bg-gray-50 p-8 text-center text-sm text-gray-500">Chưa có booking nào.</div> : null}
-                            {bookings.map((booking) => {
-                                const draft = reviewDrafts[booking.bookingId] ?? { rating: 5, comment: "" };
-                                return (
-                                    <article key={booking.bookingId} className="rounded-2xl border border-gray-100 p-4">
-                                        <div className="flex flex-col gap-4 md:flex-row md:items-center">
-                                            <img src={booking.listing?.imageUrl || "https://placehold.co/160x100?text=Villa"} alt={booking.listing?.title ?? "Booking"} className="h-28 w-full rounded-xl object-cover md:w-40" />
-                                            <div className="min-w-0 flex-1">
-                                                <p className="font-semibold text-gray-900">{booking.listing?.title ?? `Listing #${booking.listingId}`}</p>
-                                                <p className="mt-1 text-sm text-gray-500">{formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)} • {booking.guestCount ?? booking.guestsCount} khách</p>
-                                                <p className="mt-1 text-sm text-gray-500">Booking #{booking.bookingId} • {booking.status}</p>
-                                                <p className="mt-2 font-semibold text-cyan-700">{formatCurrency(Number(booking.totalAmount || booking.totalPrice || 0))}</p>
-                                            </div>
-                                            {canCancel(booking) ? <button disabled={actionId === booking.bookingId} type="button" onClick={() => cancelMyBooking(booking.bookingId)} className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50"><FiXCircle className="mr-1 inline" />Hủy booking</button> : null}
-                                        </div>
-                                        {canReview(booking) ? (
-                                            <div className="mt-4 rounded-2xl bg-gray-50 p-4">
-                                                <p className="text-sm font-semibold text-gray-900">Đánh giá chuyến đi</p>
-                                                <div className="mt-3 grid gap-3 md:grid-cols-[160px_minmax(0,1fr)_auto]">
-                                                    <select value={draft.rating} onChange={(e) => setReviewDrafts((current) => ({ ...current, [booking.bookingId]: { ...draft, rating: Number(e.target.value) } }))} className="rounded-xl border border-gray-200 px-3 py-2.5">{[1,2,3,4,5].map((rating) => <option key={rating} value={rating}>{rating} sao</option>)}</select>
-                                                    <input value={draft.comment} onChange={(e) => setReviewDrafts((current) => ({ ...current, [booking.bookingId]: { ...draft, comment: e.target.value } }))} placeholder="Nhận xét của bạn..." className="rounded-xl border border-gray-200 px-3 py-2.5" />
-                                                    <button type="button" disabled={actionId === booking.bookingId} onClick={() => submitReview(booking.bookingId)} className="rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-cyan-700"><FiStar className="mr-1 inline" />Gửi</button>
-                                                </div>
-                                            </div>
-                                        ) : null}
-                                    </article>
-                                );
-                            })}
-                        </div>
-                    </section>
-                </div>
+                    {activeTab === "profile" ? (
+                        profile ? (
+                            <div className="grid gap-7 xl:grid-cols-[380px_minmax(0,1fr)]">
+                                <ProfileSummaryCard
+                                    user={profile}
+                                    onEdit={() => setEditModal({ mode: "all" })}
+                                    onAvatarUpload={handleAvatarUpload}
+                                />
+
+                                <div className="space-y-7">
+                                    <ProfileInfoList
+                                        user={profile}
+                                        onEditField={(field) => setEditModal({ mode: "single", field })}
+                                    />
+                                    <AboutMeCard bio={profile.bio} onEdit={() => setEditModal({ mode: "single", field: "bio" })} />
+                                </div>
+                            </div>
+                        ) : (
+                            <section className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
+                                <p className="text-sm font-medium text-slate-500">
+                                    {loading ? "Đang tải hồ sơ..." : "Chưa có dữ liệu hồ sơ."}
+                                </p>
+                            </section>
+                        )
+                    ) : (
+                        <section>
+                            {loading ? (
+                                <div className="rounded-2xl border border-slate-200 bg-white px-6 py-14 text-center text-sm font-medium text-slate-500 shadow-sm">
+                                    Đang tải chuyến đi...
+                                </div>
+                            ) : (
+                                <TripHistoryList trips={trips} />
+                            )}
+                        </section>
+                    )}
+                </main>
             </div>
+
+            {profile && editModal ? (
+                <EditProfileModal
+                    isOpen={Boolean(editModal)}
+                    mode={editModal.mode}
+                    field={editModal.field}
+                    user={profile}
+                    languageOptions={profileLanguageOptions}
+                    onClose={() => setEditModal(null)}
+                    onSave={saveProfile}
+                />
+            ) : null}
         </div>
     );
 };

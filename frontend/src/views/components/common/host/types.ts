@@ -28,7 +28,7 @@ export interface StatCardItem {
 export interface StayStatusItem {
     id: string;
     listingName: string;
-    listingType: "Villa" | "Can h?" | "Homestay";
+    listingType: "Villa" | "Căn hộ" | "Homestay";
     bookedNights: number;
     totalNights: number;
 }
@@ -42,7 +42,7 @@ export interface OccupancySummary {
     cleaningStays: number;
 }
 
-export type RecentBookingStatus = "S?p nh?n ph�ng" | "�ang luu tr�" | "S?p tr? ph�ng";
+export type RecentBookingStatus = "Sắp nhận phòng" | "Đang lưu trú" | "Sắp trả phòng";
 
 export interface RecentBookingItem {
     id: string;
@@ -54,13 +54,13 @@ export interface RecentBookingItem {
 }
 
 export type BookingStatus =
-    | "S?p nh?n ph�ng"
-    | "�ang luu tr�"
-    | "S?p tr? ph�ng"
-    | "Qu� h?n thanh to�n"
-    | "�ang tr?ng";
+    | "Sắp nhận phòng"
+    | "Đang lưu trú"
+    | "Sắp trả phòng"
+    | "Quá hạn thanh toán"
+    | "Đang trống";
 
-export type PaymentStatus = "�� thanh to�n" | "C?c 50%" | "Ch? thanh to�n" | "Qu� h?n";
+export type PaymentStatus = "Đã thanh toán" | "Cọc 50%" | "Chờ thanh toán" | "Quá hạn";
 
 export interface BookingTableRow {
     id: string;

@@ -156,7 +156,7 @@ const ThemChoNghi = () => {
             <div className="mx-auto max-w-5xl space-y-6">
                 <PageHeader
                     title="Thêm chỗ nghỉ mới"
-                    subtitle="Form này gọi API thật /api/host/listings và /api/host/listings/:listingId/images, không còn lưu local/mock."
+                  
                     actions={<button type="button" onClick={() => navigate(APP_ROUTES.hostProperties)} className={secondaryButtonClass}>Quay lại danh sách</button>}
                 />
 

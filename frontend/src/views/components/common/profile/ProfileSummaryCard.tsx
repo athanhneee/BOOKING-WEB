@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { LuBadgeCheck, LuCamera, LuMapPin } from "react-icons/lu";
-import type { AccountUserProfile } from "../../../../data/mockAccountUser";
+import type { AccountUserProfile } from "../../../../models/entities/AccountProfile";
 
 type ProfileSummaryCardProps = {
     user: AccountUserProfile;

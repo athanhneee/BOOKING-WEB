@@ -1,7 +1,7 @@
 import type {
     PopularDestination,
     StayQuickChoice,
-} from "../../../../config/popularDestinations";
+} from "../../../../models/entities/Listing";
 import type { PriceBounds, StayFilterState } from "./types";
 
 export const getStayPriceBounds = (stays: PopularDestination[]): PriceBounds => {

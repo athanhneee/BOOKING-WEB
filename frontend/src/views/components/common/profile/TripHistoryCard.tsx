@@ -1,5 +1,5 @@
 import { LuCalendar, LuMapPin, LuMoon } from "react-icons/lu";
-import type { TripHistory } from "../../../../data/mockTripHistory";
+import type { TripHistory } from "../../../../models/entities/TripHistory";
 import { cn } from "../../../../utils";
 
 type TripHistoryCardProps = {
@@ -37,6 +37,11 @@ const getStatusMeta = (status: TripHistory["status"]) => {
                 label: "Chờ đánh giá",
                 className: "bg-amber-50 text-amber-700",
             };
+        case "active":
+            return {
+                label: "Đang hiệu lực",
+                className: "bg-cyan-50 text-cyan-700",
+            };
         case "cancelled":
             return {
                 label: "Đã hủy",
@@ -60,6 +65,8 @@ const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
               ]
             : trip.status === "cancelled"
               ? [{ key: "rebook", label: "Đặt lại", variant: "secondary" as const }]
+              : trip.status === "active"
+                ? [{ key: "detail", label: "Xem chi tiết", variant: "secondary" as const }]
               : trip.canReview
                 ? [
                       { key: "review", label: "Viết đánh giá", variant: "primary" as const },

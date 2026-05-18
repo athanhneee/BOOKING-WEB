@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { PopularDestination } from "../../config/popularDestinations";
+import type { PopularDestination } from "../../models/entities/Listing";
 import {
     addRecentlyViewedListing,
     readRecentlyViewedListings,

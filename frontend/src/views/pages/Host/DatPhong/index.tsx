@@ -96,7 +96,7 @@ const DatPhong = () => {
             <div className="mx-auto max-w-7xl space-y-6">
                 <PageHeader
                     title="Đặt phòng"
-                    subtitle="Danh sách booking lấy trực tiếp từ /api/host/bookings, không còn mock data."
+                    subtitle="Danh sách khách đặt phòng. "
                     actions={<button type="button" onClick={fetchBookings} className={secondaryButtonClass}><FiRefreshCw className="mr-2 inline" />Tải lại</button>}
                 />
 

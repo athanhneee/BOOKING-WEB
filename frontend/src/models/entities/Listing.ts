@@ -1,4 +1,4 @@
-export type StayCategory = "Villa" | "Căn hộ" | "Homestay" | "Nhà nguyên căn" | "Resort" | "Khách sạn";
+export type StayCategory = "Villa" | "Căn hộ" | "Homestay" | "Nhà nguyên căn" |  "Khách sạn";
 export type StayBadge = "Yêu thích" | "Nổi bật" | "Mới" | "Được đặt nhiều";
 
 export type StayAmenity =

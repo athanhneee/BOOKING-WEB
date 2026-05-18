@@ -74,7 +74,13 @@ export const getListingReviews = (
         limit?: number;
         rating?: number;
     },
-) => apiClient.get<PaginatedReviews>(`/api/listings/${listingId}/reviews`, { query });
+) =>
+    apiClient.get<PaginatedReviews>(`/api/listings/${listingId}/reviews`, {
+        query: {
+            ...query,
+            limit: query?.limit === undefined ? undefined : Math.min(query.limit, 50),
+        },
+    });
 
 export const getListingRules = (listingId: string | number) =>
     apiClient.get<{

@@ -223,7 +223,7 @@ const SearchPage = () => {
                         <div>
                             <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Tìm chỗ nghỉ</h1>
                             <p className="mt-2 text-sm leading-6 text-gray-500 sm:text-base">
-                                Villa, homestay, căn hộ — đặt ngay, nhận phòng liền
+                                Villa, Homestay, căn hộ tại Vũng Tàu
                             </p>
                         </div>
 

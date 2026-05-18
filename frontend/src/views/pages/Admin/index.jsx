@@ -63,7 +63,7 @@ const AdminOverview = () => {
             <div className="mx-auto max-w-7xl space-y-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Tổng quan hệ thống</h1>
-                    <p className="mt-1 text-sm text-gray-500">Trang này không dùng Admin mock context; dữ liệu lấy từ users/reports/listings backend.</p>
+                   
                 </div>
 
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
@@ -82,9 +82,7 @@ const AdminOverview = () => {
                     })}
                 </div>
 
-                <section className="rounded-2xl border border-cyan-100 bg-cyan-50 p-5 text-sm text-cyan-800">
-                    Các hành động quản trị chi tiết nằm trong trang Người dùng, Kiểm duyệt và Phân quyền. Tất cả trang đó gọi API backend thật.
-                </section>
+                
             </div>
         </div>
     );

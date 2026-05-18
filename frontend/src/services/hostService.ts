@@ -155,6 +155,7 @@ export const getMyHostListings = (query: { status?: HostListingStatus | "all"; p
         query: {
             ...query,
             status: query.status === "all" ? undefined : query.status,
+            limit: query.limit === undefined ? undefined : Math.min(query.limit, 50),
         },
     });
 

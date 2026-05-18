@@ -14,6 +14,13 @@ export const updateMe = (
         dob: string | null;
         bio: string | null;
         avatarUrl: string | null;
+        location: string | null;
+        job: string | null;
+        dreamDestination: string | null;
+        school: string | null;
+        languages: string[];
+        isVerified: boolean;
+        joinedYear: number | null;
     }>,
 ) => apiClient.patch<{ user: ApiUser }>("/api/users/me", payload);
 

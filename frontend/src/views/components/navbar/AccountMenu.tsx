@@ -15,7 +15,7 @@ import {
 } from "react-icons/lu";
 import { Link, useNavigate } from "react-router-dom";
 import { APP_ROUTES } from "../../../config/routes";
-import type { AccountUserProfile } from "../../../data/mockAccountUser";
+import type { AccountUserProfile } from "../../../models/entities/AccountProfile";
 import { logout } from "../../../services/authService";
 import { cn } from "../../../utils";
 

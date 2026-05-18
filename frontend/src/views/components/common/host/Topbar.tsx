@@ -10,12 +10,12 @@ const pageMeta = [
     {
         pattern: APP_ROUTES.hostProperties,
         title: "Quản lý chỗ nghỉ",
-        subtitle: "Theo dõi danh sách chỗ nghỉ và cập nhật tình trạng theo thời gian thực.",
+        subtitle: "Theo dõi danh sách chỗ nghỉ và cập nhật tình trạng phòng.",
     },
     {
         pattern: APP_ROUTES.hostNewProperty,
         title: "Thêm chỗ nghỉ mới",
-        subtitle: "Hoàn thiện các bước đăng tin để đưa chỗ nghỉ lên BlueStay.",
+        subtitle: "Hoàn thiện các bước đăng tin để đưa chỗ nghỉ lên hệ thống.",
     },
     {
         pattern: APP_ROUTES.hostBookings,
@@ -50,7 +50,7 @@ const pageMeta = [
     {
         pattern: APP_ROUTES.hostSupport,
         title: "Hỗ trợ",
-        subtitle: "Tìm câu trả lời nhanh hoặc gửi yêu cầu hỗ trợ cho đội ngũ BlueStay.",
+        subtitle: "Tìm câu trả lời nhanh hoặc gửi yêu cầu hỗ trợ cho đội ngũ minh thanh villa.",
     },
     {
         pattern: APP_ROUTES.hostSettings,

@@ -1,4 +1,4 @@
-import { popularDestinations, type PopularDestination } from "../../config/popularDestinations";
+import type { PopularDestination } from "../../models/entities/Listing";
 import { readRecentlyViewedListings } from "../recentlyViewed/recentlyViewedStorage";
 import { readSearchHistoryItems } from "../searchHistory/searchHistoryStorage";
 import {
@@ -24,7 +24,6 @@ const ignoredAddressTokens = new Set([
     "pho",
     "vung",
     "tau",
-    "resort",
 ]);
 
 const getAddressTokens = (address: string) =>
@@ -108,6 +107,10 @@ const getRecentlyViewedAffinityScore = (candidate: PopularDestination, recentlyV
 };
 
 const getPriceAffinityScore = (currentListing: PopularDestination, candidate: PopularDestination) => {
+    if (currentListing.pricePerNight <= 0) {
+        return 0;
+    }
+
     const priceDifferenceRatio = Math.abs(candidate.pricePerNight - currentListing.pricePerNight) / currentListing.pricePerNight;
 
     if (priceDifferenceRatio <= 0.15) {
@@ -145,18 +148,19 @@ const getReason = (
         return "Đánh giá cao gần đây";
     }
 
-    return "AI gợi ý cho chuyến đi này";
+    return "Gợi ý từ dữ liệu thật";
 };
 
 export const getAiNearbyRecommendations = (
     currentListing: PopularDestination,
     currentSearchState: BookingSearchState,
+    candidates: PopularDestination[],
 ): ListingRecommendation[] => {
     const searchHistory = readSearchHistoryItems().map((item) => item.state);
     const searches = [currentSearchState, ...searchHistory];
     const recentlyViewed = readRecentlyViewedListings();
 
-    return popularDestinations
+    return candidates
         .filter((candidate) => candidate.id !== currentListing.id)
         .map((candidate, index) => {
             const score =

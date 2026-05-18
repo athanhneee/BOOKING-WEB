@@ -1,7 +1,7 @@
 import { FaBath, FaBed, FaMapMarkerAlt, FaStar } from "react-icons/fa";
 import { FiHome, FiUsers } from "react-icons/fi";
 import { Link, useLocation } from "react-router-dom";
-import type { PopularDestination, StayBadge } from "../../../config/popularDestinations";
+import type { PopularDestination, StayBadge } from "../../../models/entities/Listing";
 import { APP_ROUTES } from "../../../config/routes";
 
 type StayCardProps = {

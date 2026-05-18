@@ -13,7 +13,7 @@ export type SearchHistoryItem = {
 export const SEARCH_HISTORY_STORAGE_KEY = "booking_search_history";
 export const SEARCH_HISTORY_LIMIT = 8;
 
-const canUseLocalStorage = () => typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+const canUseSessionStorage = () => typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
 
 const hasSearchIntent = (state: BookingSearchState) =>
     Boolean(state.location || state.checkIn || state.checkOut) ||
@@ -41,11 +41,11 @@ const isValidHistoryItem = (value: Partial<SearchHistoryItem> | null | undefined
 };
 
 export const readSearchHistoryItems = (): SearchHistoryItem[] => {
-    if (!canUseLocalStorage()) {
+    if (!canUseSessionStorage()) {
         return [];
     }
 
-    const rawValue = window.localStorage.getItem(SEARCH_HISTORY_STORAGE_KEY);
+    const rawValue = window.sessionStorage.getItem(SEARCH_HISTORY_STORAGE_KEY);
     if (!rawValue) {
         return [];
     }
@@ -71,11 +71,11 @@ export const readSearchHistoryItems = (): SearchHistoryItem[] => {
 };
 
 export const writeSearchHistoryItems = (items: SearchHistoryItem[]) => {
-    if (!canUseLocalStorage()) {
+    if (!canUseSessionStorage()) {
         return;
     }
 
-    window.localStorage.setItem(
+    window.sessionStorage.setItem(
         SEARCH_HISTORY_STORAGE_KEY,
         JSON.stringify(items.slice(0, SEARCH_HISTORY_LIMIT)),
     );

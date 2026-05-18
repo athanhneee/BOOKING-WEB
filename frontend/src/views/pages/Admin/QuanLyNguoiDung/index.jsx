@@ -50,7 +50,7 @@ const QuanLyNguoiDung = () => {
     return (
         <div className={pageWrapperClass}>
             <div className="mx-auto max-w-7xl space-y-6">
-                <div><h1 className="text-2xl font-bold text-gray-900">Quản lý người dùng</h1><p className="mt-1 text-sm text-gray-500">Gọi API thật /api/users, /api/users/:userId/status.</p></div>
+                
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
                 <section className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:flex-row">
                     <div className="relative flex-1"><FiSearch className="absolute left-3 top-3 text-gray-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm email, số điện thoại, tên..." className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-3" /></div>

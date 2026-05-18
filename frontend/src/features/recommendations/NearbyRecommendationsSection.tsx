@@ -1,9 +1,10 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FaChevronLeft, FaChevronRight, FaStar } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
-import type { PopularDestination } from "../../config/popularDestinations";
+import type { PopularDestination } from "../../models/entities/Listing";
 import { APP_ROUTES } from "../../config/routes";
 import type { BookingSearchState } from "../../views/components/search/searchState";
+import { getListings } from "../../services/listingService";
 import { getAiNearbyRecommendations } from "./listingRecommendations";
 
 type NearbyRecommendationsSectionProps = {
@@ -23,9 +24,39 @@ const NearbyRecommendationsSection = ({ currentListing, searchState }: NearbyRec
     const navigate = useNavigate();
     const location = useLocation();
     const railRef = useRef<HTMLDivElement | null>(null);
+    const [candidates, setCandidates] = useState<PopularDestination[]>([]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadCandidates = async () => {
+            try {
+                const result = await getListings({
+                    city: "Vũng Tàu",
+                    limit: 12,
+                    sort: "rating_desc",
+                });
+
+                if (!cancelled) {
+                    setCandidates(result.items);
+                }
+            } catch {
+                if (!cancelled) {
+                    setCandidates([]);
+                }
+            }
+        };
+
+        void loadCandidates();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentListing.id]);
+
     const recommendations = useMemo(
-        () => getAiNearbyRecommendations(currentListing, searchState),
-        [currentListing, searchState],
+        () => getAiNearbyRecommendations(currentListing, searchState, candidates),
+        [candidates, currentListing, searchState],
     );
     const totalPages = Math.max(1, Math.ceil(recommendations.length / ITEMS_PER_STEP));
     const [page, setPage] = useState(0);

@@ -2,14 +2,14 @@ import { useCallback, useMemo, useState } from "react";
 
 export const SAVED_LISTINGS_STORAGE_KEY = "saved_listing_ids";
 
-const canUseLocalStorage = () => typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+const canUseSessionStorage = () => typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
 
 const readSavedListingIds = (): string[] => {
-    if (!canUseLocalStorage()) {
+    if (!canUseSessionStorage()) {
         return [];
     }
 
-    const rawValue = window.localStorage.getItem(SAVED_LISTINGS_STORAGE_KEY);
+    const rawValue = window.sessionStorage.getItem(SAVED_LISTINGS_STORAGE_KEY);
     if (!rawValue) {
         return [];
     }
@@ -27,11 +27,11 @@ const readSavedListingIds = (): string[] => {
 };
 
 const writeSavedListingIds = (listingIds: string[]) => {
-    if (!canUseLocalStorage()) {
+    if (!canUseSessionStorage()) {
         return;
     }
 
-    window.localStorage.setItem(SAVED_LISTINGS_STORAGE_KEY, JSON.stringify(Array.from(new Set(listingIds))));
+    window.sessionStorage.setItem(SAVED_LISTINGS_STORAGE_KEY, JSON.stringify(Array.from(new Set(listingIds))));
 };
 
 export const useSavedListings = () => {

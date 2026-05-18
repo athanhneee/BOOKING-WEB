@@ -137,8 +137,8 @@ const GuestPayment = () => {
             <header className="border-b border-gray-200 bg-white">
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
                     <Link to="/" className="flex items-center gap-3">
-                        <img src={logo} alt="BlueStay" className="h-9 w-9" />
-                        <span className="text-lg font-semibold text-gray-900">BlueStay</span>
+                        <img src={logo} alt="minh thanh villa" className="h-9 w-9" />
+                        <span className="text-lg font-semibold text-gray-900">minh thanh villa</span>
                     </Link>
 
                     <a href="#support" className="inline-flex items-center gap-2 text-sm font-medium text-gray-500">
@@ -222,8 +222,8 @@ const GuestPayment = () => {
                                 type="button"
                                 onClick={() => setMethod("vnpay")}
                                 className={`rounded-xl border p-4 text-left font-semibold ${method === "vnpay"
-                                        ? "border-cyan-400 bg-cyan-50 text-cyan-700"
-                                        : "border-gray-200 text-gray-700"
+                                    ? "border-cyan-400 bg-cyan-50 text-cyan-700"
+                                    : "border-gray-200 text-gray-700"
                                     }`}
                             >
                                 <span className="inline-flex items-center gap-2">
@@ -236,8 +236,8 @@ const GuestPayment = () => {
                                 type="button"
                                 onClick={() => setMethod("bank_transfer")}
                                 className={`rounded-xl border p-4 text-left font-semibold ${method === "bank_transfer"
-                                        ? "border-cyan-400 bg-cyan-50 text-cyan-700"
-                                        : "border-gray-200 text-gray-700"
+                                    ? "border-cyan-400 bg-cyan-50 text-cyan-700"
+                                    : "border-gray-200 text-gray-700"
                                     }`}
                             >
                                 Chuyển khoản ngân hàng
@@ -247,8 +247,8 @@ const GuestPayment = () => {
                                 type="button"
                                 onClick={() => setMethod("cod")}
                                 className={`rounded-xl border p-4 text-left font-semibold ${method === "cod"
-                                        ? "border-cyan-400 bg-cyan-50 text-cyan-700"
-                                        : "border-gray-200 text-gray-700"
+                                    ? "border-cyan-400 bg-cyan-50 text-cyan-700"
+                                    : "border-gray-200 text-gray-700"
                                     }`}
                             >
                                 Thanh toán khi nhận phòng

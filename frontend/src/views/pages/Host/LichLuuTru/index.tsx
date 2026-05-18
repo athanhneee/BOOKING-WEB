@@ -28,7 +28,7 @@ const LichLuuTru = () => {
         const loadListings = async () => {
             setError("");
             try {
-                const result = await getMyHostListings({ page: 1, limit: 100 });
+                const result = await getMyHostListings({ page: 1, limit: 50 });
                 setListings(result.items ?? []);
                 setListingId((current) => current || result.items?.[0]?.listingId || "");
             } catch (fetchError) {
@@ -94,7 +94,7 @@ const LichLuuTru = () => {
     return (
         <div className={pageWrapperClass}>
             <div className="mx-auto max-w-7xl space-y-6">
-                <PageHeader title="Lịch lưu trú" subtitle="Cập nhật ngày mở/đóng phòng bằng API /api/host/listings/:listingId/calendar." />
+                <PageHeader title="Lịch lưu trú" />
 
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 

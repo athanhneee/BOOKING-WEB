@@ -34,10 +34,6 @@ const currencyFormatter = new Intl.NumberFormat("vi-VN", {
     maximumFractionDigits: 0,
 });
 
-const serifHeadingStyle = {
-    fontFamily: '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif',
-};
-
 const formatDateInput = (date: Date) => {
     const safeDate = new Date(date);
     safeDate.setHours(12, 0, 0, 0);
@@ -196,7 +192,7 @@ const HostMessagePage = () => {
         <section className="min-h-screen bg-[#f4f0eb] px-4 pb-16 pt-28 text-zinc-900 sm:px-6">
             <div className="mx-auto max-w-7xl">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                    <h1 className="text-[2.75rem] leading-none tracking-tight text-[#231a12] sm:text-[3.35rem]" style={serifHeadingStyle}>
+                    <h1 className="text-[2.75rem] leading-none tracking-tight text-[#231a12] sm:text-[3.35rem]">
                         Nhắn tin cho host
                     </h1>
                     <button

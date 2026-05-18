@@ -75,7 +75,7 @@ const CaiDat = () => {
                                 <input type="password" placeholder="Mật khẩu mới" className={inputClassName} />
                                 <input type="password" placeholder="Xác nhận mật khẩu" className={inputClassName} />
                             </div>
-                            <ToggleSwitch checked onChange={() => {}} label="Xác thực 2 bước" />
+                            <ToggleSwitch checked onChange={() => { }} label="Xác thực 2 bước" />
                             <button type="button" className="inline-flex items-center justify-center rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50">Đăng xuất tất cả thiết bị</button>
                         </div>
                     ) : null}
@@ -102,7 +102,7 @@ const CaiDat = () => {
                                 <input placeholder="Chủ tài khoản" className={inputClassName} />
                                 <input placeholder="Chi nhánh" className={inputClassName} />
                             </div>
-                            <p className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-500">Thông tin này dùng để nhận thanh toán từ BlueStay.</p>
+                            <p className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-500">Thông tin này dùng để nhận thanh toán từ minh thanh villa.</p>
                             <button type="button" className={primaryButtonClass}>Lưu thông tin</button>
                         </div>
                     ) : null}

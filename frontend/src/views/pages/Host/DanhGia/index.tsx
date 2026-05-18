@@ -19,7 +19,7 @@ const DanhGia = () => {
         const loadListings = async () => {
             setError("");
             try {
-                const result = await getMyHostListings({ page: 1, limit: 100 });
+                const result = await getMyHostListings({ page: 1, limit: 50 });
                 setListings(result.items ?? []);
                 setListingId((current) => current || result.items?.[0]?.listingId || "");
             } catch (fetchError) {
@@ -41,7 +41,7 @@ const DanhGia = () => {
             setError("");
 
             try {
-                const result = await getListingReviews(listingId, { page: 1, limit: 100 });
+                const result = await getListingReviews(listingId, { page: 1, limit: 50 });
                 setReviews(result.items ?? []);
             } catch (fetchError) {
                 setError(fetchError instanceof Error ? fetchError.message : "Không thể tải đánh giá.");
@@ -64,7 +64,7 @@ const DanhGia = () => {
             await replyToReview(reviewId, reply);
             setReplyDrafts((current) => ({ ...current, [reviewId]: "" }));
             if (listingId) {
-                const result = await getListingReviews(listingId, { page: 1, limit: 100 });
+                const result = await getListingReviews(listingId, { page: 1, limit: 50 });
                 setReviews(result.items ?? []);
             }
         } catch (submitError) {
@@ -77,7 +77,7 @@ const DanhGia = () => {
     return (
         <div className={pageWrapperClass}>
             <div className="mx-auto max-w-7xl space-y-6">
-                <PageHeader title="Đánh giá" subtitle="Danh sách review lấy từ /api/listings/:listingId/reviews và phản hồi bằng /api/reviews/:reviewId/reply." />
+                <PageHeader title="Đánh giá" />
 
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 

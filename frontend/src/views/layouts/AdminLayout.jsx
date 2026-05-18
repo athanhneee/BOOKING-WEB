@@ -14,7 +14,7 @@ const adminNavItems = [
 ];
 
 const pageMeta = [
-    { path: APP_ROUTES.adminOverview, title: "Tổng quan Admin", subtitle: "Dữ liệu tổng quan lấy từ backend reports/users/listings." },
+    { path: APP_ROUTES.adminOverview, title: "Tổng quan Admin", subtitle: "Dữ liệu tổng quan " },
     { path: APP_ROUTES.adminUsers, title: "Quản lý người dùng", subtitle: "Tìm kiếm, khóa/mở khóa và cập nhật vai trò người dùng." },
     { path: APP_ROUTES.adminModeration, title: "Kiểm duyệt bài đăng", subtitle: "Duyệt hoặc từ chối listing đang chờ duyệt." },
     { path: APP_ROUTES.adminRoles, title: "Phân quyền hệ thống", subtitle: "Cập nhật role người dùng bằng API admin users." },
@@ -45,8 +45,8 @@ const AdminLayout = () => {
                 <aside className={cn("fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-gray-200 bg-white px-4 py-5 shadow-xl transition-transform duration-300 lg:static lg:translate-x-0 lg:shadow-none", sidebarOpen ? "translate-x-0" : "-translate-x-full")}>
                     <div className="flex items-start justify-between gap-3">
                         <Link to={APP_ROUTES.adminOverview} className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50"><img src={logo} alt="MinhThanhVilla" className="h-8 w-8 object-contain" /></div>
-                            <div><p className="text-sm font-bold text-teal-800">MinhThanhVilla</p><span className="mt-1 inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600">Admin Panel</span></div>
+                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50"><img src={logo} alt="minh thanh villa" className="h-8 w-8 object-contain" /></div>
+                            <div><p className="text-sm font-bold text-teal-800">minh thanh villa</p><span className="mt-1 inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600">Admin Panel</span></div>
                         </Link>
                         <button type="button" onClick={() => setSidebarOpen(false)} aria-label="Đóng sidebar admin" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 lg:hidden"><FiX size={18} /></button>
                     </div>
