@@ -1,0 +1,513 @@
+const assert = require("node:assert/strict");
+const { before, describe, it } = require("node:test");
+
+const request = require("supertest");
+const { Op } = require("sequelize");
+import type { AuthenticatedTestUser } from "./helpers/types";
+
+process.env.NODE_ENV = "test";
+process.env.JWT_SECRET_KEY = "test-secret";
+process.env.ACCESS_TOKEN_TTL_MINUTES = "15";
+
+const { ApiError } = require("../dist/common/api-error");
+const authService = require("../dist/modules/auth/auth.service");
+const User = require("../dist/models/user").default;
+const AvailabilityCalendar = require("../dist/models/availability-calendar").default;
+const Booking = require("../dist/models/booking").default;
+const Listing = require("../dist/models/listing").default;
+const ListingAmenity = require("../dist/models/listing-amenity").default;
+const ListingImage = require("../dist/models/listing-image").default;
+const Review = require("../dist/models/review").default;
+const publicListingsService = require("../dist/modules/listings/listings.service");
+const hostListingsService = require("../dist/modules/host-listings/host-listings.service");
+const adminListingsService = require("../dist/modules/admin/admin.service");
+
+const originalGetPublicListings = publicListingsService.getPublicListings;
+
+type TestUserRecord = {
+    _id: number;
+    id: number;
+    email: string;
+    phone: string;
+    username: string;
+    fullName: string;
+    status: string;
+    roles: string[];
+};
+
+type PublicSearchQuery = {
+    city?: string;
+    district?: string;
+    checkIn?: string;
+    checkOut?: string;
+    guests?: number;
+    propertyType?: string;
+    roomType?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    amenities?: string;
+    sort?: string;
+    page?: number;
+    limit?: number;
+};
+
+type ListingPayload = Record<string, unknown> & {
+    title?: string;
+    status?: string;
+    dates?: string[];
+    isAvailable?: boolean;
+};
+
+type CapturedCreatePayload = {
+    userId?: string | number;
+    payload?: ListingPayload;
+};
+
+type CapturedUpdatePayload = {
+    listingId?: number;
+    actor?: AuthenticatedTestUser;
+    payload?: ListingPayload;
+};
+
+type CapturedCalendarPayload = {
+    listingId?: number;
+    actor?: AuthenticatedTestUser;
+    payload?: ListingPayload;
+};
+
+type CapturedAdminApproval = {
+    listingId?: number;
+    admin?: AuthenticatedTestUser;
+};
+
+type SequelizeWhere = Record<PropertyKey, unknown>;
+
+const users = new Map<string, TestUserRecord>([
+    [
+        "101",
+        {
+            _id: 101,
+            id: 101,
+            email: "host@example.com",
+            phone: "0901234567",
+            username: "host",
+            fullName: "Host User",
+            status: "active",
+            roles: ["host"],
+        },
+    ],
+    [
+        "102",
+        {
+            _id: 102,
+            id: 102,
+            email: "other-host@example.com",
+            phone: "0901234568",
+            username: "other-host",
+            fullName: "Other Host",
+            status: "active",
+            roles: ["host"],
+        },
+    ],
+    [
+        "900",
+        {
+            _id: 900,
+            id: 900,
+            email: "admin@example.com",
+            phone: "0909999999",
+            username: "admin",
+            fullName: "Admin User",
+            status: "active",
+            roles: ["admin"],
+        },
+    ],
+]);
+
+let capturedPublicSearch: PublicSearchQuery = {};
+let capturedCreatePayload: CapturedCreatePayload = {};
+let capturedUpdatePayload: CapturedUpdatePayload = {};
+let capturedCalendarPayload: CapturedCalendarPayload = {};
+let capturedAdminApproval: CapturedAdminApproval = {};
+
+before(() => {
+    authService.verifyAuthToken = (token: string) => {
+        if (token === "host-token") {
+            return { userId: "101", role: "host" };
+        }
+
+        if (token === "other-host-token") {
+            return { userId: "102", role: "host" };
+        }
+
+        if (token === "admin-token") {
+            return { userId: "900", role: "admin" };
+        }
+
+        throw new ApiError(401, "Unauthorized");
+    };
+    authService.toAuthenticatedUser = async (user: TestUserRecord): Promise<AuthenticatedTestUser> => ({
+        id: String(user._id),
+        email: user.email,
+        phone: user.phone,
+        name: user.fullName,
+        username: user.username,
+        status: user.status,
+        roles: user.roles,
+    });
+    User.findById = async (id: string | number) => users.get(String(id)) ?? null;
+
+    publicListingsService.getPublicListings = async (query: PublicSearchQuery) => {
+        capturedPublicSearch = query;
+        return {
+            items: [
+                {
+                    listingId: 801,
+                    title: "Open stay",
+                    description: "Available listing",
+                    basePrice: 1500000,
+                    ratingAvg: 4.8,
+                    reviewCount: 12,
+                    isAvailable: true,
+                    addressLine: "12 Nguyen Hue",
+                    ward: "Ward 1",
+                    city: "Vung Tau",
+                    district: "District 1",
+                    propertyType: "villa",
+                    roomType: "entire_place",
+                    maxGuests: 6,
+                    bedrooms: 3,
+                    beds: 4,
+                    bathrooms: 2,
+                    currency: "VND",
+                    imageUrl: "https://example.com/listing.jpg",
+                },
+            ],
+            pagination: { page: query.page ?? 1, limit: query.limit ?? 10, totalItems: 1, totalPages: 1 },
+        };
+    };
+    publicListingsService.getPublicListingDetail = async (listingId: number) => ({
+        listingId,
+        title: "Open stay",
+        description: "Available listing",
+        basePrice: 1500000,
+        currency: "VND",
+        maxGuests: 6,
+        bedrooms: 3,
+        beds: 4,
+        bathrooms: 2,
+        propertyType: "villa",
+        roomType: "entire_place",
+        minNights: 2,
+        maxNights: 10,
+        checkInFrom: "14:00",
+        checkOutBefore: "12:00",
+        cancellationPolicy: "moderate",
+        instantBookEnabled: false,
+        addressSummary: {
+            addressLine: "12 Nguyen Hue",
+            ward: "Ward 1",
+            district: "District 1",
+            city: "Vung Tau",
+            country: "VN",
+        },
+        amenities: [{ amenityId: 1, name: "WiFi", icon: null }],
+        images: [{ imageId: 1, url: "https://example.com/listing.jpg", caption: null, sortOrder: 1 }],
+        ratingSummary: { avgRating: 4.8, reviewCount: 12 },
+        host: { userId: 101, name: "Host User" },
+    });
+
+    hostListingsService.createListing = async (userId: string | number, payload: ListingPayload) => {
+        capturedCreatePayload = { userId, payload };
+        return { listingId: 900, status: payload.status ?? "draft" };
+    };
+    hostListingsService.updateListing = async (
+        listingId: number,
+        actor: AuthenticatedTestUser,
+        payload: ListingPayload,
+    ) => {
+        capturedUpdatePayload = { listingId, actor, payload };
+        return { listingId, status: "pending_approval" };
+    };
+    hostListingsService.getListingDetail = async (listingId: number, actor: AuthenticatedTestUser) => {
+        if (listingId === 901 && actor.id !== "101") {
+            throw new ApiError(403, "Forbidden");
+        }
+
+        return {
+            listingId,
+            hostId: "101",
+            title: "Owner stay",
+            status: "draft",
+        };
+    };
+    hostListingsService.bulkUpdateListingCalendar = async (
+        listingId: number,
+        actor: AuthenticatedTestUser,
+        payload: ListingPayload,
+    ) => {
+        capturedCalendarPayload = { listingId, actor, payload };
+        const dates = payload.dates ?? [];
+        if (dates.includes("2026-04-20") && payload.isAvailable === false) {
+            throw new ApiError(409, "Cannot block dates with active bookings");
+        }
+        return { listingId, updatedDates: dates };
+    };
+    adminListingsService.approveAdminListing = async (listingId: number, admin: AuthenticatedTestUser) => {
+        capturedAdminApproval = { listingId, admin };
+        return {
+            listingId,
+            status: "published",
+            approvedBy: Number(admin.id),
+            approvedAt: new Date().toISOString(),
+        };
+    };
+});
+
+const app = require("../dist/app").default;
+
+const hostAuth = { Authorization: "Bearer host-token" };
+const otherHostAuth = { Authorization: "Bearer other-host-token" };
+const adminAuth = { Authorization: "Bearer admin-token" };
+
+const createListingPayload = () => ({
+    title: "Villa gan bien",
+    description: "Spacious villa near the beach",
+    addressLine: "12 Nguyen Hue",
+    ward: "Ward 1",
+    district: "District 1",
+    city: "Vung Tau",
+    stateRegion: "Ba Ria - Vung Tau",
+    country: "VN",
+    postalCode: "790000",
+    latitude: 10.3456,
+    longitude: 107.0842,
+    propertyType: "villa",
+    roomType: "entire_place",
+    maxGuests: 6,
+    bedrooms: 3,
+    beds: 4,
+    bathrooms: 2,
+    basePrice: 1500000,
+    weekendPrice: 1800000,
+    cleaningFee: 200000,
+    serviceFeePct: 10,
+    currency: "VND",
+    minNights: 2,
+    maxNights: 10,
+    checkInFrom: "14:00",
+    checkOutBefore: "12:00",
+    cancellationPolicy: "moderate",
+    instantBookEnabled: false,
+    amenityIds: [1, 2],
+});
+
+describe("Listings endpoint contracts", () => {
+    it("passes supported public search filters to the listing service", async () => {
+        const response = await request(app).get(
+            "/api/listings?city=Vung%20Tau&district=District%201&checkIn=2026-04-20&checkOut=2026-04-22&guests=4&propertyType=villa&roomType=entire_place&minPrice=1000000&maxPrice=2000000&amenities=wifi,pool&sort=price_asc&page=2&limit=5",
+        );
+
+        assert.equal(response.status, 200);
+        assert.equal(response.body.data.items[0].title, "Open stay");
+        assert.equal(capturedPublicSearch.city, "Vung Tau");
+        assert.equal(capturedPublicSearch.checkIn, "2026-04-20");
+        assert.equal(capturedPublicSearch.guests, 4);
+        assert.equal(capturedPublicSearch.page, 2);
+        assert.equal(capturedPublicSearch.limit, 5);
+    });
+
+    it("returns listing detail without sensitive host fields", async () => {
+        const response = await request(app).get("/api/listings/801");
+
+        assert.equal(response.status, 200);
+        assert.equal(response.body.data.listingId, 801);
+        assert.deepEqual(response.body.data.host, { userId: 101, name: "Host User" });
+        assert.equal(response.body.data.host.email, undefined);
+    });
+
+    it("allows hosts to create draft or pending approval listings", async () => {
+        const response = await request(app)
+            .post("/api/host/listings")
+            .set(hostAuth)
+            .send({ ...createListingPayload(), status: "pending_approval" });
+
+        assert.equal(response.status, 201);
+        assert.equal(response.body.data.status, "pending_approval");
+        assert.equal(capturedCreatePayload.userId, "101");
+        assert.equal(capturedCreatePayload.payload!.status, "pending_approval");
+    });
+
+    it("rejects invalid listing create input before calling the service", async () => {
+        const previousCapturedCreatePayload = capturedCreatePayload;
+        const response = await request(app)
+            .post("/api/host/listings")
+            .set(hostAuth)
+            .send({ ...createListingPayload(), latitude: 100 });
+
+        assert.equal(response.status, 422);
+        assert.equal(capturedCreatePayload, previousCapturedCreatePayload);
+    });
+
+    it("rejects SQL injection-like sort input before calling the public listing service", async () => {
+        const previousCapturedSearch = capturedPublicSearch;
+        const response = await request(app).get(
+            "/api/listings?sort=price%20DESC%3B%20DROP%20TABLE%20bookings%3B%20--",
+        );
+
+        assert.equal(response.status, 422);
+        assert.equal(capturedPublicSearch, previousCapturedSearch);
+    });
+
+    it("enforces host listing ownership through the host service", async () => {
+        const response = await request(app)
+            .get("/api/host/listings/901")
+            .set(otherHostAuth);
+
+        assert.equal(response.status, 403);
+    });
+
+    it("returns pending approval when a published listing receives a sensitive update", async () => {
+        const response = await request(app)
+            .patch("/api/host/listings/900")
+            .set(hostAuth)
+            .send({ description: "New sensitive description", basePrice: 1700000 });
+
+        assert.equal(response.status, 200);
+        assert.equal(response.body.data.status, "pending_approval");
+        assert.equal(capturedUpdatePayload.payload!.description, "New sensitive description");
+        assert.equal(capturedUpdatePayload.payload!.basePrice, 1700000);
+    });
+
+    it("returns conflict when calendar bulk update tries to close a booked date", async () => {
+        const response = await request(app)
+            .patch("/api/host/listings/900/calendar/bulk")
+            .set(hostAuth)
+            .send({ dates: ["2026-04-20"], isAvailable: false });
+
+        assert.equal(response.status, 409);
+        assert.equal(capturedCalendarPayload.payload!.isAvailable, false);
+    });
+
+    it("rejects javascript and data image URLs before storing listing attachments", async () => {
+        let serviceCalled = false;
+        const originalAddListingImages = hostListingsService.addListingImages;
+
+        try {
+            hostListingsService.addListingImages = async () => {
+                serviceCalled = true;
+                return { listingId: 900, images: [] };
+            };
+
+            const javascriptResponse = await request(app)
+                .post("/api/host/listings/900/images")
+                .set(hostAuth)
+                .send({
+                    images: [{ url: "javascript:alert(1)", sortOrder: 1 }],
+                });
+
+            assert.equal(javascriptResponse.status, 422);
+
+            const dataResponse = await request(app)
+                .post("/api/host/listings/900/images")
+                .set(hostAuth)
+                .send({
+                    images: [{ url: "data:text/html,<script>alert(1)</script>", sortOrder: 1 }],
+                });
+
+            assert.equal(dataResponse.status, 422);
+            assert.equal(serviceCalled, false);
+        } finally {
+            hostListingsService.addListingImages = originalAddListingImages;
+        }
+    });
+
+    it("allows admins to approve pending listings", async () => {
+        const response = await request(app)
+            .patch("/api/admin/listings/900/approve")
+            .set(adminAuth)
+            .send({});
+
+        assert.equal(response.status, 200);
+        assert.equal(response.body.data.status, "published");
+        assert.equal(response.body.data.approvedBy, 900);
+        assert.equal(capturedAdminApproval.listingId, 900);
+        assert.equal(capturedAdminApproval.admin!.roles.includes("admin"), true);
+    });
+});
+
+export {};
+
+describe("Listings service availability rules", () => {
+    it("treats expired pending payment bookings as non-blocking", async () => {
+        const originals = {
+            listingFind: Listing.find,
+            reviewFind: Review.find,
+            listingAmenityFindAll: ListingAmenity.findAll,
+            listingImageFindAll: ListingImage.findAll,
+            availabilityCalendarFindAll: AvailabilityCalendar.findAll,
+            bookingFindAll: Booking.findAll,
+        };
+        const capturedBookingQueries: SequelizeWhere[] = [];
+
+        try {
+            Listing.find = async () => [
+                {
+                    listingId: 801,
+                    title: "Open stay",
+                    description: "Available listing",
+                    basePrice: 1500000,
+                    addressLine: "12 Nguyen Hue",
+                    ward: "Ward 1",
+                    city: "Vung Tau",
+                    district: "District 1",
+                    propertyType: "villa",
+                    roomType: "entire_place",
+                    maxGuests: 6,
+                    bedrooms: 3,
+                    beds: 4,
+                    bathrooms: 2,
+                    currency: "VND",
+                    amenityIds: [],
+                    images: [],
+                    availabilityCalendar: [],
+                },
+            ];
+            Review.find = () => ({
+                lean: async () => [],
+            });
+            ListingAmenity.findAll = async () => [];
+            ListingImage.findAll = async () => [];
+            AvailabilityCalendar.findAll = async () => [];
+            Booking.findAll = async (options: { where: SequelizeWhere }) => {
+                capturedBookingQueries.push(options.where);
+                return [];
+            };
+
+            await originalGetPublicListings({
+                checkIn: "2026-04-20",
+                checkOut: "2026-04-22",
+            });
+
+            assert.equal(capturedBookingQueries.length, 1);
+            const statusClauses = capturedBookingQueries[0][Op.or] as SequelizeWhere[];
+            const pendingPaymentClause = statusClauses.find((clause) => clause.status === "pending_payment");
+
+            if (!pendingPaymentClause) {
+                throw new Error("Missing pending payment status clause");
+            }
+            const pendingPaymentConditions = pendingPaymentClause[Op.or] as Array<{
+                lockedUntil: Record<PropertyKey, unknown>;
+            }>;
+            assert.equal(pendingPaymentConditions[0].lockedUntil[Op.is], null);
+            assert.ok(pendingPaymentConditions[1].lockedUntil[Op.gt] instanceof Date);
+        } finally {
+            Listing.find = originals.listingFind;
+            Review.find = originals.reviewFind;
+            ListingAmenity.findAll = originals.listingAmenityFindAll;
+            ListingImage.findAll = originals.listingImageFindAll;
+            AvailabilityCalendar.findAll = originals.availabilityCalendarFindAll;
+            Booking.findAll = originals.bookingFindAll;
+        }
+    });
+});

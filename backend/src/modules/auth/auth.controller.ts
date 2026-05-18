@@ -22,6 +22,7 @@ import {
     revokeRefreshSessionByToken,
     toAuthResponseUser,
     verifyPhoneWithOtp,
+    verifyEmailWithOtp,
 } from "./auth.service";
 
 const authContextFromRequest = (req: Request) => ({
@@ -65,7 +66,8 @@ export const register: RequestHandler = asyncHandler(async (req, res) => {
             token: session.accessToken,
             accessToken: session.accessToken,
             user: await toAuthResponseUser(user, session.roles),
-            emailVerificationOtp,
+            ...(getEnv().authDebugOtp ? { emailVerificationOtp } : {}),
+
         },
     });
 });
@@ -203,6 +205,17 @@ export const verifyPhone: RequestHandler = asyncHandler(async (req, res) => {
 
     return sendSuccess(res, {
         message: "Phone number verified successfully",
+        data: result,
+    });
+});
+export const verifyEmail: RequestHandler = asyncHandler(async (req, res) => {
+    assertValidRequest(req);
+
+    const payload = getValidatedBody<{ identifier: string; otp: string }>(req);
+    const result = await verifyEmailWithOtp(payload, authContextFromRequest(req));
+
+    return sendSuccess(res, {
+        message: "Email verified successfully",
         data: result,
     });
 });

@@ -116,6 +116,10 @@ export const verifyPhoneBodySchema = z.object({
     identifier: identifierSchema,
     otp: z.string().trim().regex(/^\d{6}$/, "otp must be a 6 digit code"),
 });
+export const verifyEmailBodySchema = z.object({
+    identifier: identifierSchema,
+    otp: z.string().trim().regex(/^\d{6}$/, "otp must be a 6 digit code"),
+});
 
 export const googleLoginBodySchema = z.object({
     idToken: z.string().trim().min(1, "idToken is required"),

@@ -14,12 +14,9 @@
     "db:ensure-final-modules": "ts-node src/scripts/ensure-final-modules-schema.ts",
     "db:migrate": "npm run db:migrate:safe",
     "db:migrate:safe": "node database/migrations/20260509_safe_schema_expansion.js && node database/migrations/20260510_security_schema_completion.js",
-    "db:seed": "npm run db:seed:amenities && npm run db:seed:admin",
-    "db:seed:amenities": "node database/seeds/20260509_default_amenities.js",
-    "db:seed:admin": "node database/seeds/20260510_default_admin.js",
-    "build": "tsc -p tsconfig.json",
+    "build": "node node_modules/typescript/lib/tsc.js -p tsconfig.json",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.tests.json",
+    "typecheck": "node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.json && node node_modules/typescript/lib/tsc.js --noEmit -p tsconfig.tests.json",
     "test": "npm run build && node --test --require ts-node/register --test-concurrency=1 tests/auth-flow.test.ts tests/auth-token-security.test.ts tests/host-onboarding-verification-flow.test.ts tests/listings-endpoints.test.ts tests/bookings-endpoints.test.ts tests/users-rbac-verification.test.ts tests/security-middleware.test.ts tests/trust-safety-uc09.test.ts tests/payments-coupons-payouts-reports.test.ts"
   },
   "dependencies": {
@@ -34,10 +31,10 @@
     "google-auth-library": "^10.6.2",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
-  
     "mysql2": "^3.22.2",
     "nodemailer": "^8.0.7",
     "sequelize": "^6.37.8",
+    "vnpay": "^2.5.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

@@ -66,7 +66,7 @@ const write = (level: "info" | "warn" | "error", message: string, meta?: LogMeta
         return;
     }
 
-    console.log(line);
+    process.stdout.write(`${line}\n`);
 };
 
 export const logger = {

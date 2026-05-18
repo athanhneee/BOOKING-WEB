@@ -54,6 +54,8 @@ export type AppEnv = {
     mailUser?: string;
     mailPassword?: string;
     mailFrom?: string;
+    backupDir: string;
+    backupRetentionDays: number;
     allowProductionAutoSchemaSync: boolean;
 };
 
@@ -159,7 +161,7 @@ const assertResolvedEnv = (name: string, value: string | undefined) => {
     if (value.includes("${{") || value.includes("${")) {
         throw new Error(
             `Environment variable ${name} contains an unresolved placeholder: ${value}. ` +
-                `Use a real value in .env when running locally.`,
+            `Use a real value in .env when running locally.`,
         );
     }
 
@@ -298,9 +300,9 @@ export const getEnv = (): AppEnv => {
     );
     const vnpayPaymentUrl =
         assertProductionValue(
-        "VNPAY_PAYMENT_URL",
-        process.env.VNPAY_PAYMENT_URL ?? (nodeEnv === "production" ? undefined : "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"),
-        nodeEnv,
+            "VNPAY_PAYMENT_URL",
+            process.env.VNPAY_PAYMENT_URL ?? (nodeEnv === "production" ? undefined : "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"),
+            nodeEnv,
         ) ?? "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
     const refreshCookieSecure =
         process.env.REFRESH_TOKEN_COOKIE_SECURE === "true" ||
@@ -421,6 +423,12 @@ export const getEnv = (): AppEnv => {
             minLength: 8,
         }),
         mailFrom: assertProductionValue("MAIL_FROM", process.env.MAIL_FROM, nodeEnv),
+        backupDir: process.env.BACKUP_DIR ?? "backups",
+        backupRetentionDays: parsePositiveInteger(
+            "BACKUP_RETENTION_DAYS",
+            process.env.BACKUP_RETENTION_DAYS,
+            14,
+        ),
         allowProductionAutoSchemaSync: parseBoolean(
             "ALLOW_PRODUCTION_AUTO_SCHEMA_SYNC",
             process.env.ALLOW_PRODUCTION_AUTO_SCHEMA_SYNC,

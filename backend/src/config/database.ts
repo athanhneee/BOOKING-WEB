@@ -18,7 +18,7 @@ export const sequelize = new Sequelize(env.dbName, env.dbUser, env.dbPassword, {
         ...(env.dbSsl
             ? {
                   ssl: {
-                      rejectUnauthorized: true,
+                      rejectUnauthorized: env.nodeEnv === "production",
                       ...(caPath && fs.existsSync(caPath) ? { ca: fs.readFileSync(caPath, "utf8") } : {}),
                   },
               }

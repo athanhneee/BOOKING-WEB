@@ -967,7 +967,85 @@ export const verifyPhoneWithOtp = async (
         isPhoneVerified: true,
     };
 };
+export const verifyEmailWithOtp = async (
+    input: { identifier: string; otp: string },
+    context: RequestContext = {},
+) => {
+    const normalizedIdentifier = normalizeIdentifier(input.identifier);
+    const normalizedOtp = input.otp.trim();
 
+    if (!isEmailIdentifier(normalizedIdentifier)) {
+        throw new ApiError(400, "identifier must be an email address");
+    }
+
+    const user = await findUserForLogin(normalizedIdentifier);
+
+    if (!user) {
+        throw new ApiError(400, "Invalid or expired OTP");
+    }
+
+    assertUserCanAuthenticate(user);
+
+    const tokenHash = hashOtpToken(normalizedIdentifier, "verify_email", normalizedOtp);
+
+    const otpToken = await AuthOtpToken.findOne({
+        where: {
+            userId: Number(user._id),
+            identifier: normalizedIdentifier,
+            purpose: "verify_email",
+        },
+        order: [["sentAt", "DESC"]],
+    });
+
+    if (!otpToken) {
+        throw new ApiError(400, "Invalid or expired OTP");
+    }
+
+    if (otpToken.consumedAt || otpToken.usedAt) {
+        throw new ApiError(400, "Invalid or expired OTP");
+    }
+
+    if (otpToken.expiresAt.getTime() < Date.now()) {
+        throw new ApiError(410, "Verification code expired");
+    }
+
+    if (otpToken.attemptCount >= getEnv().otpMaxAttempts) {
+        throw new ApiError(429, "Too many verification attempts. Please request a new code.");
+    }
+
+    otpToken.attemptCount += 1;
+
+    if (otpToken.tokenHash !== tokenHash) {
+        await otpToken.save();
+        throw new ApiError(400, "Invalid verification code");
+    }
+
+    await sequelize.transaction(async (transaction) => {
+        user.isEmailVerified = true;
+        await user.save({ transaction });
+
+        const usedAt = new Date();
+        otpToken.usedAt = usedAt;
+        otpToken.consumedAt = usedAt;
+        await otpToken.save({ transaction });
+
+        await createAuditLog({
+            actorId: Number(user._id),
+            action: "auth.email.verified",
+            targetType: "user",
+            targetId: Number(user._id),
+            ipAddress: context.ipAddress,
+            userAgent: context.userAgent,
+            transaction,
+        });
+    });
+
+    return {
+        userId: String(user._id),
+        email: user.email,
+        isEmailVerified: true,
+    };
+};
 const getLoginFailureWindowStart = () =>
     new Date(Date.now() - getEnv().authRateLimitWindowMinutes * 60 * 1000);
 
