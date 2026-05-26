@@ -30,7 +30,7 @@ const ProfileSummaryCard = ({ user, onEdit, onAvatarUpload }: ProfileSummaryCard
                             className="h-24 w-24 rounded-full object-cover shadow-sm"
                         />
                     ) : (
-                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-3xl font-semibold text-white shadow-sm">
+                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-500 text-3xl font-semibold text-white shadow-sm">
                             {getInitials(user.displayName)}
                         </div>
                     )}
@@ -61,7 +61,7 @@ const ProfileSummaryCard = ({ user, onEdit, onAvatarUpload }: ProfileSummaryCard
 
                 <h3 className="mt-5 text-2xl font-semibold text-slate-900">{user.displayName}</h3>
                 <p className="mt-2 inline-flex items-center gap-2 text-sm text-slate-500">
-                    <LuMapPin size={15} className="text-cyan-600" />
+                    <LuMapPin size={15} className="text-cyan-500" />
                     <span>{user.location || "Chưa cập nhật"}</span>
                 </p>
 

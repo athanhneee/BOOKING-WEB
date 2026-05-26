@@ -5,7 +5,7 @@ import { APP_ROUTES } from "../../../config/routes";
 import { getAdminBookingsReport, getAdminHostsReport, getAdminListingsReport, getAdminRevenueReport } from "../../../services/adminService";
 import { getAdminUsers } from "../../../services/userService";
 import { getPendingListings } from "../../../services/adminService";
-import { formatCurrency, pageWrapperClass } from "../Host/sharedStyles";
+import { formatCurrency, pageWrapperClass } from "../host/sharedStyles";
 
 const today = new Date();
 const from = new Date();
@@ -54,7 +54,7 @@ const AdminOverview = () => {
         { label: "Bài chờ duyệt", value: stats.pendingListings, icon: FiClipboard, link: APP_ROUTES.adminModeration },
         { label: "Doanh thu 30 ngày", value: formatCurrency(stats.grossRevenue), icon: FiDollarSign, link: APP_ROUTES.adminOverview },
         { label: "Booking 30 ngày", value: stats.bookings, icon: FiCheckCircle, link: APP_ROUTES.adminOverview },
-        { label: "Host mới 30 ngày", value: stats.hosts, icon: FiUsers, link: APP_ROUTES.adminUsers },
+        { label: "host mới 30 ngày", value: stats.hosts, icon: FiUsers, link: APP_ROUTES.adminUsers },
         { label: "Listing active 30 ngày", value: stats.activeListings, icon: FiClipboard, link: APP_ROUTES.adminModeration },
     ];
 
@@ -63,7 +63,7 @@ const AdminOverview = () => {
             <div className="mx-auto max-w-7xl space-y-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Tổng quan hệ thống</h1>
-                   
+
                 </div>
 
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
@@ -82,7 +82,7 @@ const AdminOverview = () => {
                     })}
                 </div>
 
-                
+
             </div>
         </div>
     );

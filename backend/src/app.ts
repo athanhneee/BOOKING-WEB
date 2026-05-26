@@ -114,6 +114,7 @@ export const createApp = () => {
     app.use("/api/host/verifications", hostVerificationsRoutes);
     app.use("/api/host", hostOnboardingRoutes);
     app.use("/api/host", hostPayoutsRoutes);
+    app.use("/api/ai/listings/search", aiListingSearchRouter);
     app.use("/api/ai/listings", listingImageVisionRoutes);
     app.use("/api/admin", adminRoutes);
     app.use("/api/payments", paymentsRoutes);
@@ -121,7 +122,6 @@ export const createApp = () => {
     app.use("/api/reviews", reviewsRoutes);
     app.use("/api/uploads", uploadsRoutes);
     app.use("/api/listings", publicListingsRoutes);
-    app.use("/api/ai/listings/search", aiListingSearchRouter);
     app.use("/api/search", semanticSearchRoutes);
     app.use("/api/reports", reportsRoutes);
     app.use("/api/host/reports", hostReportsRouter);

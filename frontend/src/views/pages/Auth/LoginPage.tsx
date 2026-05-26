@@ -29,7 +29,7 @@ declare global {
 }
 
 const primaryButtonClass =
-    "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-full bg-[#5d53f7] px-6 py-4 text-lg font-semibold text-white shadow-[0_18px_40px_-18px_rgba(93,83,247,0.8)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-[#4b40ef] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5d53f7]";
+    "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-full bg-[#5d53f7] px-6 py-4 text-lg font-semibold text-white shadow-[0_18px_40px_-18px_rgba(93,83,247,0.8)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5d53f7]";
 
 const secondaryButtonClass =
     "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white px-6 py-4 text-lg font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50";
@@ -148,7 +148,7 @@ const LoginPage = () => {
                     <div className="mt-3 text-right">
                         <Link
                             to={APP_ROUTES.forgotPassword}
-                            className="text-sm font-semibold text-[#5d53f7] transition-colors hover:text-[#4b40ef] sm:text-base"
+                            className="text-sm font-semibold text-cyan-500 transition-colors hover:text-[#4b40ef] sm:text-base"
                         >
                             Quên mật khẩu
                         </Link>
@@ -169,7 +169,7 @@ const LoginPage = () => {
 
             <div className="mt-7 text-center text-base text-slate-700 sm:text-lg">
                 Tôi chưa có tài khoản{" "}
-                <Link to={APP_ROUTES.register} className="font-semibold text-[#5d53f7] transition-colors hover:text-[#4b40ef]">
+                <Link to={APP_ROUTES.register} className="font-semibold text-cyan-500 transition-colors hover:text-[#4b40ef]">
                     Đăng ký
                 </Link>
             </div>

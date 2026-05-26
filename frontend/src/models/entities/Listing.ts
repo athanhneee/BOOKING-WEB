@@ -50,6 +50,7 @@ export type PopularDestination = {
     highlights: StayHighlight[];
     policies: StayPolicy[];
     quickChoices: StayQuickChoice[];
+    distanceMeters?: number;
 };
 
 export type ApiPropertyType = "apartment" | "villa" | "hotel" | "homestay";
@@ -79,6 +80,7 @@ export type ApiListingSummary = {
     coverImageUrl?: string | null;
     coverImage?: ApiListingImage | null;
     images?: ApiListingImage[];
+    distanceMeters?: number;
 };
 
 export type ApiListingImage = {
@@ -231,6 +233,7 @@ export const mapListingSummaryToDestination = (item: ApiListingSummary): Popular
         highlights: rating >= 4.8 ? ["Được yêu thích", "Miễn phí hủy"] : [],
         policies: ["Thanh toán linh hoạt"],
         quickChoices: getQuickChoices(item),
+        distanceMeters: item.distanceMeters,
     };
 };
 

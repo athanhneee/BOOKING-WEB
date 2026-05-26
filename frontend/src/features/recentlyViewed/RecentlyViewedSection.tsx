@@ -24,7 +24,7 @@ const RecentlyViewedSection = () => {
             <div className="mx-auto w-full max-w-[74rem] px-4 md:px-6">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-600">Lịch sử xem</p>
+                        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-500">Lịch sử xem</p>
                         <h2 className="mt-2 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">Đã xem gần đây</h2>
                     </div>
                     <p className="max-w-xl text-sm leading-6 text-zinc-500">

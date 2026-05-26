@@ -26,6 +26,7 @@ import {
     sanitizeText,
 } from "../../common/sanitization";
 import { isValidIsoDate } from "../../common/validation";
+import { isCoordinateInVungTauBounds } from "../../common/vung-tau-location-groups";
 import sequelize from "../../config/database";
 import Amenity from "../../models/amenity";
 import AvailabilityCalendar from "../../models/availability-calendar";
@@ -172,6 +173,22 @@ const uniqueNumbers = (values: number[] = []) => Array.from(new Set(values));
 const hasOwn = <T extends object>(value: T, key: keyof T) =>
     Object.prototype.hasOwnProperty.call(value, key);
 const defaultListingCity = "Vũng Tàu";
+const assertCoordinateInDefaultListingCity = (latitude: number, longitude: number) => {
+    if (isCoordinateInVungTauBounds(latitude, longitude)) {
+        return;
+    }
+
+    throw new ApiError(422, "Tọa độ chỗ nghỉ phải nằm trong khu vực Vũng Tàu", [
+        {
+            path: "latitude",
+            msg: "coordinates must be inside Vung Tau",
+        },
+        {
+            path: "longitude",
+            msg: "coordinates must be inside Vung Tau",
+        },
+    ]);
+};
 const normalizeCoordinateValue = (path: "latitude" | "longitude", value: unknown) => {
     const normalizedValue = typeof value === "string" ? value.trim().replace(",", ".") : value;
     const coordinate = Number(normalizedValue);
@@ -199,13 +216,17 @@ const normalizeCreateListingLocationInput = (input: CreateListingInput): CreateL
     const district = typeof rawInput.district === "string" && rawInput.district.trim()
         ? rawInput.district
         : defaultListingCity;
+    const latitude = normalizeCoordinateValue("latitude", rawInput.latitude);
+    const longitude = normalizeCoordinateValue("longitude", rawInput.longitude);
+
+    assertCoordinateInDefaultListingCity(latitude, longitude);
 
     return {
         ...input,
         city: defaultListingCity,
         district,
-        latitude: normalizeCoordinateValue("latitude", rawInput.latitude),
-        longitude: normalizeCoordinateValue("longitude", rawInput.longitude),
+        latitude,
+        longitude,
     };
 };
 const normalizeUpdateListingLocationInput = (input: UpdateListingInput): UpdateListingInput => {
@@ -781,6 +802,15 @@ export const updateListing = async (listingId: number, actor: HostActor, input: 
     const sanitizedInput = sanitizeUpdateListingInput(normalizeUpdateListingLocationInput(input));
     const updated = await sequelize.transaction(async (transaction) => {
         const listing = await getListingForHost(listingId, actor, transaction);
+        const hasCoordinateChange = hasOwn(sanitizedInput, "latitude") || hasOwn(sanitizedInput, "longitude");
+
+        if (hasCoordinateChange) {
+            assertCoordinateInDefaultListingCity(
+                sanitizedInput.latitude ?? listing.latitude,
+                sanitizedInput.longitude ?? listing.longitude,
+            );
+        }
+
         const previousStatus = listing.status;
         const nextMinNights = sanitizedInput.minNights ?? listing.minNights;
         const nextMaxNights = hasOwn(sanitizedInput, "maxNights")

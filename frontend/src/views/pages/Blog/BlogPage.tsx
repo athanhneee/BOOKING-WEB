@@ -62,15 +62,15 @@ const BlogPage = () => {
                                             {featuredBlogPost.category}
                                         </span>
                                         <span className="inline-flex items-center gap-2">
-                                            <FaCalendarAlt className="text-cyan-600" />
+                                            <FaCalendarAlt className="text-cyan-500" />
                                             {formatBlogDate(featuredBlogPost.publishedAt)}
                                         </span>
                                         <span className="inline-flex items-center gap-2">
-                                            <FaClock className="text-cyan-600" />
+                                            <FaClock className="text-cyan-500" />
                                             {featuredBlogPost.readTime}
                                         </span>
                                         <span className="inline-flex items-center gap-2">
-                                            <FaMapMarkerAlt className="text-cyan-600" />
+                                            <FaMapMarkerAlt className="text-cyan-500" />
                                             {featuredBlogPost.location}
                                         </span>
                                     </div>
@@ -87,7 +87,7 @@ const BlogPage = () => {
                             <div className="mt-5 space-y-4">
                                 {travelTips.map((tip, index) => (
                                     <div key={tip} className="flex gap-3">
-                                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-sm font-bold text-white">
+                                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan-500 text-sm font-bold text-white">
                                             {index + 1}
                                         </span>
                                         <p className="pt-1 text-sm leading-6 text-slate-600">{tip}</p>
@@ -96,7 +96,7 @@ const BlogPage = () => {
                             </div>
                             <Link
                                 to={APP_ROUTES.search}
-                                className="mt-7 inline-flex items-center gap-2 rounded-full bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-cyan-700"
+                                className="mt-7 inline-flex items-center gap-2 rounded-full bg-cyan-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-cyan-500"
                             >
                                 Xem nơi lưu trú
                                 <FaArrowRight className="text-xs" />

@@ -134,13 +134,13 @@ const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
         ...(trip.status === "pending_review"
             ? [{ key: "review", label: "Viết đánh giá", variant: "primary" as const }]
             : trip.status === "active"
-              ? []
-              : trip.canReview
-                ? [
-                      { key: "review", label: "Viết đánh giá", variant: "primary" as const },
-                      { key: "rebook", label: "Đặt lại", variant: "secondary" as const },
-                  ]
-                : [{ key: "rebook", label: "Đặt lại", variant: "secondary" as const }]),
+                ? []
+                : trip.canReview
+                    ? [
+                        { key: "review", label: "Viết đánh giá", variant: "primary" as const },
+                        { key: "rebook", label: "Đặt lại", variant: "secondary" as const },
+                    ]
+                    : [{ key: "rebook", label: "Đặt lại", variant: "secondary" as const }]),
     ];
 
     return (
@@ -163,7 +163,7 @@ const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
                         <div>
                             <h3 className="text-lg font-semibold text-slate-900">{trip.propertyName}</h3>
                             <p className="mt-2 flex items-center gap-2 text-sm text-slate-500">
-                                <LuMapPin size={16} className="text-cyan-600" />
+                                <LuMapPin size={16} className="text-cyan-500" />
                                 <span>{trip.location}</span>
                             </p>
                         </div>
@@ -175,11 +175,11 @@ const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
 
                     <div className="mt-4 flex flex-col gap-2 text-sm text-slate-600 sm:flex-row sm:flex-wrap sm:gap-4">
                         <span className="inline-flex items-center gap-2">
-                            <LuCalendar size={16} className="text-cyan-600" />
+                            <LuCalendar size={16} className="text-cyan-500" />
                             {formatTripDate(trip.checkIn)} - {formatTripDate(trip.checkOut)}
                         </span>
                         <span className="inline-flex items-center gap-2">
-                            <LuMoon size={16} className="text-cyan-600" />
+                            <LuMoon size={16} className="text-cyan-500" />
                             {trip.nights} đêm
                         </span>
                     </div>
@@ -202,7 +202,7 @@ const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
                                 className={cn(
                                     "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
                                     action.variant === "primary"
-                                        ? "bg-cyan-700 text-white hover:bg-cyan-800"
+                                        ? "bg-cyan-500 text-white hover:bg-cyan-500"
                                         : "border border-cyan-300/50 bg-white text-cyan-800 hover:bg-cyan-300/10",
                                 )}
                             >

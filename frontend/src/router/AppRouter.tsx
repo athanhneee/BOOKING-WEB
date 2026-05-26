@@ -18,17 +18,17 @@ import PhanQuyenHeThong from "../views/pages/Admin/PhanQuyenHeThong/index.jsx";
 import QuanLyNguoiDung from "../views/pages/Admin/QuanLyNguoiDung/index.jsx";
 import GuestPayment from "../views/pages/GuestPayment";
 import PaymentResultPage from "../views/pages/GuestPayment/PaymentResultPage";
-import CaiDat from "../views/pages/Host/CaiDat";
-import BaoCao from "../views/pages/Host/BaoCao";
-import DanhGia from "../views/pages/Host/DanhGia";
-import DatPhong from "../views/pages/Host/DatPhong";
-import HoTro from "../views/pages/Host/HoTro";
-import KhachLuuTru from "../views/pages/Host/KhachLuuTru";
-import LichLuuTru from "../views/pages/Host/LichLuuTru";
-import ChoNghi from "../views/pages/Host/ChoNghi";
-import ThemChoNghi from "../views/pages/Host/ThemChoNghi";
-import ThanhToan from "../views/pages/Host/ThanhToan";
-import TinNhan from "../views/pages/Host/TinNhan";
+import CaiDat from "../views/pages/host/CaiDat";
+import BaoCao from "../views/pages/host/BaoCao";
+import DanhGia from "../views/pages/host/DanhGia";
+import DatPhong from "../views/pages/host/DatPhong";
+import HoTro from "../views/pages/host/HoTro";
+import KhachLuuTru from "../views/pages/host/KhachLuuTru";
+import LichLuuTru from "../views/pages/host/LichLuuTru";
+import ChoNghi from "../views/pages/host/ChoNghi";
+import ThemChoNghi from "../views/pages/host/ThemChoNghi";
+import ThanhToan from "../views/pages/host/ThanhToan";
+import TinNhan from "../views/pages/host/TinNhan";
 import HomePage from "../views/pages/Home/HomePage";
 import HostMessagePage from "../views/pages/HostMessage/HostMessagePage";
 import ListingDetailPage from "../views/pages/ListingDetail/ListingDetailPage";
@@ -89,7 +89,7 @@ const AppRouter = () => {
                 </Route>
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={["Host", "Admin"]} />}>
+            <Route element={<ProtectedRoute allowedRoles={["host", "Admin"]} />}>
                 <Route path="/host" element={<HostLayout />}>
                     <Route index element={<Navigate to={APP_ROUTES.hostMessages} replace />} />
                     <Route path="tin-nhan" element={<TinNhan />} />
@@ -107,7 +107,7 @@ const AppRouter = () => {
             </Route>
 
             <Route path={APP_ROUTES.hostOverviewLegacy} element={<Navigate to={APP_ROUTES.ownerDashboard} replace />} />
-            
+
             <Route path={APP_ROUTES.guestPaymentResult} element={<PaymentResultPage />} />
             <Route path={APP_ROUTES.guestPayment} element={<GuestPayment />} />
             <Route path="*" element={<NotFoundPage />} />

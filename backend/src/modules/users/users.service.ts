@@ -7,9 +7,11 @@ import {
     findUserById,
     findUserByPhone,
     findUserByUsername,
+    findUserProfileByUserId,
     getUserRoles,
     listUsersForAdmin,
     replaceUserRoles,
+    saveUserProfileUpdates,
     saveUserUpdates,
     withTransaction,
 } from "./users.repository";
@@ -31,6 +33,11 @@ type UpdateOwnProfileInput = Partial<{
     bio: string | null;
     avatarUrl: string | null;
     avatarKey: string | null;
+    location: string | null;
+    job: string | null;
+    dreamDestination: string | null;
+    school: string | null;
+    languages: string[] | null;
 }>;
 
 type AdminUpdateUserInput = UpdateOwnProfileInput &
@@ -95,6 +102,48 @@ const buildFullName = (input: UpdateOwnProfileInput, currentFullName: string) =>
     return `${firstName} ${lastName}`.trim();
 };
 
+const normalizeNullableText = (value?: string | null) => {
+    if (value === undefined) {
+        return undefined;
+    }
+
+    if (value === null) {
+        return null;
+    }
+
+    const normalized = value.trim();
+    return normalized ? normalized : null;
+};
+
+const normalizeLanguages = (value?: string[] | null) => {
+    if (value === undefined) {
+        return undefined;
+    }
+
+    if (value === null) {
+        return null;
+    }
+
+    return [...new Set(value.map((item) => item.trim()).filter(Boolean))];
+};
+
+const parseStoredLanguages = (value: unknown) => {
+    if (Array.isArray(value)) {
+        return value.map((item) => String(item).trim()).filter(Boolean);
+    }
+
+    if (typeof value === "string" && value.trim()) {
+        try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed.map((item) => String(item).trim()).filter(Boolean) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    return [];
+};
+
 type SerializeUserOptions = {
     maskContact?: boolean;
 };
@@ -111,6 +160,7 @@ export const serializeUser = async (
     }
 
     const roles = await getUserRoles(user._id);
+    const profile = await findUserProfileByUserId(user._id);
     const email = options.maskContact ? maskEmail(user.email) : user.email;
     const phone = options.maskContact ? maskPhone(user.phone) : (user.phone ?? "");
 
@@ -131,6 +181,11 @@ export const serializeUser = async (
         bio: user.bio,
         avatarUrl: user.avatarUrl ?? null,
         avatarKey: user.avatarKey ?? null,
+        location: profile?.location ?? null,
+        job: profile?.job ?? null,
+        dreamDestination: profile?.dreamDestination ?? null,
+        school: profile?.school ?? null,
+        languages: parseStoredLanguages(profile?.languages),
         status: user.status,
         roles,
         role: selectPrimaryRole(roles),
@@ -138,6 +193,16 @@ export const serializeUser = async (
         updatedAt: user.updatedAt,
     };
 };
+
+const buildPublicProfileUpdates = (input: UpdateOwnProfileInput) => ({
+    ...(input.location !== undefined ? { location: normalizeNullableText(input.location) } : {}),
+    ...(input.job !== undefined ? { job: normalizeNullableText(input.job) } : {}),
+    ...(input.dreamDestination !== undefined
+        ? { dreamDestination: normalizeNullableText(input.dreamDestination) }
+        : {}),
+    ...(input.school !== undefined ? { school: normalizeNullableText(input.school) } : {}),
+    ...(input.languages !== undefined ? { languages: normalizeLanguages(input.languages) } : {}),
+});
 
 export const getCurrentUserProfile = (actor: AuthenticatedUser) => serializeUser(actor.id);
 
@@ -269,7 +334,19 @@ export const updateCurrentUserProfile = async (actor: AuthenticatedUser, input: 
     });
 
     const updates = buildProfileUpdates(input, user.fullName);
-    await saveUserUpdates(user, updates);
+    const publicProfileUpdates = buildPublicProfileUpdates(input);
+
+    if (Object.keys(publicProfileUpdates).length > 0) {
+        await withTransaction(async (transaction) => {
+            if (Object.keys(updates).length > 0) {
+                await saveUserUpdates(user, updates, transaction);
+            }
+
+            await saveUserProfileUpdates(user._id, publicProfileUpdates, transaction);
+        });
+    } else if (Object.keys(updates).length > 0) {
+        await saveUserUpdates(user, updates);
+    }
 
     return serializeUser(user);
 };
@@ -314,9 +391,16 @@ export const updateUserForAdmin = async (
         ...(input.email !== undefined ? { email: normalizeEmail(input.email) } : {}),
         ...(input.status !== undefined ? { status: input.status } : {}),
     };
+    const publicProfileUpdates = buildPublicProfileUpdates(input);
 
     await withTransaction(async (transaction) => {
-        await saveUserUpdates(user, updates, transaction);
+        if (Object.keys(updates).length > 0) {
+            await saveUserUpdates(user, updates, transaction);
+        }
+
+        if (Object.keys(publicProfileUpdates).length > 0) {
+            await saveUserProfileUpdates(user._id, publicProfileUpdates, transaction);
+        }
 
         if (nextRoles) {
             await replaceUserRoles(user._id, nextRoles, transaction);

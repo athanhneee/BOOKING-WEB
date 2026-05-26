@@ -4,16 +4,15 @@ import type {
 } from "../../../../models/entities/Listing";
 import type { PriceBounds, StayFilterState } from "./types";
 
-export const getStayPriceBounds = (stays: PopularDestination[]): PriceBounds => {
-    if (stays.length === 0) {
-        return { min: 0, max: 0 };
-    }
+const STAY_PRICE_BOUNDS: PriceBounds = {
+    min: 500000,
+    max: 20000000,
+};
 
-    const prices = stays.map((stay) => stay.pricePerNight);
-    return {
-        min: Math.min(...prices),
-        max: Math.max(...prices),
-    };
+export const getStayPriceBounds = (stays: PopularDestination[]): PriceBounds => {
+    void stays;
+
+    return STAY_PRICE_BOUNDS;
 };
 
 export const createDefaultStayFilters = (bounds: PriceBounds): StayFilterState => {

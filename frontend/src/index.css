@@ -93,7 +93,7 @@ canvas {
     max-width: 100%;
 }
 
-/* MinhThanhVilla - Global radius system */
+/* minhthanhvilla - Global radius system */
 input:not(.rounded-none):not(.rounded-full):not(.rounded-2xl),
 textarea:not(.rounded-none):not(.rounded-full):not(.rounded-2xl),
 select:not(.rounded-none):not(.rounded-full):not(.rounded-2xl) {

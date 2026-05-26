@@ -249,7 +249,7 @@ const DangKyHost = () => {
         <div className="bg-[#F7F8FA] px-4 py-12">
             <div className="mx-auto max-w-3xl rounded-lg border border-gray-100 bg-white p-6 shadow-sm md:p-8">
                 <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-700">Trở thành Host</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-700">Trở thành host</p>
                     <h1 className="mt-3 text-3xl font-bold text-gray-900">Đăng ký hồ sơ chủ nhà</h1>
                 </div>
 
@@ -422,7 +422,7 @@ const DangKyHost = () => {
                             <button
                                 disabled={saving}
                                 type="submit"
-                                className="rounded-lg bg-cyan-600 px-5 py-2.5 font-medium text-white hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="rounded-lg bg-cyan-500 px-5 py-2.5 font-medium text-white hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {saving ? "Đang gửi hồ sơ..." : "Gửi hồ sơ"}
                             </button>

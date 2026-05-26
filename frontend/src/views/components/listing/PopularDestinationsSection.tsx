@@ -120,7 +120,7 @@ const PopularDestinationsSection = ({
 
                 {!error && destinations.length === 0 ? (
                     <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-white px-5 py-12 text-center text-sm font-medium text-zinc-500">
-                        Chưa có chỗ nghỉ đã duyệt. Hãy đăng nhập Host để tạo phòng, sau đó Admin duyệt để hiển thị tại đây.
+                        Chưa có chỗ nghỉ đã duyệt. Hãy đăng nhập host để tạo phòng, sau đó Admin duyệt để hiển thị tại đây.
                     </div>
                 ) : null}
 

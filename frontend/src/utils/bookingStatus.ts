@@ -97,7 +97,7 @@ export function getBookingDisplayStatus(booking: ApiBooking): BookingDisplayStat
         case "cancelled":
             return { label: "Đã hủy", tone: "muted", normalizedStatus };
         case "host_cancelled":
-            return { label: "Host hủy", tone: "danger", normalizedStatus };
+            return { label: "host hủy", tone: "danger", normalizedStatus };
         case "rejected":
             return { label: "Đã từ chối", tone: "danger", normalizedStatus };
         default:

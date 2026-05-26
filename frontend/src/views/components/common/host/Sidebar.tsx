@@ -37,7 +37,7 @@ const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
 
                         <div>
                             <p className="text-xs font-semibold tracking-[0.16em] text-cyan-700">minhthanhvilla</p>
-                            <h1 className="text-lg font-semibold text-gray-900">Bảng điều khiển Host</h1>
+                            <h1 className="text-lg font-semibold text-gray-900">Bảng điều khiển host</h1>
                         </div>
                     </Link>
 

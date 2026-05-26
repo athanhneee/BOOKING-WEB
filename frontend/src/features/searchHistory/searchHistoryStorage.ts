@@ -16,7 +16,7 @@ export const SEARCH_HISTORY_LIMIT = 8;
 const canUseSessionStorage = () => typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
 
 const hasSearchIntent = (state: BookingSearchState) =>
-    Boolean(state.location || state.checkIn || state.checkOut) ||
+    Boolean(state.location || state.locationGroup || state.mapLat || state.mapLng || state.checkIn || state.checkOut) ||
     getGuestCount(state.guests) > 1 ||
     state.guests.infants > 0 ||
     state.guests.pets > 0;
@@ -24,6 +24,10 @@ const hasSearchIntent = (state: BookingSearchState) =>
 const createSearchId = (state: BookingSearchState) =>
     [
         state.location,
+        state.locationGroup,
+        state.mapLat,
+        state.mapLng,
+        state.mapRadius,
         state.checkIn,
         state.checkOut,
         state.guests.adults,

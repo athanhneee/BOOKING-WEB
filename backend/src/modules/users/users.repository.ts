@@ -3,6 +3,7 @@ import { QueryTypes, type Transaction } from "sequelize";
 import { ApiError } from "../../common/api-error";
 import sequelize from "../../config/database";
 import User, { UserDocument, UserRole, UserStatus, userRoleValues } from "../../models/user";
+import UserProfile from "../../models/user-profile";
 
 export { User };
 
@@ -145,6 +146,49 @@ export const saveUserUpdates = async (
     Object.assign(user, values);
     await user.save({ transaction });
     return user;
+};
+
+export type UserProfileUpdateAttributes = Partial<{
+    location: string | null;
+    job: string | null;
+    dreamDestination: string | null;
+    school: string | null;
+    languages: string[] | null;
+}>;
+
+export const findUserProfileByUserId = (
+    userId: string | number,
+    transaction?: Transaction,
+    includeDeleted = false,
+) =>
+    UserProfile.findOne({
+        where: {
+            userId: Number(userId),
+            ...(includeDeleted ? {} : { deletedAt: null }),
+        },
+        transaction,
+    });
+
+export const saveUserProfileUpdates = async (
+    userId: string | number,
+    values: UserProfileUpdateAttributes,
+    transaction?: Transaction,
+) => {
+    const profile = await findUserProfileByUserId(userId, transaction, true);
+
+    if (profile) {
+        Object.assign(profile, values, { deletedAt: null });
+        await profile.save({ transaction });
+        return profile;
+    }
+
+    return UserProfile.create(
+        {
+            userId: Number(userId),
+            ...values,
+        },
+        { transaction },
+    );
 };
 
 export const withTransaction = <T>(callback: (transaction: Transaction) => Promise<T>) =>

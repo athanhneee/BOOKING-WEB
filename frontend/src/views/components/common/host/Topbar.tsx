@@ -85,7 +85,7 @@ const Topbar = ({ onOpenSidebar }: TopbarProps) => {
                 </button>
 
                 <div className="min-w-[220px] flex-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">Host Center</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">host Center</p>
                     <h2 className="mt-1 text-xl font-semibold text-gray-900 sm:text-2xl">{activeMeta.title}</h2>
                     <p className="mt-1 text-sm text-gray-500">{activeMeta.subtitle}</p>
                     <p className="mt-2 text-xs font-medium capitalize text-gray-400">{today}</p>
@@ -94,7 +94,7 @@ const Topbar = ({ onOpenSidebar }: TopbarProps) => {
                 {location.pathname !== APP_ROUTES.hostNewProperty ? (
                     <Link
                         to={APP_ROUTES.hostNewProperty}
-                        className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-cyan-700"
+                        className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-cyan-500"
                     >
                         <FiPlus size={16} />
                         Thêm chỗ nghỉ

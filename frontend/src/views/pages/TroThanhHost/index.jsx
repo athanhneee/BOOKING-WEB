@@ -14,7 +14,7 @@ const faqItems = [
     },
     {
         question: "Phí đăng ký bao nhiêu?",
-        answer: "Hoàn toàn miễn phí. MinhThanhVilla chỉ thu phí dịch vụ khi có đặt phòng thành công.",
+        answer: "Hoàn toàn miễn phí. minhthanhvilla chỉ thu phí dịch vụ khi có đặt phòng thành công.",
     },
 ];
 
@@ -27,7 +27,7 @@ const benefitCards = [
     {
         icon: "🛡️",
         title: "Được bảo vệ",
-        description: "MinhThanhVilla xác minh danh tính khách hàng và hỗ trợ giải quyết tranh chấp 24/7.",
+        description: "minhthanhvilla xác minh danh tính khách hàng và hỗ trợ giải quyết tranh chấp 24/7.",
     },
     {
         icon: "📊",
@@ -37,8 +37,8 @@ const benefitCards = [
 ];
 
 const steps = [
-    { number: "1", title: "Tạo tài khoản", description: "Tạo tài khoản MinhThanhVilla", circleClassName: "bg-teal-600 text-white", connectorClassName: "bg-cyan-400" },
-    { number: "2", title: "Điền thông tin Host", description: "Hoàn thiện hồ sơ cá nhân", circleClassName: "bg-cyan-500 text-white", connectorClassName: "bg-cyan-400" },
+    { number: "1", title: "Tạo tài khoản", description: "Tạo tài khoản minhthanhvilla", circleClassName: "bg-cyan-500 text-white", connectorClassName: "bg-cyan-400" },
+    { number: "2", title: "Điền thông tin host", description: "Hoàn thiện hồ sơ cá nhân", circleClassName: "bg-cyan-500 text-white", connectorClassName: "bg-cyan-400" },
     { number: "3", title: "Xác minh danh tính", description: "Tải giấy tờ hợp lệ", circleClassName: "bg-cyan-500 text-white", connectorClassName: "bg-gray-200" },
     { number: "4", title: "Đăng chỗ nghỉ", description: "Bắt đầu đón khách", circleClassName: "bg-gray-200 text-gray-400", connectorClassName: "" },
 ];
@@ -53,9 +53,9 @@ const TroThanhHostLanding = () => {
 
     return (
         <div className="min-h-screen bg-[#F7F8FA] pt-24">
-            <section className="bg-gradient-to-br from-teal-600 to-cyan-500 px-6 py-20 text-center">
+            <section className="bg-gradient-to-br from-cyan-500 to-cyan-500 px-6 py-20 text-center">
                 <div className="mx-auto max-w-4xl">
-                    <h1 className="text-4xl font-bold text-white">Trở thành Host tại MinhThanhVilla</h1>
+                    <h1 className="text-4xl font-bold text-white">Trở thành host tại minhthanhvilla</h1>
                     <p className="mx-auto mt-4 max-w-xl text-lg text-white/80">
                         Chia sẻ không gian của bạn, tạo thu nhập thụ động cùng hàng nghìn khách du lịch Vũng Tàu.
                     </p>
@@ -64,7 +64,7 @@ const TroThanhHostLanding = () => {
                         <button
                             type="button"
                             onClick={() => navigate(APP_ROUTES.hostRegister)}
-                            className="rounded-xl bg-white px-8 py-3 font-semibold text-teal-700 transition-colors hover:bg-gray-50"
+                            className="rounded-xl bg-white px-8 py-3 font-semibold text-cyan-700 transition-colors hover:bg-gray-50"
                         >
                             Bắt đầu đăng ký
                         </button>
@@ -81,7 +81,7 @@ const TroThanhHostLanding = () => {
 
             <section id="benefits" className="px-6 py-16">
                 <div className="mx-auto max-w-5xl">
-                    <h2 className="text-center text-2xl font-bold text-teal-800">Tại sao nên trở thành Host?</h2>
+                    <h2 className="text-center text-2xl font-bold text-cyan-800">Tại sao nên trở thành host?</h2>
 
                     <div className="mx-auto mt-10 grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-3">
                         {benefitCards.map((card) => (
@@ -97,7 +97,7 @@ const TroThanhHostLanding = () => {
 
             <section className="bg-white px-6 py-16">
                 <div className="mx-auto max-w-5xl">
-                    <h2 className="text-center text-2xl font-bold text-teal-800">Quy trình trở thành Host</h2>
+                    <h2 className="text-center text-2xl font-bold text-cyan-800">Quy trình trở thành host</h2>
 
                     <div className="mx-auto mt-10 flex max-w-3xl items-start justify-center gap-0">
                         {steps.map((step, index) => (
@@ -117,7 +117,7 @@ const TroThanhHostLanding = () => {
             </section>
 
             <section className="mx-auto max-w-2xl px-6 py-16">
-                <h2 className="mb-8 text-center text-2xl font-bold text-teal-800">Câu hỏi thường gặp</h2>
+                <h2 className="mb-8 text-center text-2xl font-bold text-cyan-800">Câu hỏi thường gặp</h2>
 
                 {faqItems.map((item, index) => {
                     const isOpen = openFaq === index;
@@ -131,7 +131,7 @@ const TroThanhHostLanding = () => {
                             >
                                 <span className="text-sm font-semibold text-gray-900">{item.question}</span>
                                 <FiChevronDown
-                                    className={`transition-transform ${isOpen ? "rotate-180 text-cyan-600" : "text-gray-400"}`}
+                                    className={`transition-transform ${isOpen ? "rotate-180 text-cyan-500" : "text-gray-400"}`}
                                 />
                             </button>
 
@@ -144,13 +144,13 @@ const TroThanhHostLanding = () => {
             </section>
 
             <section className="px-6 py-16">
-                <div className="mx-auto my-12 max-w-3xl rounded-2xl bg-gradient-to-r from-teal-600 to-cyan-500 p-10 text-center text-white">
-                    <h2 className="text-2xl font-bold">Sẵn sàng bắt đầu hành trình Host của bạn?</h2>
+                <div className="mx-auto my-12 max-w-3xl rounded-2xl bg-gradient-to-r from-cyan-500 to-cyan-500 p-10 text-center text-white">
+                    <h2 className="text-2xl font-bold">Sẵn sàng bắt đầu hành trình host của bạn?</h2>
                     <p className="mt-2 text-white/80">Đăng ký ngay — hoàn toàn miễn phí</p>
                     <button
                         type="button"
                         onClick={() => navigate(APP_ROUTES.hostRegister)}
-                        className="mt-6 rounded-xl bg-white px-8 py-3 font-semibold text-teal-700 transition-colors hover:bg-gray-50"
+                        className="mt-6 rounded-xl px-8 py-3 font-semibold text-cyan-700 transition-colors"
                     >
                         Đăng ký ngay
                     </button>

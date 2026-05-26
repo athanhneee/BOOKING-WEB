@@ -15,12 +15,12 @@ const getJobLabel = (role: UserRole) => {
         return "Quản trị viênminh thanh villa ";
     }
 
-    if (role === "Host") {
+    if (role === "host") {
         return "Chủ nhà trênminh thanh villa ";
     }
 
-    if (role === "Host new") {
-        return "Đang hoàn thiện hồ sơ Host";
+    if (role === "host new") {
+        return "Đang hoàn thiện hồ sơ host";
     }
 
     return "Khách đặt villa";
@@ -31,7 +31,7 @@ const getDefaultBio = (authUser: AuthUser) => {
         return `Xin chào! Tôi là ${authUser.name}, thành viên đội ngũ vận hànhminh thanh villa .`;
     }
 
-    if (authUser.role === "Host" || authUser.role === "Host new") {
+    if (authUser.role === "host" || authUser.role === "host new") {
         return `Xin chào! Tôi là ${authUser.name}, đang quản lý các trải nghiệm lưu trú trênminh thanh villa .`;
     }
 
@@ -41,14 +41,14 @@ const getDefaultBio = (authUser: AuthUser) => {
 export const createAccountProfileFromAuthUser = (authUser: AuthUser): AccountUserProfile => ({
     id: authUser.id,
     displayName: authUser.name,
-    location: "Việt Nam",
-    avatarUrl: "",
-    job: getJobLabel(authUser.role),
-    dreamDestination: "",
-    school: "",
-    languages: ["Tiếng Việt"],
+    location: authUser.location?.trim() || "Việt Nam",
+    avatarUrl: authUser.avatarUrl?.trim() || "",
+    job: authUser.job?.trim() || getJobLabel(authUser.role),
+    dreamDestination: authUser.dreamDestination?.trim() || "",
+    school: authUser.school?.trim() || "",
+    languages: authUser.languages?.filter(Boolean) ?? ["Tiếng Việt"],
     bio: getDefaultBio(authUser),
-    isVerified: authUser.role === "Admin" || authUser.role === "Host",
+    isVerified: authUser.role === "Admin" || authUser.role === "host",
     joinedYear: getJoinedYear(),
 });
 

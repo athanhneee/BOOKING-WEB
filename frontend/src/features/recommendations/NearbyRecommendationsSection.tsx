@@ -96,9 +96,7 @@ const NearbyRecommendationsSection = ({ currentListing, searchState }: NearbyRec
             <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between gap-4">
                     <div>
-                        <div className="inline-flex items-center rounded-full bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-700">
-                            AI gợi ý
-                        </div>
+
                         <h2 className="mt-3 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
                             Chỗ ở khác gần đó
                         </h2>

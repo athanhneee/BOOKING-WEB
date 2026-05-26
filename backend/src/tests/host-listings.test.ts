@@ -121,6 +121,21 @@ describe("POST /api/host/listings", () => {
         assert.equal(response.status, 422);
     });
 
+    it("rejects coordinates outside Vung Tau", async () => {
+        const host = await createUser({ roles: ["host"] });
+
+        const response = await request(app)
+            .post("/api/host/listings")
+            .set("Authorization", buildAuthHeader(host))
+            .send({
+                ...createListingPayload(),
+                latitude: 10.7769,
+                longitude: 106.7009,
+            });
+
+        assert.equal(response.status, 422);
+    });
+
     it("validates min/max nights relationship", async () => {
         const host = await createUser({ roles: ["host"] });
 
@@ -293,6 +308,21 @@ describe("PATCH /api/host/listings/:listingId", () => {
             .set("Authorization", buildAuthHeader(host))
             .send({
                 bathrooms: 0,
+            });
+
+        assert.equal(response.status, 422);
+    });
+
+    it("rejects coordinate updates outside Vung Tau", async () => {
+        const host = await createUser({ roles: ["host"] });
+        const listing = await createListing(host.id);
+
+        const response = await request(app)
+            .patch(`/api/host/listings/${listing.listingId}`)
+            .set("Authorization", buildAuthHeader(host))
+            .send({
+                latitude: 10.7769,
+                longitude: 106.7009,
             });
 
         assert.equal(response.status, 422);

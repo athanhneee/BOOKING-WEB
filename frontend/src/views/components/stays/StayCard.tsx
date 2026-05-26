@@ -102,7 +102,7 @@ const StayCard = ({ stay }: StayCardProps) => {
                 <div className="mt-5 flex items-end justify-between gap-3 border-t border-gray-100 pt-4">
                     <div>
                         <p className="text-xs uppercase tracking-[0.18em] text-gray-400">Giá từ</p>
-                        <p className="mt-1 text-lg font-bold text-teal-700">{currencyFormatter.format(stay.pricePerNight)}</p>
+                        <p className="mt-1 text-lg font-bold text-cyan-700">{currencyFormatter.format(stay.pricePerNight)}</p>
                         <p className="text-sm text-gray-500">/ đêm</p>
                     </div>
 

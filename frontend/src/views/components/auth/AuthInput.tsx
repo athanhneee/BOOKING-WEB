@@ -24,7 +24,7 @@ const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
                 <span
                     className={buildClassName(
                         "flex min-h-15 items-center rounded-xl border bg-white px-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] transition-colors",
-                        error ? "border-rose-300 focus-within:border-rose-400" : "border-slate-200 focus-within:border-[#5d53f7]",
+                        error ? "border-rose-300 focus-within:border-rose-400" : "border-slate-200 focus-within:border-cyan-500",
                         wrapperClassName,
                     )}
                 >

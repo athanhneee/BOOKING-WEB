@@ -17,7 +17,7 @@ const icons = {
 } as const;
 
 const colors: Record<ToastType, string> = {
-    success: "bg-teal-600",
+    success: "bg-cyan-500",
     error: "bg-red-500",
     info: "bg-cyan-500",
 };

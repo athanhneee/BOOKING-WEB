@@ -9,6 +9,7 @@ import {
     buildGuestSummary,
     filterStaysByBookingSearch,
     formatSearchDateRange,
+    isMapSearchState,
     parseBookingSearchParams,
 } from "../../components/search/searchState";
 import StayGrid from "../../components/stays/StayGrid";
@@ -58,6 +59,7 @@ const SearchPage = () => {
     const bookingSearchState = useMemo(() => parseBookingSearchParams(searchParams), [searchParams]);
     const requestedPage = Number.parseInt(searchParams.get("page") ?? "1", 10);
     const apiPage = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    const isMapSearch = isMapSearchState(bookingSearchState);
 
     useEffect(() => {
         let ignore = false;
@@ -68,9 +70,16 @@ const SearchPage = () => {
 
             try {
                 const totalGuests = bookingSearchState.guests.adults + bookingSearchState.guests.children;
+                const lat = Number(bookingSearchState.mapLat);
+                const lng = Number(bookingSearchState.mapLng);
+                const radius = Number(bookingSearchState.mapRadius || 800);
 
                 const result = await getListings({
-                    city: "Vũng Tàu",
+                    city: bookingSearchState.locationGroup ? undefined : "Vũng Tàu",
+                    locationGroup: bookingSearchState.locationGroup || undefined,
+                    lat: isMapSearch && Number.isFinite(lat) ? lat : undefined,
+                    lng: isMapSearch && Number.isFinite(lng) ? lng : undefined,
+                    radius: isMapSearch && Number.isFinite(radius) ? radius : undefined,
                     checkIn: bookingSearchState.checkIn || undefined,
                     checkOut: bookingSearchState.checkOut || undefined,
                     guests: totalGuests > 0 ? totalGuests : undefined,
@@ -101,6 +110,11 @@ const SearchPage = () => {
     }, [
         apiPage,
         bookingSearchState.location,
+        bookingSearchState.locationGroup,
+        bookingSearchState.mapLat,
+        bookingSearchState.mapLng,
+        bookingSearchState.mapRadius,
+        isMapSearch,
         bookingSearchState.checkIn,
         bookingSearchState.checkOut,
         bookingSearchState.guests.adults,
@@ -128,6 +142,8 @@ const SearchPage = () => {
     const activeFilterCount = countActiveFilters(appliedFilters, defaultFilters);
     const hasSearchCriteria =
         Boolean(bookingSearchState.location) ||
+        Boolean(bookingSearchState.locationGroup) ||
+        isMapSearch ||
         Boolean(bookingSearchState.checkIn) ||
         Boolean(bookingSearchState.checkOut);
 
@@ -218,7 +234,11 @@ const SearchPage = () => {
 
                         {hasSearchCriteria ? (
                             <p className="text-sm leading-6 text-gray-500">
-                                {bookingSearchState.location ? `Khu vực: ${bookingSearchState.location}` : "Toàn bộ khu vực"}
+                                {isMapSearch
+                                    ? "Kết quả trong bán kính 800m từ vị trí bạn chọn"
+                                    : bookingSearchState.location
+                                        ? `Khu vực: ${bookingSearchState.location}`
+                                        : "Toàn bộ khu vực"}
                                 {" • "}
                                 {formatSearchDateRange(bookingSearchState.checkIn, bookingSearchState.checkOut)}
                                 {" • "}
@@ -230,7 +250,7 @@ const SearchPage = () => {
                             <span className="rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-700">
                                 Villa được yêu thích
                             </span>
-                            <span className="rounded-full border border-teal-100 bg-teal-50 px-3 py-1.5 text-sm font-semibold text-teal-700">
+                            <span className="rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-700">
                                 Giá tốt theo lịch của bạn
                             </span>
                             <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-600">
@@ -252,7 +272,7 @@ const SearchPage = () => {
                             {error}
                         </div>
                     ) : currentItems.length === 0 ? (
-                        <div className="rounded-2xl bg-white p-8 text-center text-sm font-semibold text-gray-500 shadow-sm">
+                        <div className="rounded-[32px] border border-slate-200 bg-white px-6 py-12 text-center text-sm  text-gray-600 shadow-sm">
                             Không tìm thấy chỗ nghỉ phù hợp.
                         </div>
                     ) : (

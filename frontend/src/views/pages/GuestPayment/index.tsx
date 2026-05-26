@@ -11,7 +11,7 @@ import {
     type PaymentMethod,
     type PaymentMethodAvailability,
 } from "../../../services/paymentService";
-import { daysBetween, formatCurrency, formatDate } from "../Host/sharedStyles";
+import { daysBetween, formatCurrency, formatDate } from "../host/sharedStyles";
 
 const defaultPaymentMethods: PaymentMethodAvailability[] = [
     { method: "vnpay", label: "VNPay", available: true },
@@ -212,7 +212,7 @@ const GuestPayment = () => {
 
                     <Link
                         to="/noi-luu-tru"
-                        className="mt-6 inline-flex rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white"
+                        className="mt-6 inline-flex rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-white"
                     >
                         Xem danh sách lưu trú
                     </Link>
@@ -377,7 +377,7 @@ const GuestPayment = () => {
                             type="button"
                             onClick={handlePay}
                             disabled={isSubmitting || isExpired || !selectedMethod || !isSelectedMethodAvailable}
-                            className="w-full rounded-xl bg-cyan-600 px-4 py-3 font-medium text-white transition-colors hover:bg-cyan-700 disabled:opacity-60"
+                            className="w-full rounded-xl bg-cyan-500 px-4 py-3 font-medium text-white transition-colors hover:bg-cyan-500 disabled:opacity-60"
                         >
                             {isSubmitting ? (
                                 <span className="inline-flex items-center gap-2">

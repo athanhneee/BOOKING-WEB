@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { isValidLocationGroup } from "../../common/vung-tau-location-groups";
+
 export const listingIdParamSchema = z.object({
     listingId: z.coerce.number().int().positive(),
 });
@@ -15,8 +17,11 @@ export const publicListingsQuerySchema = z.object({
     minPrice: z.coerce.number().min(0).optional(),
     maxPrice: z.coerce.number().min(0).optional(),
     amenities: z.string().trim().min(1).optional(),
+    locationGroup: z.string().trim().refine(isValidLocationGroup, "locationGroup is invalid").optional(),
+    lat: z.coerce.number().min(-90).max(90).optional(),
+    lng: z.coerce.number().min(-180).max(180).optional(),
+    radius: z.coerce.number().min(1).max(10000).optional(),
     sort: z.enum(["price_asc", "price_desc", "rating_desc", "newest"]).optional(),
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().max(100).optional(),
 });
-

@@ -22,6 +22,11 @@ class UserProfileModel extends Model<
     declare avatarUrl: CreationOptional<string | null>;
     declare dateOfBirth: CreationOptional<string | null>;
     declare gender: CreationOptional<UserProfileGender | null>;
+    declare location: CreationOptional<string | null>;
+    declare job: CreationOptional<string | null>;
+    declare dreamDestination: CreationOptional<string | null>;
+    declare school: CreationOptional<string | null>;
+    declare languages: CreationOptional<string[] | null>;
     declare addressLine: CreationOptional<string | null>;
     declare ward: CreationOptional<string | null>;
     declare district: CreationOptional<string | null>;
@@ -71,6 +76,28 @@ UserProfileModel.init(
         gender: {
             type: DataTypes.ENUM(...userProfileGenderValues),
             allowNull: true,
+        },
+        location: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
+        job: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
+        dreamDestination: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+            field: "dream_destination",
+        },
+        school: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
+        languages: {
+            type: DataTypes.JSON,
+            allowNull: true,
+            field: "languages_json",
         },
         addressLine: {
             type: DataTypes.STRING(500),

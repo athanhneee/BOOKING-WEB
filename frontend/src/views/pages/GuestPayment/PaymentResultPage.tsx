@@ -4,7 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { APP_ROUTES } from "../../../config/routes";
 import { getPaymentDetail, type Payment } from "../../../services/paymentService";
-import { formatCurrency } from "../Host/sharedStyles";
+import { formatCurrency } from "../host/sharedStyles";
 
 function getProviderLabel(payment: any, searchParams: URLSearchParams): string {
     const method = String(
@@ -147,7 +147,7 @@ const PaymentResultPage = () => {
                 <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                     <Link
                         to={APP_ROUTES.accountTrips}
-                        className="inline-flex items-center justify-center rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-700"
+                        className="inline-flex items-center justify-center rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-500"
                     >
                         Xem chuyến đi của tôi
                     </Link>

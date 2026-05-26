@@ -31,6 +31,9 @@ const avatarKeySchema = z.preprocess(
     z.string().trim().max(500).nullable().optional(),
 );
 
+const publicProfileTextSchema = nullableString(255);
+const languagesSchema = z.array(z.string().trim().min(1).max(64)).max(20).nullable().optional();
+
 const userStatusSchema = z.enum(["active", "inactive", "blocked", "suspended", "deleted", "locked"]);
 const userRoleSchema = z.enum(["guest", "host", "moderator", "admin"]);
 
@@ -48,6 +51,11 @@ const baseProfileBodySchema = z.object({
     dob: dateSchema,
     bio: nullableString(2000),
     avatarUrl: avatarUrlSchema,
+    location: publicProfileTextSchema,
+    job: publicProfileTextSchema,
+    dreamDestination: publicProfileTextSchema,
+    school: publicProfileTextSchema,
+    languages: languagesSchema,
 });
 
 export const updateMeBodySchema = baseProfileBodySchema.strict();

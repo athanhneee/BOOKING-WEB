@@ -424,7 +424,7 @@ const MessagesPage = () => {
                                 type="button"
                                 onClick={() => setConversationFilter("all")}
                                 className={`inline-flex min-h-12 items-center gap-2 rounded-full px-5 text-sm font-semibold transition ${conversationFilter === "all"
-                                    ? "bg-gradient-to-r from-cyan-500 to-teal-500 text-white shadow-sm shadow-cyan-200"
+                                    ? "bg-gradient-to-r from-cyan-500 to-cyan-500 text-white shadow-sm shadow-cyan-200"
                                     : "border border-cyan-100 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
                                     }`}
                             >
@@ -435,7 +435,7 @@ const MessagesPage = () => {
                                 type="button"
                                 onClick={() => setConversationFilter("unread")}
                                 className={`inline-flex min-h-12 items-center rounded-full px-5 text-sm font-semibold transition ${conversationFilter === "unread"
-                                    ? "bg-gradient-to-r from-cyan-500 to-teal-500 text-white shadow-sm shadow-cyan-200"
+                                    ? "bg-gradient-to-r from-cyan-500 to-cyan-500 text-white shadow-sm shadow-cyan-200"
                                     : "border border-cyan-100 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
                                     }`}
                             >
@@ -586,7 +586,7 @@ const MessagesPage = () => {
                                     <button
                                         type="submit"
                                         disabled={isSending}
-                                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-teal-500 text-white shadow-sm shadow-cyan-200 transition hover:from-cyan-600 hover:to-teal-600 disabled:cursor-not-allowed disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 disabled:shadow-none"
+                                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-cyan-500 text-white shadow-sm shadow-cyan-200 transition hover:from-cyan-500 hover:to-cyan-500 disabled:cursor-not-allowed disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 disabled:shadow-none"
                                         aria-label="Gửi tin nhắn"
                                     >
                                         <FiSend size={19} />

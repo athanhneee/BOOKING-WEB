@@ -29,7 +29,7 @@ const BlogDetailPage = () => {
                     </p>
                     <Link
                         to={APP_ROUTES.blog}
-                        className="mt-7 inline-flex items-center justify-center rounded-full bg-cyan-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-cyan-700"
+                        className="mt-7 inline-flex items-center justify-center rounded-full bg-cyan-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-cyan-500"
                     >
                         Quay lại danh sách bài viết
                     </Link>
@@ -61,15 +61,15 @@ const BlogDetailPage = () => {
                                     {post.category}
                                 </span>
                                 <span className="inline-flex items-center gap-2">
-                                    <FaCalendarAlt className="text-cyan-600" />
+                                    <FaCalendarAlt className="text-cyan-500" />
                                     {formatBlogDate(post.publishedAt)}
                                 </span>
                                 <span className="inline-flex items-center gap-2">
-                                    <FaClock className="text-cyan-600" />
+                                    <FaClock className="text-cyan-500" />
                                     {post.readTime}
                                 </span>
                                 <span className="inline-flex items-center gap-2">
-                                    <FaMapMarkerAlt className="text-cyan-600" />
+                                    <FaMapMarkerAlt className="text-cyan-500" />
                                     {post.location}
                                 </span>
                             </div>

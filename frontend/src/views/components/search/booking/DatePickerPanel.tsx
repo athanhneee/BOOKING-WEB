@@ -248,7 +248,7 @@ function CalendarMonth({
                             if (state === "disabled") {
                                 buttonClassName += " cursor-not-allowed text-gray-300";
                             } else if (state === "start" || state === "end") {
-                                buttonClassName += " selected cursor-pointer bg-teal-600 font-semibold text-white shadow-sm hover:bg-teal-700";
+                                buttonClassName += " selected cursor-pointer bg-cyan-500 font-semibold text-white shadow-sm hover:bg-cyan-500";
                             } else if (state === "today") {
                                 buttonClassName += " cursor-pointer font-semibold text-gray-900 ring-2 ring-cyan-400 hover:bg-cyan-50";
                             } else if (state === "range") {
@@ -484,7 +484,7 @@ const DatePickerPanel = ({
                                     className={cn(
                                         "rounded-full border px-6 py-2.5 text-sm font-semibold transition-all",
                                         flexDuration === option
-                                            ? "border-teal-600 bg-teal-600 text-white"
+                                            ? "border-cyan-500 bg-cyan-500 text-white"
                                             : "border-gray-300 bg-white text-gray-700 hover:border-cyan-300 hover:text-cyan-700",
                                     )}
                                 >

@@ -2,6 +2,7 @@ import express from "express";
 import { param, query } from "express-validator";
 
 import { isValidIsoDate } from "../../common/validation";
+import { isValidLocationGroup } from "../../common/vung-tau-location-groups";
 import {
     getPublicListingAvailabilityById,
     getPublicListingDetailById,
@@ -66,6 +67,27 @@ router.get(
             .withMessage("maxPrice must be greater than or equal to minPrice")
             .toFloat(),
         query("amenities").optional().isString().trim().notEmpty().withMessage("amenities must be a non-empty string"),
+        query("locationGroup")
+            .optional()
+            .isString()
+            .trim()
+            .custom((value) => isValidLocationGroup(String(value)))
+            .withMessage("locationGroup is invalid"),
+        query("lat")
+            .optional()
+            .isFloat({ min: -90, max: 90 })
+            .withMessage("lat must be a number between -90 and 90")
+            .toFloat(),
+        query("lng")
+            .optional()
+            .isFloat({ min: -180, max: 180 })
+            .withMessage("lng must be a number between -180 and 180")
+            .toFloat(),
+        query("radius")
+            .optional()
+            .isFloat({ min: 1, max: 10000 })
+            .withMessage("radius must be between 1 and 10000")
+            .toFloat(),
         query("sort").optional().isIn(publicListingSortValues).withMessage("sort is invalid"),
         query("page").optional().isInt({ min: 1 }).withMessage("page must be at least 1").toInt(),
         query("limit")

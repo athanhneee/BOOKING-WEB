@@ -11,7 +11,7 @@ import {
     primaryButtonClass,
     secondaryButtonClass,
     tableClassName,
-} from "../../Host/sharedStyles";
+} from "../../host/sharedStyles";
 
 const statusOptions = [
     { value: "pending", label: "Chờ duyệt" },

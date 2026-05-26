@@ -43,9 +43,8 @@ const ConfirmDialog = ({
                 <button
                     type="button"
                     onClick={onConfirm}
-                    className={`inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors ${
-                        variant === "danger" ? "bg-rose-500 hover:bg-rose-600" : "bg-cyan-600 hover:bg-cyan-700"
-                    }`}
+                    className={`inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors ${variant === "danger" ? "bg-rose-500 hover:bg-rose-600" : "bg-cyan-500 hover:bg-cyan-500"
+                        }`}
                 >
                     {confirmLabel}
                 </button>

@@ -30,7 +30,7 @@ const BookingWidget = ({
                 <button
                     type="button"
                     onClick={onAction}
-                    className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-cyan-700"
+                    className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-cyan-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-cyan-500"
                 >
                     {actionLabel}
                 </button>

@@ -65,6 +65,7 @@ const formatFieldDate = (isoDate: string) => {
     }
 
     const parsed = new Date(`${isoDate}T00:00:00`);
+
     if (Number.isNaN(parsed.getTime())) {
         return "Thêm ngày";
     }
@@ -94,10 +95,13 @@ const HostMessagePage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { villaId } = useParams();
+
     const routeState = location.state as HostMessageLocationState | null;
     const parsedSearch = useMemo(() => parseBookingSearchParams(location.search), [location.search]);
+
     const currentUser = getCurrentUser();
     const currentUserId = currentUser?.id ?? null;
+
     const [listing, setListing] = useState<PopularDestination | null>(null);
     const [rawListing, setRawListing] = useState<ApiListingDetail | null>(null);
     const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -107,14 +111,16 @@ const HostMessagePage = () => {
     const [messageDraft, setMessageDraft] = useState("");
     const [messageNotice, setMessageNotice] = useState<string | null>(null);
     const [loadError, setLoadError] = useState("");
+
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
     const checkIn = routeState?.checkIn || parsedSearch.checkIn || createDateOffset(1);
     const checkOut = routeState?.checkOut || parsedSearch.checkOut || createDateOffset(4);
-    const guestSummary = routeState?.guestSummary || (routeState?.guests ? `${routeState.guests} khách` : "") || buildGuestSummary(
-        parsedSearch.guests.adults > 0 ? parsedSearch.guests : defaultGuestSelection,
-        "1 khách",
-    );
+
+    const guestSummary =
+        routeState?.guestSummary ||
+        (routeState?.guests ? `${routeState.guests} khách` : "") ||
+        buildGuestSummary(parsedSearch.guests.adults > 0 ? parsedSearch.guests : defaultGuestSelection, "1 khách");
 
     useEffect(() => {
         if (!currentUserId) {
@@ -207,6 +213,7 @@ const HostMessagePage = () => {
 
                 return sortMessages([...currentMessages, payload.message]);
             });
+
             void markConversationRead(conversation.id);
         };
 
@@ -253,6 +260,7 @@ const HostMessagePage = () => {
         }
 
         const pendingId = -Date.now();
+
         const pendingMessage: ChatMessage = {
             id: pendingId,
             messageId: pendingId,
@@ -301,7 +309,7 @@ const HostMessagePage = () => {
     if (isLoading) {
         return (
             <section className="min-h-screen bg-[#f4f0eb] px-4 pb-16 pt-28">
-                <div className="mx-auto max-w-3xl rounded-2xl border border-[#e8ddd1] bg-white p-8 text-center shadow-sm">
+                <div className="mx-auto max-w-3xl rounded-[34px] border border-[#e8ddd1] bg-white p-8 text-center shadow-[0_24px_70px_-50px_rgba(71,47,23,0.38)]">
                     <p className="text-sm font-semibold text-zinc-500">Đang tải hội thoại...</p>
                 </div>
             </section>
@@ -311,13 +319,17 @@ const HostMessagePage = () => {
     if (loadError || !listing || !conversation) {
         return (
             <section className="min-h-screen bg-[#f4f0eb] px-4 pb-16 pt-28">
-                <div className="mx-auto max-w-3xl rounded-2xl border border-[#e8ddd1] bg-white p-8 text-center shadow-sm">
-                    <h1 className="text-2xl font-semibold text-zinc-900">Không mở được hội thoại</h1>
-                    <p className="mt-3 text-sm text-zinc-500">{loadError || "Trang nhắn tin cần thông tin villa hợp lệ."}</p>
+                <div className="mx-auto max-w-3xl rounded-[34px] border border-[#e8ddd1] bg-white p-8 text-center shadow-[0_24px_70px_-50px_rgba(71,47,23,0.38)]">
+                    <h1 className="text-2xl font-bold text-zinc-900">Không mở được hội thoại</h1>
+
+                    <p className="mt-3 text-sm leading-6 text-zinc-500">
+                        {loadError || "Trang nhắn tin cần thông tin villa hợp lệ."}
+                    </p>
+
                     <button
                         type="button"
                         onClick={handleBack}
-                        className="mt-6 inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-cyan-700"
+                        className="mt-6 inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-cyan-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-cyan-500"
                     >
                         <FaArrowLeft />
                         Quay lại
@@ -327,22 +339,26 @@ const HostMessagePage = () => {
         );
     }
 
-    const hostName = rawListing?.host?.name || conversation.otherParticipant?.fullName || "Host";
+    const hostName = rawListing?.host?.name || conversation.otherParticipant?.fullName || "host";
 
     return (
         <section className="min-h-screen bg-[#f4f0eb] px-4 pb-16 pt-28 text-zinc-900 sm:px-6">
             <div className="mx-auto max-w-7xl">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-[2.5rem] leading-none tracking-tight text-[#231a12] sm:text-[3rem]">
+                        <h1 className="text-[2.25rem] font-semibold leading-none tracking-tight text-[#231a12] sm:text-[3rem]">
                             Nhắn tin cho host
                         </h1>
-                        <p className="mt-2 text-sm text-zinc-500">{hostName} · {listing.name}</p>
+
+                        <p className="mt-2 text-sm font-medium text-zinc-500">
+                            {hostName} · {listing.name}
+                        </p>
                     </div>
+
                     <button
                         type="button"
                         onClick={handleBack}
-                        className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition-colors hover:bg-cyan-50 sm:self-start"
+                        className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-cyan-200 bg-white px-6 py-3 text-sm font-bold text-zinc-900 shadow-sm transition-colors hover:bg-cyan-50 sm:self-start"
                     >
                         <FiMessageCircle />
                         Thu gọn
@@ -350,8 +366,8 @@ const HostMessagePage = () => {
                 </div>
 
                 <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-                    <div className="rounded-2xl border border-[#e8ddd1] bg-white p-4 shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:p-6">
-                        <div className="max-h-[520px] min-h-[320px] overflow-y-auto rounded-2xl bg-[#f8f2ec] p-4">
+                    <div className="rounded-[34px] border border-[#e8ddd1] bg-white p-4 shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:p-6">
+                        <div className="max-h-[520px] min-h-[320px] overflow-y-auto rounded-[30px] bg-[#f8f2ec] p-4">
                             {messages.length > 0 ? (
                                 <div className="space-y-3">
                                     {messages.map((message) => {
@@ -360,22 +376,34 @@ const HostMessagePage = () => {
                                         return (
                                             <div
                                                 key={message.id}
-                                                className={`max-w-[85%] rounded-2xl px-4 py-3 ${isMine ? "ml-auto bg-cyan-600 text-white" : "mr-auto bg-white text-zinc-900"}`}
+                                                className={`max-w-[85%] px-4 py-3 shadow-sm ${isMine
+                                                    ? "ml-auto rounded-[28px] rounded-br-lg bg-cyan-500 text-white"
+                                                    : "mr-auto rounded-[28px] rounded-bl-lg bg-white text-zinc-900"
+                                                    }`}
                                             >
                                                 <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>
-                                                <p className={`mt-1 text-right text-[11px] ${isMine ? "text-white/70" : "text-zinc-400"}`}>
+
+                                                <p
+                                                    className={`mt-1 text-right text-[11px] ${isMine ? "text-white/70" : "text-zinc-400"
+                                                        }`}
+                                                >
                                                     {message.pending ? "Đang gửi..." : formatMessageTime(message.createdAt)}
                                                 </p>
                                             </div>
                                         );
                                     })}
+
                                     <div ref={messagesEndRef} />
                                 </div>
                             ) : (
                                 <div className="flex min-h-[288px] items-center justify-center text-center">
-                                    <div className="max-w-md">
-                                        <FiMessageCircle className="mx-auto text-4xl text-cyan-600" />
-                                        <p className="mt-4 text-base font-semibold text-zinc-900">Bắt đầu trao đổi với host</p>
+                                    <div className="max-w-md rounded-[30px] bg-white/70 px-6 py-8 shadow-sm">
+                                        <FiMessageCircle className="mx-auto text-4xl text-cyan-500" />
+
+                                        <p className="mt-4 text-base font-bold text-zinc-900">
+                                            Bắt đầu trao đổi với host
+                                        </p>
+
                                         <p className="mt-2 text-sm leading-7 text-zinc-500">
                                             Hỏi về lịch trống, nhận phòng hoặc nhu cầu riêng của nhóm bạn.
                                         </p>
@@ -391,14 +419,22 @@ const HostMessagePage = () => {
                                 rows={4}
                                 maxLength={2000}
                                 placeholder="Nhập tin nhắn cho host..."
-                                className="w-full resize-none rounded-2xl border border-[#e0d1c1] bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
+                                className="w-full resize-none rounded-[28px] border border-[#e0d1c1] bg-white px-5 py-4 text-sm leading-6 text-zinc-900 shadow-sm outline-none transition placeholder:text-zinc-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
                             />
+
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                {messageNotice ? <p className="text-sm text-rose-600">{messageNotice}</p> : <span />}
+                                {messageNotice ? (
+                                    <p className="rounded-full bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-600">
+                                        {messageNotice}
+                                    </p>
+                                ) : (
+                                    <span />
+                                )}
+
                                 <button
                                     type="submit"
                                     disabled={isSending}
-                                    className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-cyan-300"
+                                    className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-cyan-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-cyan-300"
                                 >
                                     <FiSend />
                                     {isSending ? "Đang gửi..." : "Gửi tin nhắn"}
@@ -407,21 +443,31 @@ const HostMessagePage = () => {
                         </form>
                     </div>
 
-                    <aside className="rounded-2xl border border-[#e8ddd1] bg-white p-4 shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:p-5">
+                    <aside className="rounded-[34px] border border-[#e8ddd1] bg-white p-4 shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:p-5">
                         {listing.imageUrl ? (
-                            <img src={listing.imageUrl} alt={listing.name} className="aspect-[4/3] w-full rounded-xl object-cover" />
+                            <img
+                                src={listing.imageUrl}
+                                alt={listing.name}
+                                className="aspect-[4/3] w-full rounded-[28px] object-cover"
+                            />
                         ) : (
-                            <div className="flex aspect-[4/3] w-full items-center justify-center rounded-xl bg-gray-100 text-sm text-zinc-500">
+                            <div className="flex aspect-[4/3] w-full items-center justify-center rounded-[28px] bg-gray-100 text-sm text-zinc-500">
                                 Đang cập nhật ảnh
                             </div>
                         )}
-                        <h2 className="mt-5 text-xl font-semibold text-zinc-900">{listing.name}</h2>
-                        <p className="mt-3 flex items-start gap-2 text-sm text-zinc-500">
-                            <FaMapMarkerAlt className="mt-0.5 shrink-0 text-cyan-600" />
+
+                        <h2 className="mt-5 text-xl font-bold text-zinc-900">{listing.name}</h2>
+
+                        <p className="mt-3 flex items-start gap-2 text-sm leading-6 text-zinc-500">
+                            <FaMapMarkerAlt className="mt-0.5 shrink-0 text-cyan-500" />
                             {listing.address}
                         </p>
-                        <p className="mt-4 text-2xl font-bold text-cyan-700">{currencyFormatter.format(listing.pricePerNight)} / đêm</p>
-                        <div className="mt-5 rounded-xl bg-cyan-50 px-4 py-4 text-sm font-medium text-cyan-800">
+
+                        <p className="mt-4 text-2xl font-bold text-cyan-700">
+                            {currencyFormatter.format(listing.pricePerNight)} / đêm
+                        </p>
+
+                        <div className="mt-5 rounded-[26px] bg-cyan-50 px-5 py-4 text-sm font-bold leading-6 text-cyan-800">
                             {formatFieldDate(checkIn)} - {formatFieldDate(checkOut)} · {guestSummary}
                         </div>
                     </aside>

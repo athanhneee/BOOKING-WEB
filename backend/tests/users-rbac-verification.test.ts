@@ -38,6 +38,15 @@ type TestUserRecord = {
     roles: string[];
 };
 
+type TestUserProfileRecord = {
+    userId: number;
+    location: string | null;
+    job: string | null;
+    dreamDestination: string | null;
+    school: string | null;
+    languages: string[] | null;
+};
+
 type HostVerificationInput = {
     verificationType: string;
     fullName: string;
@@ -64,6 +73,7 @@ type VerificationRecord = {
 };
 
 const users = new Map<string, TestUserRecord>();
+const userProfiles = new Map<string, TestUserProfileRecord>();
 const roles = new Map<string, string[]>();
 let auditLogs: AuditLogRecord[] = [];
 let verifications: VerificationRecord[] = [];
@@ -102,6 +112,7 @@ const makeUser = (
 
 const resetState = () => {
     users.clear();
+    userProfiles.clear();
     roles.clear();
 
     for (const user of [
@@ -183,6 +194,25 @@ usersRepository.replaceUserRoles = async (id: string | number, nextRoles: string
 usersRepository.saveUserUpdates = async (user: TestUserRecord, values: Partial<TestUserRecord>) => {
     Object.assign(user, values, { updatedAt: new Date("2026-01-02T00:00:00Z") });
     return user;
+};
+usersRepository.findUserProfileByUserId = async (id: string | number) => userProfiles.get(String(id)) ?? null;
+usersRepository.saveUserProfileUpdates = async (
+    id: string | number,
+    values: Partial<TestUserProfileRecord>,
+) => {
+    const key = String(id);
+    const profile = userProfiles.get(key) ?? {
+        userId: Number(id),
+        location: null,
+        job: null,
+        dreamDestination: null,
+        school: null,
+        languages: null,
+    };
+
+    Object.assign(profile, values);
+    userProfiles.set(key, profile);
+    return profile;
 };
 usersRepository.withTransaction = async (callback: (transaction: unknown) => AsyncOrSync) => callback(undefined);
 usersRepository.findUserByPhone = async (phone: string) =>
@@ -354,6 +384,36 @@ describe("Users, verification, and RBAC contracts", () => {
             .send({ phone: "0902222222" });
 
         assert.equal(duplicatePhoneResponse.status, 409);
+    });
+
+    it("persists editable public profile fields for the current user", async () => {
+        const updateResponse = await request(app)
+            .patch("/api/users/me")
+            .set(guestAuth)
+            .send({
+                fullName: "Guest Updated",
+                bio: "Short public bio",
+                location: "Vung Tau",
+                job: "Traveler",
+                dreamDestination: "Da Lat",
+                school: "Open University",
+                languages: ["Vietnamese", "English"],
+            });
+
+        assert.equal(updateResponse.status, 200);
+        assert.equal(updateResponse.body.data.user.fullName, "Guest Updated");
+        assert.equal(updateResponse.body.data.user.bio, "Short public bio");
+        assert.equal(updateResponse.body.data.user.location, "Vung Tau");
+        assert.equal(updateResponse.body.data.user.job, "Traveler");
+        assert.equal(updateResponse.body.data.user.dreamDestination, "Da Lat");
+        assert.equal(updateResponse.body.data.user.school, "Open University");
+        assert.deepEqual(updateResponse.body.data.user.languages, ["Vietnamese", "English"]);
+
+        const meResponse = await request(app).get("/api/users/me").set(guestAuth);
+
+        assert.equal(meResponse.status, 200);
+        assert.equal(meResponse.body.data.user.location, "Vung Tau");
+        assert.deepEqual(meResponse.body.data.user.languages, ["Vietnamese", "English"]);
     });
 
     it("keeps user administration admin-only and masks sensitive contact fields", async () => {

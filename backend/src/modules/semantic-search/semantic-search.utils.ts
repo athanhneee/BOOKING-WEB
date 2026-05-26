@@ -1,12 +1,13 @@
-export const normalizeVietnameseText = (value: string) =>
-    value
-        .normalize("NFD")
-        .replace(/\p{Diacritic}/gu, "")
-        .toLowerCase()
-        .trim()
-        .replace(/đ/g, "d")
-        .replace(/[^a-z0-9]+/g, " ")
-        .replace(/\s+/g, " ");
+import {
+    detectLocationGroupsFromQuery,
+    getLocationGroupAreaKey,
+    getLocationGroupNameFromAreaKey,
+    getLocationGroupNamesFromAreaKeys,
+    normalizeVietnameseText,
+    type LocationGroupName,
+} from "../../common/vung-tau-location-groups";
+
+export { normalizeVietnameseText };
 
 export const normalizeKey = (value: string) => normalizeVietnameseText(value).replace(/\s+/g, "_");
 
@@ -39,193 +40,17 @@ export const getSemanticDefaultCity = () => process.env.SEMANTIC_DEFAULT_CITY ||
 export const shouldForceVungTauOnly = () =>
     (process.env.SEMANTIC_FORCE_VUNG_TAU_ONLY ?? "true").toLowerCase() !== "false";
 
-type VungTauAreaDefinition = {
-    key: string;
-    displayName: string;
-    aliases: string[];
-};
-
-const vungTauAreaDefinitions: VungTauAreaDefinition[] = [
-    {
-        key: "bai_sau",
-        displayName: "Bãi Sau",
-        aliases: [
-            "bai sau",
-            "back beach",
-            "hoang hoa tham",
-            "thuy van",
-            "doi ngoc tuoc",
-            "hoang le kha",
-            "kim ngan",
-            "kim minh",
-            "to ngoc van",
-            "nguyen huu tien",
-            "dang thuy tram",
-            "tran van thoi",
-            "bau sen",
-            "phan chu trinh",
-            "le hong phong",
-            "nguyen an ninh",
-            "phan van tri",
-            "la van cau",
-            "pho duc chinh",
-            "vo thi sau",
-            "nguyen hien",
-            "tran quy cap",
-            "ho quy ly",
-            "hoang sam",
-            "hoang trong mau",
-            "kieu thanh que",
-            "ta uyen",
-            "thong nhat moi",
-            "thi sach",
-            "mac thanh dam",
-            "phan huy chu",
-            "phan huy ich",
-            "tran binh trong",
-            "thai van lung",
-            "nguyen bieu",
-            "nguyen thi minh khai",
-            "lac long quan",
-            "hoang huu nam",
-            "binh gia",
-            "luong van can",
-            "truong cong dinh",
-            "nam ky khoi nghia",
-            "xo viet nghe tinh",
-            "duong thuy van",
-            "bien thuy van",
-        ],
-    },
-    {
-        key: "bai_truoc",
-        displayName: "Bãi Trước / Dâu",
-        aliases: [
-            "bai truoc",
-            "bai dau",
-            "front beach",
-            "tam duong",
-            "cong vien tam duong",
-            "dinh tien hoang",
-            "nguyen truong to",
-            "ha long",
-            "quang trung",
-            "ba cu",
-            "le loi",
-            "tran phu",
-            "le ngoc han",
-            "vi ba",
-            "hai dang",
-            "le quy don",
-            "tran hung dao",
-            "do chieu",
-            "trung trac",
-            "trung nhi",
-            "ben dinh",
-            "ly thuong kiet",
-            "le lai",
-            "duong quang trung",
-        ],
-    },
-    {
-        key: "bai_dau",
-        displayName: "Bãi Trước / Dâu",
-        aliases: [
-            "bai dau",
-            "tran phu bai dau",
-            "duong tran phu",
-            "bien bai dau",
-            "tran phu",
-        ],
-    },
-    {
-        key: "bai_long_cung",
-        displayName: "Long Cung",
-        aliases: [
-            "bai long cung",
-            "long cung",
-            "bien long cung",
-            "khu long cung",
-            "ha huy tap",
-            "nguyen huu canh",
-            "chi linh",
-            "nguyen dinh tu",
-            "3 thang 2",
-            "ba vi",
-            "hoanh son",
-            "tan vien",
-            "an hai",
-            "thuy duong",
-        ],
-    },
-    {
-        key: "bai_dua",
-        displayName: "Bãi Dứa",
-        aliases: [
-            "bai dua",
-            "duong ha long",
-            "ha long bai dua",
-            "bien bai dua",
-        ],
-    },
-    {
-        key: "bai_vong_nguyet",
-        displayName: "Bãi Vọng Nguyệt / Mũi Nghinh Phong",
-        aliases: [
-            "bai vong nguyet",
-            "vong nguyet",
-            "mui nghinh phong",
-            "nghinh phong",
-        ],
-    },
-    {
-        key: "chi_linh",
-        displayName: "Long Cung",
-        aliases: [
-            "chi linh",
-            "bai chi linh",
-            "khu do thi chi linh",
-            "bien chi linh",
-        ],
-    },
-    {
-        key: "ho_tram_ho_coc",
-        displayName: "Hồ Tràm / Long Hải / Phước Hải",
-        aliases: [
-            "ho tram",
-            "ho coc",
-            "long hai",
-            "phuoc hai",
-            "nguyen tat thanh",
-            "ton duc thang",
-            "duong bo ke",
-            "duong ven bien",
-            "duong loc an binh chau",
-            "loc an binh chau",
-            "xuyen moc",
-            "bien ho tram",
-            "bien ho coc",
-        ],
-    },
-];
-
-export const inferVungTauAreaKeys = (text: string) => {
-    const normalized = normalizeVietnameseText(text);
-
-    return uniqueStrings(
-        vungTauAreaDefinitions
-            .filter((area) =>
-                area.aliases.some((alias) => normalized.includes(normalizeVietnameseText(alias))),
-            )
-            .map((area) => area.key),
-    );
-};
+export const inferVungTauAreaKeys = (text: string) =>
+    uniqueStrings(detectLocationGroupsFromQuery(text).map(getLocationGroupAreaKey));
 
 export const getVungTauAreaDisplayName = (key: string) =>
-    vungTauAreaDefinitions.find((area) => area.key === key)?.displayName ?? key;
+    getLocationGroupNameFromAreaKey(key) ?? key;
 
 export const getVungTauAreaDisplayNames = (keys: string[]) =>
-    uniqueStrings(keys.map(getVungTauAreaDisplayName));
+    getLocationGroupNamesFromAreaKeys(keys);
+
+export const getVungTauAreaKeysForLocationGroups = (groupNames: LocationGroupName[]) =>
+    uniqueStrings(groupNames.map(getLocationGroupAreaKey));
 
 export const isVungTauRelatedText = (text: string) => {
     const normalized = normalizeVietnameseText(text);

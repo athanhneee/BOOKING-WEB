@@ -1,4 +1,4 @@
-export type UserRole = "Guest" | "Host" | "Host new" | "Admin" | "Moderator" | string;
+export type UserRole = "Guest" | "host" | "host new" | "Admin" | "Moderator" | string;
 
 export type AuthUser = {
     id: string;
@@ -6,6 +6,12 @@ export type AuthUser = {
     email: string;
     role: UserRole;
     roles?: string[];
+    avatarUrl?: string | null;
+    location?: string | null;
+    job?: string | null;
+    dreamDestination?: string | null;
+    school?: string | null;
+    languages?: string[] | null;
 };
 
 const AUTH_STORAGE_KEY = "minhthanhvilla_current_user";
@@ -32,6 +38,12 @@ export const getCurrentUser = (): AuthUser | null => {
                 email: parsed.email,
                 role: parsed.role,
                 roles: Array.isArray(parsed.roles) ? parsed.roles.map(String) : undefined,
+                avatarUrl: typeof parsed.avatarUrl === "string" ? parsed.avatarUrl : null,
+                location: typeof parsed.location === "string" ? parsed.location : null,
+                job: typeof parsed.job === "string" ? parsed.job : null,
+                dreamDestination: typeof parsed.dreamDestination === "string" ? parsed.dreamDestination : null,
+                school: typeof parsed.school === "string" ? parsed.school : null,
+                languages: Array.isArray(parsed.languages) ? parsed.languages.map(String) : null,
             };
         }
     } catch {

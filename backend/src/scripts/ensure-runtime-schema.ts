@@ -196,6 +196,22 @@ const ensureUsersSchema = async () => {
     );
 };
 
+const ensureUserProfilesSchema = async () => {
+    if (!(await tableExists("user_profiles"))) {
+        return;
+    }
+
+    await ensureColumn("user_profiles", "location", "`location` VARCHAR(255) NULL AFTER `gender`");
+    await ensureColumn("user_profiles", "job", "`job` VARCHAR(255) NULL AFTER `location`");
+    await ensureColumn(
+        "user_profiles",
+        "dream_destination",
+        "`dream_destination` VARCHAR(255) NULL AFTER `job`",
+    );
+    await ensureColumn("user_profiles", "school", "`school` VARCHAR(255) NULL AFTER `dream_destination`");
+    await ensureColumn("user_profiles", "languages_json", "`languages_json` JSON NULL AFTER `school`");
+};
+
 const ensureRolesSchema = async () => {
     if (!(await tableExists("roles"))) {
         await sequelize.query(`
@@ -418,6 +434,7 @@ const ensureMessagingSchema = async () => {
 
 export const ensureRuntimeSchema = async () => {
     await ensureUsersSchema();
+    await ensureUserProfilesSchema();
     await ensureRolesSchema();
     await ensureAuthOtpSchema();
     await ensureAuditLogsSchema();

@@ -67,11 +67,11 @@ export const FilterTabs = <T extends string,>({ options, value, onChange, underl
                             underline ? "rounded-none px-3 py-2 text-sm font-medium transition-colors" : "rounded-xl px-3 py-2 text-sm font-medium transition-colors",
                             underline
                                 ? isActive
-                                    ? "border-b-2 border-cyan-600 text-cyan-700"
+                                    ? "border-b-2 border-cyan-500 text-cyan-700"
                                     : "border-b-2 border-transparent text-gray-500 hover:text-gray-700"
                                 : isActive
-                                  ? "bg-cyan-300/15 text-cyan-700"
-                                  : "text-gray-500 hover:bg-white hover:text-gray-700",
+                                    ? "bg-cyan-300/15 text-cyan-700"
+                                    : "text-gray-500 hover:bg-white hover:text-gray-700",
                         )}
                     >
                         {option.label}
@@ -92,7 +92,7 @@ export const ToggleSwitch = ({ checked, onChange, label }: ToggleSwitchProps) =>
     return (
         <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)} className="inline-flex items-center gap-3">
             {label ? <span className="text-sm font-medium text-gray-700">{label}</span> : null}
-            <span className={cn("relative inline-flex h-7 w-12 rounded-full transition-colors", checked ? "bg-cyan-600" : "bg-gray-300")}>
+            <span className={cn("relative inline-flex h-7 w-12 rounded-full transition-colors", checked ? "bg-cyan-500" : "bg-gray-300")}>
                 <span
                     className={cn(
                         "absolute top-1 h-5 w-5 rounded-full bg-white transition-transform",

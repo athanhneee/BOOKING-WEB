@@ -145,9 +145,9 @@ const HostTinNhan = () => {
                         currentConversations.map((conversation) =>
                             Number(conversation.id) === Number(selectedConversationId)
                                 ? {
-                                      ...conversation,
-                                      unreadCount: 0,
-                                  }
+                                    ...conversation,
+                                    unreadCount: 0,
+                                }
                                 : conversation,
                         ),
                     );
@@ -255,9 +255,9 @@ const HostTinNhan = () => {
             currentConversations.map((item) =>
                 Number(item.id) === Number(conversation.id)
                     ? {
-                          ...item,
-                          unreadCount: 0,
-                      }
+                        ...item,
+                        unreadCount: 0,
+                    }
                     : item,
             ),
         );
@@ -323,9 +323,9 @@ const HostTinNhan = () => {
                     currentConversations.map((conversation) =>
                         Number(conversation.id) === Number(result.conversation.id)
                             ? {
-                                  ...result.conversation,
-                                  unreadCount: 0,
-                              }
+                                ...result.conversation,
+                                unreadCount: 0,
+                            }
                             : conversation,
                     ),
                 ),
@@ -374,7 +374,7 @@ const HostTinNhan = () => {
                                         onClick={() => handleSelectConversation(conversation)}
                                         className={`flex w-full gap-3 border-b border-gray-200 px-4 py-4 text-left transition-colors ${isActive ? "bg-white" : "hover:bg-white"}`}
                                     >
-                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-sm font-bold text-white">
+                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cyan-500 text-sm font-bold text-white">
                                             {getInitials(guestName)}
                                         </span>
                                         <span className="min-w-0 flex-1">
@@ -392,7 +392,7 @@ const HostTinNhan = () => {
                                                     {conversation.lastMessage || "Chưa có tin nhắn."}
                                                 </span>
                                                 {conversation.unreadCount > 0 ? (
-                                                    <span className="ml-auto rounded-full bg-cyan-600 px-2 py-0.5 text-[11px] font-bold text-white">
+                                                    <span className="ml-auto rounded-full bg-cyan-500 px-2 py-0.5 text-[11px] font-bold text-white">
                                                         {conversation.unreadCount}
                                                     </span>
                                                 ) : null}
@@ -409,7 +409,7 @@ const HostTinNhan = () => {
                     {selectedConversation ? (
                         <>
                             <div className="flex items-center gap-3 border-b border-gray-200 px-5 py-4">
-                                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-cyan-600 text-sm font-bold text-white">
+                                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-cyan-500 text-sm font-bold text-white">
                                     {getInitials(selectedConversation.otherParticipant?.fullName)}
                                 </span>
                                 <div className="min-w-0">
@@ -430,7 +430,7 @@ const HostTinNhan = () => {
                                 ) : messages.length === 0 ? (
                                     <div className="flex min-h-[360px] items-center justify-center text-center">
                                         <div>
-                                            <FiMessageCircle className="mx-auto text-4xl text-cyan-600" />
+                                            <FiMessageCircle className="mx-auto text-4xl text-cyan-500" />
                                             <p className="mt-3 text-sm font-semibold text-gray-900">Chưa có tin nhắn trong hội thoại này.</p>
                                         </div>
                                     </div>
@@ -442,7 +442,7 @@ const HostTinNhan = () => {
                                             return (
                                                 <div
                                                     key={message.id}
-                                                    className={`max-w-[78%] rounded-2xl px-4 py-3 ${isMine ? "ml-auto bg-cyan-600 text-white" : "mr-auto bg-white text-gray-900 shadow-sm"}`}
+                                                    className={`max-w-[78%] rounded-2xl px-4 py-3 ${isMine ? "ml-auto bg-cyan-500 text-white" : "mr-auto bg-white text-gray-900 shadow-sm"}`}
                                                 >
                                                     <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>
                                                     <p className={`mt-1 text-right text-[11px] ${isMine ? "text-white/70" : "text-gray-400"}`}>
@@ -472,7 +472,7 @@ const HostTinNhan = () => {
                                     <button
                                         type="submit"
                                         disabled={isSending}
-                                        className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-cyan-600 text-white transition-colors hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-cyan-300"
+                                        className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-cyan-500 text-white transition-colors hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-cyan-300"
                                         aria-label="Gửi tin nhắn"
                                     >
                                         <FiSend />

@@ -539,14 +539,18 @@ export const keywordSearchFallback = async (
         status: { [Op.in]: semanticPublicListingStatuses },
         deletedAt: null,
         maxGuests: { [Op.gte]: filters.guests },
-        [Op.or]: [
+        ...(filters.vungTauAreaKeys.length === 0
+            ? {
+                  [Op.or]: [
             { title: { [Op.like]: keyword } },
             { description: { [Op.like]: keyword } },
             { city: { [Op.like]: keyword } },
             { district: { [Op.like]: keyword } },
             { ward: { [Op.like]: keyword } },
             { addressLine: { [Op.like]: keyword } },
-        ],
+                  ],
+              }
+            : {}),
     };
 
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {

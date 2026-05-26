@@ -8,7 +8,7 @@ import AuthCard from "../../components/auth/AuthCard";
 import AuthInput from "../../components/auth/AuthInput";
 
 const primaryButtonClass =
-    "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-xl bg-[#5d53f7] px-6 py-4 font-sans text-lg font-semibold text-white shadow-[0_18px_40px_-18px_rgba(93,83,247,0.8)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-[#4b40ef] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5d53f7]";
+    "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-xl bg-[#5d53f7] px-6 py-4 font-sans text-lg font-semibold text-white shadow-[0_18px_40px_-18px_rgba(93,83,247,0.8)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5d53f7]";
 
 const OTP_LENGTH = 6;
 const OTP_RESEND_SECONDS = 23;
@@ -188,7 +188,7 @@ const ForgotPasswordPage = () => {
 
                     <Link
                         to={APP_ROUTES.login}
-                        className="inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-xl bg-[#5d53f7] px-6 py-4 font-sans text-lg font-semibold text-white shadow-[0_18px_40px_-18px_rgba(93,83,247,0.8)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-[#4b40ef]"
+                        className="inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-xl bg-[#5d53f7] px-6 py-4 font-sans text-lg font-semibold text-white shadow-[0_18px_40px_-18px_rgba(93,83,247,0.8)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-500"
                     >
                         Quay lại đăng nhập
                         <LuArrowLeft className="text-xl" />
@@ -212,7 +212,7 @@ const ForgotPasswordPage = () => {
                                     placeholder="0"
                                     onChange={(event) => handleOtpChange(index, event.target.value)}
                                     onKeyDown={(event) => handleOtpKeyDown(index, event)}
-                                    className="aspect-[0.82] w-full rounded-xl border border-slate-200 bg-white text-center font-sans text-4xl font-semibold text-slate-500 outline-none transition-colors placeholder:text-slate-300 focus:border-[#5d53f7] sm:text-5xl"
+                                    className="aspect-[0.82] w-full rounded-xl border border-slate-200 bg-white text-center font-sans text-4xl font-semibold text-slate-500 outline-none transition-colors placeholder:text-slate-300 focus:border-cyan-500 sm:text-5xl"
                                     aria-label={`Mã OTP số ${index + 1}`}
                                 />
                             ))}
@@ -258,12 +258,12 @@ const ForgotPasswordPage = () => {
                     <div className="mt-7 text-center font-sans text-sm text-slate-600 sm:text-base">
                         <span>Bạn chưa nhận được mã? </span>
                         {resendCountdown > 0 ? (
-                            <span className="font-medium text-[#5d53f7]">Gửi lại mã OTP sau {resendCountdown}s</span>
+                            <span className="font-medium text-cyan-500">Gửi lại mã OTP sau {resendCountdown}s</span>
                         ) : (
                             <button
                                 type="button"
                                 onClick={handleResendOtp}
-                                className="font-semibold text-[#5d53f7] transition-colors hover:text-[#4b40ef]"
+                                className="font-semibold text-cyan-500 transition-colors hover:text-[#4b40ef]"
                             >
                                 Gửi lại mã OTP
                             </button>
@@ -296,7 +296,7 @@ const ForgotPasswordPage = () => {
                     <div className="mt-7 text-center">
                         <Link
                             to={APP_ROUTES.login}
-                            className="inline-flex items-center gap-2 font-sans text-base font-semibold text-[#5d53f7] transition-colors hover:text-[#4b40ef]"
+                            className="inline-flex items-center gap-2 font-sans text-base font-semibold text-cyan-500 transition-colors hover:text-[#4b40ef]"
                         >
                             <LuArrowLeft />
                             Quay lại đăng nhập

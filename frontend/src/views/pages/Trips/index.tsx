@@ -10,6 +10,7 @@ import type { ApiUser } from "../../../models/entities/User";
 import { getMyBookings } from "../../../services/bookingService";
 import { getMe, updateMe, updateMyAvatar } from "../../../services/userService";
 import { uploadFileToR2 } from "../../../services/api/uploadsApi";
+import { getCurrentUser, setCurrentUser } from "../../../store/authStore";
 import { cn } from "../../../utils";
 import EditProfileModal from "../../components/common/profile/EditProfileModal";
 import ProfileInfoList from "../../components/common/profile/ProfileInfoList";
@@ -108,8 +109,37 @@ const buildCurrentBackendPayload = (profile: AccountUserProfile): UpdateMePayloa
     return {
         fullName: profile.displayName,
         bio: profile.bio || null,
+        location: profile.location || null,
+        job: profile.job || null,
+        dreamDestination: profile.dreamDestination || null,
+        school: profile.school || null,
+        languages: profile.languages,
         ...(avatarUrl !== undefined ? { avatarUrl } : {}),
     };
+};
+
+const syncCurrentUserSession = (user: ApiUser) => {
+    const currentUser = getCurrentUser();
+
+    if (!currentUser) {
+        return;
+    }
+
+    setCurrentUser({
+        ...currentUser,
+        id: getUserId(user),
+        name: user.fullName?.trim() || user.name?.trim() || currentUser.name,
+        email: user.email || currentUser.email,
+        roles: user.roles ?? currentUser.roles,
+        avatarUrl: user.avatarUrl ?? currentUser.avatarUrl,
+        location: user.location ?? currentUser.location,
+        job: user.job ?? currentUser.job,
+        dreamDestination: user.dreamDestination ?? currentUser.dreamDestination,
+        school: user.school ?? currentUser.school,
+        languages: user.languages ?? currentUser.languages,
+    });
+
+    window.dispatchEvent(new Event("account-profile-updated"));
 };
 
 const calculateNights = (checkIn: string, checkOut: string) => {
@@ -275,6 +305,7 @@ const ProfilePage = () => {
         try {
             const result = await updateMe(buildCurrentBackendPayload(normalizedProfile));
             setProfile(createProfileFromApiUser(result.user));
+            syncCurrentUserSession(result.user);
             setSuccess("Đã cập nhật hồ sơ.");
             setEditModal(null);
         } catch (saveError) {
@@ -302,6 +333,7 @@ const ProfilePage = () => {
                 key: uploaded.key,
             });
             setProfile(createProfileFromApiUser(result.user));
+            syncCurrentUserSession(result.user);
             setSuccess("Đã cập nhật ảnh đại diện.");
         } catch (avatarError) {
             setError(avatarError instanceof Error ? avatarError.message : "Không thể cập nhật ảnh đại diện.");

@@ -1,13 +1,22 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { FaMinus, FaPlus } from "react-icons/fa";
 import { FiCalendar, FiSearch, FiUsers } from "react-icons/fi";
-import { HiOutlineMapPin, HiOutlinePaperAirplane, HiOutlineSparkles } from "react-icons/hi2";
-import { Sparkles } from "lucide-react";
+import { HiOutlineMapPin, HiOutlineSparkles } from "react-icons/hi2";
+import { Sparkles, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { APP_ROUTES } from "../../../config/routes";
+import {
+    LOCATION_GROUP_SUGGESTIONS,
+    MAP_SEARCH_LABEL,
+    MAP_SEARCH_RADIUS_METERS,
+    VUNG_TAU_DEFAULT_COORDINATES,
+    isLatLngInVungTauBounds,
+    type LocationGroupName,
+} from "../../../data/vungTauLocationGroups";
 import { addSearchHistoryItem } from "../../../features/searchHistory/searchHistoryStorage";
 import useScrollVisibility from "../../../hooks/useScrollVisibility";
 import { cn } from "../../../utils";
+import LocationMapPicker, { type MapSearchPosition } from "./LocationMapPicker";
 import SearchPopover from "./SearchPopover";
 import DatePickerPanel from "./booking/DatePickerPanel";
 import type { GuestSelection } from "./booking/Guest";
@@ -41,9 +50,22 @@ type SearchSuggestion = {
     title: string;
     description: string;
     value: string;
+    kind: "map" | "locationGroup";
+    locationGroup?: LocationGroupName;
     icon: ReactNode;
     accentClassName: string;
 };
+
+const DEFAULT_MAP_SEARCH_POSITION: MapSearchPosition = {
+    lat: VUNG_TAU_DEFAULT_COORDINATES.latitude,
+    lng: VUNG_TAU_DEFAULT_COORDINATES.longitude,
+};
+
+const AI_SEARCH_SUGGESTIONS = [
+    "Villa gần biển có hồ bơi riêng", "Cho 10-15 người có BBQ ạ, gần biển đi bộ ", "Villa view biển có loa karaoke ",
+];
+
+const AI_EMPTY_HINT = "Thử nhập: Villa gần biển có hồ bơi cho 10 người";
 
 const getTimeOfDay = (date = new Date()) => {
     const hour = date.getHours();
@@ -65,59 +87,34 @@ const isSearchRoutePath = (pathname: string) =>
 const createLocationSuggestions = (): SearchSuggestion[] => {
     const accents = [
         "bg-sky-100 text-sky-600",
+        "bg-cyan-100 text-cyan-500",
         "bg-rose-100 text-rose-500",
-        "bg-orange-100 text-orange-500",
-        "bg-amber-100 text-amber-600",
         "bg-emerald-100 text-emerald-600",
-        "bg-cyan-100 text-cyan-600",
+        "bg-amber-100 text-amber-600",
     ];
 
     const icons = [
-        <HiOutlinePaperAirplane key="nearby" size={20} />,
-        <HiOutlineMapPin key="vung-tau" size={20} />,
+        <HiOutlineMapPin key="map-search" size={20} />,
         <HiOutlineSparkles key="bai-sau" size={20} />,
         <HiOutlineMapPin key="bai-truoc" size={20} />,
         <HiOutlineSparkles key="long-cung" size={20} />,
         <HiOutlineMapPin key="ho-tram" size={20} />,
     ];
 
-    const locations = [
+    const locations: Array<Omit<SearchSuggestion, "icon" | "accentClassName">> = [
         {
-            id: "nearby",
-            title: "Lân cận",
-            description: "Tìm quanh Vũng Tàu",
-            value: "Vũng Tàu",
+            id: "map-search",
+            title: "Tìm kiếm bằng bản đồ",
+            description: "Chọn vị trí trên bản đồ, tìm quanh 800m",
+            value: MAP_SEARCH_LABEL,
+            kind: "map",
         },
-        {
-            id: "vung-tau",
-            title: "Vũng Tàu",
-            description: "Villa, homestay, căn hộ nghỉ dưỡng",
-            value: "Vũng Tàu",
-        },
-        {
-            id: "bai-sau",
-            title: "Bãi Sau",
-            description: "Gần biển, nhiều villa cho nhóm đông",
-            value: "Bãi Sau Vũng Tàu",
-        },
-        {
-            id: "bai-truoc",
-            title: "Bãi Trước",
-            description: "Trung tâm, tiện đi lại",
-            value: "Bãi Trước Vũng Tàu",
-        },
-        {
-            id: "long-cung",
-            title: "Long Cung",
-            description: "Khu villa nghỉ dưỡng gần biển",
-            value: "Long Cung Vũng Tàu",
-        },
-        {
-            id: "ho-tram",
-            title: "Hồ Tràm",
-            description: "Không gian nghỉ dưỡng yên tĩnh",
-            value: "Hồ Tràm",
-        },
+        ...LOCATION_GROUP_SUGGESTIONS.map((suggestion) => ({
+            ...suggestion,
+            value: suggestion.title,
+            kind: "locationGroup" as const,
+            locationGroup: suggestion.title,
+        })),
     ];
 
     return locations.map((location, index) => ({
@@ -213,8 +210,20 @@ const SearchBarInner = ({
     const locationSuggestions = useMemo(() => createLocationSuggestions(), []);
     const [openField, setOpenField] = useState<OpenField>(null);
     const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+    const [mapPickerOpen, setMapPickerOpen] = useState(false);
     const [mobileDateField, setMobileDateField] = useState<"checkIn" | "checkOut">("checkIn");
     const [draftState, setDraftState] = useState(initialDraftState);
+    const [aiOverlayOpen, setAiOverlayOpen] = useState(false);
+    const [aiQuery, setAiQuery] = useState("");
+    const [mapPosition, setMapPosition] = useState<MapSearchPosition>(() => {
+        const lat = Number(initialDraftState.mapLat);
+        const lng = Number(initialDraftState.mapLng);
+        const initialPosition = { lat, lng };
+
+        return isLatLngInVungTauBounds(initialPosition)
+            ? initialPosition
+            : DEFAULT_MAP_SEARCH_POSITION;
+    });
     const [timeOfDay, setTimeOfDay] = useState(() => getTimeOfDay());
     const [aiSearchError, setAiSearchError] = useState("");
     const [isPinnedByScroll, setIsPinnedByScroll] = useState(() =>
@@ -223,6 +232,8 @@ const SearchBarInner = ({
 
     const shellRef = useRef<HTMLDivElement | null>(null);
     const popoverRef = useRef<HTMLDivElement | null>(null);
+    const aiOverlayRef = useRef<HTMLFormElement | null>(null);
+    const aiInputRef = useRef<HTMLInputElement | null>(null);
     const locationInputRef = useRef<HTMLInputElement | null>(null);
     const locationFieldRef = useRef<HTMLDivElement | null>(null);
     const checkInButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -261,23 +272,38 @@ const SearchBarInner = ({
     }, [openField]);
 
     useEffect(() => {
-        if (!openField && !mobileSheetOpen) {
+        if (!aiOverlayOpen) {
+            return;
+        }
+
+        const frame = window.requestAnimationFrame(() => aiInputRef.current?.focus());
+        return () => window.cancelAnimationFrame(frame);
+    }, [aiOverlayOpen]);
+
+    useEffect(() => {
+        if (!openField && !mobileSheetOpen && !aiOverlayOpen) {
             return;
         }
 
         const handleMouseDown = (event: MouseEvent) => {
             const target = event.target as Node;
-            if (shellRef.current?.contains(target) || popoverRef.current?.contains(target)) {
+            if (
+                shellRef.current?.contains(target) ||
+                popoverRef.current?.contains(target) ||
+                aiOverlayRef.current?.contains(target)
+            ) {
                 return;
             }
 
             setOpenField(null);
+            setAiOverlayOpen(false);
         };
 
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === "Escape") {
                 setOpenField(null);
                 setMobileSheetOpen(false);
+                setAiOverlayOpen(false);
             }
         };
 
@@ -288,7 +314,7 @@ const SearchBarInner = ({
             document.removeEventListener("mousedown", handleMouseDown);
             window.removeEventListener("keydown", handleKeyDown);
         };
-    }, [mobileSheetOpen, openField]);
+    }, [aiOverlayOpen, mobileSheetOpen, openField]);
 
     useEffect(() => {
         if (!mobileSheetOpen) {
@@ -333,16 +359,20 @@ const SearchBarInner = ({
         draftState.guests.children !== defaultGuestSelection.children ||
         draftState.guests.infants !== defaultGuestSelection.infants ||
         draftState.guests.pets !== defaultGuestSelection.pets;
+
     const heroShellClass = isHeroIntro
         ? "rounded-[28px] border border-slate-200/80 bg-white px-2 py-2 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.24)] md:rounded-full"
         : "rounded-full border border-gray-100 bg-white px-2 py-2 shadow-2xl";
+
     const heroFieldActiveClass = isHeroIntro
         ? "bg-white shadow-[0_16px_32px_-24px_rgba(15,23,42,0.32)] ring-1 ring-cyan-300"
         : "bg-white shadow-md ring-2 ring-cyan-300";
+
     const heroFieldIdleClass = isHeroIntro ? "hover:bg-slate-50/80" : "hover:bg-gray-50";
+
     const searchButtonClass = isHeroIntro
-        ? "ml-1 inline-flex h-14 w-14 items-center justify-center rounded-full bg-cyan-500 text-white shadow-[0_18px_32px_-18px_rgba(6,182,212,0.62)] transition-all duration-200 hover:bg-cyan-600 hover:shadow-[0_20px_36px_-18px_rgba(8,145,178,0.6)]"
-        : "ml-1 inline-flex h-14 w-14 items-center justify-center rounded-full bg-cyan-500 text-white shadow-md transition-all duration-200 hover:bg-cyan-600 hover:shadow-lg";
+        ? "ml-1 inline-flex h-14 w-14 items-center justify-center rounded-full bg-cyan-500 text-white shadow-[0_18px_32px_-18px_rgba(6,182,212,0.62)] transition-all duration-200 hover:bg-cyan-500 hover:shadow-[0_20px_36px_-18px_rgba(8,145,178,0.6)]"
+        : "ml-1 inline-flex h-14 w-14 items-center justify-center rounded-full bg-cyan-500 text-white shadow-md transition-all duration-200 hover:bg-cyan-500 hover:shadow-lg";
 
     const activeAnchorRef = (
         openField === "location"
@@ -436,14 +466,27 @@ const SearchBarInner = ({
         }
     };
 
-    const handleSearch = () => {
-        const nextState = sanitizeBookingSearchState(draftState);
+    const setLocationText = (value: string) =>
+        setDraftState((current) => ({
+            ...current,
+            location: value,
+            locationGroup: "",
+            mapLat: "",
+            mapLng: "",
+            mapRadius: "",
+        }));
+
+    const clearLocation = () => setLocationText("");
+
+    const submitSearchState = (state: BookingSearchState) => {
+        const nextState = sanitizeBookingSearchState(state);
         const nextParams = buildBookingSearchParams(nextState);
         nextParams.delete("page");
 
         setDraftState(nextState);
         setOpenField(null);
         setMobileSheetOpen(false);
+        setMapPickerOpen(false);
         addSearchHistoryItem(nextState);
 
         navigate({
@@ -452,18 +495,81 @@ const SearchBarInner = ({
         });
     };
 
-    const handleAiSearch = () => {
-        const keyword = draftState.location.trim();
+    const handleSearch = () => {
+        submitSearchState(draftState);
+    };
+
+    const handleLocationSuggestionSelect = (item: SearchSuggestion) => {
+        if (item.kind === "map") {
+            setOpenField(null);
+            setMobileSheetOpen(false);
+            setMapPickerOpen(true);
+            return;
+        }
+
+        setDraftState((current) => ({
+            ...current,
+            location: item.title,
+            locationGroup: item.locationGroup ?? "",
+            mapLat: "",
+            mapLng: "",
+            mapRadius: "",
+        }));
+        setOpenField(null);
+    };
+
+    const handleMapSearchConfirm = (position: MapSearchPosition) => {
+        const nextState: BookingSearchState = {
+            ...draftState,
+            location: MAP_SEARCH_LABEL,
+            locationGroup: "",
+            mapLat: position.lat.toFixed(6),
+            mapLng: position.lng.toFixed(6),
+            mapRadius: String(MAP_SEARCH_RADIUS_METERS),
+        };
+
+        setMapPosition(position);
+        submitSearchState(nextState);
+    };
+
+    const openAiOverlay = () => {
+        setAiSearchError("");
+        setOpenField(null);
+        setMobileSheetOpen(false);
+        setAiOverlayOpen(true);
+    };
+
+    const closeAiOverlay = () => {
+        setAiOverlayOpen(false);
+        setAiSearchError("");
+    };
+
+    const handleAiQueryChange = (value: string) => {
+        setAiQuery(value);
+        if (aiSearchError) {
+            setAiSearchError("");
+        }
+    };
+
+    const handleAiSuggestionClick = (suggestion: string) => {
+        setAiQuery(suggestion);
+        setAiSearchError("");
+        aiInputRef.current?.focus();
+    };
+
+    const submitAiSearch = () => {
+        const keyword = aiQuery.trim();
 
         if (!keyword) {
-            setAiSearchError("Nhập nội dung bạn muốn tìm bằng AI");
-            setOpenField("location");
+            setAiSearchError(AI_EMPTY_HINT);
+            aiInputRef.current?.focus();
             return;
         }
 
         setAiSearchError("");
         setOpenField(null);
         setMobileSheetOpen(false);
+        setAiOverlayOpen(false);
 
         if (location.pathname === APP_ROUTES.aiSearch) {
             window.dispatchEvent(new CustomEvent("ai-search-submit", { detail: { query: keyword } }));
@@ -504,7 +610,7 @@ const SearchBarInner = ({
                     >
                         {shouldShowIntro ? (
                             <div className="mb-6 text-center md:mb-7">
-                                <p className="text-[2.2rem] font-semibold leading-[0.95] tracking-[-0.045em] text-cyan-600 md:text-[3.15rem]">
+                                <p className="text-[2.2rem] font-semibold leading-[0.95] tracking-[-0.045em] text-cyan-500 md:text-[3.15rem]">
                                     {`Chào buổi ${timeOfDay}!`}
                                 </p>
                                 <p className="mx-auto mt-3 max-w-[44rem] text-sm leading-6 text-slate-600 md:text-[1.125rem] md:leading-7">
@@ -513,178 +619,292 @@ const SearchBarInner = ({
                             </div>
                         ) : null}
 
-                        <div className={cn("flex items-start gap-3", desktopAside ? "xl:items-center" : "")}>
-                            <div className="min-w-0 flex-1">
-                                <div
-                                    ref={shellRef}
-                                    className={heroShellClass}
-                                >
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setOpenField(null);
-                                            setMobileSheetOpen(true);
-                                        }}
-                                        className="flex w-full items-center gap-3 px-2 py-1.5 text-left md:hidden"
-                                        aria-label="Mở bộ tìm kiếm"
+                        <div className="relative isolate">
+                            <div
+                                className={cn(
+                                    "flex items-center gap-4 transition-[opacity,transform] duration-200",
+                                    desktopAside ? "xl:items-center" : "",
+                                )}
+                            >
+                                <div className="relative min-w-0 flex-1">
+                                    <div
+                                        ref={shellRef}
+                                        className={cn(
+                                            heroShellClass,
+                                            "transition-[opacity,transform] duration-300 ease-out",
+                                            aiOverlayOpen && "pointer-events-none scale-[0.985] opacity-0",
+                                        )}
                                     >
-                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm">
-                                            <FiSearch size={16} />
-                                        </span>
-                                        <span className="min-w-0 flex-1">
-                                            <span className="block truncate text-sm font-semibold text-gray-900">
-                                                {draftState.location || "Địa điểm, ngày, khách"}
-                                            </span>
-                                            <span className="mt-0.5 block truncate text-xs text-gray-500">
-                                                {`${formatSearchDateRange(draftState.checkIn, draftState.checkOut)} • ${buildGuestSummary(draftState.guests, "1 khách")}`}
-                                            </span>
-                                        </span>
-                                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cyan-500 text-white shadow-md">
-                                            <FiSearch size={16} />
-                                        </span>
-                                    </button>
-
-                                    <div className="hidden grid-cols-[minmax(0,1.24fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center md:grid">
-                                        <div className="relative min-w-0">
-                                            <div
-                                                ref={locationFieldRef}
-                                                role="button"
-                                                tabIndex={0}
-                                                onMouseDown={(event) => {
-                                                    event.preventDefault();
-                                                    event.stopPropagation();
-                                                }}
-                                                onClick={(event) => {
-                                                    event.stopPropagation();
-                                                    setMobileSheetOpen(false);
-                                                    setOpenField((current) => (current === "location" ? null : "location"));
-                                                }}
-                                                onKeyDown={(event) => {
-                                                    if (event.key === "Enter" || event.key === " ") {
-                                                        event.preventDefault();
-                                                        setOpenField("location");
-                                                    }
-                                                }}
-                                                className={cn(
-                                                    "search-field-btn flex cursor-text items-center gap-3 rounded-full px-5 py-3 transition-all duration-200",
-                                                    openField === "location"
-                                                        ? heroFieldActiveClass
-                                                        : heroFieldIdleClass,
-                                                )}
-                                            >
-                                                <span className="shrink-0 text-lg text-gray-400">
-                                                    <HiOutlineMapPin size={22} />
-                                                </span>
-                                                <span className="min-w-0 flex-1">
-                                                    <span className="block text-xs font-semibold text-gray-800">Địa điểm</span>
-                                                    {openField === "location" ? (
-                                                        <input
-                                                            ref={locationInputRef}
-                                                            type="text"
-                                                            value={draftState.location}
-                                                            onChange={(event) =>
-                                                                setDraftState((current) => ({
-                                                                    ...current,
-                                                                    location: event.target.value,
-                                                                }))
-                                                            }
-                                                            onClick={(event) => event.stopPropagation()}
-                                                            onKeyDown={(event) => {
-                                                                if (event.key === "Enter") {
-                                                                    event.preventDefault();
-                                                                    handleSearch();
-                                                                }
-                                                            }}
-                                                            placeholder="Tìm kiếm điểm đến"
-                                                            className="mt-0.5 block w-full border-none bg-transparent p-0 text-sm text-gray-700 outline-none placeholder:text-gray-400"
-                                                        />
-                                                    ) : (
-                                                        <span
-                                                            className={cn(
-                                                                "mt-0.5 block truncate text-sm",
-                                                                draftState.location ? "text-gray-700" : "text-gray-400",
-                                                            )}
-                                                        >
-                                                            {draftState.location || "Tìm kiếm điểm đến"}
-                                                        </span>
-                                                    )}
-                                                </span>
-                                            </div>
-                                            <Divider visible={openField !== "location"} />
-                                        </div>
-
-                                        <DesktopField
-                                            label="Nhận phòng"
-                                            value={draftState.checkIn ? formatSearchDate(draftState.checkIn) : ""}
-                                            placeholder="Thêm ngày"
-                                            icon={<FiCalendar size={20} />}
-                                            isActive={openField === "checkIn"}
-                                            tone={isHeroIntro ? "hero" : "default"}
-                                            onClick={() => {
-                                                setMobileSheetOpen(false);
-                                                setOpenField((current) => (current === "checkIn" ? null : "checkIn"));
-                                            }}
-                                            buttonRef={checkInButtonRef}
-                                            showDivider={openField !== "checkIn"}
-                                        />
-
-                                        <DesktopField
-                                            label="Trả phòng"
-                                            value={draftState.checkOut ? formatSearchDate(draftState.checkOut) : ""}
-                                            placeholder="Thêm ngày"
-                                            icon={<FiCalendar size={20} />}
-                                            isActive={openField === "checkOut"}
-                                            tone={isHeroIntro ? "hero" : "default"}
-                                            onClick={() => {
-                                                setMobileSheetOpen(false);
-                                                setOpenField((current) => (current === "checkOut" ? null : "checkOut"));
-                                            }}
-                                            buttonRef={checkOutButtonRef}
-                                            showDivider={openField !== "checkOut"}
-                                        />
-
-                                        <DesktopField
-                                            label="Khách"
-                                            value={hasCustomGuests ? buildGuestSummary(draftState.guests) : ""}
-                                            placeholder="Thêm khách"
-                                            icon={<FiUsers size={20} />}
-                                            isActive={openField === "guests"}
-                                            tone={isHeroIntro ? "hero" : "default"}
-                                            onClick={() => {
-                                                setMobileSheetOpen(false);
-                                                setOpenField((current) => (current === "guests" ? null : "guests"));
-                                            }}
-                                            buttonRef={guestsButtonRef}
-                                        />
-
                                         <button
                                             type="button"
-                                            onMouseDown={(event) => event.stopPropagation()}
-                                            onClick={handleSearch}
-                                            className={searchButtonClass}
-                                            aria-label="Tìm kiếm"
+                                            onClick={() => {
+                                                setOpenField(null);
+                                                setMobileSheetOpen(true);
+                                            }}
+                                            className="flex w-full items-center gap-3 px-2 py-1.5 text-left md:hidden"
+                                            aria-label="Mở bộ tìm kiếm"
                                         >
-                                            <FiSearch size={20} />
+                                            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm">
+                                                <FiSearch size={16} />
+                                            </span>
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block truncate text-sm font-semibold text-gray-900">
+                                                    {draftState.location || "Địa điểm, ngày, khách"}
+                                                </span>
+                                                <span className="mt-0.5 block truncate text-xs text-gray-500">
+                                                    {`${formatSearchDateRange(draftState.checkIn, draftState.checkOut)} • ${buildGuestSummary(draftState.guests, "1 khách")}`}
+                                                </span>
+                                            </span>
+                                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cyan-500 text-white shadow-md">
+                                                <FiSearch size={16} />
+                                            </span>
                                         </button>
+
+                                        <div className="hidden grid-cols-[minmax(0,1.24fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center md:grid">
+                                            <div className="relative min-w-0">
+                                                <div
+                                                    ref={locationFieldRef}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    onMouseDown={(event) => {
+                                                        event.preventDefault();
+                                                        event.stopPropagation();
+                                                    }}
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        setMobileSheetOpen(false);
+                                                        setOpenField((current) =>
+                                                            current === "location" ? null : "location",
+                                                        );
+                                                    }}
+                                                    onKeyDown={(event) => {
+                                                        if (event.key === "Enter" || event.key === " ") {
+                                                            event.preventDefault();
+                                                            setOpenField("location");
+                                                        }
+                                                    }}
+                                                    className={cn(
+                                                        "search-field-btn flex cursor-text items-center gap-3 rounded-full px-5 py-3 transition-all duration-200",
+                                                        openField === "location"
+                                                            ? heroFieldActiveClass
+                                                            : heroFieldIdleClass,
+                                                    )}
+                                                >
+                                                    <span className="shrink-0 text-lg text-gray-400">
+                                                        <HiOutlineMapPin size={22} />
+                                                    </span>
+                                                    <span className="min-w-0 flex-1">
+                                                        <span className="block text-xs font-semibold text-gray-800">
+                                                            Địa điểm
+                                                        </span>
+                                                        {openField === "location" ? (
+                                                            <input
+                                                                ref={locationInputRef}
+                                                                type="text"
+                                                                value={draftState.location}
+                                                                onChange={(event) => setLocationText(event.target.value)}
+                                                                onClick={(event) => event.stopPropagation()}
+                                                                onKeyDown={(event) => {
+                                                                    if (event.key === "Enter") {
+                                                                        event.preventDefault();
+                                                                        handleSearch();
+                                                                    }
+                                                                }}
+                                                                placeholder="Tìm kiếm điểm đến"
+                                                                className="mt-0.5 block w-full border-none bg-transparent p-0 text-sm text-gray-700 outline-none placeholder:text-gray-400"
+                                                            />
+                                                        ) : (
+                                                            <span
+                                                                className={cn(
+                                                                    "mt-0.5 block truncate text-sm",
+                                                                    draftState.location ? "text-gray-700" : "text-gray-400",
+                                                                )}
+                                                            >
+                                                                {draftState.location || "Tìm kiếm điểm đến"}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                </div>
+                                                <Divider visible={openField !== "location"} />
+                                            </div>
+
+                                            <DesktopField
+                                                label="Nhận phòng"
+                                                value={draftState.checkIn ? formatSearchDate(draftState.checkIn) : ""}
+                                                placeholder="Thêm ngày"
+                                                icon={<FiCalendar size={20} />}
+                                                isActive={openField === "checkIn"}
+                                                tone={isHeroIntro ? "hero" : "default"}
+                                                onClick={() => {
+                                                    setMobileSheetOpen(false);
+                                                    setOpenField((current) => (current === "checkIn" ? null : "checkIn"));
+                                                }}
+                                                buttonRef={checkInButtonRef}
+                                                showDivider={openField !== "checkIn"}
+                                            />
+
+                                            <DesktopField
+                                                label="Trả phòng"
+                                                value={draftState.checkOut ? formatSearchDate(draftState.checkOut) : ""}
+                                                placeholder="Thêm ngày"
+                                                icon={<FiCalendar size={20} />}
+                                                isActive={openField === "checkOut"}
+                                                tone={isHeroIntro ? "hero" : "default"}
+                                                onClick={() => {
+                                                    setMobileSheetOpen(false);
+                                                    setOpenField((current) => (current === "checkOut" ? null : "checkOut"));
+                                                }}
+                                                buttonRef={checkOutButtonRef}
+                                                showDivider={openField !== "checkOut"}
+                                            />
+
+                                            <DesktopField
+                                                label="Khách"
+                                                value={hasCustomGuests ? buildGuestSummary(draftState.guests) : ""}
+                                                placeholder="Thêm khách"
+                                                icon={<FiUsers size={20} />}
+                                                isActive={openField === "guests"}
+                                                tone={isHeroIntro ? "hero" : "default"}
+                                                onClick={() => {
+                                                    setMobileSheetOpen(false);
+                                                    setOpenField((current) => (current === "guests" ? null : "guests"));
+                                                }}
+                                                buttonRef={guestsButtonRef}
+                                            />
+
+                                            <button
+                                                type="button"
+                                                onMouseDown={(event) => event.stopPropagation()}
+                                                onClick={handleSearch}
+                                                className={searchButtonClass}
+                                                aria-label="Tìm kiếm"
+                                            >
+                                                <FiSearch size={20} />
+                                            </button>
+                                        </div>
                                     </div>
+
+                                    <form
+                                        ref={aiOverlayRef}
+                                        onSubmit={(event) => {
+                                            event.preventDefault();
+                                            submitAiSearch();
+                                        }}
+                                        aria-hidden={!aiOverlayOpen}
+                                        className={cn(
+                                            "absolute inset-x-0 top-0 z-30 origin-top transition-[opacity,transform] duration-300 ease-out will-change-transform motion-reduce:translate-y-0 motion-reduce:scale-100 motion-reduce:transition-none",
+                                            aiOverlayOpen
+                                                ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
+                                                : "pointer-events-none -translate-y-2 scale-[0.97] opacity-0",
+                                        )}
+                                    >
+                                        <div className={cn(heroShellClass, "flex items-center gap-2")}>
+                                            <div
+                                                className={cn(
+                                                    "flex min-w-0 flex-1 cursor-text items-center gap-3 rounded-full px-5 py-3 transition-all duration-200",
+                                                    isHeroIntro
+                                                        ? "bg-white shadow-[0_16px_32px_-24px_rgba(15,23,42,0.32)] ring-1 ring-cyan-300"
+                                                        : "bg-white shadow-md ring-2 ring-cyan-300",
+                                                )}
+                                                onClick={() => aiInputRef.current?.focus()}
+                                            >
+                                                <span className="shrink-0 text-lg text-cyan-500">
+                                                    <Sparkles size={22} />
+                                                </span>
+
+                                                <span className="min-w-0 flex-1">
+                                                    <span className="block text-xs font-semibold text-gray-500">
+                                                        Tìm kiếm
+                                                    </span>
+                                                    <input
+                                                        ref={aiInputRef}
+                                                        type="text"
+                                                        value={aiQuery}
+                                                        onChange={(event) => handleAiQueryChange(event.target.value)}
+                                                        placeholder="Thử tìm kiếm một nội dung"
+                                                        maxLength={500}
+                                                        tabIndex={aiOverlayOpen ? 0 : -1}
+                                                        className="mt-0.5 block w-full border-none bg-transparent p-0 text-sm  text-gray-500 outline-none placeholder:text-gray-700"
+                                                    />
+                                                </span>
+
+                                                {aiQuery ? (
+                                                    <button
+                                                        type="button"
+                                                        tabIndex={aiOverlayOpen ? 0 : -1}
+                                                        onClick={(event) => {
+                                                            event.stopPropagation();
+                                                            handleAiQueryChange("");
+                                                            aiInputRef.current?.focus();
+                                                        }}
+                                                        aria-label="Xóa nội dung tìm kiếm AI"
+                                                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100"
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
+                                                ) : null}
+                                            </div>
+
+                                            <button
+                                                type="submit"
+                                                tabIndex={aiOverlayOpen ? 0 : -1}
+                                                aria-label="Tìm kiếm"
+                                                className={searchButtonClass}
+                                            >
+                                                <FiSearch size={20} />
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                tabIndex={aiOverlayOpen ? 0 : -1}
+                                                onClick={closeAiOverlay}
+                                                aria-label="Đóng tìm kiếm AI"
+                                                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-100"
+                                            >
+                                                <X size={18} />
+                                            </button>
+                                        </div>
+
+                                        {aiSearchError ? (
+                                            <p className="mt-3 rounded-full border border-cyan-100 bg-white px-4 py-2 text-center text-sm font-medium text-slate-500 shadow-sm">
+                                                {aiSearchError}
+                                            </p>
+                                        ) : null}
+
+                                        <div className="mt-3 flex flex-wrap gap-2.5 rounded-[28px] border border-cyan-100/80 bg-white/95 p-3 shadow-[0_24px_60px_-36px_rgba(8,145,178,0.4)] backdrop-blur">
+                                            {AI_SEARCH_SUGGESTIONS.map((suggestion) => (
+                                                <button
+                                                    key={suggestion}
+                                                    type="button"
+                                                    tabIndex={aiOverlayOpen ? 0 : -1}
+                                                    onClick={() => handleAiSuggestionClick(suggestion)}
+                                                    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                                >
+                                                    {suggestion}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </form>
                                 </div>
+
+                                <button
+                                    type="button"
+                                    onMouseDown={(event) => event.stopPropagation()}
+                                    onClick={openAiOverlay}
+                                    aria-expanded={aiOverlayOpen}
+                                    className={cn(
+                                        "h-14 shrink-0 items-center justify-center gap-2 rounded-full border border-cyan-200 bg-white px-4 text-sm font-semibold text-cyan-700 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-md sm:px-5",
+                                        aiOverlayOpen ? "hidden md:inline-flex" : "inline-flex",
+                                    )}
+                                >
+                                    <Sparkles size={17} />
+                                    <span className="hidden sm:inline">Tìm AI</span>
+                                    <span className="sm:hidden">AI</span>
+                                </button>
+
+                                {desktopAside ? <div className="hidden md:block">{desktopAside}</div> : null}
                             </div>
-
-                            <button
-                                type="button"
-                                onMouseDown={(event) => event.stopPropagation()}
-                                onClick={handleAiSearch}
-                                className="hidden h-14 shrink-0 items-center justify-center gap-2 rounded-full border border-cyan-200 bg-white px-5 text-sm font-semibold text-cyan-700 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-md md:inline-flex"
-                            >
-                                <Sparkles size={17} />
-                                Tìm AI
-                            </button>
-
-                            {desktopAside ? <div className="hidden md:block">{desktopAside}</div> : null}
                         </div>
-                        {aiSearchError ? (
-                            <p className="mt-3 text-center text-sm font-semibold text-rose-600">{aiSearchError}</p>
-                        ) : null}
                     </div>
                 </div>
             </div>
@@ -695,24 +915,18 @@ const SearchBarInner = ({
                 anchorRef={activeAnchorRef}
                 align="start"
                 offset={14}
-                className="w-[min(430px,calc(100vw-2rem))]"
+                className="w-[min(500px,calc(100vw-2rem))]"
             >
                 <div className="overflow-hidden rounded-[30px] border border-black/5 bg-white/98 p-5 shadow-[0_36px_85px_-46px_rgba(15,23,42,0.38)]">
                     <div className="mb-4 flex items-center justify-between gap-3">
                         <div>
                             <p className="text-base font-semibold text-gray-900">Điểm đến được đề xuất</p>
-
                         </div>
 
                         {draftState.location ? (
                             <button
                                 type="button"
-                                onClick={() =>
-                                    setDraftState((current) => ({
-                                        ...current,
-                                        location: "",
-                                    }))
-                                }
+                                onClick={() => clearLocation()}
                                 className="shrink-0 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-50"
                             >
                                 Xóa
@@ -726,13 +940,7 @@ const SearchBarInner = ({
                                 <button
                                     key={item.id}
                                     type="button"
-                                    onClick={() => {
-                                        setDraftState((current) => ({
-                                            ...current,
-                                            location: item.value,
-                                        }));
-                                        setOpenField(null);
-                                    }}
+                                    onClick={() => handleLocationSuggestionSelect(item)}
                                     className="flex w-full items-center gap-4 rounded-[24px] px-3 py-3 text-left transition-colors hover:bg-gray-50"
                                 >
                                     <span
@@ -866,27 +1074,17 @@ const SearchBarInner = ({
                                 <input
                                     type="text"
                                     value={draftState.location}
-                                    onChange={(event) =>
-                                        setDraftState((current) => ({
-                                            ...current,
-                                            location: event.target.value,
-                                        }))
-                                    }
+                                    onChange={(event) => setLocationText(event.target.value)}
                                     placeholder="Tìm kiếm điểm đến"
                                     className="mt-3 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-base text-gray-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
                                 />
 
                                 <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                                    {locationSuggestions.slice(0, 4).map((item) => (
+                                    {locationSuggestions.map((item) => (
                                         <button
                                             key={item.id}
                                             type="button"
-                                            onClick={() =>
-                                                setDraftState((current) => ({
-                                                    ...current,
-                                                    location: item.value,
-                                                }))
-                                            }
+                                            onClick={() => handleLocationSuggestionSelect(item)}
                                             className="inline-flex shrink-0 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700"
                                         >
                                             <span
@@ -1021,27 +1219,33 @@ const SearchBarInner = ({
                                 <button
                                     type="button"
                                     onClick={handleSearch}
-                                    className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-cyan-600"
+                                    className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-cyan-500"
                                 >
                                     <FiSearch size={16} />
                                     Tìm kiếm
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={handleAiSearch}
+                                    onClick={openAiOverlay}
                                     className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-cyan-200 bg-white px-4 text-sm font-semibold text-cyan-700 transition-colors hover:bg-cyan-50"
                                 >
                                     <Sparkles size={16} />
                                     Tìm AI
                                 </button>
                             </div>
-                            {aiSearchError ? (
-                                <p className="mt-3 text-center text-sm font-semibold text-rose-600">{aiSearchError}</p>
-                            ) : null}
                         </div>
                     </div>
                 </div>
             ) : null}
+
+            <LocationMapPicker
+                isOpen={mapPickerOpen}
+                value={mapPosition}
+                radiusMeters={MAP_SEARCH_RADIUS_METERS}
+                onChange={setMapPosition}
+                onClose={() => setMapPickerOpen(false)}
+                onConfirm={handleMapSearchConfirm}
+            />
         </>
     );
 };
@@ -1049,6 +1253,7 @@ const SearchBarInner = ({
 const SearchBar = ({ variant, forceHidden = false, forceVisible = false, desktopAside }: SearchBarProps) => {
     const location = useLocation();
     const inferredVariant = variant ?? (isSearchRoutePath(location.pathname) ? "listing" : "home");
+
     const initialDraftState = useMemo(
         () =>
             isSearchRoutePath(location.pathname)
@@ -1056,6 +1261,7 @@ const SearchBar = ({ variant, forceHidden = false, forceVisible = false, desktop
                 : createDefaultBookingSearchState(),
         [location.pathname, location.search],
     );
+
     const syncKey = useMemo(
         () => createSearchSyncKey(location.pathname, location.search, inferredVariant),
         [inferredVariant, location.pathname, location.search],

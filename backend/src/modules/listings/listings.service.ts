@@ -13,6 +13,15 @@ import {
 } from "../../common/listing-relations";
 import { getCoverImage, getDefaultDailyPrice, serializeListingImage } from "../../common/listing-mappers";
 import { sanitizeSingleLineText, sanitizeText } from "../../common/sanitization";
+import {
+    getDistanceMeters,
+    isCoordinateInVungTauBounds,
+    isAddressInLocationGroup,
+    isValidLatitude,
+    isValidLocationGroup,
+    isValidLongitude,
+    type LocationGroupName,
+} from "../../common/vung-tau-location-groups";
 import Amenity from "../../models/amenity";
 import Booking from "../../models/booking";
 import Listing, {
@@ -40,6 +49,10 @@ export type PublicListingsQuery = {
     minPrice?: number;
     maxPrice?: number;
     amenities?: string;
+    locationGroup?: LocationGroupName;
+    lat?: number;
+    lng?: number;
+    radius?: number;
     sort?: PublicListingSort;
     page?: number;
     limit?: number;
@@ -85,6 +98,7 @@ type PublicListingSearchItem = {
     imageUrl: string | null;
     coverImage: ReturnType<typeof serializeListingImage> | null;
     images: ReturnType<typeof serializeListingImage>[];
+    distanceMeters?: number;
 };
 
 const normalizeComparableText = (value: string) =>
@@ -110,6 +124,66 @@ const parsePagination = (page?: number, limit?: number) => ({
     page: Math.max(1, page ?? 1),
     limit: Math.min(publicListingsMaxPageLimit, Math.max(1, limit ?? 10)),
 });
+
+const defaultMapSearchRadiusMeters = 800;
+const maxMapSearchRadiusMeters = 10000;
+
+const buildSearchableListingAddress = (listing: ListingDocument) =>
+    [
+        listing.addressLine,
+        listing.ward,
+        listing.district,
+        listing.city,
+        listing.stateRegion ?? "",
+    ]
+        .filter(Boolean)
+        .join(" ");
+
+const hasValidListingCoordinates = (listing: ListingDocument) =>
+    isValidLatitude(Number(listing.latitude)) && isValidLongitude(Number(listing.longitude));
+
+const resolveMapSearchInput = (query: PublicListingsQuery) => {
+    if (query.lat === undefined && query.lng === undefined) {
+        return null;
+    }
+
+    if (query.lat === undefined || query.lng === undefined) {
+        return null;
+    }
+
+    if (!isValidLatitude(query.lat) || !isValidLongitude(query.lng)) {
+        throw new ApiError(422, "Validation error", [
+            {
+                path: !isValidLatitude(query.lat) ? "lat" : "lng",
+                msg: "lat/lng is invalid",
+            },
+        ]);
+    }
+
+    if (!isCoordinateInVungTauBounds(query.lat, query.lng)) {
+        throw new ApiError(422, "Validation error", [
+            {
+                path: "lat",
+                msg: "map search location must be inside Vung Tau",
+            },
+            {
+                path: "lng",
+                msg: "map search location must be inside Vung Tau",
+            },
+        ]);
+    }
+
+    const radius = Math.min(
+        maxMapSearchRadiusMeters,
+        Math.max(1, query.radius ?? defaultMapSearchRadiusMeters),
+    );
+
+    return {
+        lat: query.lat,
+        lng: query.lng,
+        radius,
+    };
+};
 
 const getPublicListingOrThrow = async (listingId: number) => {
     const listing = await Listing.findOne({
@@ -362,6 +436,8 @@ const getBookedDatesForMonth = async (listingId: number, month: number, year: nu
 
 export const getPublicListings = async (query: PublicListingsQuery) => {
     const { page, limit } = parsePagination(query.page, query.limit);
+    const mapSearch = resolveMapSearchInput(query);
+    const distanceByListingId = new Map<number, number>();
 
     if ((query.checkIn && !query.checkOut) || (!query.checkIn && query.checkOut)) {
         throw new ApiError(422, "Validation error", [
@@ -386,6 +462,15 @@ export const getPublicListings = async (query: PublicListingsQuery) => {
             {
                 path: "maxPrice",
                 msg: "maxPrice must be greater than or equal to minPrice",
+            },
+        ]);
+    }
+
+    if (query.locationGroup && !isValidLocationGroup(query.locationGroup)) {
+        throw new ApiError(422, "Validation error", [
+            {
+                path: "locationGroup",
+                msg: "locationGroup is invalid",
             },
         ]);
     }
@@ -430,6 +515,32 @@ export const getPublicListings = async (query: PublicListingsQuery) => {
 
         if (query.district && !compareStrings(listing.district, query.district)) {
             return false;
+        }
+
+        if (
+            query.locationGroup &&
+            !isAddressInLocationGroup(buildSearchableListingAddress(listing), query.locationGroup)
+        ) {
+            return false;
+        }
+
+        if (mapSearch) {
+            if (!hasValidListingCoordinates(listing)) {
+                return false;
+            }
+
+            const distanceMeters = getDistanceMeters(
+                mapSearch.lat,
+                mapSearch.lng,
+                Number(listing.latitude),
+                Number(listing.longitude),
+            );
+
+            if (distanceMeters > mapSearch.radius) {
+                return false;
+            }
+
+            distanceByListingId.set(listing.listingId, Math.round(distanceMeters));
         }
 
         const listingAmenityIds = amenityIdsMap.get(listing.listingId) ?? [];
@@ -481,12 +592,21 @@ export const getPublicListings = async (query: PublicListingsQuery) => {
             imageUrl: coverImage?.url ?? null,
             coverImage: coverImage ? serializeListingImage(coverImage) : null,
             images: images.map(serializeListingImage),
+            ...(distanceByListingId.has(listing.listingId)
+                ? { distanceMeters: distanceByListingId.get(listing.listingId) }
+                : {}),
         };
     });
 
     const sortKey = query.sort ?? "newest";
 
     items.sort((left, right) => {
+        if (mapSearch && query.sort === undefined) {
+            return (left.distanceMeters ?? Number.MAX_SAFE_INTEGER) -
+                (right.distanceMeters ?? Number.MAX_SAFE_INTEGER) ||
+                right.listingId - left.listingId;
+        }
+
         const businessCityPriority =
             Number(compareStrings(right.city, defaultBusinessCity)) -
             Number(compareStrings(left.city, defaultBusinessCity));

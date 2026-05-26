@@ -30,11 +30,10 @@ const Pagination = ({ page, totalPages, onChange }: PaginationProps) => {
                     onClick={() => onChange(value)}
                     aria-label={`Trang ${value}`}
                     aria-current={value === page ? "page" : undefined}
-                    className={`inline-flex h-12 w-12 items-center justify-center rounded-full text-sm font-semibold transition-all ${
-                        value === page
-                            ? "bg-cyan-500 text-white shadow-[0_18px_36px_-20px_rgba(6,182,212,0.7)]"
-                            : "border border-slate-200 bg-white text-slate-600 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.45)] hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700 hover:shadow-[0_18px_36px_-22px_rgba(8,145,178,0.35)]"
-                    }`}
+                    className={`inline-flex h-12 w-12 items-center justify-center rounded-full text-sm font-semibold transition-all ${value === page
+                        ? "bg-cyan-500 text-white shadow-[0_18px_36px_-20px_rgba(6,182,212,0.7)]"
+                        : "border border-slate-200 bg-white text-slate-600 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.45)] hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700 hover:shadow-[0_18px_36px_-22px_rgba(8,145,178,0.35)]"
+                        }`}
                 >
                     {value}
                 </button>

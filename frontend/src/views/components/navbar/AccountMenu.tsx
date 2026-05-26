@@ -49,38 +49,38 @@ const createMenuGroups = (
     onLogout: () => void,
     isAuthenticated: boolean,
 ): MenuGroup[] => [
-    {
-        key: "personal",
-        items: [
-            { key: "favorites", label: "Danh sách yêu thích", icon: LuHeart, to: APP_ROUTES.search },
-            { key: "trips", label: "Chuyến đi", icon: LuPlane, to: APP_ROUTES.accountTrips },
-            { key: "messages", label: "Tin nhắn", icon: LuMessageSquare, action: onMessagesClick },
-            { key: "profile", label: "Hồ sơ", icon: LuUserRound, to: APP_ROUTES.accountProfile },
-        ],
-    },
-    {
-        key: "account",
-        items: [
-            { key: "settings", label: "Cài đặt tài khoản", icon: LuSettings, to: APP_ROUTES.accountProfile },
-            { key: "help", label: "Trung tâm trợ giúp", icon: LuCircleHelp },
-        ],
-    },
-    {
-        key: "host",
-        items: [
-            { key: "become-host", label: hostAction?.label ?? "Trở thành Host", icon: LuHouse, to: hostAction?.to ?? APP_ROUTES.hostLanding },
-            { key: "host-support", label: "Tìm hỗ trợ Host", icon: LuSearch, to: APP_ROUTES.ownerDashboard },
-        ],
-    },
-    {
-        key: "auth",
-        items: [
-            isAuthenticated
-                ? { key: "logout", label: "Đăng xuất", icon: LuLogOut, action: onLogout }
-                : { key: "login", label: "Đăng nhập", icon: LuLogIn, to: APP_ROUTES.login },
-        ],
-    },
-];
+        {
+            key: "personal",
+            items: [
+                { key: "favorites", label: "Danh sách yêu thích", icon: LuHeart, to: APP_ROUTES.search },
+                { key: "trips", label: "Chuyến đi", icon: LuPlane, to: APP_ROUTES.accountTrips },
+                { key: "messages", label: "Tin nhắn", icon: LuMessageSquare, action: onMessagesClick },
+                { key: "profile", label: "Hồ sơ", icon: LuUserRound, to: APP_ROUTES.accountProfile },
+            ],
+        },
+        {
+            key: "account",
+            items: [
+                { key: "settings", label: "Cài đặt tài khoản", icon: LuSettings, to: APP_ROUTES.accountProfile },
+                { key: "help", label: "Trung tâm trợ giúp", icon: LuCircleHelp },
+            ],
+        },
+        {
+            key: "host",
+            items: [
+                { key: "become-host", label: hostAction?.label ?? "Trở thành host", icon: LuHouse, to: hostAction?.to ?? APP_ROUTES.hostLanding },
+                { key: "host-support", label: "Tìm hỗ trợ host", icon: LuSearch, to: APP_ROUTES.ownerDashboard },
+            ],
+        },
+        {
+            key: "auth",
+            items: [
+                isAuthenticated
+                    ? { key: "logout", label: "Đăng xuất", icon: LuLogOut, action: onLogout }
+                    : { key: "login", label: "Đăng nhập", icon: LuLogIn, to: APP_ROUTES.login },
+            ],
+        },
+    ];
 
 const isMobileViewport = () =>
     typeof window !== "undefined" && window.matchMedia("(max-width: 767.98px)").matches;

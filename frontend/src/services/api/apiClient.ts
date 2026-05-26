@@ -63,7 +63,7 @@ const normalizeUserRole = (role?: string): AuthUser["role"] => {
 
     if (normalizedRole === "admin") return "Admin";
     if (normalizedRole === "moderator") return "Moderator";
-    if (normalizedRole === "host") return "Host";
+    if (normalizedRole === "host") return "host";
     return "Guest";
 };
 
@@ -79,6 +79,12 @@ export const normalizeAuthUser = (raw: unknown): AuthUser | null => {
         email?: string;
         role?: string;
         roles?: string[];
+        avatarUrl?: string | null;
+        location?: string | null;
+        job?: string | null;
+        dreamDestination?: string | null;
+        school?: string | null;
+        languages?: string[] | null;
     };
     const id = user.id ?? user.userId;
     const roles = Array.isArray(user.roles) ? user.roles.map(String) : [];
@@ -94,6 +100,12 @@ export const normalizeAuthUser = (raw: unknown): AuthUser | null => {
         email: user.email,
         role: normalizeUserRole(role),
         roles,
+        avatarUrl: typeof user.avatarUrl === "string" ? user.avatarUrl : null,
+        location: typeof user.location === "string" ? user.location : null,
+        job: typeof user.job === "string" ? user.job : null,
+        dreamDestination: typeof user.dreamDestination === "string" ? user.dreamDestination : null,
+        school: typeof user.school === "string" ? user.school : null,
+        languages: Array.isArray(user.languages) ? user.languages.map(String) : null,
     };
 };
 

@@ -7,6 +7,7 @@ import {
     type ApiRoomType,
     type PaginatedListings,
 } from "../models/entities/Listing";
+import type { LocationGroupName } from "../data/vungTauLocationGroups";
 import type { PaginatedReviews } from "../models/entities/Review";
 
 export type ListingQuery = {
@@ -20,6 +21,10 @@ export type ListingQuery = {
     minPrice?: number;
     maxPrice?: number;
     amenities?: string | string[];
+    locationGroup?: LocationGroupName;
+    lat?: number;
+    lng?: number;
+    radius?: number;
     sort?: "price_asc" | "price_desc" | "rating_desc" | "newest";
     page?: number;
     limit?: number;

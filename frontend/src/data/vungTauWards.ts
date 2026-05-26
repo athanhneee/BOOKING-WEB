@@ -5,7 +5,7 @@ export type VungTauWard = {
 };
 
 // Tọa độ là điểm trung tâm tham khảo để đưa bản đồ tới khu vực.
-// Host vẫn cần kéo ghim để chốt đúng vị trí chỗ nghỉ.
+// host vẫn cần kéo ghim để chốt đúng vị trí chỗ nghỉ.
 export const VUNG_TAU_WARDS: VungTauWard[] = [
     {
         name: "Phường Vũng Tàu",

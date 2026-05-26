@@ -68,7 +68,7 @@ const persistAuthResponse = (data: AuthResponse) => {
 
 export const getDefaultRouteForRole = (role: UserRole) => {
     if (role === "Admin") return APP_ROUTES.adminOverview;
-    if (role === "Host" || role === "Host new") return APP_ROUTES.ownerDashboard;
+    if (role === "host" || role === "host new") return APP_ROUTES.ownerDashboard;
     return APP_ROUTES.accountProfile;
 };
 

@@ -141,9 +141,9 @@ const CaiDat = () => {
                             {profileMessage ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{profileMessage}</div> : null}
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                                 {profile?.avatarUrl ? (
-                                    <img src={profile.avatarUrl} alt={profile.fullName ?? profile.name ?? "Host"} className="h-20 w-20 rounded-full object-cover" />
+                                    <img src={profile.avatarUrl} alt={profile.fullName ?? profile.name ?? "host"} className="h-20 w-20 rounded-full object-cover" />
                                 ) : (
-                                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-cyan-600 text-2xl font-semibold text-white">
+                                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-cyan-500 text-2xl font-semibold text-white">
                                         {getInitials(profileForm.fullName || "Chủ Nhà")}
                                     </div>
                                 )}

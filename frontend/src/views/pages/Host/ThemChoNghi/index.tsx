@@ -6,7 +6,17 @@ import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
 import { APP_ROUTES } from "../../../../config/routes";
+import {
+    VUNG_TAU_DEFAULT_COORDINATES,
+    clampLatLngToVungTauBounds,
+    isLatLngInVungTauBounds,
+} from "../../../../data/vungTauLocationGroups";
 import { VUNG_TAU_WARDS } from "../../../../data/vungTauWards";
+import {
+    VUNG_TAU_LEAFLET_BOUNDS,
+    VUNG_TAU_MIN_MAP_ZOOM,
+    VungTauMapBoundsLimiter,
+} from "../../../components/maps/VungTauMapBounds";
 import {
     addHostListingImages,
     createHostListing,
@@ -42,8 +52,8 @@ L.Icon.Default.mergeOptions({
 
 const VUNG_TAU_CITY = "Vũng Tàu";
 const DEFAULT_VUNG_TAU_COORDINATES = {
-    latitude: 10.345,
-    longitude: 107.084,
+    latitude: VUNG_TAU_DEFAULT_COORDINATES.latitude,
+    longitude: VUNG_TAU_DEFAULT_COORDINATES.longitude,
 };
 const locationSelectionError = "Vui lòng chọn phường/xã và kéo ghim trên bản đồ đến đúng vị trí chỗ nghỉ.";
 
@@ -269,6 +279,19 @@ const getFormCoordinates = (value: Pick<FormState, "latitude" | "longitude">): C
 
     return { latitude, longitude };
 };
+const isCoordinatesInVungTauBounds = (position: Coordinates) =>
+    isLatLngInVungTauBounds({ lat: position.latitude, lng: position.longitude });
+const clampCoordinatesToVungTauBounds = (position: Coordinates): Coordinates => {
+    const boundedPosition = clampLatLngToVungTauBounds({
+        lat: position.latitude,
+        lng: position.longitude,
+    });
+
+    return {
+        latitude: boundedPosition.lat,
+        longitude: boundedPosition.lng,
+    };
+};
 const getLocationValidationError = (value: Pick<FormState, "addressLine" | "ward" | "latitude" | "longitude">) => {
     if (!value.addressLine.trim()) {
         return "Vui lòng nhập địa chỉ chỗ nghỉ.";
@@ -278,6 +301,10 @@ const getLocationValidationError = (value: Pick<FormState, "addressLine" | "ward
 
     if (!value.ward.trim() || !coordinates) {
         return locationSelectionError;
+    }
+
+    if (!isCoordinatesInVungTauBounds(coordinates)) {
+        return "Vị trí chỗ nghỉ phải nằm trong khu vực Vũng Tàu.";
     }
 
     return "";
@@ -335,9 +362,13 @@ const ListingLocationMap = ({
     onPositionChange: (position: Coordinates) => void;
 }) => {
     const markerRef = useRef<LeafletMarker | null>(null);
-    const markerPosition = useMemo<LatLngExpression>(
-        () => [position.latitude, position.longitude],
+    const boundedPosition = useMemo(
+        () => clampCoordinatesToVungTauBounds(position),
         [position.latitude, position.longitude],
+    );
+    const markerPosition = useMemo<LatLngExpression>(
+        () => [boundedPosition.latitude, boundedPosition.longitude],
+        [boundedPosition.latitude, boundedPosition.longitude],
     );
     const eventHandlers = useMemo(
         () => ({
@@ -349,27 +380,40 @@ const ListingLocationMap = ({
                 }
 
                 const nextPosition = marker.getLatLng();
-                onPositionChange({
+                onPositionChange(clampCoordinatesToVungTauBounds({
                     latitude: nextPosition.lat,
                     longitude: nextPosition.lng,
-                });
+                }));
             },
         }),
         [onPositionChange],
     );
 
+    useEffect(() => {
+        if (isCoordinatesInVungTauBounds(position)) {
+            return;
+        }
+
+        onPositionChange(boundedPosition);
+    }, [boundedPosition, onPositionChange, position]);
+
     return (
         <MapContainer
             center={markerPosition}
-            zoom={14}
+            zoom={13}
+            minZoom={VUNG_TAU_MIN_MAP_ZOOM}
+            maxBounds={VUNG_TAU_LEAFLET_BOUNDS}
+            maxBoundsViscosity={1}
             scrollWheelZoom
             className="h-full w-full"
         >
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                bounds={VUNG_TAU_LEAFLET_BOUNDS}
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            <MapViewUpdater position={position} />
+            <VungTauMapBoundsLimiter />
+            <MapViewUpdater position={boundedPosition} />
             <Marker
                 draggable
                 eventHandlers={eventHandlers}
@@ -873,7 +917,7 @@ const ThemChoNghi = () => {
                                     value={form.addressLine}
                                     onChange={(e) => setField("addressLine", e.target.value)}
                                     className={inputClassName}
-                                    // placeholder="Ví dụ: 164B Phan Chu Trinh"
+                                // placeholder="Ví dụ: 164B Phan Chu Trinh"
                                 />
                             </label>
                             <label>
@@ -907,7 +951,7 @@ const ThemChoNghi = () => {
                             <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                     <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
-                                        <MapPin size={18} className="text-cyan-600" />
+                                        <MapPin size={18} className="text-cyan-500" />
                                         <span>Vị trí trên bản đồ</span>
                                     </div>
                                     <p className="mt-1 text-xs text-gray-500">
@@ -940,7 +984,7 @@ const ThemChoNghi = () => {
                                 onKeyDown={preventInvalidIntegerKey}
                                 onChange={(e) => setIntegerField("maxGuests", e.target.value)}
                                 className={inputClassName}
-                                
+
                             />
                         </label>
 
@@ -955,7 +999,7 @@ const ThemChoNghi = () => {
                                 onKeyDown={preventInvalidIntegerKey}
                                 onChange={(e) => setIntegerField("bedrooms", e.target.value)}
                                 className={inputClassName}
-                                
+
                             />
                         </label>
 
@@ -970,7 +1014,7 @@ const ThemChoNghi = () => {
                                 onKeyDown={preventInvalidIntegerKey}
                                 onChange={(e) => setIntegerField("beds", e.target.value)}
                                 className={inputClassName}
-                                
+
                             />
                         </label>
 
@@ -984,7 +1028,7 @@ const ThemChoNghi = () => {
                                 onKeyDown={preventInvalidNumberKey}
                                 onChange={(e) => setDecimalField("bathrooms", e.target.value)}
                                 className={inputClassName}
-                               
+
                             />
                         </label>
                     </div>
@@ -1001,7 +1045,7 @@ const ThemChoNghi = () => {
                                 onKeyDown={preventInvalidIntegerKey}
                                 onChange={(e) => handleBasePriceChange(e.target.value)}
                                 className={inputClassName}
-                               
+
                             />
                         </label>
 
@@ -1018,7 +1062,7 @@ const ThemChoNghi = () => {
                                 className={inputClassName}
                                 placeholder="Mặc định bằng giá cơ bản"
                             />
-                           
+
                         </label>
 
                         <label>
@@ -1031,7 +1075,7 @@ const ThemChoNghi = () => {
                                 onKeyDown={preventInvalidIntegerKey}
                                 onChange={(e) => setIntegerField("cleaningFee", e.target.value)}
                                 className={inputClassName}
-                                
+
                             />
                         </label>
 
@@ -1060,7 +1104,7 @@ const ThemChoNghi = () => {
                                 onKeyDown={preventInvalidIntegerKey}
                                 onChange={(e) => setIntegerField("minNights", e.target.value)}
                                 className={inputClassName}
-                               
+
                             />
                         </label>
 
@@ -1074,7 +1118,7 @@ const ThemChoNghi = () => {
                                 onKeyDown={preventInvalidIntegerKey}
                                 onChange={(e) => setIntegerField("maxNights", e.target.value)}
                                 className={inputClassName}
-                               
+
                             />
                         </label>
 
@@ -1188,7 +1232,7 @@ const ThemChoNghi = () => {
                                                             : image.status === "failed"
                                                                 ? "font-semibold text-rose-600"
                                                                 : image.status === "uploading"
-                                                                    ? "font-semibold text-cyan-600"
+                                                                    ? "font-semibold text-cyan-500"
                                                                     : "text-gray-500"
                                                     }>
                                                         {image.status === "success" ? "Upload thành công" : image.status === "failed" ? "Upload thất bại" : image.status === "uploading" ? "Đang upload ảnh..." : "Chờ upload"}

@@ -57,7 +57,7 @@ const ListingCard = ({ listing }: ListingCardProps) => {
                     <div className="min-w-0">
                         <h3 className="truncate text-lg font-semibold text-slate-950">{listing.title}</h3>
                         <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
-                            <MapPin size={15} className="shrink-0 text-cyan-600" />
+                            <MapPin size={15} className="shrink-0 text-cyan-500" />
                             <span className="truncate">{address || listing.city}</span>
                         </p>
                     </div>
@@ -73,15 +73,15 @@ const ListingCard = ({ listing }: ListingCardProps) => {
 
                 <div className="mt-4 grid grid-cols-3 gap-2 text-sm text-slate-600">
                     <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2">
-                        <Users size={15} className="text-cyan-600" />
+                        <Users size={15} className="text-cyan-500" />
                         {listing.maxGuests}
                     </span>
                     <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2">
-                        <BedDouble size={15} className="text-cyan-600" />
+                        <BedDouble size={15} className="text-cyan-500" />
                         {listing.bedrooms}
                     </span>
                     <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2">
-                        <Bath size={15} className="text-cyan-600" />
+                        <Bath size={15} className="text-cyan-500" />
                         {listing.bathrooms}
                     </span>
                 </div>
@@ -89,7 +89,7 @@ const ListingCard = ({ listing }: ListingCardProps) => {
                 <div className="mt-auto flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Giá từ</p>
-                        <p className="mt-1 text-lg font-bold text-teal-700">
+                        <p className="mt-1 text-lg font-bold text-cyan-700">
                             {currencyFormatter.format(Number(listing.basePrice || 0))}
                         </p>
                         <p className="text-sm text-slate-500">/ đêm</p>

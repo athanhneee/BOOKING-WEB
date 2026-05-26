@@ -7,7 +7,7 @@ import {
     pageWrapperClass,
     secondaryButtonClass,
     tableClassName,
-} from "../../Host/sharedStyles";
+} from "../../host/sharedStyles";
 
 const getAddress = (listing) =>
     [listing.addressLine, listing.ward, listing.district, listing.city].filter(Boolean).join(", ");
@@ -337,57 +337,57 @@ const KiemDuyetBaiDang = () => {
 
                                 return (
                                     <tr key={listing.listingId}>
-                                    <td className="px-4 py-4">
-                                        <div className="flex items-center gap-3">
-                                            {shouldShowCoverImage ? (
-                                                <img
-                                                    src={coverImageUrl}
-                                                    alt={listing.title}
-                                                    className="h-20 w-32 shrink-0 rounded-xl object-cover"
-                                                    loading="lazy"
-                                                    onError={() => handleListingImageError(coverImageUrl)}
-                                                />
-                                            ) : (
-                                                <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-medium text-slate-500">
-                                                    Chưa có ảnh
+                                        <td className="px-4 py-4">
+                                            <div className="flex items-center gap-3">
+                                                {shouldShowCoverImage ? (
+                                                    <img
+                                                        src={coverImageUrl}
+                                                        alt={listing.title}
+                                                        className="h-20 w-32 shrink-0 rounded-xl object-cover"
+                                                        loading="lazy"
+                                                        onError={() => handleListingImageError(coverImageUrl)}
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-medium text-slate-500">
+                                                        Chưa có ảnh
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <p className="font-semibold text-gray-900">{listing.title}</p>
+                                                    <p className="text-xs text-gray-500">ID: {listing.listingId}</p>
                                                 </div>
-                                            )}
-                                            <div>
-                                                <p className="font-semibold text-gray-900">{listing.title}</p>
-                                                <p className="text-xs text-gray-500">ID: {listing.listingId}</p>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-4 text-gray-600">{getAddress(listing)}</td>
-                                    <td className="px-4 py-4 text-gray-600">{listing.propertyType}</td>
-                                    <td className="px-4 py-4 text-gray-600">{formatCurrency(Number(listing.basePrice || 0))}</td>
-                                    <td className="px-4 py-4">
-                                        <div className="flex flex-wrap gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleViewDetail(listing.listingId)}
-                                                className="rounded-lg border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
-                                            >
-                                                Xem chi tiết
-                                            </button>
+                                        </td>
+                                        <td className="px-4 py-4 text-gray-600">{getAddress(listing)}</td>
+                                        <td className="px-4 py-4 text-gray-600">{listing.propertyType}</td>
+                                        <td className="px-4 py-4 text-gray-600">{formatCurrency(Number(listing.basePrice || 0))}</td>
+                                        <td className="px-4 py-4">
+                                            <div className="flex flex-wrap gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleViewDetail(listing.listingId)}
+                                                    className="rounded-lg border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+                                                >
+                                                    Xem chi tiết
+                                                </button>
 
-                                            <button
-                                                type="button"
-                                                onClick={() => handleApprove(listing.listingId)}
-                                                className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-                                            >
-                                                Duyệt
-                                            </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleApprove(listing.listingId)}
+                                                    className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                                                >
+                                                    Duyệt
+                                                </button>
 
-                                            <button
-                                                type="button"
-                                                onClick={() => openRejectModal(listing)}
-                                                className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
-                                            >
-                                                Từ chối
-                                            </button>
-                                        </div>
-                                    </td>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openRejectModal(listing)}
+                                                    className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                                                >
+                                                    Từ chối
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 );
                             })}

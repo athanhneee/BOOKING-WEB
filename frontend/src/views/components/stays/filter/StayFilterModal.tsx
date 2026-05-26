@@ -187,12 +187,12 @@ const StayFilterModal = ({ isOpen, onClose, stays, value, bounds, onApply }: Sta
                                     type="button"
                                     onClick={() => handleSortChange(option.value)}
                                     className={`flex w-full items-start gap-3 rounded-xl border-2 p-4 text-left transition-all duration-150 ${isSelected
-                                            ? "border-cyan-500 bg-cyan-50"
-                                            : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                                        ? "border-cyan-500 bg-cyan-50"
+                                        : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
                                         }`}
                                 >
                                     <div
-                                        className={`flex-shrink-0 rounded-xl p-2 transition-colors ${isSelected ? "bg-cyan-100 text-cyan-600" : "bg-gray-100 text-gray-500"
+                                        className={`flex-shrink-0 rounded-xl p-2 transition-colors ${isSelected ? "bg-cyan-100 text-cyan-500" : "bg-gray-100 text-gray-500"
                                             }`}
                                     >
                                         <Icon size={16} />
@@ -230,7 +230,7 @@ const StayFilterModal = ({ isOpen, onClose, stays, value, bounds, onApply }: Sta
                     <button
                         type="button"
                         onClick={handleApply}
-                        className="inline-flex items-center justify-center rounded-xl bg-cyan-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_-20px_rgba(8,145,178,0.8)] transition hover:bg-cyan-700"
+                        className="inline-flex items-center justify-center rounded-xl bg-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_-20px_rgba(8,145,178,0.8)] transition hover:bg-cyan-500"
                     >
                         Xem {matchingCount} nơi lưu trú
                     </button>

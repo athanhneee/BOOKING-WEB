@@ -55,7 +55,7 @@ const Header = () => {
                 return;
             }
 
-            if (currentUser.role === "Admin" || currentUser.role === "Host") {
+            if (currentUser.role === "Admin" || currentUser.role === "host") {
                 setHostApplicationStatus("approved");
                 return;
             }
@@ -96,12 +96,12 @@ const Header = () => {
 
     const hostAction =
         hostApplicationStatus === "approved"
-            ? { label: "Khu vực Host", to: APP_ROUTES.ownerDashboard }
+            ? { label: "Khu vực host", to: APP_ROUTES.ownerDashboard }
             : hostApplicationStatus === "pending"
-              ? { label: "Đang xét duyệt Host", to: APP_ROUTES.hostStatus }
-              : hostApplicationStatus === "rejected"
-                ? { label: "Gửi lại hồ sơ Host", to: APP_ROUTES.hostStatus }
-                : { label: "Trở thành Host", to: APP_ROUTES.hostLanding };
+                ? { label: "Đang xét duyệt host", to: APP_ROUTES.hostStatus }
+                : hostApplicationStatus === "rejected"
+                    ? { label: "Gửi lại hồ sơ host", to: APP_ROUTES.hostStatus }
+                    : { label: "Trở thành host", to: APP_ROUTES.hostLanding };
 
     const renderBecomeHostLink = (mobile = false) => {
         if (hostApplicationStatus === "approved") {
@@ -139,23 +139,21 @@ const Header = () => {
                 className={
                     mobile
                         ? "rounded-xl px-4 py-3 text-sm font-medium text-cyan-800 transition-all duration-200 hover:bg-cyan-300/10"
-                        : `hidden min-h-11 items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 md:inline-flex ${
-                              useDarkText
-                                  ? "border-cyan-300/50 bg-white text-cyan-800 hover:bg-cyan-300/10"
-                                  : "border-white/30 bg-white/12 text-white backdrop-blur hover:bg-white/18"
-                          }`
+                        : `hidden min-h-11 items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 md:inline-flex ${useDarkText
+                            ? "border-cyan-300/50 bg-white text-cyan-800 hover:bg-cyan-300/10"
+                            : "border-white/30 bg-white/12 text-white backdrop-blur hover:bg-white/18"
+                        }`
                 }
             >
-                Trở thành Host
+                Trở thành host
             </Link>
         );
     };
 
     return (
         <header
-            className={`fixed left-0 top-0 z-50 w-full py-3 transition-transform duration-[520ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] will-change-transform md:py-4 ${
-                isVisible ? "translate-y-0" : "pointer-events-none -translate-y-[110%]"
-            }`}
+            className={`fixed left-0 top-0 z-50 w-full py-3 transition-transform duration-[520ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] will-change-transform md:py-4 ${isVisible ? "translate-y-0" : "pointer-events-none -translate-y-[110%]"
+                }`}
         >
             <div className="container mx-auto flex items-center justify-between px-4 md:px-6">
                 <Link to={APP_ROUTES.home}>
@@ -163,9 +161,8 @@ const Header = () => {
                 </Link>
 
                 <nav
-                    className={`hidden items-center space-x-8 text-base font-medium md:flex ${
-                        useDarkText ? "text-slate-900" : "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.75)]"
-                    }`}
+                    className={`hidden items-center space-x-8 text-base font-medium md:flex ${useDarkText ? "text-slate-900" : "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.75)]"
+                        }`}
                 >
                     {navLinks.map(({ to, label }) => {
                         const isActive = location.pathname === to;

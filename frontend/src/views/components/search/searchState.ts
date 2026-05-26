@@ -1,8 +1,19 @@
 import type { PopularDestination } from "../../../models/entities/Listing";
+import {
+    isLocationGroupName,
+    isLatLngInVungTauBounds,
+    MAP_SEARCH_RADIUS_METERS,
+    normalizeVietnameseText,
+    type LocationGroupName,
+} from "../../../data/vungTauLocationGroups";
 import type { GuestSelection } from "./booking/Guest";
 
 export type BookingSearchState = {
     location: string;
+    locationGroup: LocationGroupName | "";
+    mapLat: string;
+    mapLng: string;
+    mapRadius: string;
     checkIn: string;
     checkOut: string;
     guests: GuestSelection;
@@ -56,6 +67,10 @@ export const guestFieldConfigs: GuestFieldConfig[] = [
 
 export const createDefaultBookingSearchState = (): BookingSearchState => ({
     location: "",
+    locationGroup: "",
+    mapLat: "",
+    mapLng: "",
+    mapRadius: "",
     checkIn: "",
     checkOut: "",
     guests: { ...defaultGuestSelection },
@@ -141,6 +156,13 @@ export const formatSearchDateRange = (checkIn: string, checkOut: string) => {
 
 export const sanitizeBookingSearchState = (state: BookingSearchState): BookingSearchState => {
     const trimmedLocation = state.location.trim();
+    const locationGroup =
+        state.locationGroup && isLocationGroupName(state.locationGroup)
+            ? state.locationGroup
+            : "";
+    let mapLat = state.mapLat?.trim() ?? "";
+    let mapLng = state.mapLng?.trim() ?? "";
+    let mapRadius = state.mapRadius?.trim() ?? "";
     const adults = Math.max(1, state.guests.adults || 1);
     const children = Math.max(0, state.guests.children || 0);
     const infants = Math.max(0, state.guests.infants || 0);
@@ -161,8 +183,23 @@ export const sanitizeBookingSearchState = (state: BookingSearchState): BookingSe
         nextCheckOut = addDaysToIso(nextCheckIn, 1);
     }
 
+    if (mapLat || mapLng) {
+        const parsedLat = Number(mapLat);
+        const parsedLng = Number(mapLng);
+
+        if (!isLatLngInVungTauBounds({ lat: parsedLat, lng: parsedLng })) {
+            mapLat = "";
+            mapLng = "";
+            mapRadius = "";
+        }
+    }
+
     return {
         location: trimmedLocation,
+        locationGroup,
+        mapLat,
+        mapLng,
+        mapRadius,
         checkIn: nextCheckIn,
         checkOut: nextCheckOut,
         guests: {
@@ -176,9 +213,14 @@ export const sanitizeBookingSearchState = (state: BookingSearchState): BookingSe
 
 export const parseBookingSearchParams = (paramsLike: URLSearchParams | string) => {
     const params = typeof paramsLike === "string" ? new URLSearchParams(paramsLike) : paramsLike;
+    const locationGroupParam = params.get("locationGroup") ?? "";
 
     return sanitizeBookingSearchState({
         location: params.get("location") ?? "",
+        locationGroup: isLocationGroupName(locationGroupParam) ? locationGroupParam : "",
+        mapLat: params.get("lat") ?? "",
+        mapLng: params.get("lng") ?? "",
+        mapRadius: params.get("radius") ?? "",
         checkIn: params.get("checkIn") ?? "",
         checkOut: params.get("checkOut") ?? "",
         guests: {
@@ -196,6 +238,16 @@ export const buildBookingSearchParams = (state: BookingSearchState) => {
 
     if (sanitizedState.location) {
         params.set("location", sanitizedState.location);
+    }
+
+    if (sanitizedState.locationGroup) {
+        params.set("locationGroup", sanitizedState.locationGroup);
+    }
+
+    if (sanitizedState.mapLat && sanitizedState.mapLng) {
+        params.set("lat", sanitizedState.mapLat);
+        params.set("lng", sanitizedState.mapLng);
+        params.set("radius", sanitizedState.mapRadius || String(MAP_SEARCH_RADIUS_METERS));
     }
 
     if (sanitizedState.checkIn) {
@@ -224,14 +276,16 @@ export const buildBookingSearchParams = (state: BookingSearchState) => {
 };
 
 export const normalizeSearchText = (value: string) =>
-    value
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .trim();
+    normalizeVietnameseText(value);
+
+export const isMapSearchState = (state: BookingSearchState) =>
+    Boolean(state.mapLat && state.mapLng);
 
 export const filterStaysByBookingSearch = (stays: PopularDestination[], state: BookingSearchState) => {
-    const normalizedLocation = normalizeSearchText(state.location);
+    const normalizedLocation =
+        state.locationGroup || isMapSearchState(state)
+            ? ""
+            : normalizeSearchText(state.location);
     const requiredGuests = getGuestCount(state.guests);
 
     return stays.filter((stay) => {

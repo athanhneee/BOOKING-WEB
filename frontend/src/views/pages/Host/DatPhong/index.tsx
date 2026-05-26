@@ -72,7 +72,7 @@ const DatPhong = () => {
     const summary = useMemo(() => {
         const displayStatuses = bookings.map((booking) => getBookingDisplayStatus(booking).normalizedStatus);
         const totalRevenue = bookings
-            .filter((booking, index) => ["paid", "confirmed", "checked_in", "completed"].includes(displayStatuses[index]))
+            .filter((_booking, index) => ["paid", "confirmed", "checked_in", "completed"].includes(displayStatuses[index]))
             .reduce((sum, booking) => sum + getBookingAmount(booking), 0);
 
         return [
@@ -179,7 +179,7 @@ const DatPhong = () => {
                                                             disabled={isBusy}
                                                             type="button"
                                                             onClick={() => {
-                                                                const reason = window.prompt("Lý do hủy/từ chối booking?") || "Host hủy hoặc từ chối booking";
+                                                                const reason = window.prompt("Lý do hủy/từ chối booking?") || "host hủy hoặc từ chối booking";
                                                                 void runAction(booking.bookingId, () => cancelHostBooking(booking.bookingId, reason));
                                                             }}
                                                             className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm text-rose-600 transition-colors hover:bg-rose-50"

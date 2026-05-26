@@ -13,9 +13,9 @@ const sidebarItems: Array<{
     label: string;
     icon: typeof LuUserRound;
 }> = [
-    { key: "profile", label: "Giới thiệu bản thân", icon: LuUserRound },
-    { key: "trips", label: "Chuyến đi trước đây", icon: LuPlaneTakeoff },
-];
+        { key: "profile", label: "Giới thiệu bản thân", icon: LuUserRound },
+        { key: "trips", label: "Chuyến đi trước đây", icon: LuPlaneTakeoff },
+    ];
 
 const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
     return (
@@ -72,7 +72,7 @@ const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
                                 >
                                     <Icon size={16} className={isActive ? "text-cyan-700" : "text-slate-400"} />
                                     <span className="flex-1 text-[15px] font-medium">{item.label}</span>
-                                    <LuChevronRight size={16} className={isActive ? "text-cyan-600" : "text-slate-300"} />
+                                    <LuChevronRight size={16} className={isActive ? "text-cyan-500" : "text-slate-300"} />
                                 </button>
                             );
                         })}
