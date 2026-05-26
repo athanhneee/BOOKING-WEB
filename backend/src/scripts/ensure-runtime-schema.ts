@@ -139,6 +139,7 @@ const ensureUsersSchema = async () => {
                 \`dob\` DATE NULL,
                 \`bio\` TEXT NULL,
                 \`avatar_url\` VARCHAR(1024) NULL,
+                \`avatar_key\` VARCHAR(500) NULL,
                 \`is_email_verified\` TINYINT(1) NOT NULL DEFAULT 0,
                 \`is_phone_verified\` TINYINT(1) NOT NULL DEFAULT 0,
                 \`is_host_verified\` TINYINT(1) NOT NULL DEFAULT 0,
@@ -167,6 +168,7 @@ const ensureUsersSchema = async () => {
         "`is_email_verified` TINYINT(1) NOT NULL DEFAULT 0 AFTER `bio`",
     );
     await ensureColumn("users", "avatar_url", "`avatar_url` VARCHAR(1024) NULL AFTER `bio`");
+    await ensureColumn("users", "avatar_key", "`avatar_key` VARCHAR(500) NULL AFTER `avatar_url`");
     await ensureColumn(
         "users",
         "is_phone_verified",
@@ -313,11 +315,113 @@ const ensureAuditLogsSchema = async () => {
     `);
 };
 
+const ensureMessagingSchema = async () => {
+    if (!(await tableExists("conversation"))) {
+        await sequelize.query(`
+            CREATE TABLE \`conversation\` (
+                \`conversation_id\` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                \`created_by_user_id\` BIGINT UNSIGNED NULL,
+                \`listing_id\` INT UNSIGNED NULL,
+                \`guest_user_id\` BIGINT UNSIGNED NULL,
+                \`host_user_id\` BIGINT UNSIGNED NULL,
+                \`booking_order_id\` INT UNSIGNED NULL,
+                \`dedupe_key\` VARCHAR(255) NULL,
+                \`last_message\` TEXT NULL,
+                \`last_message_at\` DATETIME NULL,
+                \`created_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                \`updated_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (\`conversation_id\`),
+                UNIQUE KEY \`uq_conversation_dedupe_key\` (\`dedupe_key\`),
+                INDEX \`idx_conversation_listing\` (\`listing_id\`),
+                INDEX \`idx_conversation_guest\` (\`guest_user_id\`),
+                INDEX \`idx_conversation_host\` (\`host_user_id\`),
+                INDEX \`idx_conversation_booking\` (\`booking_order_id\`),
+                INDEX \`idx_conversation_last_message_at\` (\`last_message_at\`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+    } else {
+        await ensureColumn("conversation", "last_message", "`last_message` TEXT NULL AFTER `dedupe_key`");
+        await ensureColumn("conversation", "last_message_at", "`last_message_at` DATETIME NULL AFTER `last_message`");
+        await ensureColumn("conversation", "guest_user_id", "`guest_user_id` BIGINT UNSIGNED NULL AFTER `listing_id`");
+        await ensureColumn("conversation", "host_user_id", "`host_user_id` BIGINT UNSIGNED NULL AFTER `guest_user_id`");
+        await ensureIndex("conversation", "idx_conversation_listing", "INDEX", "`listing_id`");
+        await ensureIndex("conversation", "idx_conversation_guest", "INDEX", "`guest_user_id`");
+        await ensureIndex("conversation", "idx_conversation_host", "INDEX", "`host_user_id`");
+        await ensureIndex("conversation", "idx_conversation_booking", "INDEX", "`booking_order_id`");
+        await ensureIndex("conversation", "idx_conversation_last_message_at", "INDEX", "`last_message_at`");
+    }
+
+    if (!(await tableExists("conversation_participant"))) {
+        await sequelize.query(`
+            CREATE TABLE \`conversation_participant\` (
+                \`conversation_id\` BIGINT UNSIGNED NOT NULL,
+                \`user_id\` BIGINT UNSIGNED NOT NULL,
+                \`role\` ENUM('guest','host','admin') NULL,
+                \`joined_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                \`last_read_at\` DATETIME NULL,
+                PRIMARY KEY (\`conversation_id\`, \`user_id\`),
+                INDEX \`idx_conversation_participant_user\` (\`user_id\`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+    } else {
+        await ensureColumn(
+            "conversation_participant",
+            "role",
+            "`role` ENUM('guest','host','admin') NULL AFTER `user_id`",
+        );
+        await ensureIndex(
+            "conversation_participant",
+            "idx_conversation_participant_user",
+            "INDEX",
+            "`user_id`",
+        );
+        await ensureEnumContains(
+            "conversation_participant",
+            "role",
+            ["guest", "host", "admin"],
+            "NULL",
+        );
+    }
+
+    if (!(await tableExists("message"))) {
+        await sequelize.query(`
+            CREATE TABLE \`message\` (
+                \`message_id\` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                \`conversation_id\` BIGINT UNSIGNED NOT NULL,
+                \`sender_id\` BIGINT UNSIGNED NOT NULL,
+                \`content\` TEXT NOT NULL,
+                \`message_type\` ENUM('text','image','system','file') NOT NULL DEFAULT 'text',
+                \`attachments_json\` LONGTEXT NULL,
+                \`created_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                \`updated_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (\`message_id\`),
+                INDEX \`idx_message_conversation_created\` (\`conversation_id\`, \`created_at\`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+    } else {
+        await ensureColumn(
+            "message",
+            "updated_at",
+            "`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `created_at`",
+        );
+        await ensureColumn("message", "attachments_json", "`attachments_json` LONGTEXT NULL AFTER `message_type`");
+        await ensureIndex("message", "idx_message_conversation_created", "INDEX", "`conversation_id`, `created_at`");
+        await ensureEnumContains(
+            "message",
+            "message_type",
+            ["text", "image", "system", "file"],
+            "NOT NULL",
+            "DEFAULT 'text'",
+        );
+    }
+};
+
 export const ensureRuntimeSchema = async () => {
     await ensureUsersSchema();
     await ensureRolesSchema();
     await ensureAuthOtpSchema();
     await ensureAuditLogsSchema();
+    await ensureMessagingSchema();
 };
 
 if (require.main === module) {

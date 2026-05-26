@@ -3,9 +3,11 @@ import { body, param, query } from "express-validator";
 
 import { isValidIsoDate } from "../../common/validation";
 import {
+    approveHostPayoutHandler,
     createAdminHostPayout,
     listAdminHostPayouts,
-    markAdminHostPayoutPaid,
+    markHostPayoutPaidHandler,
+    rejectHostPayoutHandler,
 } from "./payouts.controller";
 import { authenticate } from "../../middlewares/authenticate.middleware";
 import { requireRole } from "../../middlewares/require-role.middleware";
@@ -58,14 +60,29 @@ router.post(
     createAdminHostPayout,
 );
 
+router.patch("/:payoutId/approve", [payoutIdParamValidator], approveHostPayoutHandler);
+
+router.patch(
+    "/:payoutId/reject",
+    [
+        payoutIdParamValidator,
+        body("reason").isString().trim().notEmpty().withMessage("reason is required").isLength({ max: 2000 }),
+    ],
+    rejectHostPayoutHandler,
+);
+
 router.patch(
     "/:payoutId/paid",
     [
         payoutIdParamValidator,
-        body("paidAt").optional().isISO8601().withMessage("paidAt must be an ISO datetime"),
-        body("reference").isString().trim().notEmpty().withMessage("reference is required").isLength({ max: 255 }),
+        body("transferReference")
+            .isString()
+            .trim()
+            .notEmpty()
+            .withMessage("transferReference is required")
+            .isLength({ max: 255 }),
     ],
-    markAdminHostPayoutPaid,
+    markHostPayoutPaidHandler,
 );
 
 export default router;

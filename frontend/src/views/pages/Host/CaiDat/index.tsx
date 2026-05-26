@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PageHeader, ToggleSwitch } from "../shared";
 import { getInitials, hostCardClass, inputClassName, pageWrapperClass, primaryButtonClass, secondaryButtonClass } from "../sharedStyles";
+import type { ApiUser } from "../../../../models/entities/User";
+import { getMe, updateMe, updateMyAvatar } from "../../../../services/userService";
+import { uploadFileToR2 } from "../../../../services/api/uploadsApi";
 
 type SettingsTab = "profile" | "security" | "notifications" | "bank" | "locale";
 
@@ -22,6 +25,17 @@ const notificationItems = [
 
 const CaiDat = () => {
     const [tab, setTab] = useState<SettingsTab>("profile");
+    const [profile, setProfile] = useState<ApiUser | null>(null);
+    const [profileForm, setProfileForm] = useState({
+        fullName: "",
+        email: "",
+        phone: "",
+    });
+    const [profileMessage, setProfileMessage] = useState("");
+    const [profileError, setProfileError] = useState("");
+    const [savingProfile, setSavingProfile] = useState(false);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const avatarInputRef = useRef<HTMLInputElement | null>(null);
     const [notifications, setNotifications] = useState<Record<string, boolean>>({
         booking: true,
         checkout: true,
@@ -29,6 +43,78 @@ const CaiDat = () => {
         review: true,
         system: true,
     });
+
+    useEffect(() => {
+        let ignore = false;
+
+        const loadProfile = async () => {
+            try {
+                const result = await getMe();
+                if (ignore) return;
+
+                setProfile(result.user);
+                setProfileForm({
+                    fullName: result.user.fullName ?? result.user.name ?? "",
+                    email: result.user.email ?? "",
+                    phone: result.user.phone ?? "",
+                });
+            } catch (error) {
+                if (!ignore) {
+                    setProfileError(error instanceof Error ? error.message : "Không thể tải hồ sơ host.");
+                }
+            }
+        };
+
+        void loadProfile();
+
+        return () => {
+            ignore = true;
+        };
+    }, []);
+
+    const handleAvatarChange = async (file: File | undefined) => {
+        if (!file) return;
+
+        setProfileError("");
+        setProfileMessage("");
+        setUploadingAvatar(true);
+
+        try {
+            const uploaded = await uploadFileToR2(file, {
+                folder: "avatars",
+                maxSizeBytes: 5 * 1024 * 1024,
+            });
+            const result = await updateMyAvatar({
+                url: uploaded.publicUrl,
+                key: uploaded.key,
+            });
+            setProfile(result.user);
+            setProfileMessage("Đã cập nhật ảnh đại diện.");
+        } catch (error) {
+            setProfileError(error instanceof Error ? error.message : "Không thể cập nhật ảnh đại diện.");
+        } finally {
+            setUploadingAvatar(false);
+        }
+    };
+
+    const handleSaveProfile = async () => {
+        setProfileError("");
+        setProfileMessage("");
+        setSavingProfile(true);
+
+        try {
+            const result = await updateMe({
+                fullName: profileForm.fullName,
+                phone: profileForm.phone || null,
+            });
+            setProfile(result.user);
+            setProfileMessage("Đã lưu hồ sơ host.");
+        } catch (error) {
+            setProfileError(error instanceof Error ? error.message : "Không thể lưu hồ sơ host.");
+        } finally {
+            setSavingProfile(false);
+        }
+    };
 
     return (
         <div className={pageWrapperClass}>
@@ -51,20 +137,38 @@ const CaiDat = () => {
                 <div className={hostCardClass}>
                     {tab === "profile" ? (
                         <div className="space-y-6">
+                            {profileError ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{profileError}</div> : null}
+                            {profileMessage ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{profileMessage}</div> : null}
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-cyan-600 text-2xl font-semibold text-white">
-                                    {getInitials("Chủ Nhà")}
-                                </div>
-                                <button type="button" className={secondaryButtonClass}>Thay đổi ảnh</button>
+                                {profile?.avatarUrl ? (
+                                    <img src={profile.avatarUrl} alt={profile.fullName ?? profile.name ?? "Host"} className="h-20 w-20 rounded-full object-cover" />
+                                ) : (
+                                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-cyan-600 text-2xl font-semibold text-white">
+                                        {getInitials(profileForm.fullName || "Chủ Nhà")}
+                                    </div>
+                                )}
+                                <input
+                                    ref={avatarInputRef}
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    className="hidden"
+                                    onChange={(event) => {
+                                        void handleAvatarChange(event.target.files?.[0]);
+                                        event.target.value = "";
+                                    }}
+                                />
+                                <button type="button" disabled={uploadingAvatar} onClick={() => avatarInputRef.current?.click()} className={secondaryButtonClass}>
+                                    {uploadingAvatar ? "Đang upload..." : "Thay đổi ảnh"}
+                                </button>
                             </div>
                             <div className="grid gap-5 md:grid-cols-2">
-                                <input placeholder="Họ tên" className={inputClassName} />
-                                <input placeholder="Email" className={inputClassName} />
-                                <input placeholder="Số điện thoại" className={inputClassName} />
+                                <input value={profileForm.fullName} onChange={(event) => setProfileForm((current) => ({ ...current, fullName: event.target.value }))} placeholder="Họ tên" className={inputClassName} />
+                                <input value={profileForm.email} readOnly placeholder="Email" className={inputClassName} />
+                                <input value={profileForm.phone} onChange={(event) => setProfileForm((current) => ({ ...current, phone: event.target.value }))} placeholder="Số điện thoại" className={inputClassName} />
                                 <input placeholder="CMND/CCCD" className={inputClassName} />
                                 <input placeholder="Địa chỉ" className={`${inputClassName} md:col-span-2`} />
                             </div>
-                            <button type="button" className={primaryButtonClass}>Lưu thay đổi</button>
+                            <button type="button" disabled={savingProfile} onClick={handleSaveProfile} className={primaryButtonClass}>{savingProfile ? "Đang lưu..." : "Lưu thay đổi"}</button>
                         </div>
                     ) : null}
 

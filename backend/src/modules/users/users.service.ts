@@ -30,6 +30,7 @@ type UpdateOwnProfileInput = Partial<{
     dob: string | null;
     bio: string | null;
     avatarUrl: string | null;
+    avatarKey: string | null;
 }>;
 
 type AdminUpdateUserInput = UpdateOwnProfileInput &
@@ -129,6 +130,7 @@ export const serializeUser = async (
         dob: user.dateOfBirth,
         bio: user.bio,
         avatarUrl: user.avatarUrl ?? null,
+        avatarKey: user.avatarKey ?? null,
         status: user.status,
         roles,
         role: selectPrimaryRole(roles),
@@ -153,6 +155,7 @@ const buildProfileUpdates = (input: UpdateOwnProfileInput, currentFullName: stri
         ...(dateOfBirth !== undefined ? { dateOfBirth } : {}),
         ...(input.bio !== undefined ? { bio: input.bio } : {}),
         ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl?.trim() ? input.avatarUrl.trim() : null } : {}),
+        ...(input.avatarKey !== undefined ? { avatarKey: input.avatarKey?.trim() ? input.avatarKey.trim() : null } : {}),
     };
 };
 
@@ -271,6 +274,16 @@ export const updateCurrentUserProfile = async (actor: AuthenticatedUser, input: 
     return serializeUser(user);
 };
 
+export const updateCurrentUserAvatar = async (
+    actor: AuthenticatedUser,
+    input: { url: string; key?: string | null },
+) => {
+    return updateCurrentUserProfile(actor, {
+        avatarUrl: input.url,
+        avatarKey: input.key ?? null,
+    });
+};
+
 export const updateUserForAdmin = async (
     actor: AuthenticatedUser,
     userId: string,
@@ -345,6 +358,46 @@ export const updateUserForAdmin = async (
                 transaction,
             });
         }
+    });
+
+    return serializeUser(user, { maskContact: true });
+};
+
+export const updateUserAvatarForAdmin = async (
+    actor: AuthenticatedUser,
+    userId: string,
+    input: { url: string; key?: string | null },
+    context: RequestContext = {},
+) => {
+    assertAdminActor(actor);
+
+    const user = await findUserById(userId);
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    await withTransaction(async (transaction) => {
+        await saveUserUpdates(
+            user,
+            {
+                avatarUrl: input.url.trim(),
+                avatarKey: input.key?.trim() ? input.key.trim() : null,
+            },
+            transaction,
+        );
+        await createAuditLog({
+            actorId: actor.id,
+            action: "users.avatar_updated",
+            targetType: "user",
+            targetId: user._id,
+            metadata: {
+                avatarKey: input.key ?? null,
+            },
+            ipAddress: context.ipAddress ?? null,
+            userAgent: context.userAgent ?? null,
+            transaction,
+        });
     });
 
     return serializeUser(user, { maskContact: true });

@@ -9,6 +9,7 @@ import {
     getValidatedQuery,
 } from "../../common/validation";
 import {
+    approveHostPayout,
     createHostPayout,
     CreateHostPayoutInput,
     createPayoutAccount,
@@ -18,9 +19,9 @@ import {
     AdminPayoutListQuery,
     getHostPayoutAccounts,
     getHostPayouts,
-    MarkPayoutPaidInput,
     markHostPayoutPaid,
     PayoutListQuery,
+    rejectHostPayout,
     updatePayoutAccount,
     UpdatePayoutAccountInput,
 } from "./payouts.service";
@@ -110,15 +111,46 @@ export const createAdminHostPayout: RequestHandler = asyncHandler(async (req, re
     });
 });
 
-export const markAdminHostPayoutPaid: RequestHandler = asyncHandler(async (req, res) => {
+export const approveHostPayoutHandler: RequestHandler = asyncHandler(async (req, res) => {
     assertValidRequest(req);
 
     const params = getValidatedParams<{ payoutId: number }>(req);
-    const payload = getValidatedBody<MarkPayoutPaidInput>(req);
-    const result = await markHostPayoutPaid(params.payoutId, req.user!, payload, auditContextFromRequest(req));
+    const payout = await approveHostPayout({
+        payoutId: params.payoutId,
+        actorUserId: Number(req.user!.id),
+    });
 
     return sendSuccess(res, {
-        message: "Payout marked as paid",
-        data: result,
+        data: payout,
+    });
+});
+
+export const rejectHostPayoutHandler: RequestHandler = asyncHandler(async (req, res) => {
+    assertValidRequest(req);
+
+    const params = getValidatedParams<{ payoutId: number }>(req);
+    const payout = await rejectHostPayout({
+        payoutId: params.payoutId,
+        actorUserId: Number(req.user!.id),
+        reason: String(req.body.reason ?? ""),
+    });
+
+    return sendSuccess(res, {
+        data: payout,
+    });
+});
+
+export const markHostPayoutPaidHandler: RequestHandler = asyncHandler(async (req, res) => {
+    assertValidRequest(req);
+
+    const params = getValidatedParams<{ payoutId: number }>(req);
+    const payout = await markHostPayoutPaid({
+        payoutId: params.payoutId,
+        actorUserId: Number(req.user!.id),
+        transferReference: String(req.body.transferReference ?? ""),
+    });
+
+    return sendSuccess(res, {
+        data: payout,
     });
 });

@@ -5,14 +5,14 @@ import heroTwo from "../../assets/img/nabi.JPG";
 const photoCards = [
     {
         image: heroOne,
-        alt: "Không gian nghỉ dưỡng tại Minh Thanh Villa",
+        alt: "Không gian nghỉ dưỡng tạiminh thanh villa ",
         title: "Không gian nghỉ dưỡng riêng tư",
         description: "Biệt thự rộng rãi, tiện nghi cho gia đình và nhóm bạn tận hưởng kỳ nghỉ trọn vẹn.",
         className: "left-[8%] top-[12%] rotate-[-10deg]",
     },
     {
         image: heroTwo,
-        alt: "Khung cảnh thư giãn tại Minh Thanh Villa",
+        alt: "Khung cảnh thư giãn tạiminh thanh villa ",
         title: "Trải nghiệm thư giãn gần biển",
         description: "Bình yên, ấm cúng và luôn sẵn sàng cho những buổi sáng đầy nắng tại Vũng Tàu.",
         className: "right-[8%] bottom-[10%] rotate-[9deg]",

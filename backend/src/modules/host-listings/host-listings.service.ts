@@ -14,6 +14,7 @@ import {
 } from "../../common/listing-relations";
 import {
     ListingApiStatus,
+    getCoverImage,
     getDefaultDailyPrice,
     serializeListingImage,
     toApiListingStatus,
@@ -109,13 +110,20 @@ export type UpdateListingInput = Partial<
     status?: ListingApiStatus;
 };
 
-export type AddListingImagesInput = {
-    images: Array<{
-        url: string;
-        caption?: string | null;
-        sortOrder: number;
-        isCover?: boolean;
-    }>;
+type AddListingImageItem = {
+    url: string;
+    key?: string | null;
+    objectKey?: string | null;
+    originalFilename?: string | null;
+    displayTitle?: string | null;
+    altText?: string | null;
+    caption?: string | null;
+    sortOrder?: number;
+    isCover?: boolean;
+};
+
+export type AddListingImagesInput = Partial<AddListingImageItem> & {
+    images?: AddListingImageItem[];
 };
 
 export type ReplaceAmenitiesInput = {
@@ -163,6 +171,82 @@ const bookingBlockingStatuses = [pendingPaymentBlockingStatus, ...alwaysBlocking
 const uniqueNumbers = (values: number[] = []) => Array.from(new Set(values));
 const hasOwn = <T extends object>(value: T, key: keyof T) =>
     Object.prototype.hasOwnProperty.call(value, key);
+const defaultListingCity = "Vũng Tàu";
+const normalizeCoordinateValue = (path: "latitude" | "longitude", value: unknown) => {
+    const normalizedValue = typeof value === "string" ? value.trim().replace(",", ".") : value;
+    const coordinate = Number(normalizedValue);
+    const min = path === "latitude" ? -90 : -180;
+    const max = path === "latitude" ? 90 : 180;
+
+    if (!Number.isFinite(coordinate) || coordinate < min || coordinate > max) {
+        throw new ApiError(422, "Tọa độ chỗ nghỉ không hợp lệ", [
+            {
+                path,
+                msg: `${path} is invalid`,
+            },
+        ]);
+    }
+
+    return coordinate;
+};
+const normalizeCreateListingLocationInput = (input: CreateListingInput): CreateListingInput => {
+    const rawInput = input as CreateListingInput & {
+        city?: unknown;
+        district?: unknown;
+        latitude?: unknown;
+        longitude?: unknown;
+    };
+    const district = typeof rawInput.district === "string" && rawInput.district.trim()
+        ? rawInput.district
+        : defaultListingCity;
+
+    return {
+        ...input,
+        city: defaultListingCity,
+        district,
+        latitude: normalizeCoordinateValue("latitude", rawInput.latitude),
+        longitude: normalizeCoordinateValue("longitude", rawInput.longitude),
+    };
+};
+const normalizeUpdateListingLocationInput = (input: UpdateListingInput): UpdateListingInput => {
+    const rawInput = input as UpdateListingInput & {
+        city?: unknown;
+        district?: unknown;
+        latitude?: unknown;
+        longitude?: unknown;
+    };
+    const hasLocationField =
+        hasOwn(input, "addressLine") ||
+        hasOwn(input, "ward") ||
+        hasOwn(input, "district") ||
+        hasOwn(input, "city") ||
+        hasOwn(input, "latitude") ||
+        hasOwn(input, "longitude");
+    const normalized: UpdateListingInput = {
+        ...input,
+    };
+
+    if (hasLocationField) {
+        normalized.city = defaultListingCity;
+    }
+
+    if (hasOwn(input, "district") || hasLocationField) {
+        normalized.district =
+            typeof rawInput.district === "string" && rawInput.district.trim()
+                ? rawInput.district
+                : defaultListingCity;
+    }
+
+    if (hasOwn(input, "latitude")) {
+        normalized.latitude = normalizeCoordinateValue("latitude", rawInput.latitude);
+    }
+
+    if (hasOwn(input, "longitude")) {
+        normalized.longitude = normalizeCoordinateValue("longitude", rawInput.longitude);
+    }
+
+    return normalized;
+};
 
 const sensitiveListingFields = new Set<keyof UpdateListingInput>([
     "description",
@@ -339,6 +423,8 @@ const assertStatusTransition = (
         draft: ["draft", "pending_approval"],
         pending_approval: ["draft", "pending_approval"],
         active: ["active", "inactive"],
+        approved: ["approved", "inactive"],
+        published: ["published", "inactive"],
         inactive: ["active", "inactive"],
         rejected: ["draft"],
         suspended: ["inactive"],
@@ -530,7 +616,9 @@ const serializeHostListingSummary = async (listing: ListingDocument) => {
         bathrooms: listing.bathrooms,
         basePrice: listing.basePrice,
         currency: listing.currency,
-        imageUrl: images[0]?.url ?? null,
+        imageUrl: getCoverImage(images)?.url ?? null,
+        coverImage: getCoverImage(images) ? serializeListingImage(getCoverImage(images)!) : null,
+        images: images.map(serializeListingImage),
     };
 };
 
@@ -593,7 +681,7 @@ export const createListing = async (
         userId,
         isAdmin: Boolean(options.isAdmin),
     };
-    const sanitizedInput = sanitizeCreateListingInput(input);
+    const sanitizedInput = sanitizeCreateListingInput(normalizeCreateListingLocationInput(input));
     const amenityIds = uniqueNumbers(input.amenityIds ?? []);
     const nextStatus = input.status === "pending_approval" ? "pending_approval" : "draft";
 
@@ -690,7 +778,7 @@ export const getListingDetail = async (listingId: number, actor: HostActor) => {
 };
 
 export const updateListing = async (listingId: number, actor: HostActor, input: UpdateListingInput) => {
-    const sanitizedInput = sanitizeUpdateListingInput(input);
+    const sanitizedInput = sanitizeUpdateListingInput(normalizeUpdateListingLocationInput(input));
     const updated = await sequelize.transaction(async (transaction) => {
         const listing = await getListingForHost(listingId, actor, transaction);
         const previousStatus = listing.status;
@@ -779,13 +867,41 @@ export const deleteListing = async (listingId: number, actor: HostActor) => {
 };
 
 export const addListingImages = async (listingId: number, actor: HostActor, input: AddListingImagesInput) => {
+    const inputImages: AddListingImageItem[] = Array.isArray(input.images)
+        ? input.images
+        : input.url
+            ? [
+                  {
+                      url: input.url,
+                      key: input.key,
+                      objectKey: input.objectKey,
+                      originalFilename: input.originalFilename,
+                      displayTitle: input.displayTitle,
+                      altText: input.altText,
+                      caption: input.caption,
+                      sortOrder: input.sortOrder,
+                      isCover: input.isCover,
+                  },
+              ]
+            : [];
+
+    if (inputImages.length === 0) {
+        throw new ApiError(422, "Validation error", [
+            {
+                path: "images",
+                msg: "At least one image is required",
+            },
+        ]);
+    }
+
     const result = await sequelize.transaction(async (transaction) => {
         const listing = await getListingForHost(listingId, actor, transaction);
         const currentImages = await getListingImagesForListing(listing, transaction);
         const existingSortOrders = new Set(currentImages.map((image) => image.sortOrder));
         const inputSortOrders = new Set<number>();
+        let nextSortOrder = currentImages.reduce((max, image) => Math.max(max, image.sortOrder), -1) + 1;
 
-        if (currentImages.length + input.images.length > maxImagesPerListing) {
+        if (currentImages.length + inputImages.length > maxImagesPerListing) {
             throw new ApiError(422, "Validation error", [
                 {
                     path: "images",
@@ -794,10 +910,21 @@ export const addListingImages = async (listingId: number, actor: HostActor, inpu
             ]);
         }
 
-        for (const image of input.images) {
-            assertSafeImageUrl(image.url);
+        if (inputImages.filter((image) => image.isCover).length > 1) {
+            throw new ApiError(422, "Validation error", [
+                {
+                    path: "images.isCover",
+                    msg: "Only one image can be marked as cover",
+                },
+            ]);
+        }
 
-            if (existingSortOrders.has(image.sortOrder) || inputSortOrders.has(image.sortOrder)) {
+        const normalizedImages = inputImages.map((image) => {
+            assertSafeImageUrl(image.url);
+            const sortOrder = image.sortOrder ?? nextSortOrder++;
+            const objectKey = image.objectKey ?? image.key ?? null;
+
+            if (existingSortOrders.has(sortOrder) || inputSortOrders.has(sortOrder)) {
                 throw new ApiError(422, "Validation error", [
                     {
                         path: "images",
@@ -806,14 +933,44 @@ export const addListingImages = async (listingId: number, actor: HostActor, inpu
                 ]);
             }
 
-            inputSortOrders.add(image.sortOrder);
+            inputSortOrders.add(sortOrder);
+
+            return {
+                ...image,
+                objectKey,
+                originalFilename: sanitizeNullableSingleLineText(image.originalFilename),
+                displayTitle: sanitizeNullableSingleLineText(image.displayTitle),
+                altText: sanitizeNullableSingleLineText(image.altText) ?? listing.title ?? "Ảnh chỗ nghỉ",
+                caption: sanitizeNullableSingleLineText(image.caption),
+                sortOrder,
+            };
+        });
+
+        const hasNewCoverImage = normalizedImages.some((image) => image.isCover);
+
+        if (hasNewCoverImage) {
+            await ListingImage.update(
+                {
+                    isCover: false,
+                },
+                {
+                    where: {
+                        listingId: listing.listingId,
+                    },
+                    transaction,
+                },
+            );
         }
 
         const createdRows = await ListingImage.bulkCreate(
-            input.images.map((image) => ({
+            normalizedImages.map((image) => ({
                 listingId: listing.listingId,
                 url: image.url,
-                caption: sanitizeNullableSingleLineText(image.caption),
+                objectKey: image.objectKey,
+                originalFilename: image.originalFilename,
+                displayTitle: image.displayTitle,
+                altText: image.altText,
+                caption: image.caption,
                 sortOrder: image.sortOrder,
                 isCover: Boolean(image.isCover),
             })),
@@ -823,11 +980,21 @@ export const addListingImages = async (listingId: number, actor: HostActor, inpu
         const appendedImages: ListingImageRecord[] = createdRows.map((row) => ({
             imageId: Number(row.id),
             url: row.url,
+            objectKey: row.objectKey,
+            key: row.objectKey,
+            originalFilename: row.originalFilename,
+            displayTitle: row.displayTitle,
+            altText: row.altText,
             caption: row.caption,
             sortOrder: row.sortOrder,
+            isCover: row.isCover,
         }));
 
-        listing.images = [...currentImages, ...appendedImages].sort(
+        const existingImagesForListingJson = hasNewCoverImage
+            ? currentImages.map((image) => ({ ...image, isCover: false }))
+            : currentImages;
+
+        listing.images = [...existingImagesForListingJson, ...appendedImages].sort(
             (left, right) => left.sortOrder - right.sortOrder,
         );
         const forcedPendingApproval = markPublishedListingPendingIfSensitive(listing, actor, true);
@@ -872,6 +1039,67 @@ export const deleteListingImage = async (listingId: number, imageId: number, act
             forcedPendingApproval,
         }, transaction);
     });
+};
+
+export const setListingImageCover = async (listingId: number, imageId: number, actor: HostActor) => {
+    const updatedImage = await sequelize.transaction(async (transaction) => {
+        const listing = await getListingForHost(listingId, actor, transaction);
+        const image = await ListingImage.findOne({
+            where: {
+                listingId: listing.listingId,
+                id: imageId,
+            },
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+
+        if (!image) {
+            throw new ApiError(404, "Image not found");
+        }
+
+        await ListingImage.update(
+            {
+                isCover: false,
+            },
+            {
+                where: {
+                    listingId: listing.listingId,
+                },
+                transaction,
+            },
+        );
+
+        await image.update({ isCover: true }, { transaction });
+
+        const currentImages = await getListingImagesForListing(listing, transaction);
+        listing.images = currentImages.map((item) => ({
+            ...item,
+            isCover: item.imageId === imageId,
+        }));
+        const forcedPendingApproval = markPublishedListingPendingIfSensitive(listing, actor, true);
+        await listing.save({ transaction });
+        await writeListingAudit(actor, "host_listing.images.set_cover", listing.listingId, {
+            imageId,
+            forcedPendingApproval,
+        }, transaction);
+
+        return image;
+    });
+
+    return {
+        image: serializeListingImage({
+            imageId: Number(updatedImage.id),
+            url: updatedImage.url,
+            objectKey: updatedImage.objectKey,
+            key: updatedImage.objectKey,
+            originalFilename: updatedImage.originalFilename,
+            displayTitle: updatedImage.displayTitle,
+            altText: updatedImage.altText,
+            caption: updatedImage.caption,
+            sortOrder: updatedImage.sortOrder,
+            isCover: true,
+        }),
+    };
 };
 
 export const replaceListingAmenities = async (listingId: number, actor: HostActor, input: ReplaceAmenitiesInput) => {

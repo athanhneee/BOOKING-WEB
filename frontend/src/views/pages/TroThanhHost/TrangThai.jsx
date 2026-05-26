@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { APP_ROUTES } from "../../../config/routes";
-import { getHostRegisterStatus } from "../../../services/hostService";
+import { getMyHostApplication } from "../../../services/api/hostApplicationService";
 
 const statusText = {
     pending: "Hồ sơ đang chờ Admin duyệt",
@@ -19,7 +19,7 @@ const TrangThaiHost = () => {
             setLoading(true);
             setError("");
             try {
-                const result = await getHostRegisterStatus();
+                const result = await getMyHostApplication();
                 setData(result);
             } catch (fetchError) {
                 setError(fetchError instanceof Error ? fetchError.message : "Không thể tải trạng thái host.");
@@ -37,7 +37,7 @@ const TrangThaiHost = () => {
             <div className="mx-auto max-w-3xl rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-700">Trạng thái Host</p>
                 <h1 className="mt-3 text-3xl font-bold text-gray-900">Theo dõi hồ sơ chủ nhà</h1>
-                <p className="mt-2 text-sm text-gray-500">Dữ liệu lấy thật từ /api/host/register/status.</p>
+                
 
                 {loading ? <div className="mt-8 rounded-2xl bg-gray-50 p-6 text-center text-gray-500">Đang tải trạng thái...</div> : null}
                 {error ? <div className="mt-8 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}

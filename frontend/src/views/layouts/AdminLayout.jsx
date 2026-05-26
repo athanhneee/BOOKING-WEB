@@ -1,4 +1,4 @@
-import { FiBell, FiClipboard, FiGrid, FiLogOut, FiMenu, FiShield, FiUsers, FiX } from "react-icons/fi";
+import { FiBell, FiClipboard, FiFileText, FiGrid, FiLogOut, FiMenu, FiShield, FiUsers, FiX } from "react-icons/fi";
 import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import logo from "../../assets/img/logo_mau.svg";
 import { APP_ROUTES } from "../../config/routes";
@@ -10,6 +10,7 @@ const adminNavItems = [
     { id: "tong-quan", label: "Tổng quan", to: APP_ROUTES.adminOverview, icon: FiGrid },
     { id: "nguoi-dung", label: "Người dùng", to: APP_ROUTES.adminUsers, icon: FiUsers },
     { id: "kiem-duyet", label: "Kiểm duyệt", to: APP_ROUTES.adminModeration, icon: FiClipboard },
+    { id: "ho-so-host", label: "Hồ sơ host", to: APP_ROUTES.adminHostApplications, icon: FiFileText },
     { id: "phan-quyen", label: "Phân quyền", to: APP_ROUTES.adminRoles, icon: FiShield },
 ];
 
@@ -17,7 +18,8 @@ const pageMeta = [
     { path: APP_ROUTES.adminOverview, title: "Tổng quan Admin", subtitle: "Dữ liệu tổng quan " },
     { path: APP_ROUTES.adminUsers, title: "Quản lý người dùng", subtitle: "Tìm kiếm, khóa/mở khóa và cập nhật vai trò người dùng." },
     { path: APP_ROUTES.adminModeration, title: "Kiểm duyệt bài đăng", subtitle: "Duyệt hoặc từ chối listing đang chờ duyệt." },
-    { path: APP_ROUTES.adminRoles, title: "Phân quyền hệ thống", subtitle: "Cập nhật role người dùng bằng API admin users." },
+    { path: APP_ROUTES.adminHostApplications, title: "Hồ sơ host", subtitle: "Duyệt hồ sơ host." },
+    { path: APP_ROUTES.adminRoles, title: "Phân quyền hệ thống", subtitle: "Cập nhật role người dùng " },
 ];
 
 const AdminLayout = () => {

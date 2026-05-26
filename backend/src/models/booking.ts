@@ -19,6 +19,7 @@ import {
 
 export const bookingStatusValues = [
     "pending",
+    "pending_host",
     "pending_payment",
     "confirmed",
     "paid",

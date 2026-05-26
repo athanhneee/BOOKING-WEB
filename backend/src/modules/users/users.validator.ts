@@ -26,6 +26,11 @@ const avatarUrlSchema = z.preprocess(
     z.string().trim().url("avatarUrl must be a valid URL").max(1024).nullable().optional(),
 );
 
+const avatarKeySchema = z.preprocess(
+    (value) => (value === "" ? null : value),
+    z.string().trim().max(500).nullable().optional(),
+);
+
 const userStatusSchema = z.enum(["active", "inactive", "blocked", "suspended", "deleted", "locked"]);
 const userRoleSchema = z.enum(["guest", "host", "moderator", "admin"]);
 
@@ -46,6 +51,13 @@ const baseProfileBodySchema = z.object({
 });
 
 export const updateMeBodySchema = baseProfileBodySchema.strict();
+
+export const updateAvatarBodySchema = z
+    .object({
+        url: z.string().trim().url("url must be a valid URL").max(1024),
+        key: avatarKeySchema,
+    })
+    .strict();
 
 export const adminUpdateUserBodySchema = baseProfileBodySchema
     .extend({

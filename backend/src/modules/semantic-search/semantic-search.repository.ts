@@ -17,6 +17,7 @@ import {
     ListingVectorPayload,
     SemanticSearchFilters,
     SemanticSearchItem,
+    semanticPublicListingStatuses,
 } from "./semantic-search.types";
 import {
     buildLocationKeys,
@@ -273,7 +274,7 @@ export const getActiveListingIndexRecords = async (
 ): Promise<ListingIndexRecord[]> => {
     const listings = await Listing.findAll({
         where: {
-            status: "active",
+            status: { [Op.in]: semanticPublicListingStatuses },
             deletedAt: null,
         },
         order: [["listingId", "ASC"]],
@@ -385,7 +386,7 @@ export const buildListingVectorPayload = (record: ListingIndexRecord): ListingVe
         property_type: listing.propertyType,
         room_type: listing.roomType,
 
-        status: "active",
+        status: listing.status as ListingVectorPayload["status"],
     };
 };
 
@@ -398,7 +399,7 @@ export const findAvailableListingItems = async (
 
     const where: Record<string, unknown> = {
         listingId: { [Op.in]: listingIds },
-        status: "active",
+        status: { [Op.in]: semanticPublicListingStatuses },
         deletedAt: null,
         maxGuests: { [Op.gte]: filters.guests },
     };
@@ -535,7 +536,7 @@ export const keywordSearchFallback = async (
     const keyword = `%${filters.query.trim()}%`;
 
     const where: Record<string, unknown> = {
-        status: "active",
+        status: { [Op.in]: semanticPublicListingStatuses },
         deletedAt: null,
         maxGuests: { [Op.gte]: filters.guests },
         [Op.or]: [

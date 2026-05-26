@@ -4,6 +4,7 @@ import type { BookingDocument, BookingStatus } from "../models/booking";
 
 export const alwaysBlockingBookingStatuses = [
     "pending",
+    "pending_host",
     "confirmed",
     "paid",
     "checked_in",

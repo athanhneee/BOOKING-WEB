@@ -25,6 +25,7 @@ export const getListingImagesForListing = async (
             listingId: listing.listingId,
         },
         order: [
+            ["isCover", "DESC"],
             ["sortOrder", "ASC"],
             ["id", "ASC"],
         ],
@@ -34,8 +35,25 @@ export const getListingImagesForListing = async (
     const normalizedImages = rows.map<ListingImageRecord>((row) => ({
         imageId: Number(row.id),
         url: row.url,
+        objectKey: row.objectKey,
+        key: row.objectKey,
         caption: row.caption,
+
+        // AI image label fields
+        displayTitle: row.displayTitle,
+        altText: row.altText,
+        aiImageType: row.aiImageType,
+        aiSceneTags: row.aiSceneTags,
+        aiAmenityTags: row.aiAmenityTags,
+        aiDescription: row.aiDescription,
+        aiConfidence: row.aiConfidence,
+        aiQualityWarnings: row.aiQualityWarnings,
+        aiAnalysisStatus: row.aiAnalysisStatus,
+        aiErrorMessage: row.aiErrorMessage,
+        aiAnalyzedAt: row.aiAnalyzedAt,
+
         sortOrder: row.sortOrder,
+        isCover: row.isCover,
     }));
     const normalizedImageIds = new Set(normalizedImages.map((image) => image.imageId));
 
@@ -131,20 +149,19 @@ export const getAvailabilityCalendarMap = async (
         listingIds.length === 0
             ? []
             : await AvailabilityCalendar.findAll({
-                  where: {
-                      listingId: {
-                          [Op.in]: listingIds,
-                      },
-                  },
-                  order: [
-                      ["listingId", "ASC"],
-                      ["date", "ASC"],
-                  ],
-                  transaction,
-              });
+                where: {
+                    listingId: {
+                        [Op.in]: listingIds,
+                    },
+                },
+                order: [
+                    ["listingId", "ASC"],
+                    ["date", "ASC"],
+                ],
+                transaction,
+            });
 
     const rowsByListing = new Map<number, ListingAvailabilityDayRecord[]>();
-
     for (const row of rows) {
         const current = rowsByListing.get(row.listingId) ?? [];
         current.push({
@@ -180,17 +197,17 @@ export const getListingAmenityIdsMap = async (
         listingIds.length === 0
             ? []
             : await ListingAmenity.findAll({
-                  where: {
-                      listingId: {
-                          [Op.in]: listingIds,
-                      },
-                  },
-                  order: [
-                      ["listingId", "ASC"],
-                      ["amenityId", "ASC"],
-                  ],
-                  transaction,
-              });
+                where: {
+                    listingId: {
+                        [Op.in]: listingIds,
+                    },
+                },
+                order: [
+                    ["listingId", "ASC"],
+                    ["amenityId", "ASC"],
+                ],
+                transaction,
+            });
 
     const rowsByListing = new Map<number, number[]>();
 
@@ -217,18 +234,19 @@ export const getListingImagesMap = async (
         listingIds.length === 0
             ? []
             : await ListingImage.findAll({
-                  where: {
-                      listingId: {
-                          [Op.in]: listingIds,
-                      },
-                  },
-                  order: [
-                      ["listingId", "ASC"],
-                      ["sortOrder", "ASC"],
-                      ["id", "ASC"],
-                  ],
-                  transaction,
-              });
+                where: {
+                    listingId: {
+                        [Op.in]: listingIds,
+                    },
+                },
+                order: [
+                    ["listingId", "ASC"],
+                    ["isCover", "DESC"],
+                    ["sortOrder", "ASC"],
+                    ["id", "ASC"],
+                ],
+                transaction,
+            });
 
     const rowsByListing = new Map<number, ListingImageRecord[]>();
 
@@ -237,8 +255,23 @@ export const getListingImagesMap = async (
         current.push({
             imageId: Number(row.id),
             url: row.url,
+            objectKey: row.objectKey,
+            key: row.objectKey,
+            originalFilename: row.originalFilename,
+            displayTitle: row.displayTitle,
+            altText: row.altText,
             caption: row.caption,
+            aiImageType: row.aiImageType,
+            aiSceneTags: row.aiSceneTags,
+            aiAmenityTags: row.aiAmenityTags,
+            aiDescription: row.aiDescription,
+            aiConfidence: row.aiConfidence,
+            aiQualityWarnings: row.aiQualityWarnings,
+            aiAnalysisStatus: row.aiAnalysisStatus,
+            aiErrorMessage: row.aiErrorMessage,
+            aiAnalyzedAt: row.aiAnalyzedAt,
             sortOrder: row.sortOrder,
+            isCover: row.isCover,
         });
         rowsByListing.set(row.listingId, current);
     }

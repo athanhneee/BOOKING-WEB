@@ -5,18 +5,91 @@ import { Link, useParams } from "react-router-dom";
 import logo from "../../../assets/img/logo_mau.svg";
 import type { ApiBooking } from "../../../models/entities/Booking";
 import { getBookingDetail } from "../../../services/bookingService";
-import { createPayment, type PaymentMethod } from "../../../services/paymentService";
+import {
+    createPayment,
+    getPaymentMethods,
+    type PaymentMethod,
+    type PaymentMethodAvailability,
+} from "../../../services/paymentService";
 import { daysBetween, formatCurrency, formatDate } from "../Host/sharedStyles";
+
+const defaultPaymentMethods: PaymentMethodAvailability[] = [
+    { method: "vnpay", label: "VNPay", available: true },
+    { method: "momo", label: "MoMo", available: false },
+];
+
+function getRemainingPaymentSeconds(booking: any): number {
+    if (typeof booking?.remainingPaymentSeconds === "number") {
+        return Math.max(0, booking.remainingPaymentSeconds);
+    }
+
+    const expiresAt = booking?.paymentExpiresAt ?? booking?.lockedUntil;
+
+    if (!expiresAt) {
+        return 0;
+    }
+
+    return Math.max(
+        0,
+        Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000),
+    );
+}
+
+const getErrorStatus = (error: unknown) => {
+    if (!error || typeof error !== "object") {
+        return undefined;
+    }
+
+    const candidate = error as { status?: number; response?: { status?: number } };
+    return candidate.response?.status ?? candidate.status;
+};
 
 const GuestPayment = () => {
     const { bookingId } = useParams();
 
     const [booking, setBooking] = useState<ApiBooking | null>(null);
     const [method, setMethod] = useState<PaymentMethod>("vnpay");
-    const [remaining, setRemaining] = useState(15 * 60);
+    const [paymentMethods, setPaymentMethods] = useState<PaymentMethodAvailability[]>(defaultPaymentMethods);
+    const [remaining, setRemaining] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        let ignore = false;
+
+        const loadPaymentMethods = async () => {
+            try {
+                const result = await getPaymentMethods();
+
+                if (ignore) {
+                    return;
+                }
+
+                const methods = result.items.length > 0 ? result.items : defaultPaymentMethods;
+                setPaymentMethods(methods);
+                setMethod((currentMethod) => {
+                    const current = methods.find((item) => item.method === currentMethod);
+
+                    if (current?.available !== false) {
+                        return currentMethod;
+                    }
+
+                    return methods.find((item) => item.available)?.method ?? "vnpay";
+                });
+            } catch {
+                if (!ignore) {
+                    setPaymentMethods(defaultPaymentMethods);
+                }
+            }
+        };
+
+        void loadPaymentMethods();
+
+        return () => {
+            ignore = true;
+        };
+    }, []);
 
     useEffect(() => {
         if (!bookingId) {
@@ -36,6 +109,7 @@ const GuestPayment = () => {
 
                 if (!ignore) {
                     setBooking(result);
+                    setRemaining(getRemainingPaymentSeconds(result));
                 }
             } catch (loadError) {
                 if (!ignore) {
@@ -63,8 +137,31 @@ const GuestPayment = () => {
         return () => window.clearInterval(timer);
     }, []);
 
+    const vnpayMethod = paymentMethods.find((item) => item.method === "vnpay");
+    const momoMethod = paymentMethods.find((item) => item.method === "momo");
+    const isVnpayAvailable = vnpayMethod?.available !== false;
+    const isMomoAvailable = momoMethod?.available !== false;
+    const momoUnavailableReason = "MoMo chưa được cấu hình trên máy chủ. Vui lòng chọn VNPay.";
+    const selectedMethod = paymentMethods.find((item) => item.method === method);
+    const isSelectedMethodAvailable = selectedMethod?.available !== false;
+    const selectedMethodUnavailableReason =
+        method === "momo"
+            ? momoUnavailableReason
+            : selectedMethod?.unavailableReason ?? "Phương thức thanh toán chưa khả dụng.";
+    const isExpired = remaining <= 0;
+
     const handlePay = async () => {
         if (!booking) return;
+
+        if (isExpired) {
+            setError("Phiên giữ chỗ đã hết hạn, vui lòng đặt lại.");
+            return;
+        }
+
+        if (!isSelectedMethodAvailable) {
+            setError(selectedMethodUnavailableReason);
+            return;
+        }
 
         setIsSubmitting(true);
         setError("");
@@ -75,9 +172,9 @@ const GuestPayment = () => {
                 method,
             });
 
-            if (method === "vnpay") {
+            if (method === "vnpay" || method === "momo") {
                 if (!payment.paymentUrl) {
-                    throw new Error("Backend chưa trả về paymentUrl VNPay.");
+                    throw new Error(`Đang xảy ra lỗi khi thanh toán bằng ${method === "vnpay" ? "VNPay" : "MoMo"}.`);
                 }
 
                 window.location.assign(payment.paymentUrl);
@@ -86,6 +183,12 @@ const GuestPayment = () => {
 
             window.location.assign(`/thanh-toan/ket-qua?paymentId=${payment.paymentId}&bookingId=${payment.bookingId}&status=${payment.paymentStatus}`);
         } catch (submitError) {
+            if (getErrorStatus(submitError) === 409) {
+                setError("Phiên giữ chỗ đã hết hạn, lịch đã được mở lại. Vui lòng đặt lại.");
+                setRemaining(0);
+                return;
+            }
+
             setError(submitError instanceof Error ? submitError.message : "Không tạo được thanh toán.");
         } finally {
             setIsSubmitting(false);
@@ -220,8 +323,9 @@ const GuestPayment = () => {
                         <div className="grid gap-3">
                             <button
                                 type="button"
-                                onClick={() => setMethod("vnpay")}
-                                className={`rounded-xl border p-4 text-left font-semibold ${method === "vnpay"
+                                onClick={() => isVnpayAvailable && setMethod("vnpay")}
+                                disabled={!isVnpayAvailable}
+                                className={`rounded-xl border p-4 text-left font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${method === "vnpay"
                                     ? "border-cyan-400 bg-cyan-50 text-cyan-700"
                                     : "border-gray-200 text-gray-700"
                                     }`}
@@ -234,25 +338,22 @@ const GuestPayment = () => {
 
                             <button
                                 type="button"
-                                onClick={() => setMethod("bank_transfer")}
-                                className={`rounded-xl border p-4 text-left font-semibold ${method === "bank_transfer"
+                                onClick={() => isMomoAvailable && setMethod("momo")}
+                                disabled={!isMomoAvailable}
+                                className={`rounded-xl border p-4 text-left font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${method === "momo"
                                     ? "border-cyan-400 bg-cyan-50 text-cyan-700"
                                     : "border-gray-200 text-gray-700"
                                     }`}
                             >
-                                Chuyển khoản ngân hàng
+                                Thanh toán MoMo
+                                {!isMomoAvailable ? (
+                                    <span className="mt-1 block text-xs font-medium text-amber-600">
+                                        {momoUnavailableReason}
+                                    </span>
+                                ) : null}
                             </button>
 
-                            <button
-                                type="button"
-                                onClick={() => setMethod("cod")}
-                                className={`rounded-xl border p-4 text-left font-semibold ${method === "cod"
-                                    ? "border-cyan-400 bg-cyan-50 text-cyan-700"
-                                    : "border-gray-200 text-gray-700"
-                                    }`}
-                            >
-                                Thanh toán khi nhận phòng
-                            </button>
+
                         </div>
 
                         <p className="text-sm font-medium text-gray-700">
@@ -262,6 +363,12 @@ const GuestPayment = () => {
                             </strong>
                         </p>
 
+                        {isExpired && (
+                            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                Phiên giữ chỗ đã hết hạn, lịch đã được mở lại. Vui lòng đặt lại nếu bạn vẫn muốn thuê căn này.
+                            </div>
+                        )}
+
                         {error ? (
                             <p className="rounded-xl bg-rose-50 p-3 text-sm font-semibold text-rose-600">{error}</p>
                         ) : null}
@@ -269,7 +376,7 @@ const GuestPayment = () => {
                         <button
                             type="button"
                             onClick={handlePay}
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || isExpired || !selectedMethod || !isSelectedMethodAvailable}
                             className="w-full rounded-xl bg-cyan-600 px-4 py-3 font-medium text-white transition-colors hover:bg-cyan-700 disabled:opacity-60"
                         >
                             {isSubmitting ? (
@@ -279,6 +386,8 @@ const GuestPayment = () => {
                                 </span>
                             ) : method === "vnpay" ? (
                                 "Thanh toán qua VNPay"
+                            ) : method === "momo" ? (
+                                "Thanh toán qua MoMo"
                             ) : (
                                 "Xác nhận thanh toán"
                             )}

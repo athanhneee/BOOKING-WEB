@@ -338,6 +338,27 @@ describe("Listings endpoint contracts", () => {
         assert.equal(capturedCreatePayload.payload!.status, "pending_approval");
     });
 
+    it("allows missing district and city while normalizing comma decimal coordinates", async () => {
+        const payload: Record<string, unknown> = {
+            ...createListingPayload(),
+            latitude: "10,3456",
+            longitude: "107,0842",
+        };
+        delete payload.city;
+        delete payload.district;
+
+        const response = await request(app)
+            .post("/api/host/listings")
+            .set(hostAuth)
+            .send(payload);
+
+        assert.equal(response.status, 201);
+        assert.equal(capturedCreatePayload.payload!.city, undefined);
+        assert.equal(capturedCreatePayload.payload!.district, undefined);
+        assert.equal(capturedCreatePayload.payload!.latitude, 10.3456);
+        assert.equal(capturedCreatePayload.payload!.longitude, 107.0842);
+    });
+
     it("rejects invalid listing create input before calling the service", async () => {
         const previousCapturedCreatePayload = capturedCreatePayload;
         const response = await request(app)

@@ -167,11 +167,17 @@ const ChoNghi = () => {
                                         <tr key={listing.listingId}>
                                             <td className="px-4 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <img
-                                                        src={listing.imageUrl || "https://placehold.co/160x100?text=Villa"}
-                                                        alt={listing.title}
-                                                        className="h-16 w-24 rounded-xl object-cover"
-                                                    />
+                                                    {listing.imageUrl ? (
+                                                        <img
+                                                            src={listing.imageUrl}
+                                                            alt={listing.title}
+                                                            className="h-16 w-24 rounded-xl object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-16 w-24 items-center justify-center rounded-xl bg-slate-100 text-xs font-medium text-slate-500">
+                                                            Chưa có ảnh
+                                                        </div>
+                                                    )}
                                                     <div>
                                                         <p className="font-semibold text-gray-900">{listing.title}</p>
                                                         <p className="mt-1 text-xs text-gray-500">{[listing.addressLine, listing.ward, listing.district, listing.city].filter(Boolean).join(", ")}</p>

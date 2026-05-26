@@ -189,7 +189,7 @@ describe("Bookings service transaction-safe business rules", () => {
         });
 
         assert.equal(result.bookingId, 9001);
-        assert.equal(result.status, "confirmed");
+        assert.equal(result.status, "pending_payment");
         assert.equal(result.subtotalAmount, 2000000);
         assert.equal(result.cleaningFeeAmount, 100000);
         assert.equal(result.serviceFeeAmount, 200000);

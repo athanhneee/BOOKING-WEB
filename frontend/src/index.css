@@ -2,11 +2,14 @@
 @import "tailwindcss";
 
 @theme {
-    --font-sans: "Be Vietnam Pro", "Inter", "Noto Sans", Arial, sans-serif;
+    --font-sans: "Be Vietnam Pro", "Inter", "Arial", sans-serif;
 }
 
 :root {
-    --font-sans: "Be Vietnam Pro", "Inter", "Noto Sans", Arial, sans-serif;
+    font-family: "Be Vietnam Pro", "Inter", "Arial", sans-serif;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    --font-sans: "Be Vietnam Pro", "Inter", "Arial", sans-serif;
     --color-primary: #06b6d4;
     --color-primary-dark: #0e7490;
     --color-accent: #ff6b6b;
@@ -171,4 +174,28 @@ button:not(.rounded-none):not(.rounded-full):not(.rounded-2xl) {
     transition:
         background-color 150ms ease,
         box-shadow 150ms ease;
+}
+
+.gallery-thumbnail-scroll {
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+    scrollbar-color: rgba(255, 255, 255, 0.35) rgba(255, 255, 255, 0.08);
+}
+
+.gallery-thumbnail-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+.gallery-thumbnail-scroll::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.gallery-thumbnail-scroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.gallery-thumbnail-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.55);
 }

@@ -11,7 +11,7 @@ import {
     getListingImagesMap,
     getListingRulesForListing,
 } from "../../common/listing-relations";
-import { getDefaultDailyPrice, serializeListingImage } from "../../common/listing-mappers";
+import { getCoverImage, getDefaultDailyPrice, serializeListingImage } from "../../common/listing-mappers";
 import { sanitizeSingleLineText, sanitizeText } from "../../common/sanitization";
 import Amenity from "../../models/amenity";
 import Booking from "../../models/booking";
@@ -83,6 +83,8 @@ type PublicListingSearchItem = {
     bathrooms: number;
     currency: string;
     imageUrl: string | null;
+    coverImage: ReturnType<typeof serializeListingImage> | null;
+    images: ReturnType<typeof serializeListingImage>[];
 };
 
 const normalizeComparableText = (value: string) =>
@@ -455,6 +457,7 @@ export const getPublicListings = async (query: PublicListingsQuery) => {
             reviewCount: 0,
         };
         const images = imageMap.get(listing.listingId) ?? [];
+        const coverImage = getCoverImage(images);
 
         return {
             listingId: listing.listingId,
@@ -475,7 +478,9 @@ export const getPublicListings = async (query: PublicListingsQuery) => {
             beds: listing.beds,
             bathrooms: listing.bathrooms,
             currency: listing.currency,
-            imageUrl: images[0]?.url ?? null,
+            imageUrl: coverImage?.url ?? null,
+            coverImage: coverImage ? serializeListingImage(coverImage) : null,
+            images: images.map(serializeListingImage),
         };
     });
 
@@ -567,6 +572,7 @@ export const getPublicListingDetail = async (listingId: number) => {
             ? {
                   userId: Number(host.id),
                   name: `${host.firstName} ${host.lastName}`.trim(),
+                  avatarUrl: host.avatarUrl ?? null,
               }
             : null,
     };

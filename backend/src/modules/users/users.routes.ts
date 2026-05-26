@@ -9,12 +9,14 @@ import {
     getUserById,
     listUsers,
     updateMe,
+    updateMyAvatar,
     updateUserById,
     updateUserStatus,
 } from "./users.controller";
 import {
     adminUpdateUserBodySchema,
     listUsersQuerySchema,
+    updateAvatarBodySchema,
     updateMeBodySchema,
     updateUserStatusBodySchema,
     userIdParamsSchema,
@@ -25,6 +27,7 @@ const router = express.Router();
 router.use(authenticate, requireActiveUser);
 
 router.get("/me", getMe);
+router.patch("/me/avatar", validate({ body: updateAvatarBodySchema }), updateMyAvatar);
 router.patch("/me", validate({ body: updateMeBodySchema }), updateMe);
 
 router.get("/:userId", requireRole("admin"), validate({ params: userIdParamsSchema }), getUserById);

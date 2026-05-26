@@ -7,7 +7,9 @@ import {
     getCurrentUserProfile,
     getUserProfileForAdmin,
     listUserProfilesForAdmin,
+    updateCurrentUserAvatar,
     updateCurrentUserProfile,
+    updateUserAvatarForAdmin,
     updateUserForAdmin,
     updateUserStatusForAdmin,
 } from "./users.service";
@@ -54,6 +56,18 @@ export const updateMe: RequestHandler = asyncHandler(async (req, res) => {
     });
 });
 
+export const updateMyAvatar: RequestHandler = asyncHandler(async (req, res) => {
+    const payload = getValidatedBody<{ url: string; key?: string | null }>(req);
+    const user = await updateCurrentUserAvatar(req.user!, payload);
+
+    return sendSuccess(res, {
+        message: "Avatar updated",
+        data: {
+            user,
+        },
+    });
+});
+
 export const getUserById: RequestHandler = asyncHandler(async (req, res) => {
     const params = getValidatedParams<{ userId: string }>(req);
     const user = await getUserProfileForAdmin(params.userId);
@@ -72,6 +86,19 @@ export const updateUserById: RequestHandler = asyncHandler(async (req, res) => {
 
     return sendSuccess(res, {
         message: "User updated",
+        data: {
+            user,
+        },
+    });
+});
+
+export const updateAdminUserAvatar: RequestHandler = asyncHandler(async (req, res) => {
+    const params = getValidatedParams<{ userId: string }>(req);
+    const payload = getValidatedBody<{ url: string; key?: string | null }>(req);
+    const user = await updateUserAvatarForAdmin(req.user!, params.userId, payload, requestContext(req));
+
+    return sendSuccess(res, {
+        message: "User avatar updated",
         data: {
             user,
         },

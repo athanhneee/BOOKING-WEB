@@ -1,15 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { FiCheck, FiRefreshCw, FiX } from "react-icons/fi";
-import {
-    ADMIN_LISTINGS_MAX_PAGE_LIMIT,
-    approveListing,
-    getPendingListings,
-    rejectListing,
-} from "../../../../services/adminService";
+import { FiRefreshCw } from "react-icons/fi";
+import * as adminService from "../../../../services/adminService";
+import { API_BASE_URL } from "../../../../services/api/apiClient";
 import {
     formatCurrency,
     pageWrapperClass,
-    primaryButtonClass,
     secondaryButtonClass,
     tableClassName,
 } from "../../Host/sharedStyles";
@@ -17,7 +12,90 @@ import {
 const getAddress = (listing) =>
     [listing.addressLine, listing.ward, listing.district, listing.city].filter(Boolean).join(", ");
 
+const imageUrlFields = ["url", "imageUrl", "image_url", "secureUrl", "publicUrl"];
+
+const getImageUrlValue = (image) => {
+    if (!image || typeof image !== "object") {
+        return "";
+    }
+
+    for (const field of imageUrlFields) {
+        const value = image[field];
+
+        if (typeof value === "string" && value.trim()) {
+            return value.trim();
+        }
+    }
+
+    return "";
+};
+
+const resolveImageUrl = (url) => {
+    if (typeof url !== "string" || !url.trim()) {
+        return "";
+    }
+
+    const trimmedUrl = url.trim();
+
+    if (/^(https?:|data:|blob:)/i.test(trimmedUrl)) {
+        return trimmedUrl;
+    }
+
+    if (trimmedUrl.startsWith("//")) {
+        return `${window.location.protocol}${trimmedUrl}`;
+    }
+
+    try {
+        const baseUrl = API_BASE_URL || window.location.origin;
+        return new URL(trimmedUrl.startsWith("/") ? trimmedUrl : `/${trimmedUrl}`, baseUrl).toString();
+    } catch {
+        return trimmedUrl;
+    }
+};
+
+const getImageSrc = (image) => resolveImageUrl(getImageUrlValue(image));
+
+const isCoverImage = (image) =>
+    image?.isCover === true ||
+    image?.is_cover === true ||
+    image?.isCover === 1 ||
+    image?.is_cover === 1 ||
+    image?.isCover === "true" ||
+    image?.is_cover === "true" ||
+    image?.isCover === "1" ||
+    image?.is_cover === "1";
+
+const getImageSortOrder = (image) => {
+    const sortOrder = Number(image?.sortOrder ?? image?.sort_order ?? 0);
+    return Number.isFinite(sortOrder) ? sortOrder : 0;
+};
+
+const getListingCoverImageUrl = (listing) => {
+    const directUrl =
+        listing.coverImageUrl ||
+        getImageUrlValue(listing.coverImage) ||
+        listing.imageUrl ||
+        listing.image_url ||
+        listing.secureUrl ||
+        listing.publicUrl;
+
+    if (directUrl) {
+        return resolveImageUrl(directUrl);
+    }
+
+    const images = Array.isArray(listing.images)
+        ? [...listing.images].sort((left, right) => getImageSortOrder(left) - getImageSortOrder(right))
+        : [];
+    const coverImage = images.find(isCoverImage) ?? images[0];
+
+    return getImageSrc(coverImage);
+};
+
 const getErrorMessage = (error, fallback) => {
+    if (error?.response?.data?.message) {
+        return error.response.data.message;
+    }
+
     if (error?.errors?.length) {
         return error.errors.map((item) => item.msg).join("; ");
     }
@@ -25,18 +103,99 @@ const getErrorMessage = (error, fallback) => {
     return error instanceof Error ? error.message : fallback;
 };
 
+const ruleToneClass = {
+    allowed: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    denied: "border-rose-200 bg-rose-50 text-rose-700",
+    neutral: "border-gray-200 bg-gray-50 text-gray-600",
+};
+
+const getRulePermission = (allowed) => {
+    if (allowed === true) {
+        return {
+            value: "Cho phép",
+            tone: "allowed",
+        };
+    }
+
+    if (allowed === false) {
+        return {
+            value: "Không cho phép",
+            tone: "denied",
+        };
+    }
+
+    return {
+        value: "Không quy định",
+        tone: "neutral",
+    };
+};
+
+const getListingRuleItems = (rules = {}) => {
+    const normalizedRules = rules || {};
+    const checkInFrom =
+        typeof normalizedRules.checkInFrom === "string"
+            ? normalizedRules.checkInFrom.trim()
+            : normalizedRules.checkInFrom;
+    const checkOutBefore =
+        typeof normalizedRules.checkOutBefore === "string"
+            ? normalizedRules.checkOutBefore.trim()
+            : normalizedRules.checkOutBefore;
+    const quietHours =
+        typeof normalizedRules.quietHours === "string" ? normalizedRules.quietHours.trim() : normalizedRules.quietHours;
+
+    return [
+        {
+            label: "Giờ nhận phòng",
+            value: checkInFrom ? `Từ ${checkInFrom}` : "Không quy định",
+            tone: "neutral",
+        },
+        {
+            label: "Giờ trả phòng",
+            value: checkOutBefore ? `Trước ${checkOutBefore}` : "Không quy định",
+            tone: "neutral",
+        },
+        {
+            label: "Hút thuốc",
+            ...getRulePermission(normalizedRules.smokingAllowed),
+        },
+        {
+            label: "Thú cưng",
+            ...getRulePermission(normalizedRules.petsAllowed),
+        },
+        {
+            label: "Tổ chức tiệc",
+            ...getRulePermission(normalizedRules.partyAllowed),
+        },
+        {
+            label: "Giờ yên tĩnh",
+            value: quietHours ? quietHours : "Không quy định",
+            tone: "neutral",
+        },
+    ];
+};
+
 const KiemDuyetBaiDang = () => {
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [actionId, setActionId] = useState(null);
+    const [selectedListingDetail, setSelectedListingDetail] = useState(null);
+    const [detailModalOpen, setDetailModalOpen] = useState(false);
+    const [viewedListingIds, setViewedListingIds] = useState(() => new Set());
+    const [rejectModalOpen, setRejectModalOpen] = useState(false);
+    const [rejectTarget, setRejectTarget] = useState(null);
+    const [rejectReason, setRejectReason] = useState("");
+    const [failedImageUrls, setFailedImageUrls] = useState(() => new Set());
 
-    const fetchListings = useCallback(async () => {
+    const fetchPendingListings = useCallback(async () => {
         setLoading(true);
         setError("");
 
         try {
-            const result = await getPendingListings({ page: 1, limit: ADMIN_LISTINGS_MAX_PAGE_LIMIT });
+            const result = await adminService.getPendingListings({
+                page: 1,
+                limit: adminService.ADMIN_LISTINGS_MAX_PAGE_LIMIT,
+            });
+            setFailedImageUrls(new Set());
             setListings(result.items ?? []);
         } catch (fetchError) {
             setError(getErrorMessage(fetchError, "Không thể tải bài chờ duyệt."));
@@ -46,22 +205,85 @@ const KiemDuyetBaiDang = () => {
     }, []);
 
     useEffect(() => {
-        void fetchListings();
-    }, [fetchListings]);
+        void fetchPendingListings();
+    }, [fetchPendingListings]);
 
-    const runAction = async (listingId, action) => {
-        setActionId(listingId);
-        setError("");
-
+    const handleViewDetail = async (listingId) => {
         try {
-            await action();
-            await fetchListings();
-        } catch (actionError) {
-            setError(getErrorMessage(actionError, "Không thể xử lý bài đăng."));
+            setLoading(true);
+            setError("");
+            const detail = await adminService.getAdminListingDetail(listingId);
+            setSelectedListingDetail(detail);
+            setViewedListingIds((prev) => {
+                const next = new Set(prev);
+                next.add(Number(listingId));
+                return next;
+            });
+            setDetailModalOpen(true);
+        } catch (viewError) {
+            setError(getErrorMessage(viewError, "Không tải được chi tiết căn."));
         } finally {
-            setActionId(null);
+            setLoading(false);
         }
     };
+
+    const handleApprove = async (listingId) => {
+        if (!viewedListingIds.has(Number(listingId))) {
+            setError("Vui lòng xem chi tiết căn trước khi duyệt.");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            setError("");
+            await adminService.approveListing(listingId);
+            setDetailModalOpen(false);
+            setSelectedListingDetail(null);
+            await fetchPendingListings();
+        } catch (approveError) {
+            setError(getErrorMessage(approveError, "Duyệt căn thất bại."));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const openRejectModal = (listing) => {
+        setRejectTarget(listing);
+        setRejectReason("");
+        setError("");
+        setRejectModalOpen(true);
+    };
+
+    const handleReject = async () => {
+        if (!rejectTarget) return;
+
+        if (!rejectReason.trim()) {
+            setError("Vui lòng nhập lý do từ chối.");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            setError("");
+            await adminService.rejectListing(rejectTarget.listingId, rejectReason.trim());
+            setRejectModalOpen(false);
+            setRejectTarget(null);
+            setRejectReason("");
+            await fetchPendingListings();
+        } catch (rejectError) {
+            setError(getErrorMessage(rejectError, "Từ chối căn thất bại."));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleListingImageError = useCallback((imageUrl) => {
+        setFailedImageUrls((prev) => {
+            const next = new Set(prev);
+            next.add(imageUrl);
+            return next;
+        });
+    }, []);
 
     return (
         <div className={pageWrapperClass}>
@@ -69,9 +291,11 @@ const KiemDuyetBaiDang = () => {
                 <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Kiểm duyệt bài đăng</h1>
-                        <p className="mt-1 text-sm text-gray-500">Duyệt hoặc từ chối các chỗ nghỉ host đã gửi lên.</p>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Duyệt hoặc từ chối các chỗ nghỉ host đã gửi lên.
+                        </p>
                     </div>
-                    <button type="button" onClick={fetchListings} className={secondaryButtonClass}>
+                    <button type="button" onClick={fetchPendingListings} className={secondaryButtonClass}>
                         <FiRefreshCw className="mr-2 inline" />
                         Tải lại
                     </button>
@@ -107,15 +331,27 @@ const KiemDuyetBaiDang = () => {
                                 </tr>
                             ) : null}
 
-                            {listings.map((listing) => (
-                                <tr key={listing.listingId}>
+                            {listings.map((listing) => {
+                                const coverImageUrl = getListingCoverImageUrl(listing);
+                                const shouldShowCoverImage = coverImageUrl && !failedImageUrls.has(coverImageUrl);
+
+                                return (
+                                    <tr key={listing.listingId}>
                                     <td className="px-4 py-4">
                                         <div className="flex items-center gap-3">
-                                            <img
-                                                src={listing.imageUrl || "https://placehold.co/160x100?text=Villa"}
-                                                alt={listing.title}
-                                                className="h-16 w-24 rounded-xl object-cover"
-                                            />
+                                            {shouldShowCoverImage ? (
+                                                <img
+                                                    src={coverImageUrl}
+                                                    alt={listing.title}
+                                                    className="h-20 w-32 shrink-0 rounded-xl object-cover"
+                                                    loading="lazy"
+                                                    onError={() => handleListingImageError(coverImageUrl)}
+                                                />
+                                            ) : (
+                                                <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-medium text-slate-500">
+                                                    Chưa có ảnh
+                                                </div>
+                                            )}
                                             <div>
                                                 <p className="font-semibold text-gray-900">{listing.title}</p>
                                                 <p className="text-xs text-gray-500">ID: {listing.listingId}</p>
@@ -129,35 +365,212 @@ const KiemDuyetBaiDang = () => {
                                         <div className="flex flex-wrap gap-2">
                                             <button
                                                 type="button"
-                                                disabled={actionId === listing.listingId}
-                                                onClick={() => runAction(listing.listingId, () => approveListing(listing.listingId))}
-                                                className={primaryButtonClass}
+                                                onClick={() => handleViewDetail(listing.listingId)}
+                                                className="rounded-lg border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
                                             >
-                                                <FiCheck className="mr-1 inline" />
-                                                Duyệt
+                                                Xem chi tiết
                                             </button>
+
                                             <button
                                                 type="button"
-                                                disabled={actionId === listing.listingId}
-                                                onClick={() => {
-                                                    const reason = window.prompt("Lý do từ chối bài đăng?");
-                                                    if (reason) {
-                                                        void runAction(listing.listingId, () => rejectListing(listing.listingId, reason));
-                                                    }
-                                                }}
-                                                className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50"
+                                                onClick={() => handleApprove(listing.listingId)}
+                                                className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                                             >
-                                                <FiX className="mr-1 inline" />
+                                                Duyệt
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => openRejectModal(listing)}
+                                                className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                                            >
                                                 Từ chối
                                             </button>
                                         </div>
                                     </td>
-                                </tr>
-                            ))}
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </section>
             </div>
+
+            {detailModalOpen && selectedListingDetail && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+                        <div className="mb-4 flex items-start justify-between gap-4">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900">
+                                    {selectedListingDetail.title}
+                                </h2>
+                                <p className="text-sm text-gray-500">
+                                    {selectedListingDetail.addressLine}, {selectedListingDetail.ward},{" "}
+                                    {selectedListingDetail.district}, {selectedListingDetail.city}
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setDetailModalOpen(false)}
+                                className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50"
+                            >
+                                Đóng
+                            </button>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <section className="rounded-xl border p-4">
+                                <h3 className="mb-2 font-semibold text-gray-900">Thông tin host</h3>
+                                <p>Họ tên: {selectedListingDetail.host?.fullName || "Chưa có"}</p>
+                                <p>Email: {selectedListingDetail.host?.email || "Chưa có"}</p>
+                                <p>SĐT: {selectedListingDetail.host?.phone || "Chưa có"}</p>
+                                <p>
+                                    Xác minh host:{" "}
+                                    {selectedListingDetail.host?.isHostVerified ? "Đã xác minh" : "Chưa xác minh"}
+                                </p>
+                            </section>
+
+                            <section className="rounded-xl border p-4">
+                                <h3 className="mb-2 font-semibold text-gray-900">Giá & sức chứa</h3>
+                                <p>Giá thường: {Number(selectedListingDetail.basePrice || 0).toLocaleString("vi-VN")}đ</p>
+                                <p>Giá cuối tuần: {Number(selectedListingDetail.weekendPrice || 0).toLocaleString("vi-VN")}đ</p>
+                                <p>Phí dọn dẹp: {Number(selectedListingDetail.cleaningFee || 0).toLocaleString("vi-VN")}đ</p>
+                                <p>Khách tối đa: {selectedListingDetail.maxGuests}</p>
+                                <p>Phòng ngủ: {selectedListingDetail.bedrooms}</p>
+                                <p>Giường: {selectedListingDetail.beds}</p>
+                                <p>Phòng tắm: {selectedListingDetail.bathrooms}</p>
+                            </section>
+                        </div>
+
+                        <section className="mt-4 rounded-xl border p-4">
+                            <h3 className="mb-2 font-semibold text-gray-900">Mô tả</h3>
+                            <p className="whitespace-pre-line text-gray-700">
+                                {selectedListingDetail.description || "Chưa có mô tả"}
+                            </p>
+                        </section>
+
+                        <section className="mt-4 rounded-xl border p-4">
+                            <h3 className="mb-3 font-semibold text-gray-900">Ảnh căn</h3>
+                            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                                {(selectedListingDetail.images || []).map((image) => {
+                                    const imageSrc = getImageSrc(image);
+
+                                    if (!imageSrc) {
+                                        return null;
+                                    }
+
+                                    return (
+                                        <img
+                                            key={
+                                                image.listingImageId ||
+                                                image.imageId ||
+                                                image.id ||
+                                                image.url ||
+                                                image.imageUrl ||
+                                                image.image_url
+                                            }
+                                            src={imageSrc}
+                                            alt={selectedListingDetail.title}
+                                            className="h-44 w-full rounded-xl object-cover"
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </section>
+
+                        <section className="mt-4 rounded-xl border p-4">
+                            <h3 className="mb-2 font-semibold text-gray-900">Tiện ích</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {(selectedListingDetail.amenities || []).map((amenity) => (
+                                    <span
+                                        key={amenity.amenityId || amenity.name}
+                                        className="rounded-full bg-gray-100 px-3 py-1 text-sm"
+                                    >
+                                        {amenity.name}
+                                    </span>
+                                ))}
+                            </div>
+                        </section>
+
+                        <section className="mt-4 rounded-xl border p-4">
+                            <h3 className="mb-3 font-semibold text-gray-900">Nội quy</h3>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                {getListingRuleItems(selectedListingDetail.rules).map((rule) => (
+                                    <div
+                                        key={rule.label}
+                                        className="rounded-lg border border-gray-100 bg-white p-3 shadow-sm"
+                                    >
+                                        <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                            {rule.label}
+                                        </p>
+                                        <span
+                                            className={`mt-2 inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${ruleToneClass[rule.tone]}`}
+                                        >
+                                            {rule.value}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setDetailModalOpen(false)}
+                                className="rounded-lg border px-4 py-2 hover:bg-gray-50"
+                            >
+                                Đóng
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => handleApprove(selectedListingDetail.listingId)}
+                                className="rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
+                            >
+                                Duyệt căn này
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {rejectModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+                        <h2 className="text-xl font-bold text-gray-900">Từ chối căn</h2>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Nhập lý do từ chối để host biết cần chỉnh sửa gì.
+                        </p>
+
+                        <textarea
+                            value={rejectReason}
+                            onChange={(event) => setRejectReason(event.target.value)}
+                            rows={5}
+                            className="mt-4 w-full rounded-xl border border-gray-300 p-3 outline-none focus:border-red-500"
+                            placeholder="Ví dụ: Ảnh chưa rõ, thiếu thông tin địa chỉ, giá chưa hợp lệ..."
+                        />
+
+                        <div className="mt-5 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setRejectModalOpen(false)}
+                                className="rounded-lg border px-4 py-2 hover:bg-gray-50"
+                            >
+                                Hủy
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleReject}
+                                className="rounded-lg bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700"
+                            >
+                                Xác nhận từ chối
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

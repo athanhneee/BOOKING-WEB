@@ -28,7 +28,9 @@ import { addRecentlyViewedListing } from "../../../features/recentlyViewed/recen
 import NearbyRecommendationsSection from "../../../features/recommendations/NearbyRecommendationsSection";
 import { useSavedListings } from "../../../features/wishlist/useSavedListings";
 import { createBooking } from "../../../services/bookingService";
+import { createOrGetConversation } from "../../../services/api/conversationsApi";
 import { getListingById, getListingReviews, getListingRules } from "../../../services/listingService";
+import { getCurrentUser } from "../../../store/authStore";
 import SearchPopover from "../../components/search/SearchPopover";
 import DatePickerPanel from "../../components/search/booking/DatePickerPanel";
 import type { GuestSelection } from "../../components/search/booking/Guest";
@@ -99,7 +101,48 @@ const accentBadgeClass = "border border-cyan-100 bg-cyan-50 text-cyan-600";
 
 const bookingQueueLimitMessage =
     "Bạn chỉ có thể thêm tối đa 5 chỗ ở vào danh sách chờ đặt. Bạn có thể lưu chỗ ở này để xem sau.";
+const aiImageTypeTitleMap: Record<string, string> = {
+    bedroom: "Phòng ngủ",
+    living_room: "Phòng khách",
+    kitchen: "Nhà bếp",
+    bathroom: "Phòng tắm",
+    pool: "Hồ bơi",
+    balcony: "Ban công",
+    garden: "Sân vườn",
+    rooftop: "Sân thượng",
+    parking: "Chỗ đậu xe",
+    bbq_area: "Khu BBQ",
+    dining_area: "Khu vực ăn uống",
+    front_view: "Mặt tiền villa",
+    outdoor_area: "Không gian ngoài trời",
+    hallway: "Hành lang",
+    stairs: "Cầu thang",
+    sea_view: "View biển",
+    city_view: "View thành phố",
+    other: "Ảnh chỗ nghỉ",
+};
 
+const buildAiImageLabel = (image: ApiListingDetail["images"][number], index: number) => {
+    const directTitle = image.displayTitle ?? image.display_title ?? image.aiDisplayTitle;
+
+    if (directTitle?.trim()) {
+        return directTitle.trim();
+    }
+
+    const imageType = image.aiImageType ?? image.ai_image_type;
+
+    if (imageType && aiImageTypeTitleMap[imageType]) {
+        return aiImageTypeTitleMap[imageType];
+    }
+
+    const description = image.aiDescription ?? image.ai_description;
+
+    if (description?.trim()) {
+        return description.trim().length > 42 ? `${description.trim().slice(0, 41)}…` : description.trim();
+    }
+
+    return `Ảnh chỗ nghỉ ${index + 1}`;
+};
 const hostProfiles: HostProfile[] = [
     {
         name: "Minh Thành",
@@ -149,6 +192,39 @@ const getInitials = (name: string) =>
         .map((part) => part[0])
         .join("")
         .toUpperCase() || "H";
+
+const isTechnicalImageLabel = (value?: string | null) => {
+    const label = value?.trim();
+
+    if (!label) {
+        return true;
+    }
+
+    if (/^https?:\/\//i.test(label) || label.includes("/")) {
+        return true;
+    }
+
+    return /\.(jpe?g|png|webp|gif|avif|heic)$/i.test(label) || /^z\d{6,}/i.test(label);
+};
+
+const getFriendlyImageLabel = (
+    image: ApiListingDetail["images"][number] & {
+        display_title?: string | null;
+        alt_text?: string | null;
+    },
+    index: number,
+) => {
+    const candidates = [
+        image.displayTitle,
+        image.display_title,
+        image.caption,
+        image.altText,
+        image.alt_text,
+    ];
+    const friendly = candidates.find((candidate) => !isTechnicalImageLabel(candidate));
+
+    return friendly?.trim() || `Ảnh chỗ nghỉ ${index + 1}`;
+};
 
 const buildGuestReviews = (listing: PopularDestination): GuestReview[] => {
     if (listing.rating <= 0) {
@@ -284,6 +360,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
     const [isLoading, setIsLoading] = useState(true);
     const [loadError, setLoadError] = useState("");
     const [isBooking, setIsBooking] = useState(false);
+    const [isOpeningConversation, setIsOpeningConversation] = useState(false);
     const bookingSearchState = useMemo(() => parseBookingSearchParams(location.search), [location.search]);
     const initialBookingState = useMemo(() => {
         return {
@@ -519,13 +596,16 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
         );
     }
 
-    const galleryItems: GalleryItem[] = [
-        { id: `${destination.id}-cover`, imageUrl: destination.imageUrl, label: "Ảnh đại diện", placeholder: false },
-        { id: `${destination.id}-detail-01`, imageUrl: destination.imageUrl, label: "Ảnh chi tiết 01", placeholder: true },
-        { id: `${destination.id}-detail-02`, imageUrl: destination.imageUrl, label: "Ảnh chi tiết 02", placeholder: true },
-        { id: `${destination.id}-detail-03`, imageUrl: destination.imageUrl, label: "Ảnh chi tiết 03", placeholder: true },
-        { id: `${destination.id}-detail-04`, imageUrl: destination.imageUrl, label: "Ảnh chi tiết 04", placeholder: true },
-    ];
+    const galleryItems: GalleryItem[] = (rawListing?.images ?? [])
+        .filter((image) => Boolean(image.url))
+        .sort((left, right) => Number(Boolean(right.isCover)) - Number(Boolean(left.isCover)) || left.sortOrder - right.sortOrder)
+        .map((image, index) => ({
+            id: String(image.imageId ?? `${destination.id}-${index}`),
+            imageUrl: image.url,
+            label: buildAiImageLabel(image, index),
+            placeholder: false,
+        }));
+    const hasGalleryImages = galleryItems.length > 0;
 
     const currentImage = galleryItems[selectedImageIndex] ?? galleryItems[0];
     const reviewMetrics: ReviewMetric[] = [
@@ -553,6 +633,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
     const hostProfile: HostProfile = rawListing?.host
         ? {
             name: rawListing.host.name || "Chủ nhà",
+            avatarUrl: rawListing.host.avatarUrl ?? undefined,
             verified: true,
             listingCount: 1,
             joinedYear: new Date().getFullYear(),
@@ -572,6 +653,12 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
     });
     const isListingSaved = isSaved(destination.id);
     const isListingInQueue = bookingQueue.hasItem(destination.id);
+    const currentUser = getCurrentUser();
+    const listingHostUserId = rawListing?.host?.userId ?? null;
+    const isCurrentUserListingHost =
+        Boolean(currentUser && listingHostUserId) &&
+        String(currentUser?.id) === String(listingHostUserId);
+    const showHostMessageAction = !isCurrentUserListingHost;
     const activeDesktopAnchorRef = (
         activeDesktopField === "checkin"
             ? checkInFieldRef
@@ -631,16 +718,45 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
         showActionFeedback("Đã thêm villa vào danh sách chờ đặt.");
     };
 
-    const openHostMessage = () => {
-        navigate(APP_ROUTES.villaHostMessage(destination.id), {
-            state: {
-                returnTo: `${location.pathname}${location.search}`,
-                checkIn,
-                checkOut,
-                guests: stayingGuestCount,
-                guestSummary,
-            },
-        });
+    const openHostMessage = async () => {
+        if (!currentUser) {
+            navigate(`${APP_ROUTES.login}?redirectTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`);
+            return;
+        }
+
+        if (isCurrentUserListingHost) {
+            showActionFeedback("Bạn không thể nhắn tin cho chính chỗ nghỉ của mình.");
+            return;
+        }
+
+        const listingId = rawListing?.listingId ?? Number(destination.id);
+
+        if (!Number.isFinite(Number(listingId))) {
+            showActionFeedback("Không xác định được chỗ nghỉ để mở hội thoại.");
+            return;
+        }
+
+        setIsOpeningConversation(true);
+        setActionFeedback(null);
+
+        try {
+            const result = await createOrGetConversation(Number(listingId));
+
+            navigate(APP_ROUTES.messages, {
+                state: {
+                    selectedConversationId: result.conversation.id,
+                    returnTo: `${location.pathname}${location.search}`,
+                    checkIn,
+                    checkOut,
+                    guests: stayingGuestCount,
+                    guestSummary,
+                },
+            });
+        } catch (error) {
+            showActionFeedback(error instanceof Error ? error.message : "Không mở được hội thoại với host.");
+        } finally {
+            setIsOpeningConversation(false);
+        }
     };
 
     const handleBookNow = async () => {
@@ -751,10 +867,18 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
     };
 
     const handlePreviousImage = () => {
+        if (galleryItems.length === 0) {
+            return;
+        }
+
         setSelectedImageIndex((currentIndex) => (currentIndex === 0 ? galleryItems.length - 1 : currentIndex - 1));
     };
 
     const handleNextImage = () => {
+        if (galleryItems.length === 0) {
+            return;
+        }
+
         setSelectedImageIndex((currentIndex) => (currentIndex + 1) % galleryItems.length);
     };
 
@@ -1099,25 +1223,32 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                     onTouchStart={handleGalleryTouchStart}
                                     onTouchEnd={handleGalleryTouchEnd}
                                 >
-                                    <img
-                                        src={currentImage.imageUrl}
-                                        alt={currentImage.label}
-                                        className="h-[320px] w-full object-cover sm:h-[420px] xl:h-[520px]"
-                                    />
+                                    {hasGalleryImages ? (
+                                        <img
+                                            src={currentImage.imageUrl}
+                                            alt={currentImage.label}
+                                            className="h-[320px] w-full object-cover sm:h-[420px] xl:h-[520px]"
+                                        />
+                                    ) : (
+                                        <div className="flex h-[320px] w-full items-center justify-center text-sm font-semibold text-zinc-600 sm:h-[420px] xl:h-[520px]">
+                                            Chưa có ảnh
+                                        </div>
+                                    )}
 
                                     <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-black/10" />
 
                                     <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-zinc-900 shadow-lg">
                                         <span>
-                                            {selectedImageIndex + 1}/{galleryItems.length}
+                                            {hasGalleryImages ? `${selectedImageIndex + 1}/${galleryItems.length}` : "Chưa có ảnh"}
                                         </span>
-                                        {currentImage.placeholder ? <span className="text-black">Ảnh demo</span> : null}
+                                        {currentImage?.placeholder ? <span className="text-black">Ảnh demo</span> : null}
                                     </div>
 
                                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 sm:pl-4">
                                         <button
                                             type="button"
                                             onClick={handlePreviousImage}
+                                            disabled={!hasGalleryImages}
                                             className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/92 text-zinc-900 shadow-lg transition-transform hover:scale-105"
                                             aria-label="Xem ảnh trước"
                                         >
@@ -1129,6 +1260,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                         <button
                                             type="button"
                                             onClick={handleNextImage}
+                                            disabled={!hasGalleryImages}
                                             className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/92 text-zinc-900 shadow-lg transition-transform hover:scale-105"
                                             aria-label="Xem ảnh tiếp theo"
                                         >
@@ -1139,7 +1271,8 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                     <div className="absolute bottom-4 right-4">
                                         <button
                                             type="button"
-                                            onClick={() => setIsGalleryModalOpen(true)}
+                                            onClick={() => hasGalleryImages && setIsGalleryModalOpen(true)}
+                                            disabled={!hasGalleryImages}
                                             className="inline-flex items-center gap-2 rounded-full bg-white/92 px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-lg transition-transform hover:-translate-y-0.5"
                                         >
                                             Xem tất cả ảnh
@@ -1216,14 +1349,17 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                             <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-600 sm:text-[15px]">{hostProfile.bio}</p>
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            onClick={openHostMessage}
-                                            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-semibold text-cyan-700 transition-colors hover:bg-cyan-100 sm:self-start"
-                                        >
-                                            <FiMessageCircle />
-                                            Nhắn tin cho host
-                                        </button>
+                                        {showHostMessageAction ? (
+                                            <button
+                                                type="button"
+                                                onClick={openHostMessage}
+                                                disabled={isOpeningConversation}
+                                                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-semibold text-cyan-700 transition-colors hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60 sm:self-start"
+                                            >
+                                                <FiMessageCircle />
+                                                {isOpeningConversation ? "Đang mở..." : "Nhắn tin cho host"}
+                                            </button>
+                                        ) : null}
                                     </div>
                                 </div>
                             </section>
@@ -1301,29 +1437,32 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                 </div>
                             </section>
 
-                            <section className="mt-12">
-                                <div className="rounded-2xl border border-[#e8ddd1] bg-white p-5 shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:p-6">
-                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                        <div className="min-w-0">
-                                            <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]">
-                                                Nhắn tin cho host
-                                            </h2>
-                                            <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-600">
-                                                Mở trang nhắn tin riêng để trao đổi về lịch trống, nhận phòng hoặc nhu cầu riêng của nhóm bạn.
-                                            </p>
-                                        </div>
+                            {showHostMessageAction ? (
+                                <section className="mt-12">
+                                    <div className="rounded-2xl border border-[#e8ddd1] bg-white p-5 shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:p-6">
+                                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                            <div className="min-w-0">
+                                                <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]">
+                                                    Nhắn tin cho host
+                                                </h2>
+                                                <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-600">
+                                                    Mở trang nhắn tin riêng để trao đổi về lịch trống, nhận phòng hoặc nhu cầu riêng của nhóm bạn.
+                                                </p>
+                                            </div>
 
-                                        <button
-                                            type="button"
-                                            onClick={openHostMessage}
-                                            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-cyan-700"
-                                        >
-                                            <FiMessageCircle />
-                                            Nhắn tin cho host
-                                        </button>
+                                            <button
+                                                type="button"
+                                                onClick={openHostMessage}
+                                                disabled={isOpeningConversation}
+                                                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-cyan-300"
+                                            >
+                                                <FiMessageCircle />
+                                                {isOpeningConversation ? "Đang mở..." : "Nhắn tin cho host"}
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            </section>
+                                </section>
+                            ) : null}
 
                             <section className="mt-12">
                                 <h2 className="text-[2.2rem] leading-none tracking-tight text-[#231a12]">
@@ -1438,8 +1577,8 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                 </div>
             ) : null}
 
-            {isGalleryModalOpen ? (
-                <div className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm" onClick={() => setIsGalleryModalOpen(false)} role="presentation">
+            {isGalleryModalOpen && hasGalleryImages ? (
+                <div className="fixed inset-0 z-[90] overflow-y-auto bg-black/70 backdrop-blur-sm" onClick={() => setIsGalleryModalOpen(false)} role="presentation">
                     <div
                         className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4 py-6 sm:px-6 lg:px-8"
                         onClick={(event) => event.stopPropagation()}
@@ -1479,6 +1618,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                         <button
                                             type="button"
                                             onClick={handlePreviousImage}
+                                            disabled={!hasGalleryImages}
                                             className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-zinc-900 shadow-lg"
                                             aria-label="Xem ảnh trước"
                                         >
@@ -1490,6 +1630,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                         <button
                                             type="button"
                                             onClick={handleNextImage}
+                                            disabled={!hasGalleryImages}
                                             className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-zinc-900 shadow-lg"
                                             aria-label="Xem ảnh tiếp theo"
                                         >
@@ -1502,7 +1643,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-3">
+                                <div className="gallery-thumbnail-scroll max-h-[320px] space-y-3 overflow-y-auto pr-2 sm:max-h-[460px] xl:max-h-[620px]">
                                     {galleryItems.map((item, index) => {
                                         const isActive = index === selectedImageIndex;
 
@@ -1517,9 +1658,7 @@ const ListingDetailContent = ({ villaId }: ListingDetailContentProps) => {
                                                 <img src={item.imageUrl} alt={item.label} className="h-20 w-24 rounded-xl object-cover" />
                                                 <div className="min-w-0">
                                                     <p className="truncate text-sm font-semibold text-white">{item.label}</p>
-                                                    <p className="mt-1 text-xs text-white/65">
-                                                        {item.placeholder ? "Ảnh demo, thay bằng ảnh thật khi có dữ liệu." : "Ảnh bìa đang hiển thị ở đầu trang."}
-                                                    </p>
+
                                                 </div>
                                             </button>
                                         );

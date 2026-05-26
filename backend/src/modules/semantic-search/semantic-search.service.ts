@@ -24,8 +24,8 @@ import {
     uniqueStrings,
 } from "./semantic-search.utils";
 
-const maxQueryLength = 300;
-const maxLimit = 50;
+const maxQueryLength = 500;
+const maxLimit = 30;
 
 const calculatePriceScore = (price: number, minPrice?: number, maxPrice?: number) => {
     if (maxPrice === undefined && minPrice === undefined) return 0.7;
@@ -198,7 +198,7 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
 
     const district = input.district ?? parsed.district;
     const page = Math.max(1, Math.floor(input.page ?? 1));
-    const limit = Math.min(maxLimit, Math.max(1, Math.floor(input.limit ?? 10)));
+    const limit = Math.min(maxLimit, Math.max(1, Math.floor(input.limit ?? 12)));
 
     const vungTauAreaKeys = inferVungTauAreaKeys(`${query} ${semanticQuery}`);
 

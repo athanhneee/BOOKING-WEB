@@ -548,7 +548,7 @@ export const getAdminBookingsReport = async (admin: AuthenticatedUser, query: An
         SELECT
             ${groupBy} AS period,
             COUNT(*) AS totalBookings,
-            SUM(b.status IN ('pending','pending_payment')) AS pendingBookings,
+            SUM(b.status IN ('pending','pending_host','pending_payment')) AS pendingBookings,
             SUM(b.status IN ('paid','confirmed','checked_in')) AS paidBookings,
             SUM(b.status = 'completed') AS completedBookings,
             SUM(b.status = 'cancelled') AS cancelledBookings,

@@ -1,4 +1,5 @@
 import { apiClient } from "./api/apiClient";
+import { getMyHostApplication as getMyPrivateHostApplication } from "./api/hostApplicationService";
 import type {
     ApiListingDetail,
     ApiListingSummary,
@@ -184,6 +185,11 @@ export const addHostListingImages = (
     listingId: string | number,
     images: Array<{
         url: string;
+        key?: string | null;
+        objectKey?: string | null;
+        originalFilename?: string | null;
+        displayTitle?: string | null;
+        altText?: string | null;
         caption?: string | null;
         sortOrder?: number;
         isCover?: boolean;
@@ -192,6 +198,9 @@ export const addHostListingImages = (
 
 export const deleteHostListingImage = (listingId: string | number, imageId: string | number) =>
     apiClient.delete(`/api/host/listings/${listingId}/images/${imageId}`);
+
+export const setHostListingImageCover = (listingId: string | number, imageId: string | number) =>
+    apiClient.patch(`/api/host/listings/${listingId}/images/${imageId}/cover`);
 
 export const replaceHostListingAmenities = (listingId: string | number, amenityIds: number[]) =>
     apiClient.put(`/api/host/listings/${listingId}/amenities`, { amenityIds });
@@ -229,19 +238,19 @@ export const confirmHostBooking = (bookingId: string | number) =>
     apiClient.patch<ApiBooking>(`/api/host/bookings/${bookingId}/confirm`);
 
 export const checkInHostBooking = (bookingId: string | number) =>
-    apiClient.patch<ApiBooking>(`/api/host/bookings/${bookingId}/check-in`);
+    apiClient.post<ApiBooking>(`/api/host/bookings/${bookingId}/check-in`);
 
 export const checkOutHostBooking = (bookingId: string | number) =>
-    apiClient.patch<ApiBooking>(`/api/host/bookings/${bookingId}/check-out`);
+    apiClient.post<ApiBooking>(`/api/host/bookings/${bookingId}/check-out`);
 
 export const cancelHostBooking = (bookingId: string | number, reason?: string) =>
     apiClient.patch<ApiBooking>(`/api/host/bookings/${bookingId}/cancel`, { reason });
 
 export const getHostApplicationMe = () =>
-    apiClient.get<HostApplicationMeResult>("/api/host/application/me");
+    getMyPrivateHostApplication() as Promise<HostApplicationMeResult>;
 
 export const getHostRegisterStatus = () =>
-    apiClient.get<HostApplicationMeResult>("/api/host/register/status");
+    getMyPrivateHostApplication() as Promise<HostApplicationMeResult>;
 
 export const registerHostApplication = (payload: {
     contactName?: string | null;

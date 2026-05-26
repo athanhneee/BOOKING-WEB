@@ -8,7 +8,8 @@ import type { TripHistory } from "../../../models/entities/TripHistory";
 import type { ApiBooking } from "../../../models/entities/Booking";
 import type { ApiUser } from "../../../models/entities/User";
 import { getMyBookings } from "../../../services/bookingService";
-import { getMe, updateMe } from "../../../services/userService";
+import { getMe, updateMe, updateMyAvatar } from "../../../services/userService";
+import { uploadFileToR2 } from "../../../services/api/uploadsApi";
 import { cn } from "../../../utils";
 import EditProfileModal from "../../components/common/profile/EditProfileModal";
 import ProfileInfoList from "../../components/common/profile/ProfileInfoList";
@@ -18,17 +19,15 @@ import TripHistoryList from "../../components/common/profile/TripHistoryList";
 
 type EditModalState =
     | {
-          mode: "all";
-          field?: undefined;
-      }
+        mode: "all";
+        field?: undefined;
+    }
     | {
-          mode: "single";
-          field: EditableProfileField;
-      };
+        mode: "single";
+        field: EditableProfileField;
+    };
 
 type UpdateMePayload = Parameters<typeof updateMe>[0];
-
-const fallbackTripImageUrl = new URL("../../../assets/img/mocnhien.jpg", import.meta.url).href;
 
 const pageCopy: Record<AccountTab, { title: string; description: string }> = {
     profile: {
@@ -79,7 +78,7 @@ const createProfileFromApiUser = (user: ApiUser): AccountUserProfile => {
         displayName,
         location: user.location?.trim() ?? "",
         avatarUrl: user.avatarUrl?.trim() ?? "",
-        job: user.job?.trim() ?? (isHost ? "Chủ nhà trên Minh Thanh Villa" : ""),
+        job: user.job?.trim() ?? (isHost ? "Chủ nhà trênminh thanh villa " : ""),
         dreamDestination: user.dreamDestination?.trim() ?? "",
         school: user.school?.trim() ?? "",
         languages: user.languages?.filter(Boolean) ?? [],
@@ -142,12 +141,22 @@ const mapBookingToTrip = (booking: ApiBooking): TripHistory => {
     const totalPrice = Number(booking.totalAmount || booking.totalPrice || 0);
     const status = mapBookingStatusToTripStatus(booking);
     const location = [booking.listing?.city, booking.listing?.district].filter(Boolean).join(", ");
+    const address = [booking.listing?.addressLine, booking.listing?.district, booking.listing?.city]
+        .filter(Boolean)
+        .join(", ");
+    const coverImageUrl =
+        booking.listing?.coverImageUrl ||
+        booking.listing?.coverImage?.url ||
+        booking.listing?.images?.find((image) => image.isCover)?.url ||
+        booking.listing?.images?.[0]?.url ||
+        booking.listing?.imageUrl ||
+        "";
 
     return {
         id: String(booking.bookingId),
         propertyName: booking.listing?.title ?? `Chỗ nghỉ #${booking.listingId}`,
         location: location || "Chưa cập nhật",
-        imageUrl: booking.listing?.imageUrl || fallbackTripImageUrl,
+        imageUrl: coverImageUrl,
         checkIn: booking.checkInDate,
         checkOut: booking.checkOutDate,
         nights: booking.nights || calculateNights(booking.checkInDate, booking.checkOutDate),
@@ -156,6 +165,19 @@ const mapBookingToTrip = (booking: ApiBooking): TripHistory => {
         status,
         canReview: status === "completed",
         canRebook: status === "completed" || status === "cancelled",
+        guestCount: booking.guestCount ?? booking.guestsCount,
+        address: address || location,
+        paymentStatus: booking.paymentStatus,
+        subtotalAmount: Number(booking.subtotalAmount || 0),
+        cleaningFeeAmount: Number(booking.cleaningFeeAmount || 0),
+        serviceFeeAmount: Number(booking.serviceFeeAmount || 0),
+        discountAmount: Number(booking.discountAmount || 0),
+        bookingNote: booking.bookingNote,
+        cancellationReason: booking.cancellationReason,
+        createdAt: booking.createdAt,
+        paidAt: booking.paidAt,
+        checkedInAt: booking.checkedInAt,
+        checkedOutAt: booking.checkedOutAt,
     };
 };
 
@@ -253,7 +275,7 @@ const ProfilePage = () => {
         try {
             const result = await updateMe(buildCurrentBackendPayload(normalizedProfile));
             setProfile(createProfileFromApiUser(result.user));
-            setSuccess("Đã cập nhật hồ sơ từ database thật.");
+            setSuccess("Đã cập nhật hồ sơ.");
             setEditModal(null);
         } catch (saveError) {
             const message = saveError instanceof Error ? saveError.message : "Không thể cập nhật hồ sơ.";
@@ -262,12 +284,28 @@ const ProfilePage = () => {
         }
     };
 
-    const handleAvatarUpload = (file: File) => {
+    const handleAvatarUpload = async (file: File) => {
         if (!profile) {
             return;
         }
 
-        setError(`Ảnh ${file.name} chưa được lưu. Hãy upload ảnh lên R2 hoặc dịch vụ lưu trữ rồi dán URL ảnh thật vào hồ sơ.`);
+        setError("");
+        setSuccess("");
+
+        try {
+            const uploaded = await uploadFileToR2(file, {
+                folder: "avatars",
+                maxSizeBytes: 5 * 1024 * 1024,
+            });
+            const result = await updateMyAvatar({
+                url: uploaded.publicUrl,
+                key: uploaded.key,
+            });
+            setProfile(createProfileFromApiUser(result.user));
+            setSuccess("Đã cập nhật ảnh đại diện.");
+        } catch (avatarError) {
+            setError(avatarError instanceof Error ? avatarError.message : "Không thể cập nhật ảnh đại diện.");
+        }
     };
 
     return (

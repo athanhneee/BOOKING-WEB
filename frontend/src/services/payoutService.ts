@@ -1,6 +1,15 @@
 import { apiClient } from "./api/apiClient";
 
-export type PayoutStatus = "pending" | "processing" | "paid" | "failed" | "cancelled";
+export type HostPayoutStatus =
+    | "pending"
+    | "approved"
+    | "processing"
+    | "paid"
+    | "failed"
+    | "rejected"
+    | "cancelled";
+
+export type PayoutStatus = HostPayoutStatus;
 
 export type PayoutAccount = {
     payoutAccountId: number;
@@ -90,11 +99,25 @@ export const createHostPayout = (payload: {
     notes?: string | null;
 }) => apiClient.post<{ payoutId: number; status: PayoutStatus }>("/api/admin/host-payouts", payload);
 
-export const markHostPayoutPaid = (
-    payoutId: string | number,
-    payload: { paidAt?: string; reference?: string | null } = {},
-) =>
-    apiClient.patch<{ payoutId: number; status: PayoutStatus }>(
-        `/api/admin/host-payouts/${payoutId}/paid`,
-        payload,
+export async function approveHostPayout(payoutId: number | string) {
+    return apiClient.patch<{ payoutId: number; status: HostPayoutStatus }>(
+        `/api/admin/host-payouts/${payoutId}/approve`,
     );
+}
+
+export async function rejectHostPayout(payoutId: number | string, reason: string) {
+    return apiClient.patch<{ payoutId: number; status: HostPayoutStatus }>(
+        `/api/admin/host-payouts/${payoutId}/reject`,
+        { reason },
+    );
+}
+
+export async function markHostPayoutPaid(
+    payoutId: number | string,
+    transferReference: string,
+) {
+    return apiClient.patch<{ payoutId: number; status: HostPayoutStatus }>(
+        `/api/admin/host-payouts/${payoutId}/paid`,
+        { transferReference },
+    );
+}

@@ -13,4 +13,17 @@ export type TripHistory = {
     status: TripHistoryStatus;
     canReview: boolean;
     canRebook: boolean;
+    guestCount?: number;
+    address?: string;
+    paymentStatus?: string | null;
+    subtotalAmount?: number;
+    cleaningFeeAmount?: number;
+    serviceFeeAmount?: number;
+    discountAmount?: number;
+    bookingNote?: string | null;
+    cancellationReason?: string | null;
+    createdAt?: string;
+    paidAt?: string | null;
+    checkedInAt?: string | null;
+    checkedOutAt?: string | null;
 };

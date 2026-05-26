@@ -44,11 +44,6 @@ export type CreateHostPayoutInput = {
     notes?: string | null;
 };
 
-export type MarkPayoutPaidInput = {
-    paidAt?: string;
-    reference?: string | null;
-};
-
 type AuditContext = {
     ipAddress?: string | null;
     userAgent?: string | null;
@@ -62,7 +57,10 @@ type BookingPayoutCandidate = {
     bookingStatus: string;
     paymentStatus: string | null;
     listingTitle: string;
-    accommodationAmount: string;
+    totalAmount: string;
+    currency: string;
+    serviceFeeAmount: string;
+    hostAmount: string;
 };
 
 type PayoutRow = {
@@ -97,6 +95,26 @@ const assertAdmin = (user: AuthenticatedUser) => {
 };
 
 const normalizeOptional = (value?: string | null) => (value?.trim() ? value.trim() : null);
+
+function assertTransferReference(value: string | undefined | null): string {
+    const normalized = value?.trim();
+
+    if (!normalized) {
+        throw new ApiError(400, "Mã chuyển khoản là bắt buộc khi đánh dấu đã thanh toán.");
+    }
+
+    return normalized;
+}
+
+function assertDifferentAdmin(params: {
+    actorUserId: number;
+    blockedUserId: number | null | undefined;
+    message: string;
+}) {
+    if (params.blockedUserId && Number(params.blockedUserId) === Number(params.actorUserId)) {
+        throw new ApiError(403, params.message);
+    }
+}
 
 const assertValidBankInfo = (input: {
     bankName?: string;
@@ -345,7 +363,7 @@ export const deletePayoutAccount = async (user: AuthenticatedUser, payoutAccount
         if (account.isDefault) {
             const activePayoutCount = await HostPayoutBatch.countDocuments({
                 payoutAccountId: account.payoutAccountId,
-                status: { $in: ["pending", "processing"] },
+                status: { $in: ["pending", "approved", "processing"] },
             });
 
             if (activePayoutCount > 0) {
@@ -484,7 +502,10 @@ const getBookingPayoutCandidates = async (
             b.status AS bookingStatus,
             p.status AS paymentStatus,
             l.title AS listingTitle,
-            b.total_amount AS accommodationAmount
+            b.total_amount AS totalAmount,
+            b.currency,
+            COALESCE(b.service_fee_amount, 0) AS serviceFeeAmount,
+            GREATEST(COALESCE(b.total_amount, 0) - COALESCE(b.service_fee_amount, 0), 0) AS hostAmount
         FROM bookings b
         INNER JOIN listings l ON l.listing_id = b.listing_id
         LEFT JOIN payments p ON p.booking_id = b.booking_id AND p.status = 'paid'
@@ -512,7 +533,7 @@ const assertNoDuplicatePayoutBookings = async (
         FROM host_payout_booking_item i
         INNER JOIN host_payout_batch p ON p.payout_id = i.payout_id
         WHERE i.booking_detail_id IN (:bookingDetailIds)
-          AND p.status IN ('pending','processing','paid')
+          AND p.status IN ('pending','approved','processing','paid')
         FOR UPDATE
         `,
         {
@@ -548,7 +569,7 @@ const assertNoDuplicatePayoutBookings = async (
         SELECT booking_detail_id AS bookingDetailId
         FROM host_payout
         WHERE booking_detail_id IN (:bookingDetailIds)
-          AND status IN ('pending','processing','paid')
+          AND status IN ('pending','approved','processing','paid')
         `,
         {
             replacements: { bookingDetailIds },
@@ -569,6 +590,7 @@ export const createHostPayout = async (
 ) => {
     assertAdmin(admin);
 
+    const actorUserId = getCurrentUserId(admin);
     const bookingIds = Array.from(new Set(input.bookingIds));
 
     await assertUserHasRole(input.hostId, "host");
@@ -609,7 +631,7 @@ export const createHostPayout = async (
         );
 
         const expectedAmountVnd = bookingRows.reduce(
-            (total, row) => total + moneyToVnd(row.accommodationAmount),
+            (total, row) => total + moneyToVnd(row.hostAmount),
             0n,
         );
         const inputAmountVnd = moneyToVnd(input.amount);
@@ -631,6 +653,12 @@ export const createHostPayout = async (
                 currency: input.currency,
                 status: "pending",
                 notes: input.notes?.trim() ? input.notes.trim() : null,
+                createdByUserId: actorUserId,
+                approvedByUserId: null,
+                approvedAt: null,
+                rejectedByUserId: null,
+                rejectedAt: null,
+                rejectionReason: null,
                 paidAt: null,
                 paidByUserId: null,
                 transferReference: null,
@@ -643,13 +671,17 @@ export const createHostPayout = async (
                 payoutId: payout.payoutId,
                 bookingOrderId: row.bookingId,
                 bookingDetailId: row.bookingDetailId,
+                amount: row.totalAmount,
+                currency: row.currency,
+                serviceFeeAmount: row.serviceFeeAmount,
+                hostAmount: row.hostAmount,
                 createdAt: new Date(),
             })),
             { transaction },
         );
 
         await writeAuditLog({
-            actorId: getCurrentUserId(admin),
+            actorId: actorUserId,
             action: "payout.create",
             targetType: "host_payout_batch",
             targetId: payout.payoutId,
@@ -672,87 +704,108 @@ export const createHostPayout = async (
     });
 };
 
-export const markHostPayoutPaid = async (
-    payoutId: number,
-    admin: AuthenticatedUser,
-    input: MarkPayoutPaidInput,
-    context: AuditContext = {},
-) => {
-    assertAdmin(admin);
-
+export async function approveHostPayout(params: {
+    payoutId: number;
+    actorUserId: number;
+}) {
     return sequelize.transaction(async (transaction) => {
-        const payout = await HostPayoutBatch.findOne({
-            where: { payoutId },
+        const payout = await HostPayoutBatch.findByPk(params.payoutId, {
             transaction,
-            lock: true,
+            lock: transaction.LOCK.UPDATE,
         });
 
         if (!payout) {
-            throw new ApiError(404, "Payout not found");
+            throw new ApiError(404, "Không tìm thấy payout");
         }
 
-        if (payout.status === "paid") {
-            return {
-                payoutId: payout.payoutId,
-                status: payout.status,
-                paidAt: payout.paidAt,
-                transferReference: payout.transferReference,
-            };
+        if (payout.status !== "pending") {
+            throw new ApiError(409, "Chỉ payout pending mới được duyệt.");
         }
 
-        if (!["pending", "processing"].includes(payout.status)) {
-            throw new ApiError(409, "Payout cannot be marked as paid");
-        }
-
-        const paidAt = input.paidAt ? new Date(input.paidAt) : new Date();
-        const transferReference = normalizeOptional(input.reference);
-
-        if (Number.isNaN(paidAt.getTime())) {
-            throw new ApiError(422, "Validation error", [
-                {
-                    path: "paidAt",
-                    msg: "paidAt must be a valid ISO datetime",
-                },
-            ]);
-        }
-
-        if (!transferReference) {
-            throw new ApiError(422, "Validation error", [
-                {
-                    path: "reference",
-                    msg: "reference is required",
-                },
-            ]);
-        }
-
-        payout.status = "paid";
-        payout.paidAt = paidAt;
-        payout.paidByUserId = getCurrentUserId(admin);
-        payout.transferReference = transferReference;
-        await payout.save({ transaction });
-
-        await writeAuditLog({
-            actorId: getCurrentUserId(admin),
-            action: "payout.mark_paid",
-            targetType: "host_payout_batch",
-            targetId: payout.payoutId,
-            metadata: {
-                hostId: payout.hostId,
-                amount: payout.amount,
-                currency: payout.currency,
-                paidAt: payout.paidAt,
-                transferReference: payout.transferReference,
-            },
-            ipAddress: context.ipAddress,
-            userAgent: context.userAgent,
-            transaction,
+        assertDifferentAdmin({
+            actorUserId: params.actorUserId,
+            blockedUserId: payout.createdByUserId,
+            message: "Admin tạo payout không được tự duyệt payout này.",
         });
 
-        return {
-            payoutId: payout.payoutId,
-            status: payout.status,
-            paidAt: payout.paidAt,
-            transferReference: payout.transferReference,
-        };
+        payout.status = "approved";
+        payout.approvedByUserId = params.actorUserId;
+        payout.approvedAt = new Date();
+
+        await payout.save({ transaction });
+
+        return payout;
     });
-};
+}
+
+export async function rejectHostPayout(params: {
+    payoutId: number;
+    actorUserId: number;
+    reason: string;
+}) {
+    return sequelize.transaction(async (transaction) => {
+        const payout = await HostPayoutBatch.findByPk(params.payoutId, {
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+
+        if (!payout) {
+            throw new ApiError(404, "Không tìm thấy payout");
+        }
+
+        if (payout.status !== "pending" && payout.status !== "approved") {
+            throw new ApiError(409, "Payout hiện tại không thể từ chối.");
+        }
+
+        const rejectionReason = params.reason.trim();
+
+        if (!rejectionReason) {
+            throw new ApiError(400, "Lý do từ chối là bắt buộc.");
+        }
+
+        payout.status = "rejected";
+        payout.rejectedByUserId = params.actorUserId;
+        payout.rejectedAt = new Date();
+        payout.rejectionReason = rejectionReason;
+
+        await payout.save({ transaction });
+
+        return payout;
+    });
+}
+
+export async function markHostPayoutPaid(params: {
+    payoutId: number;
+    actorUserId: number;
+    transferReference: string;
+}) {
+    return sequelize.transaction(async (transaction) => {
+        const payout = await HostPayoutBatch.findByPk(params.payoutId, {
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+
+        if (!payout) {
+            throw new ApiError(404, "Không tìm thấy payout");
+        }
+
+        if (payout.status !== "approved") {
+            throw new ApiError(409, "Chỉ payout đã duyệt mới được đánh dấu đã chuyển tiền.");
+        }
+
+        assertDifferentAdmin({
+            actorUserId: params.actorUserId,
+            blockedUserId: payout.approvedByUserId,
+            message: "Admin đã duyệt payout không được tự đánh dấu đã chuyển tiền.",
+        });
+
+        payout.status = "paid";
+        payout.paidAt = new Date();
+        payout.paidByUserId = params.actorUserId;
+        payout.transferReference = assertTransferReference(params.transferReference);
+
+        await payout.save({ transaction });
+
+        return payout;
+    });
+}

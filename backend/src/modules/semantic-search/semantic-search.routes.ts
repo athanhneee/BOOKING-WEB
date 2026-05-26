@@ -2,9 +2,13 @@ import express from "express";
 import { body } from "express-validator";
 
 import { isValidIsoDate } from "../../common/validation";
-import { semanticSearchListings } from "./semantic-search.controller";
+import {
+    aiListingSearch,
+    semanticSearchListings,
+} from "./semantic-search.controller";
 
 const router = express.Router();
+export const aiListingSearchRouter = express.Router();
 
 router.post(
     "/semantic",
@@ -14,8 +18,8 @@ router.post(
             .trim()
             .notEmpty()
             .withMessage("query is required")
-            .isLength({ max: 300 })
-            .withMessage("query must be at most 300 characters"),
+            .isLength({ max: 500 })
+            .withMessage("query must be at most 500 characters"),
 
         body("checkIn")
             .optional()
@@ -91,11 +95,67 @@ router.post(
 
         body("limit")
             .optional()
-            .isInt({ min: 1, max: 50 })
-            .withMessage("limit must be between 1 and 50")
+            .isInt({ min: 1, max: 30 })
+            .withMessage("limit must be between 1 and 30")
             .toInt(),
     ],
     semanticSearchListings,
+);
+
+aiListingSearchRouter.post(
+    "/",
+    [
+        body("query")
+            .isString()
+            .trim()
+            .notEmpty()
+            .withMessage("query is required")
+            .isLength({ max: 500 })
+            .withMessage("query must be at most 500 characters"),
+
+        body("limit")
+            .optional()
+            .isInt({ min: 1, max: 30 })
+            .withMessage("limit must be between 1 and 30")
+            .toInt(),
+
+        body("filters")
+            .optional()
+            .isObject()
+            .withMessage("filters must be an object"),
+
+        body("filters.city")
+            .optional()
+            .isString()
+            .trim()
+            .notEmpty()
+            .withMessage("filters.city must be a non-empty string")
+            .isLength({ max: 255 }),
+
+        body("filters.minPrice")
+            .optional()
+            .isFloat({ min: 0 })
+            .withMessage("filters.minPrice must be 0 or more")
+            .toFloat(),
+
+        body("filters.maxPrice")
+            .optional()
+            .isFloat({ min: 0 })
+            .withMessage("filters.maxPrice must be 0 or more")
+            .custom((value, { req }) =>
+                req.body?.filters?.minPrice === undefined ||
+                Number(value) >= Number(req.body.filters.minPrice),
+            )
+            .withMessage("filters.maxPrice must be greater than or equal to filters.minPrice")
+            .toFloat(),
+
+        body("filters.guests")
+            .optional()
+            .isInt({ min: 1 })
+            .withMessage("filters.guests must be at least 1")
+            .toInt(),
+    ],
+    aiListingSearch,
 );
 
 export default router;

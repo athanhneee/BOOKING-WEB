@@ -2,14 +2,7 @@ import { ParsedQueryFilters, SemanticSearchRequest } from "./semantic-search.typ
 import { normalizeVietnameseText, uniqueStrings } from "./semantic-search.utils";
 
 const cityAliases: Record<string, string> = {
-    "da nang": "Đà Nẵng",
-    "danang": "Đà Nẵng",
-    "nha trang": "Nha Trang",
-    "da lat": "Đà Lạt",
-    "dalat": "Đà Lạt",
-    "ha noi": "Hà Nội",
-    "hanoi": "Hà Nội",
-    "ho chi minh": "TP Hồ Chí Minh",
+        "ho chi minh": "TP Hồ Chí Minh",
     "tp ho chi minh": "TP Hồ Chí Minh",
     "sai gon": "TP Hồ Chí Minh",
     "saigon": "TP Hồ Chí Minh",
@@ -17,9 +10,7 @@ const cityAliases: Record<string, string> = {
     "vungtau": "Vũng Tàu",
     "tp vung tau": "Vũng Tàu",
     "thanh pho vung tau": "Vũng Tàu",
-    "phu quoc": "Phú Quốc",
-    "hoi an": "Hội An",
-    "hue": "Huế",
+
 };
 
 /**

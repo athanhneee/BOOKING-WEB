@@ -1,5 +1,6 @@
 import { APP_ROUTES } from "../config/routes";
 import { apiClient, normalizeAuthUser } from "./api/apiClient";
+import { disconnectSocket } from "./socket/socketClient";
 import { clearCurrentUser, setAuthSession, type AuthUser, type UserRole } from "../store/authStore";
 
 type LoginInput = {
@@ -158,6 +159,7 @@ export const logout = async () => {
     try {
         await apiClient.post("/api/auth/logout");
     } finally {
+        disconnectSocket();
         clearCurrentUser();
     }
 };

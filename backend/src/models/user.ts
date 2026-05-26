@@ -33,6 +33,7 @@ export type UserRecord = {
     dateOfBirth: Date | null;
     bio: string | null;
     avatarUrl: string | null;
+    avatarKey: string | null;
     isEmailVerified: boolean;
     isPhoneVerified: boolean;
     isHostVerified: boolean;
@@ -73,6 +74,7 @@ class UserModel extends Model<
     declare dateOfBirth: Date | null;
     declare bio: string | null;
     declare avatarUrl: CreationOptional<string | null>;
+    declare avatarKey: CreationOptional<string | null>;
     declare isEmailVerified: CreationOptional<boolean>;
     declare isPhoneVerified: CreationOptional<boolean>;
     declare isHostVerified: CreationOptional<boolean>;
@@ -150,6 +152,11 @@ UserModel.init(
             type: DataTypes.STRING(1024),
             allowNull: true,
             field: "avatar_url",
+        },
+        avatarKey: {
+            type: DataTypes.STRING(500),
+            allowNull: true,
+            field: "avatar_key",
         },
         isEmailVerified: {
             type: DataTypes.BOOLEAN,

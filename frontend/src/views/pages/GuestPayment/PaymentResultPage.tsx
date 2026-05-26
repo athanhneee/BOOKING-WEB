@@ -6,6 +6,17 @@ import { APP_ROUTES } from "../../../config/routes";
 import { getPaymentDetail, type Payment } from "../../../services/paymentService";
 import { formatCurrency } from "../Host/sharedStyles";
 
+function getProviderLabel(payment: any, searchParams: URLSearchParams): string {
+    const method = String(
+        payment?.method ?? searchParams.get("method") ?? searchParams.get("provider") ?? "",
+    ).toLowerCase();
+
+    if (method === "momo") return "MoMo";
+    if (method === "vnpay") return "VNPay";
+
+    return "cổng thanh toán";
+}
+
 const PaymentResultPage = () => {
     const [searchParams] = useSearchParams();
     const paymentId = searchParams.get("paymentId");
@@ -55,11 +66,13 @@ const PaymentResultPage = () => {
     const finalStatus = payment?.paymentStatus ?? status;
 
     const resultView = useMemo(() => {
+        const providerLabel = getProviderLabel(payment, searchParams);
+
         if (finalStatus === "paid") {
             return {
                 icon: <FiCheckCircle className="text-emerald-500" size={64} />,
                 title: "Thanh toán thành công",
-                description: "Đặt phòng của bạn đã được ghi nhận thanh toán.",
+                description: "Thanh toán thành công. Hệ thống đã gửi email xác nhận đặt phòng cho bạn.",
             };
         }
 
@@ -67,16 +80,24 @@ const PaymentResultPage = () => {
             return {
                 icon: <FiClock className="text-amber-500" size={64} />,
                 title: "Đang chờ xác nhận thanh toán",
-                description: "Hệ thống đang chờ VNPay xác nhận giao dịch.",
+                description: "Hệ thống đang chờ cổng thanh toán xác nhận giao dịch.",
+            };
+        }
+
+        if (finalStatus === "expired") {
+            return {
+                icon: <FiXCircle className="text-rose-500" size={64} />,
+                title: "Phiên giữ chỗ đã hết hạn",
+                description: "Phiên giữ chỗ đã hết hạn, vui lòng đặt lại.",
             };
         }
 
         return {
             icon: <FiXCircle className="text-rose-500" size={64} />,
             title: "Thanh toán chưa thành công",
-            description: "Giao dịch bị hủy, hết hạn hoặc không được VNPay xác nhận.",
+            description: `Giao dịch bị hủy hoặc không được ${providerLabel} xác nhận.`,
         };
-    }, [finalStatus]);
+    }, [finalStatus, payment, searchParams]);
 
     if (isLoading) {
         return (

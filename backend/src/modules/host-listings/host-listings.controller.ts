@@ -24,6 +24,7 @@ import {
     ListMineQuery,
     replaceListingAmenities,
     ReplaceAmenitiesInput,
+    setListingImageCover,
     toHostActor,
     updateListing,
     UpdateListingInput,
@@ -103,6 +104,18 @@ export const deleteHostListingImage: RequestHandler = asyncHandler(async (req, r
 
     return sendSuccess(res, {
         message: "Image deleted",
+    });
+});
+
+export const setHostListingImageCover: RequestHandler = asyncHandler(async (req, res) => {
+    assertValidRequest(req);
+
+    const params = getValidatedParams<{ listingId: number; imageId: number }>(req);
+    const result = await setListingImageCover(params.listingId, params.imageId, toHostActor(req.user!));
+
+    return sendSuccess(res, {
+        message: "Cover image updated",
+        data: result,
     });
 });
 

@@ -3,6 +3,7 @@ import { body, param, query } from "express-validator";
 
 import {
     approveListing,
+    getAdminListingDetailHandler,
     listPendingListings,
     rejectListing,
 } from "./admin.controller";
@@ -31,6 +32,8 @@ router.get(
     ],
     listPendingListings,
 );
+
+router.get("/:listingId", [listingIdParamValidator], getAdminListingDetailHandler);
 
 router.patch("/:listingId/approve", [listingIdParamValidator], approveListing);
 

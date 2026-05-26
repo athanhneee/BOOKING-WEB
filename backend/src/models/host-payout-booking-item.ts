@@ -22,6 +22,10 @@ export type HostPayoutBookingItemRecord = {
     payoutId: number;
     bookingOrderId: number;
     bookingDetailId: number;
+    amount: string;
+    currency: string;
+    serviceFeeAmount: string;
+    hostAmount: string;
     createdAt: Date;
 };
 
@@ -33,6 +37,10 @@ class HostPayoutBookingItemModel extends Model<
     declare payoutId: number;
     declare bookingOrderId: number;
     declare bookingDetailId: number;
+    declare amount: string;
+    declare currency: string;
+    declare serviceFeeAmount: string;
+    declare hostAmount: string;
     declare createdAt: CreationOptional<Date>;
 }
 
@@ -58,6 +66,28 @@ HostPayoutBookingItemModel.init(
             type: DataTypes.INTEGER.UNSIGNED,
             allowNull: false,
             field: "booking_detail_id",
+        },
+        amount: {
+            type: DataTypes.DECIMAL(15, 2),
+            allowNull: false,
+            defaultValue: 0,
+        },
+        currency: {
+            type: DataTypes.STRING(8),
+            allowNull: false,
+            defaultValue: "VND",
+        },
+        serviceFeeAmount: {
+            type: DataTypes.DECIMAL(15, 2),
+            allowNull: false,
+            defaultValue: 0,
+            field: "service_fee_amount",
+        },
+        hostAmount: {
+            type: DataTypes.DECIMAL(15, 2),
+            allowNull: false,
+            defaultValue: 0,
+            field: "host_amount",
         },
         createdAt: {
             type: DataTypes.DATE,

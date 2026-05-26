@@ -4,7 +4,10 @@ import { asyncHandler } from "../../common/async-handler";
 import { sendSuccess } from "../../common/http";
 import { assertValidRequest, getValidatedBody } from "../../common/validation";
 import { semanticSearchListings as searchService } from "./semantic-search.service";
-import { SemanticSearchRequest } from "./semantic-search.types";
+import {
+    AiListingSearchRequest,
+    SemanticSearchRequest,
+} from "./semantic-search.types";
 
 /**
  * Endpoint xử lý tìm kiếm ngữ nghĩa cho listing.
@@ -23,5 +26,28 @@ export const semanticSearchListings: RequestHandler = asyncHandler(async (req, r
     // 4. Trả về kết quả thành công
     return sendSuccess(res, {
         data: result,
+    });
+});
+
+export const aiListingSearch: RequestHandler = asyncHandler(async (req, res) => {
+    assertValidRequest(req);
+
+    const payload = getValidatedBody<AiListingSearchRequest>(req);
+    const query = payload.query.trim();
+    const result = await searchService({
+        query,
+        limit: payload.limit,
+        city: payload.filters?.city,
+        minPrice: payload.filters?.minPrice,
+        maxPrice: payload.filters?.maxPrice,
+        guests: payload.filters?.guests,
+    });
+
+    return sendSuccess(res, {
+        data: {
+            query,
+            mode: result.fallback ? "keyword_fallback" : "semantic",
+            items: result.items,
+        },
     });
 });

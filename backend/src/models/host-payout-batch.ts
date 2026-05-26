@@ -17,7 +17,15 @@ import {
     SimpleFilter,
 } from "./mysql-helpers";
 
-export const hostPayoutStatusValues = ["pending", "processing", "paid", "failed", "cancelled"] as const;
+export const hostPayoutStatusValues = [
+    "pending",
+    "approved",
+    "processing",
+    "paid",
+    "failed",
+    "rejected",
+    "cancelled",
+] as const;
 export type HostPayoutStatus = (typeof hostPayoutStatusValues)[number];
 
 export type HostPayoutBatchRecord = {
@@ -28,6 +36,12 @@ export type HostPayoutBatchRecord = {
     currency: string;
     status: HostPayoutStatus;
     notes: string | null;
+    createdByUserId: number | null;
+    approvedByUserId: number | null;
+    approvedAt: Date | null;
+    rejectedByUserId: number | null;
+    rejectedAt: Date | null;
+    rejectionReason: string | null;
     paidAt: Date | null;
     paidByUserId: number | null;
     transferReference: string | null;
@@ -46,6 +60,12 @@ class HostPayoutBatchModel extends Model<
     declare currency: string;
     declare status: HostPayoutStatus;
     declare notes: string | null;
+    declare createdByUserId: number | null;
+    declare approvedByUserId: number | null;
+    declare approvedAt: Date | null;
+    declare rejectedByUserId: number | null;
+    declare rejectedAt: Date | null;
+    declare rejectionReason: string | null;
     declare paidAt: Date | null;
     declare paidByUserId: number | null;
     declare transferReference: string | null;
@@ -88,6 +108,36 @@ HostPayoutBatchModel.init(
         notes: {
             type: DataTypes.TEXT,
             allowNull: true,
+        },
+        createdByUserId: {
+            type: DataTypes.BIGINT.UNSIGNED,
+            allowNull: true,
+            field: "created_by_user_id",
+        },
+        approvedByUserId: {
+            type: DataTypes.BIGINT.UNSIGNED,
+            allowNull: true,
+            field: "approved_by_user_id",
+        },
+        approvedAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            field: "approved_at",
+        },
+        rejectedByUserId: {
+            type: DataTypes.BIGINT.UNSIGNED,
+            allowNull: true,
+            field: "rejected_by_user_id",
+        },
+        rejectedAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            field: "rejected_at",
+        },
+        rejectionReason: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            field: "rejection_reason",
         },
         paidAt: {
             type: DataTypes.DATE,

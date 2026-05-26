@@ -24,6 +24,9 @@ export const updateMe = (
     }>,
 ) => apiClient.patch<{ user: ApiUser }>("/api/users/me", payload);
 
+export const updateMyAvatar = (payload: { url: string; key?: string | null }) =>
+    apiClient.patch<{ user: ApiUser }>("/api/users/me/avatar", payload);
+
 export const getAdminUsers = (
     query: {
         page?: number;
@@ -54,3 +57,6 @@ export const updateAdminUser = (
 
 export const updateAdminUserStatus = (userId: string | number, status: ApiUserStatus) =>
     apiClient.patch<{ user: ApiUser }>(`/api/users/${userId}/status`, { status });
+
+export const updateAdminUserAvatar = (userId: string | number, payload: { url: string; key?: string | null }) =>
+    apiClient.patch<{ user: ApiUser }>(`/api/admin/users/${userId}/avatar`, payload);

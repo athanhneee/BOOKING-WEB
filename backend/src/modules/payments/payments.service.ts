@@ -1,14 +1,19 @@
 import { Op, type Transaction } from "sequelize";
-
+import { releaseBookingDateLocksForBooking } from "../../services/booking-date-lock.service";
+import { sendBookingConfirmationEmail } from "../../services/booking-confirmation-mail.service";
 import { ApiError } from "../../common/api-error";
 import sequelize from "../../config/database";
+import { getEnv } from "../../config/env";
+import { logger } from "../../config/logger";
 import type { AuthenticatedUser } from "../auth/auth.service";
 import Booking, { BookingDocument, BookingStatus } from "../../models/booking";
+import BookingStatusHistory from "../../models/booking-status-history";
 import { getNextSequence } from "../../models/counter";
 import Coupon from "../../models/coupon";
 import CouponRedemption from "../../models/coupon-redemption";
 import Payment, { PaymentDocument, PaymentMethod, PaymentStatus } from "../../models/payment";
 import PaymentTransaction from "../../models/payment-transaction";
+import Refund from "../../models/refund";
 import { toVnpayAmount } from "../../utils/money";
 import { writeAuditLog } from "../../services/audit-log-service";
 import {
@@ -17,6 +22,14 @@ import {
     verifyVnpayPayload,
     VnpayPayload,
 } from "./vnpay.service";
+import {
+    buildMomoPaymentUrl,
+    isMomoAmountMatching,
+    MomoPayload,
+    normalizeMomoPayload,
+    verifyMomoPayload,
+    getMomoAvailability,
+} from "./momo.service";
 
 export type CreatePaymentInput = {
     bookingId: number;
@@ -29,22 +42,80 @@ export type ListPaymentsQuery = {
     limit?: number;
 };
 
+export type PaymentMethodAvailability = {
+    method: PaymentMethod;
+    label: string;
+    available: boolean;
+    unavailableReason?: string;
+    missingConfigKeys?: string[];
+};
+
 export type VnpayWebhookResult = {
     RspCode: string;
     Message: string;
 };
-
+export type MomoWebhookResult = {
+    resultCode: number;
+    message: string;
+};
 type PaymentCallbackContext = {
     ipAddress?: string | null;
     userAgent?: string | null;
 };
 
-const payableBookingStatuses: BookingStatus[] = ["pending", "pending_payment", "confirmed"];
+const payableBookingStatuses: BookingStatus[] = ["pending_payment", "confirmed"];
 const reusablePaymentStatuses: PaymentStatus[] = ["pending", "paid"];
-const pendingPaymentTtlMs = 15 * 60 * 1000;
+
 
 const isAdmin = (user: AuthenticatedUser) => user.roles.includes("admin");
 const isHost = (user: AuthenticatedUser) => user.roles.includes("host");
+
+function getBookingPaymentExpiresAt(booking: BookingDocument): Date {
+    const env = getEnv();
+
+    return booking.lockedUntil ?? new Date(Date.now() + env.paymentHoldMinutes * 60 * 1000);
+}
+
+function assertBookingCanCreatePayment(booking: BookingDocument): void {
+    const now = Date.now();
+
+    if (booking.status === "expired" || booking.status === "cancelled") {
+        throw new ApiError(409, "Phiên giữ chỗ đã hết hạn hoặc booking đã bị hủy.");
+    }
+
+    if (
+        booking.status === "pending_payment" &&
+        booking.lockedUntil &&
+        booking.lockedUntil.getTime() <= now
+    ) {
+        throw new ApiError(409, "Phiên giữ chỗ đã hết hạn, vui lòng đặt lại.");
+    }
+}
+
+export const getPaymentMethodAvailability = () => {
+    const env = getEnv();
+    const isVnpayAvailable = Boolean(env.vnpayTmnCode && env.vnpayHashSecret && env.vnpayReturnUrl);
+    const momoAvailability = getMomoAvailability();
+    const methods: PaymentMethodAvailability[] = [
+        {
+            method: "vnpay",
+            label: "VNPay",
+            available: isVnpayAvailable,
+            unavailableReason: isVnpayAvailable ? undefined : "VNPay payment is not configured",
+        },
+        {
+            method: "momo",
+            label: "MoMo",
+            available: momoAvailability.available,
+            unavailableReason: momoAvailability.available ? undefined : "MoMo payment is not configured",
+            missingConfigKeys: momoAvailability.missingKeys,
+        },
+    ];
+
+    return {
+        items: methods,
+    };
+};
 
 const assertBookingCanBePaidByUser = (booking: BookingDocument, user: AuthenticatedUser) => {
     if (String(booking.guestUserId) !== user.id) {
@@ -121,18 +192,27 @@ const maybeBuildVnpayUrl = async (
     return result.paymentUrl;
 };
 
-const isPendingPaymentReusable = (payment: PaymentDocument, now = new Date()) =>
-    payment.status === "pending" &&
-    payment.createdAt instanceof Date &&
-    payment.createdAt.getTime() + pendingPaymentTtlMs > now.getTime();
+const isPendingPaymentReusable = (payment: PaymentDocument) => {
+    if (payment.status !== "pending") {
+        return false;
+    }
+
+    if (!payment.expiresAt) {
+        return false;
+    }
+
+    return payment.expiresAt.getTime() > Date.now();
+};
 
 const expirePendingPayment = async (payment: PaymentDocument, transaction: Transaction) => {
     if (payment.status !== "pending") {
         return;
     }
 
+    const expiredAt = new Date();
     payment.status = "expired";
-    payment.failedAt = payment.failedAt ?? new Date();
+    payment.failedAt = payment.failedAt ?? expiredAt;
+    payment.expiredAt = payment.expiredAt ?? expiredAt;
     await payment.save({ transaction });
 
     if (payment.providerTxnRef) {
@@ -234,6 +314,146 @@ const redeemBookingCouponIfNeeded = async (booking: BookingDocument, transaction
     });
 };
 
+const expireBookingAfterFailedPayment = async (
+    booking: BookingDocument,
+    transaction: Transaction,
+) => {
+    if (booking.status !== "pending_payment") {
+        return;
+    }
+
+    booking.status = "expired";
+    booking.lockedUntil = null;
+    await booking.save({ transaction });
+
+    await releaseBookingDateLocksForBooking({
+        bookingId: booking.bookingId,
+        transaction,
+    });
+};
+
+const isLateSuccessfulPaymentForBooking = (booking: BookingDocument): boolean =>
+    booking.status === "expired" ||
+    booking.status === "cancelled" ||
+    Boolean(
+        booking.status === "pending_payment" &&
+        booking.lockedUntil &&
+        booking.lockedUntil.getTime() <= Date.now()
+    );
+
+const createLatePaymentRefundIfMissing = async (
+    booking: BookingDocument,
+    payment: PaymentDocument,
+    transaction: Transaction,
+) => {
+    const existingRefund = await Refund.findOne({
+        where: {
+            bookingId: booking.bookingId,
+            paymentId: payment.paymentId,
+            reason: "late_payment_after_booking_expired",
+        },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+    });
+
+    if (existingRefund) {
+        return;
+    }
+
+    await Refund.create(
+        {
+            bookingId: booking.bookingId,
+            paymentId: payment.paymentId,
+            requestedByUserId: booking.guestUserId,
+            amount: payment.amount,
+            currency: payment.currency,
+            status: "pending",
+            reason: "late_payment_after_booking_expired",
+            providerRef: null,
+            processedByUserId: null,
+            processedAt: null,
+        },
+        { transaction },
+    );
+};
+
+const markLateSuccessfulPaymentForManualReview = async (params: {
+    booking: BookingDocument;
+    payment: PaymentDocument;
+    paidAt: Date;
+    previousPaymentStatus: PaymentStatus;
+    transaction: Transaction;
+    provider: PaymentMethod;
+}) => {
+    const { booking, payment, paidAt, previousPaymentStatus, transaction, provider } = params;
+
+    payment.status = "paid";
+    payment.paidAt = paidAt;
+    payment.failedAt = null;
+    payment.providerPayload = {
+        ...(payment.providerPayload ?? {}),
+        latePaymentAfterBookingExpired: true,
+        manualReviewReason: "payment_success_after_hold_expired",
+    };
+
+    if (booking.status === "pending_payment") {
+        const oldStatus = booking.status;
+
+        booking.status = "expired";
+        booking.lockedUntil = null;
+        booking.version += 1;
+
+        await releaseBookingDateLocksForBooking({
+            bookingId: booking.bookingId,
+            transaction,
+        });
+
+        await BookingStatusHistory.create(
+            {
+                bookingId: booking.bookingId,
+                oldStatus,
+                newStatus: "expired",
+                changedByUserId: null,
+                reason: "late_payment_after_booking_expired",
+                metadataJson: {
+                    paymentId: payment.paymentId,
+                    provider,
+                    paidAt: paidAt.toISOString(),
+                },
+            },
+            { transaction },
+        );
+    }
+
+    if (previousPaymentStatus !== "paid") {
+        await createLatePaymentRefundIfMissing(booking, payment, transaction);
+    }
+
+    logger.warn("Late successful payment requires manual review", {
+        bookingId: booking.bookingId,
+        paymentId: payment.paymentId,
+        provider,
+        bookingStatus: booking.status,
+        paidAt,
+    });
+};
+
+const sendBookingConfirmationEmailOnce = (
+    payment: Pick<PaymentDocument, "paymentId" | "bookingId">,
+    shouldSendConfirmationEmail: boolean,
+) => {
+    if (!shouldSendConfirmationEmail) {
+        return;
+    }
+
+    sendBookingConfirmationEmail(payment.paymentId).catch((error) => {
+        logger.error("Failed to send booking confirmation email", error, {
+            paymentId: payment.paymentId,
+            bookingId: payment.bookingId,
+        });
+    });
+};
+
 export const createPayment = async (
     user: AuthenticatedUser,
     input: CreatePaymentInput,
@@ -254,6 +474,7 @@ export const createPayment = async (
             throw new ApiError(404, "Booking not found");
         }
 
+        assertBookingCanCreatePayment(booking);
         assertBookingCanBePaidByUser(booking, user);
 
         const existingPayments = await Payment.findAll({
@@ -273,9 +494,14 @@ export const createPayment = async (
             return serializePayment(paidPayment);
         }
 
-        const pendingPayment = existingPayments.find((payment) => payment.status === "pending");
+        const pendingPayment = existingPayments.find(
+            (payment) => payment.status === "pending" && payment.method === input.method,
+        );
+
         if (pendingPayment && isPendingPaymentReusable(pendingPayment)) {
             let paymentUrl: string | null = null;
+            let providerTxnRef = pendingPayment.providerTxnRef;
+            let provider = pendingPayment.provider;
 
             if (pendingPayment.method === "vnpay") {
                 const vnpayPayment = buildVnpayPaymentUrl({
@@ -284,27 +510,49 @@ export const createPayment = async (
                     ipAddress: clientIp,
                     createdAt: pendingPayment.createdAt,
                 });
-                paymentUrl = vnpayPayment.paymentUrl;
 
-                if (pendingPayment.providerTxnRef !== vnpayPayment.txnRef) {
-                    pendingPayment.provider = "vnpay";
-                    pendingPayment.providerTxnRef = vnpayPayment.txnRef;
-                    await pendingPayment.save({ transaction });
-                    await PaymentTransaction.update(
-                        {
-                            provider: "vnpay",
-                            providerTxnRef: vnpayPayment.txnRef,
-                        },
-                        {
-                            where: {
-                                paymentId: pendingPayment.paymentId,
-                                providerTxnRef: null,
-                            },
-                            transaction,
-                        },
-                    );
-                }
+                paymentUrl = vnpayPayment.paymentUrl;
+                provider = "vnpay";
+                providerTxnRef = vnpayPayment.txnRef;
             }
+
+            if (pendingPayment.method === "momo") {
+                const momoPayment = await buildMomoPaymentUrl({ booking, payment: pendingPayment });
+
+                paymentUrl = momoPayment.paymentUrl;
+                provider = "momo";
+                providerTxnRef = momoPayment.txnRef;
+
+                pendingPayment.providerPayload = {
+                    createResponse: momoPayment.responsePayload,
+                    requestId: momoPayment.requestId,
+                };
+            }
+
+            if (provider && pendingPayment.provider !== provider) {
+                pendingPayment.provider = provider;
+            }
+
+            if (providerTxnRef && pendingPayment.providerTxnRef !== providerTxnRef) {
+                pendingPayment.providerTxnRef = providerTxnRef;
+            }
+
+            await pendingPayment.save({ transaction });
+
+            await PaymentTransaction.update(
+                {
+                    provider: pendingPayment.provider,
+                    providerTxnRef: pendingPayment.providerTxnRef,
+                    rawPayloadJson: pendingPayment.providerPayload,
+                },
+                {
+                    where: {
+                        paymentId: pendingPayment.paymentId,
+                        providerTxnRef: null,
+                    },
+                    transaction,
+                },
+            );
 
             return serializePayment(pendingPayment, paymentUrl);
         }
@@ -315,21 +563,24 @@ export const createPayment = async (
             }
         }
 
+        const expiresAt = getBookingPaymentExpiresAt(booking);
         const payment = new Payment({
             paymentId: await getNextSequence("payment", 890),
             bookingId: booking.bookingId,
-            userId: Number(user.id),
+            userId: booking.guestUserId,
             amount: booking.totalAmount,
             currency: booking.currency,
             method: input.method,
             status: "pending",
-            provider: input.method === "vnpay" ? "vnpay" : null,
+            provider: input.method === "vnpay" || input.method === "momo" ? input.method : null,
             providerTxnRef: null,
             providerTransactionNo: null,
             providerResponseCode: null,
             providerPayload: null,
             paidAt: null,
             failedAt: null,
+            expiresAt,
+            expiredAt: null,
         });
 
         let paymentUrl: string | null = null;
@@ -340,7 +591,19 @@ export const createPayment = async (
             paymentUrl = vnpayPayment.paymentUrl;
         }
 
+        if (input.method === "momo") {
+            const momoPayment = await buildMomoPaymentUrl({ booking, payment });
+
+            payment.providerTxnRef = momoPayment.txnRef;
+            payment.providerPayload = {
+                createResponse: momoPayment.responsePayload,
+                requestId: momoPayment.requestId,
+            };
+            paymentUrl = momoPayment.paymentUrl;
+        }
+
         await payment.save({ transaction });
+
         await PaymentTransaction.create(
             {
                 paymentId: payment.paymentId,
@@ -352,7 +615,7 @@ export const createPayment = async (
                 status: "pending",
                 amount: payment.amount,
                 currency: payment.currency,
-                rawPayloadJson: null,
+                rawPayloadJson: payment.providerPayload,
                 processedAt: null,
             },
             { transaction },
@@ -430,7 +693,7 @@ const updatePaymentFromVnpayPayload = async (payload: VnpayPayload) => {
         throw new ApiError(400, "Invalid VNPay signature");
     }
 
-    return sequelize.transaction(async (transaction) => {
+    const result = await sequelize.transaction(async (transaction) => {
         const payment = await Payment.findOne({
             where: {
                 providerTxnRef: payload.vnp_TxnRef,
@@ -459,6 +722,9 @@ const updatePaymentFromVnpayPayload = async (payload: VnpayPayload) => {
             throw new ApiError(400, "Invalid VNPay amount");
         }
 
+        const previousPaymentStatus = payment.status;
+        let shouldSendConfirmationEmail = false;
+
         payment.providerPayload = sanitizeVnpayPayloadForStorage(payload);
         payment.providerTransactionNo = payload.vnp_TransactionNo ?? payment.providerTransactionNo;
         payment.providerResponseCode = payload.vnp_ResponseCode ?? payment.providerResponseCode;
@@ -466,23 +732,42 @@ const updatePaymentFromVnpayPayload = async (payload: VnpayPayload) => {
         if (isSuccessfulVnpayPayload(payload)) {
             const paidAt = payment.paidAt ?? new Date();
 
-            if (payment.status !== "paid") {
-                payment.status = "paid";
-                payment.paidAt = paidAt;
-                payment.failedAt = null;
-            }
+            if (isLateSuccessfulPaymentForBooking(booking)) {
+                await markLateSuccessfulPaymentForManualReview({
+                    booking,
+                    payment,
+                    paidAt,
+                    previousPaymentStatus,
+                    transaction,
+                    provider: "vnpay",
+                });
+            } else {
+                if (payment.status !== "paid") {
+                    payment.status = "paid";
+                    payment.paidAt = paidAt;
+                    payment.failedAt = null;
+                }
 
-            if (!["paid", "checked_in", "completed"].includes(booking.status)) {
-                booking.status = "paid";
-                booking.paidAt = paidAt;
+                if (!["paid", "checked_in", "completed"].includes(booking.status)) {
+                    booking.status = "paid";
+                    booking.lockedUntil = null;
+                    booking.paidAt = paidAt;
+                }
+
+                await redeemBookingCouponIfNeeded(booking, transaction);
+                shouldSendConfirmationEmail = previousPaymentStatus !== "paid";
             }
-            await redeemBookingCouponIfNeeded(booking, transaction);
         } else if (payment.status !== "paid") {
             payment.status = getFailedVnpayStatus(payload);
-            payment.failedAt = new Date();
+            const failedAt = new Date();
+            payment.failedAt = failedAt;
 
-            if (payment.status === "expired" && booking.status === "pending_payment") {
-                booking.status = "expired";
+            if (payment.status === "expired") {
+                payment.expiredAt = payment.expiredAt ?? failedAt;
+            }
+
+            if (["failed", "cancelled", "expired"].includes(payment.status)) {
+                await expireBookingAfterFailedPayment(booking, transaction);
             }
         }
 
@@ -492,18 +777,18 @@ const updatePaymentFromVnpayPayload = async (payload: VnpayPayload) => {
             payment.status === "paid"
                 ? "succeeded"
                 : payment.status === "failed"
-                  ? "failed"
-                  : payment.status === "cancelled" || payment.status === "expired"
-                    ? "cancelled"
-                    : "pending";
+                    ? "failed"
+                    : payment.status === "cancelled" || payment.status === "expired"
+                        ? "cancelled"
+                        : "pending";
         const existingTransaction = payment.providerTxnRef
             ? await PaymentTransaction.findOne({
-                  where: {
-                      providerTxnRef: payment.providerTxnRef,
-                  },
-                  transaction,
-                  lock: true,
-              })
+                where: {
+                    providerTxnRef: payment.providerTxnRef,
+                },
+                transaction,
+                lock: true,
+            })
             : null;
 
         if (existingTransaction) {
@@ -531,8 +816,23 @@ const updatePaymentFromVnpayPayload = async (payload: VnpayPayload) => {
             );
         }
 
-        return serializePayment(payment);
+        return {
+            payment: serializePayment(payment),
+            shouldSendConfirmationEmail,
+            paymentId: payment.paymentId,
+            bookingId: payment.bookingId,
+        };
     });
+
+    sendBookingConfirmationEmailOnce(
+        {
+            paymentId: result.paymentId,
+            bookingId: result.bookingId,
+        },
+        result.shouldSendConfirmationEmail,
+    );
+
+    return result.payment;
 };
 
 const buildVnpayAuditMetadata = (payload: VnpayPayload, outcome: string) => ({
@@ -668,5 +968,339 @@ export const processVnpayWebhook = async (
     return {
         RspCode: "00",
         Message: "Confirm Success",
+    };
+};
+
+const sanitizeMomoPayloadForStorage = (payload: MomoPayload) => ({
+    partnerCode: payload.partnerCode ?? null,
+    orderId: payload.orderId ?? null,
+    requestId: payload.requestId ?? null,
+    amount: payload.amount ?? null,
+    resultCode: payload.resultCode ?? null,
+    message: payload.message ?? null,
+    orderInfo: payload.orderInfo ?? null,
+    orderType: payload.orderType ?? null,
+    payType: payload.payType ?? null,
+    transId: payload.transId ?? null,
+    responseTime: payload.responseTime ?? null,
+    extraData: payload.extraData ?? null,
+});
+
+const isSuccessfulMomoPayload = (payload: MomoPayload) => payload.resultCode === "0";
+
+const getFailedMomoStatus = (payload: MomoPayload): PaymentStatus => {
+    if (payload.resultCode === "1006") {
+        return "cancelled";
+    }
+
+    if (payload.resultCode === "7000" || payload.resultCode === "7002") {
+        return "pending";
+    }
+
+    return "failed";
+};
+
+const findPaymentByMomoPayload = async (payload: MomoPayload) => {
+    const orderId = payload.orderId;
+
+    if (!orderId) {
+        return null;
+    }
+
+    return Payment.findOne({ providerTxnRef: orderId });
+};
+
+const updatePaymentFromMomoPayload = async (payload: MomoPayload) => {
+    if (!verifyMomoPayload(payload)) {
+        throw new ApiError(400, "Invalid MoMo signature");
+    }
+
+    const result = await sequelize.transaction(async (transaction) => {
+        const payment = await Payment.findOne({
+            where: {
+                providerTxnRef: payload.orderId,
+            },
+            transaction,
+            lock: true,
+        });
+
+        if (!payment) {
+            throw new ApiError(404, "Payment not found");
+        }
+
+        const booking = await Booking.findOne({
+            where: {
+                bookingId: payment.bookingId,
+            },
+            transaction,
+            lock: true,
+        });
+
+        if (!booking) {
+            throw new ApiError(404, "Booking not found");
+        }
+
+        if (!isMomoAmountMatching(payload, payment)) {
+            throw new ApiError(400, "Invalid MoMo amount");
+        }
+
+        const previousPaymentStatus = payment.status;
+        let shouldSendConfirmationEmail = false;
+
+        payment.provider = "momo";
+        payment.providerPayload = {
+            ...(payment.providerPayload ?? {}),
+            callback: sanitizeMomoPayloadForStorage(payload),
+        };
+        payment.providerTransactionNo = payload.transId ?? payment.providerTransactionNo;
+        payment.providerResponseCode = payload.resultCode ?? payment.providerResponseCode;
+
+        if (isSuccessfulMomoPayload(payload)) {
+            const paidAt = payment.paidAt ?? new Date();
+
+            if (isLateSuccessfulPaymentForBooking(booking)) {
+                await markLateSuccessfulPaymentForManualReview({
+                    booking,
+                    payment,
+                    paidAt,
+                    previousPaymentStatus,
+                    transaction,
+                    provider: "momo",
+                });
+            } else {
+                if (payment.status !== "paid") {
+                    payment.status = "paid";
+                    payment.paidAt = paidAt;
+                    payment.failedAt = null;
+                }
+
+                if (!["paid", "checked_in", "completed"].includes(booking.status)) {
+                    booking.status = "paid";
+                    booking.lockedUntil = null;
+                    booking.paidAt = paidAt;
+                }
+
+                await redeemBookingCouponIfNeeded(booking, transaction);
+                shouldSendConfirmationEmail = previousPaymentStatus !== "paid";
+            }
+        } else if (payment.status !== "paid") {
+            payment.status = getFailedMomoStatus(payload);
+
+            if (payment.status !== "pending") {
+                const failedAt = new Date();
+                payment.failedAt = failedAt;
+
+                if (payment.status === "expired") {
+                    payment.expiredAt = payment.expiredAt ?? failedAt;
+                }
+            }
+
+            if (["failed", "cancelled", "expired"].includes(payment.status)) {
+                await expireBookingAfterFailedPayment(booking, transaction);
+            }
+        }
+
+        await payment.save({ transaction });
+        await booking.save({ transaction });
+
+        const transactionStatus =
+            payment.status === "paid"
+                ? "succeeded"
+                : payment.status === "failed"
+                    ? "failed"
+                    : payment.status === "cancelled" || payment.status === "expired"
+                        ? "cancelled"
+                        : "pending";
+
+        const existingTransaction = payment.providerTxnRef
+            ? await PaymentTransaction.findOne({
+                where: {
+                    providerTxnRef: payment.providerTxnRef,
+                },
+                transaction,
+                lock: true,
+            })
+            : null;
+
+        if (existingTransaction) {
+            existingTransaction.provider = "momo";
+            existingTransaction.providerTransactionNo = payment.providerTransactionNo;
+            existingTransaction.status = transactionStatus;
+            existingTransaction.rawPayloadJson = sanitizeMomoPayloadForStorage(payload);
+            existingTransaction.processedAt = new Date();
+            await existingTransaction.save({ transaction });
+        } else {
+            await PaymentTransaction.create(
+                {
+                    paymentId: payment.paymentId,
+                    bookingId: booking.bookingId,
+                    provider: "momo",
+                    providerTxnRef: payment.providerTxnRef,
+                    providerTransactionNo: payment.providerTransactionNo,
+                    transactionType: "payment",
+                    status: transactionStatus,
+                    amount: payment.amount,
+                    currency: payment.currency,
+                    rawPayloadJson: sanitizeMomoPayloadForStorage(payload),
+                    processedAt: new Date(),
+                },
+                { transaction },
+            );
+        }
+
+        return {
+            payment: serializePayment(payment),
+            shouldSendConfirmationEmail,
+            paymentId: payment.paymentId,
+            bookingId: payment.bookingId,
+        };
+    });
+
+    sendBookingConfirmationEmailOnce(
+        {
+            paymentId: result.paymentId,
+            bookingId: result.bookingId,
+        },
+        result.shouldSendConfirmationEmail,
+    );
+
+    return result.payment;
+};
+
+const buildMomoAuditMetadata = (payload: MomoPayload, outcome: string) => ({
+    provider: "momo",
+    outcome,
+    orderId: payload.orderId ?? null,
+    requestId: payload.requestId ?? null,
+    resultCode: payload.resultCode ?? null,
+    message: payload.message ?? null,
+    transId: payload.transId ?? null,
+    amount: payload.amount ?? null,
+});
+
+const writeMomoPaymentCallbackAudit = async (
+    action: string,
+    payload: MomoPayload,
+    outcome: string,
+    context: PaymentCallbackContext,
+    targetId?: number | null,
+) => {
+    await writeAuditLog({
+        action,
+        targetType: targetId ? "payment" : "payment_callback",
+        targetId: targetId ?? null,
+        metadata: buildMomoAuditMetadata(payload, outcome),
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+    });
+};
+
+const getMomoCallbackFailureOutcome = (error: unknown) => {
+    if (!(error instanceof ApiError)) {
+        return "error";
+    }
+
+    if (error.statusCode === 400 && /signature/i.test(error.message)) {
+        return "invalid_signature";
+    }
+
+    if (error.statusCode === 400 && /amount/i.test(error.message)) {
+        return "invalid_amount";
+    }
+
+    if (error.statusCode === 404) {
+        return "order_not_found";
+    }
+
+    return `http_${error.statusCode}`;
+};
+
+export const processMomoReturn = async (
+    input: Record<string, unknown>,
+    context: PaymentCallbackContext = {},
+) => {
+    const payload = normalizeMomoPayload(input);
+
+    try {
+        const result = await updatePaymentFromMomoPayload(payload);
+
+        await writeMomoPaymentCallbackAudit(
+            "payment.callback.momo.return",
+            payload,
+            result.paymentStatus,
+            context,
+            result.paymentId,
+        );
+
+        return result;
+    } catch (error) {
+        const payment = await findPaymentByMomoPayload(payload);
+
+        await writeMomoPaymentCallbackAudit(
+            "payment.callback.momo.return",
+            payload,
+            getMomoCallbackFailureOutcome(error),
+            context,
+            payment?.paymentId ?? null,
+        );
+
+        throw error;
+    }
+};
+
+export const processMomoWebhook = async (
+    input: Record<string, unknown>,
+    context: PaymentCallbackContext = {},
+): Promise<MomoWebhookResult> => {
+    const payload = normalizeMomoPayload(input);
+
+    if (!verifyMomoPayload(payload)) {
+        await writeMomoPaymentCallbackAudit("payment.callback.momo.webhook", payload, "invalid_signature", context);
+
+        return {
+            resultCode: 97,
+            message: "Invalid signature",
+        };
+    }
+
+    const payment = await findPaymentByMomoPayload(payload);
+
+    if (!payment) {
+        await writeMomoPaymentCallbackAudit("payment.callback.momo.webhook", payload, "order_not_found", context);
+
+        return {
+            resultCode: 1,
+            message: "Order not found",
+        };
+    }
+
+    if (!isMomoAmountMatching(payload, payment)) {
+        await writeMomoPaymentCallbackAudit(
+            "payment.callback.momo.webhook",
+            payload,
+            "invalid_amount",
+            context,
+            payment.paymentId,
+        );
+
+        return {
+            resultCode: 4,
+            message: "Invalid amount",
+        };
+    }
+
+    await updatePaymentFromMomoPayload(payload);
+
+    await writeMomoPaymentCallbackAudit(
+        "payment.callback.momo.webhook",
+        payload,
+        "confirmed",
+        context,
+        payment.paymentId,
+    );
+
+    return {
+        resultCode: 0,
+        message: "Success",
     };
 };

@@ -69,12 +69,12 @@ const LoginPage = () => {
         const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
         if (!googleClientId) {
-            setError("Thiếu VITE_GOOGLE_CLIENT_ID trong frontend .env.local.");
+            setError("Đang xảy ra lỗi.");
             return;
         }
 
         if (!window.google?.accounts?.id) {
-            setError("Chưa nạp Google Identity script trong index.html.");
+            setError("Google Identity script chưa sẵn sàng.");
             return;
         }
 
@@ -84,7 +84,7 @@ const LoginPage = () => {
             client_id: googleClientId,
             callback: async (response) => {
                 if (!response.credential) {
-                    setError("Google không trả về idToken hợp lệ.");
+                    setError("Đang xảy ra lỗi.");
                     return;
                 }
 
@@ -107,7 +107,7 @@ const LoginPage = () => {
     return (
         <AuthCard
             title="Đăng nhập tài khoản"
-            description="Đăng nhập để tiếp tục quản lý đặt phòng, theo dõi chuyến đi và truy cập khu vực host hoặc admin khi cần."
+            description="Đăng nhập tận hưởng tối đa những lợi ích."
         >
             <form className="space-y-5" onSubmit={handleSubmit}>
                 <AuthInput

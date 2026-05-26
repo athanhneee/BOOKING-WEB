@@ -185,7 +185,12 @@ const Header = () => {
                 <div className="flex items-center gap-2 md:gap-3">
                     {renderBecomeHostLink()}
 
-                    <AccountMenu key={location.pathname} user={accountMenuUser} hostAction={hostAction} />
+                    <AccountMenu
+                        key={location.pathname}
+                        user={accountMenuUser}
+                        isAuthenticated={Boolean(currentUser)}
+                        hostAction={hostAction}
+                    />
 
                     <button
                         type="button"

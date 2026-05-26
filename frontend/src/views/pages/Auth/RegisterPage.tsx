@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { LuArrowRight, LuEye, LuEyeOff, LuLock, LuMail, LuPhone, LuUserRound } from "react-icons/lu";
 import { APP_ROUTES } from "../../../config/routes";
-import { registerAccount, resolvePostAuthRoute } from "../../../services/authService";
+import { loginWithGoogleIdToken, registerAccount, resolvePostAuthRoute } from "../../../services/authService";
 import AuthCard from "../../components/auth/AuthCard";
 import AuthInput from "../../components/auth/AuthInput";
 
@@ -13,7 +13,21 @@ const primaryButtonClass =
 
 const secondaryButtonClass =
     "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white px-6 py-4 text-lg font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50";
-
+declare global {
+    interface Window {
+        google?: {
+            accounts: {
+                id: {
+                    initialize: (options: {
+                        client_id: string;
+                        callback: (response: { credential?: string }) => void;
+                    }) => void;
+                    prompt: () => void;
+                };
+            };
+        };
+    }
+}
 const getPasswordStrength = (password: string) => {
     let score = 0;
 
@@ -81,6 +95,45 @@ const RegisterPage = () => {
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleGoogleLogin = () => {
+        const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+
+        if (!googleClientId) {
+            setError("Đang xảy ra lỗi.");
+            return;
+        }
+
+        if (!window.google?.accounts?.id) {
+            setError("Đang xảy ra lỗi.");
+            return;
+        }
+
+        setError("");
+
+        window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: async (response) => {
+                if (!response.credential) {
+                    setError("Đang xảy ra lỗi.");
+                    return;
+                }
+
+                setIsSubmitting(true);
+
+                try {
+                    const user = await loginWithGoogleIdToken(response.credential);
+                    navigate(resolvePostAuthRoute(user), { replace: true });
+                } catch (googleError) {
+                    setError(googleError instanceof Error ? googleError.message : "Không thể đăng nhập Google.");
+                } finally {
+                    setIsSubmitting(false);
+                }
+            },
+        });
+
+        window.google.accounts.id.prompt();
     };
 
     return (
@@ -193,7 +246,7 @@ const RegisterPage = () => {
                 <span className="h-px flex-1 bg-slate-200" />
             </div>
 
-            <button type="button" className={secondaryButtonClass}>
+            <button type="button" disabled={isSubmitting} onClick={handleGoogleLogin} className={secondaryButtonClass}>
                 <FcGoogle className="text-[28px]" />
                 Đăng nhập với Google
             </button>

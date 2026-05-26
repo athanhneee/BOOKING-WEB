@@ -19,7 +19,7 @@ import {
     stringifyJsonValue,
 } from "./mysql-helpers";
 
-export const paymentMethodValues = ["vnpay", "cod", "bank_transfer"] as const;
+export const paymentMethodValues = ["vnpay", "momo"] as const;
 export type PaymentMethod = (typeof paymentMethodValues)[number];
 
 export const paymentStatusValues = ["pending", "paid", "failed", "cancelled", "expired", "refunded"] as const;
@@ -44,6 +44,7 @@ export type PaymentRecord = {
     refundedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+
 };
 
 class PaymentModel extends Model<InferAttributes<PaymentModel>, InferCreationAttributes<PaymentModel>> {
@@ -65,6 +66,8 @@ class PaymentModel extends Model<InferAttributes<PaymentModel>, InferCreationAtt
     declare refundedAt: CreationOptional<Date | null>;
     declare createdAt: CreationOptional<Date>;
     declare updatedAt: CreationOptional<Date>;
+    declare expiresAt: Date | null;
+    declare expiredAt: Date | null;
 }
 
 PaymentModel.init(
@@ -162,6 +165,16 @@ PaymentModel.init(
         },
         createdAt: DataTypes.DATE,
         updatedAt: DataTypes.DATE,
+        expiresAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            field: "expires_at",
+        },
+        expiredAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            field: "expired_at",
+        },
     },
     {
         sequelize,
@@ -182,6 +195,10 @@ PaymentModel.init(
             {
                 unique: true,
                 fields: ["provider_txn_ref"],
+            },
+            {
+                name: "idx_payments_status_expires_at",
+                fields: ["status", "expires_at"],
             },
         ],
     },

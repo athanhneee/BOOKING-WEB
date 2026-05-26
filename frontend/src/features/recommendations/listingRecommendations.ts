@@ -148,7 +148,7 @@ const getReason = (
         return "Đánh giá cao gần đây";
     }
 
-    return "Gợi ý từ dữ liệu thật";
+    return "Gợi ý từ dữ liệu";
 };
 
 export const getAiNearbyRecommendations = (

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ApiBooking } from "../../../../models/entities/Booking";
 import { getHostBookings } from "../../../../services/hostService";
+import { bookingStatusToneClassNames, getBookingDisplayStatus } from "../../../../utils/bookingStatus";
 import { PageHeader } from "../shared";
 import { formatDate, maskEmail, pageWrapperClass, tableClassName } from "../sharedStyles";
 
@@ -29,15 +30,20 @@ const KhachLuuTru = () => {
 
     const guests = useMemo(
         () =>
-            bookings.map((booking) => ({
-                id: booking.bookingId,
-                name: `Khách booking #${booking.bookingId}`,
-                email: `guest-${booking.guestUserId}@private.local`,
-                listing: booking.listing?.title ?? `Listing #${booking.listingId}`,
-                dates: `${formatDate(booking.checkInDate)} - ${formatDate(booking.checkOutDate)}`,
-                guestCount: booking.guestCount ?? booking.guestsCount ?? 1,
-                status: booking.status,
-            })),
+            bookings.map((booking) => {
+                const displayStatus = getBookingDisplayStatus(booking);
+
+                return {
+                    id: booking.bookingId,
+                    name: `Khách booking #${booking.bookingId}`,
+                    email: `guest-${booking.guestUserId}@private.local`,
+                    listing: booking.listing?.title ?? booking.listingTitle ?? `Listing #${booking.listingId}`,
+                    dates: `${formatDate(booking.checkInDate)} - ${formatDate(booking.checkOutDate)}`,
+                    guestCount: booking.guests ?? booking.guestCount ?? booking.guestsCount ?? 1,
+                    statusLabel: displayStatus.label,
+                    statusTone: displayStatus.tone,
+                };
+            }),
         [bookings],
     );
 
@@ -62,7 +68,7 @@ const KhachLuuTru = () => {
                                     <td className="px-4 py-4 text-gray-600">{guest.listing}</td>
                                     <td className="px-4 py-4 text-gray-600">{guest.dates}</td>
                                     <td className="px-4 py-4 text-gray-600">{guest.guestCount}</td>
-                                    <td className="px-4 py-4"><span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">{guest.status}</span></td>
+                                    <td className="px-4 py-4"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${bookingStatusToneClassNames[guest.statusTone]}`}>{guest.statusLabel}</span></td>
                                 </tr>
                             ))}
                         </tbody>

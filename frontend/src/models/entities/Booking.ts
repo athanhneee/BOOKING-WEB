@@ -1,10 +1,26 @@
-export type BookingStatus = "pending" | "confirmed" | "cancelled" | "completed" | string;
+export type BookingStatus =
+    | "pending"
+    | "pending_host"
+    | "pending_host_confirmation"
+    | "pending_payment"
+    | "confirmed"
+    | "paid"
+    | "checked_in"
+    | "completed"
+    | "cancelled"
+    | "cancelled_by_guest"
+    | "cancelled_by_host"
+    | "host_cancelled"
+    | "rejected"
+    | "expired"
+    | string;
 
 export type ApiBooking = {
     bookingId: number;
     listingId: number;
     guestUserId: string | number;
     hostUserId: string | number;
+    listingTitle?: string | null;
     listing: {
         listingId: number;
         title: string;
@@ -12,14 +28,35 @@ export type ApiBooking = {
         district: string;
         addressLine: string;
         imageUrl: string | null;
+        coverImageUrl?: string | null;
+        coverImage?: {
+            imageId: number;
+            url: string;
+            displayTitle?: string | null;
+            altText?: string | null;
+            caption?: string | null;
+        } | null;
+        images?: Array<{
+            imageId: number;
+            url: string;
+            displayTitle?: string | null;
+            altText?: string | null;
+            caption?: string | null;
+            isCover?: boolean;
+            sortOrder?: number;
+        }>;
     } | null;
     checkInDate: string;
     checkOutDate: string;
+    guests?: number;
     guestCount: number;
     guestsCount?: number;
     nights: number;
     status: BookingStatus;
     internalStatus?: string;
+    lockedUntil?: string | null;
+    paymentExpiresAt?: string | null;
+    remainingPaymentSeconds?: number;
     paymentStatus: string | null;
     currency: string;
     subtotalAmount: number;
@@ -32,10 +69,10 @@ export type ApiBooking = {
     bookingNote: string | null;
     cancellationReason: string | null;
     cancelledByUserId: string | number | null;
-    cancelledAt: string | null;
+    cancelledAt?: string | null;
     checkedInAt: string | null;
     checkedOutAt: string | null;
-    paidAt: string | null;
+    paidAt?: string | null;
     createdAt: string;
     updatedAt: string;
 };

@@ -20,7 +20,7 @@ const pageMeta = [
     {
         pattern: APP_ROUTES.hostBookings,
         title: "Đặt phòng",
-        subtitle: "Xem các đơn mới, tình trạng lưu trú và ghi chú cho từng booking.",
+        subtitle: "Xem các đơn mới, tình trạng lưu trú và ghi chú.",
     },
     {
         pattern: APP_ROUTES.hostCalendar,

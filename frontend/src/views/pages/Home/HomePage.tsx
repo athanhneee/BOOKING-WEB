@@ -1,5 +1,6 @@
 import { useState } from "react";
 import RecentlyViewedSection from "../../../features/recentlyViewed/RecentlyViewedSection";
+import BlogHighlightsSection from "../../components/blog/BlogHighlightsSection";
 import Hero from "../../components/layout/Hero";
 import PopularDestinationsSection from "../../components/listing/PopularDestinationsSection";
 import SearchBar from "../../components/search/SearchBar";
@@ -18,6 +19,7 @@ const HomePage = () => {
                 onExpandedChange={setIsPopularExpanded}
                 onSearchBarHiddenChange={setIsSearchBarHidden}
             />
+            <BlogHighlightsSection />
         </>
     );
 };

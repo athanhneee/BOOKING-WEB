@@ -19,7 +19,7 @@ import {
     stringifyJsonValue,
 } from "./mysql-helpers";
 
-export const messageTypeValues = ["text", "image", "file"] as const;
+export const messageTypeValues = ["text", "image", "system", "file"] as const;
 export type MessageType = (typeof messageTypeValues)[number];
 
 export type MessageAttachment = {
@@ -36,6 +36,7 @@ export type MessageRecord = {
     messageType: MessageType;
     attachments: MessageAttachment[];
     createdAt: Date;
+    updatedAt: Date;
 };
 
 class MessageModel extends Model<InferAttributes<MessageModel>, InferCreationAttributes<MessageModel>> {
@@ -46,6 +47,7 @@ class MessageModel extends Model<InferAttributes<MessageModel>, InferCreationAtt
     declare messageType: MessageType;
     declare attachments: MessageAttachment[];
     declare createdAt: CreationOptional<Date>;
+    declare updatedAt: CreationOptional<Date>;
 }
 
 MessageModel.init(
@@ -92,12 +94,17 @@ MessageModel.init(
             allowNull: false,
             field: "created_at",
         },
+        updatedAt: {
+            type: DataTypes.DATE,
+            allowNull: false,
+            field: "updated_at",
+        },
     },
     {
         sequelize,
         tableName: "message",
         underscored: true,
-        timestamps: false,
+        timestamps: true,
     },
 );
 

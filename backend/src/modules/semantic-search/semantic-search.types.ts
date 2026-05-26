@@ -1,5 +1,8 @@
 import type { PropertyType, RoomType } from "../../models/listing";
 
+export const semanticPublicListingStatuses = ["active", "approved", "published"] as const;
+export type SemanticPublicListingStatus = (typeof semanticPublicListingStatuses)[number];
+
 export type SemanticSearchRequest = {
     query: string;
     checkIn?: string;
@@ -14,6 +17,17 @@ export type SemanticSearchRequest = {
     roomType?: RoomType;
     page?: number;
     limit?: number;
+};
+
+export type AiListingSearchRequest = {
+    query: string;
+    limit?: number;
+    filters?: {
+        city?: string;
+        minPrice?: number;
+        maxPrice?: number;
+        guests?: number;
+    };
 };
 
 export type ParsedQueryFilters = {
@@ -79,7 +93,7 @@ export type ListingVectorPayload = {
     property_type: PropertyType;
     room_type: RoomType;
 
-    status: "active";
+    status: SemanticPublicListingStatus;
 };
 
 export type VectorSearchHit = {
@@ -153,4 +167,10 @@ export type SemanticSearchResponse = {
             roomType?: RoomType;
         };
     };
+};
+
+export type AiListingSearchResponse = {
+    query: string;
+    mode: "semantic" | "keyword_fallback";
+    items: SemanticSearchItem[];
 };

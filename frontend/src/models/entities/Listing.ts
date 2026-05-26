@@ -1,4 +1,4 @@
-export type StayCategory = "Villa" | "Căn hộ" | "Homestay" | "Nhà nguyên căn" |  "Khách sạn";
+export type StayCategory = "Villa" | "Căn hộ" | "Homestay" | "Nhà nguyên căn" | "Khách sạn";
 export type StayBadge = "Yêu thích" | "Nổi bật" | "Mới" | "Được đặt nhiều";
 
 export type StayAmenity =
@@ -75,6 +75,64 @@ export type ApiListingSummary = {
     bathrooms: number;
     currency: string;
     imageUrl: string | null;
+    image_url?: string | null;
+    coverImageUrl?: string | null;
+    coverImage?: ApiListingImage | null;
+    images?: ApiListingImage[];
+};
+
+export type ApiListingImage = {
+    imageId: number;
+    id?: number;
+    listingImageId?: number;
+    url: string;
+    imageUrl?: string | null;
+    image_url?: string | null;
+    secureUrl?: string | null;
+    publicUrl?: string | null;
+    key?: string | null;
+    objectKey?: string | null;
+    caption: string | null;
+
+    displayTitle?: string | null;
+    display_title?: string | null;
+
+    altText?: string | null;
+    alt_text?: string | null;
+
+    aiDisplayTitle?: string | null;
+
+    aiImageType?: string | null;
+    ai_image_type?: string | null;
+
+    aiSceneTags?: string[];
+    ai_scene_tags?: string[];
+
+    aiAmenityTags?: string[];
+    ai_amenity_tags?: string[];
+
+    aiDescription?: string | null;
+    ai_description?: string | null;
+
+    aiConfidence?: number | null;
+    ai_confidence?: number | null;
+
+    aiQualityWarnings?: string[];
+    ai_quality_warnings?: string[];
+
+    aiAnalysisStatus?: "pending" | "analyzed" | "failed";
+    ai_analysis_status?: "pending" | "analyzed" | "failed";
+
+    aiErrorMessage?: string | null;
+    ai_error_message?: string | null;
+
+    aiAnalyzedAt?: string | null;
+    ai_analyzed_at?: string | null;
+
+    sortOrder: number;
+    sort_order?: number;
+    isCover?: boolean;
+    is_cover?: boolean;
 };
 
 export type ApiListingDetail = {
@@ -108,9 +166,9 @@ export type ApiListingDetail = {
         postalCode: string | null;
     };
     amenities: Array<{ amenityId: number; name: string; icon?: string | null }>;
-    images: Array<{ imageId: number; url: string; caption: string | null; sortOrder: number }>;
+    images: ApiListingImage[];
     ratingSummary: { avgRating: number; reviewCount: number };
-    host: { userId: number; name: string } | null;
+    host: { userId: number; name: string; avatarUrl?: string | null } | null;
 };
 
 export type PaginatedListings = {
@@ -161,7 +219,7 @@ export const mapListingSummaryToDestination = (item: ApiListingSummary): Popular
         address: buildAddress(item),
         rating,
         pricePerNight: Number(item.basePrice || 0),
-        imageUrl: item.imageUrl ?? "",
+        imageUrl: item.coverImageUrl ?? item.coverImage?.url ?? item.images?.find((image) => image.isCover)?.url ?? item.imageUrl ?? "",
         description: item.description ?? "",
         category: propertyTypeToCategory(item.propertyType),
         guests: Number(item.maxGuests || 1),
@@ -196,7 +254,7 @@ export const mapListingDetailToDestination = (item: ApiListingDetail): PopularDe
         beds: item.beds,
         bathrooms: item.bathrooms,
         currency: item.currency,
-        imageUrl: item.images?.[0]?.url ?? null,
+        imageUrl: item.images?.find((image) => image.isCover)?.url ?? item.images?.[0]?.url ?? null,
     };
 
     return {

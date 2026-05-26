@@ -19,7 +19,11 @@ const ListingCard = ({ listing, onClick, className = "" }: ListingCardProps) => 
             <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-100">
                 {listing.imageUrl ? (
                     <img src={listing.imageUrl} alt={listing.name} className="h-full w-full object-cover" loading="lazy" />
-                ) : null}
+                ) : (
+                    <div className="flex h-full w-full items-center justify-center text-sm font-medium text-slate-500">
+                        Chưa có ảnh
+                    </div>
+                )}
                 <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-slate-950/75 px-2.5 py-1 text-xs font-semibold text-white">
                     <FaStar className="text-amber-300" />
                     {listing.rating.toFixed(1)}

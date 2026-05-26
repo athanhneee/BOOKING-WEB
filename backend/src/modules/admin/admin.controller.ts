@@ -12,6 +12,7 @@ import {
     AdminListingQuery,
     RejectListingInput,
     approveAdminListing,
+    getAdminListingDetail,
     listPendingAdminListings,
     rejectAdminListing,
 } from "./admin.service";
@@ -24,6 +25,17 @@ export const listPendingListings: RequestHandler = asyncHandler(async (req, res)
 
     return sendSuccess(res, {
         data: result,
+    });
+});
+
+export const getAdminListingDetailHandler: RequestHandler = asyncHandler(async (req, res) => {
+    assertValidRequest(req);
+
+    const params = getValidatedParams<{ listingId: number }>(req);
+    const detail = await getAdminListingDetail(params.listingId);
+
+    return sendSuccess(res, {
+        data: detail,
     });
 });
 

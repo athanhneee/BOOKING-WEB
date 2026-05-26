@@ -1,4 +1,4 @@
-import { FiMenu, FiX } from "react-icons/fi";
+import { FiArrowRight, FiCompass, FiMenu, FiX } from "react-icons/fi";
 import { Link, NavLink } from "react-router-dom";
 import logo from "../../../../assets/img/logo_mau.svg";
 import { APP_ROUTES } from "../../../../config/routes";
@@ -89,14 +89,37 @@ const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
                     })}
                 </nav>
 
-                <div className="mt-auto rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-4">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                        <FiMenu className="text-cyan-700" />
-                        Gợi ý hôm nay
+                <div className="mt-auto space-y-3">
+                    <Link
+                        to={APP_ROUTES.search}
+                        onClick={onClose}
+                        className="group block rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-cyan-300 hover:bg-cyan-50"
+                    >
+                        <div className="flex items-start gap-3">
+                            <span className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 transition-colors group-hover:bg-white">
+                                <FiCompass size={18} />
+                            </span>
+
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-gray-900">Chuyển sang chế độ du lịch</p>
+                                <p className="mt-1 text-sm leading-6 text-gray-600">
+                                    Tìm nơi lưu trú, xem chuyến đi và đặt phòng .
+                                </p>
+                            </div>
+
+                            <FiArrowRight className="mt-1 flex-none text-gray-400 transition-colors group-hover:text-cyan-700" size={16} />
+                        </div>
+                    </Link>
+
+                    <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-4">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                            <FiMenu className="text-cyan-700" />
+                            Gợi ý hôm nay
+                        </div>
+                        <p className="mt-2 text-sm leading-6 text-gray-600">
+                            Kiểm tra các đơn sắp nhận phòng và những giao dịch.
+                        </p>
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-gray-600">
-                        Kiểm tra các đơn sắp nhận phòng và những giao dịch đang chờ xác nhận để vận hành mượt hơn.
-                    </p>
                 </div>
             </aside>
         </>

@@ -42,7 +42,9 @@ hostBookingsRoutes.use(authenticate, requireRole("host", "admin"));
 hostBookingsRoutes.get("/", validate({ query: bookingsQuerySchema }), getHostBookingList);
 hostBookingsRoutes.get("/:bookingId", validate({ params: bookingIdParamSchema }), getHostBookingById);
 hostBookingsRoutes.patch("/:bookingId/confirm", validate({ params: bookingIdParamSchema }), confirmHostBookingById);
+hostBookingsRoutes.post("/:bookingId/check-in", validate({ params: bookingIdParamSchema }), checkInHostBookingById);
 hostBookingsRoutes.patch("/:bookingId/check-in", validate({ params: bookingIdParamSchema }), checkInHostBookingById);
+hostBookingsRoutes.post("/:bookingId/check-out", validate({ params: bookingIdParamSchema }), checkOutHostBookingById);
 hostBookingsRoutes.patch("/:bookingId/check-out", validate({ params: bookingIdParamSchema }), checkOutHostBookingById);
 hostBookingsRoutes.patch(
     "/:bookingId/cancel",

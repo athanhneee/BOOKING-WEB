@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } 
 import { FaMinus, FaPlus } from "react-icons/fa";
 import { FiCalendar, FiSearch, FiUsers } from "react-icons/fi";
 import { HiOutlineMapPin, HiOutlinePaperAirplane, HiOutlineSparkles } from "react-icons/hi2";
+import { Sparkles } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { APP_ROUTES } from "../../../config/routes";
 import { addSearchHistoryItem } from "../../../features/searchHistory/searchHistoryStorage";
@@ -54,9 +55,12 @@ const getTimeOfDay = (date = new Date()) => {
 };
 
 const createSearchSyncKey = (pathname: string, search: string, variant: SearchBarVariant) =>
-    pathname === APP_ROUTES.search
+    pathname === APP_ROUTES.search || pathname === APP_ROUTES.searchLegacy
         ? `search:${buildBookingSearchParams(parseBookingSearchParams(search)).toString()}`
         : `${variant}:${pathname}`;
+
+const isSearchRoutePath = (pathname: string) =>
+    pathname === APP_ROUTES.search || pathname === APP_ROUTES.searchLegacy;
 
 const createLocationSuggestions = (): SearchSuggestion[] => {
     const accents = [
@@ -203,6 +207,7 @@ const SearchBarInner = ({
     initialDraftState: BookingSearchState;
 }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const isScrollVisible = useScrollVisibility({ threshold: 12, topOffset: 64, hideStartRatio: 0.5 });
     const todayIso = useMemo(() => toIsoDate(new Date()), []);
     const locationSuggestions = useMemo(() => createLocationSuggestions(), []);
@@ -211,6 +216,7 @@ const SearchBarInner = ({
     const [mobileDateField, setMobileDateField] = useState<"checkIn" | "checkOut">("checkIn");
     const [draftState, setDraftState] = useState(initialDraftState);
     const [timeOfDay, setTimeOfDay] = useState(() => getTimeOfDay());
+    const [aiSearchError, setAiSearchError] = useState("");
     const [isPinnedByScroll, setIsPinnedByScroll] = useState(() =>
         typeof window !== "undefined" ? window.scrollY > 320 : false,
     );
@@ -446,6 +452,31 @@ const SearchBarInner = ({
         });
     };
 
+    const handleAiSearch = () => {
+        const keyword = draftState.location.trim();
+
+        if (!keyword) {
+            setAiSearchError("Nhập nội dung bạn muốn tìm bằng AI");
+            setOpenField("location");
+            return;
+        }
+
+        setAiSearchError("");
+        setOpenField(null);
+        setMobileSheetOpen(false);
+
+        if (location.pathname === APP_ROUTES.aiSearch) {
+            window.dispatchEvent(new CustomEvent("ai-search-submit", { detail: { query: keyword } }));
+            return;
+        }
+
+        navigate(APP_ROUTES.aiSearch, {
+            state: {
+                initialQuery: keyword,
+            },
+        });
+    };
+
     if (forceHidden) {
         return null;
     }
@@ -639,8 +670,21 @@ const SearchBarInner = ({
                                 </div>
                             </div>
 
+                            <button
+                                type="button"
+                                onMouseDown={(event) => event.stopPropagation()}
+                                onClick={handleAiSearch}
+                                className="hidden h-14 shrink-0 items-center justify-center gap-2 rounded-full border border-cyan-200 bg-white px-5 text-sm font-semibold text-cyan-700 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-md md:inline-flex"
+                            >
+                                <Sparkles size={17} />
+                                Tìm AI
+                            </button>
+
                             {desktopAside ? <div className="hidden md:block">{desktopAside}</div> : null}
                         </div>
+                        {aiSearchError ? (
+                            <p className="mt-3 text-center text-sm font-semibold text-rose-600">{aiSearchError}</p>
+                        ) : null}
                     </div>
                 </div>
             </div>
@@ -657,7 +701,7 @@ const SearchBarInner = ({
                     <div className="mb-4 flex items-center justify-between gap-3">
                         <div>
                             <p className="text-base font-semibold text-gray-900">Điểm đến được đề xuất</p>
-                           
+
                         </div>
 
                         {draftState.location ? (
@@ -982,7 +1026,18 @@ const SearchBarInner = ({
                                     <FiSearch size={16} />
                                     Tìm kiếm
                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={handleAiSearch}
+                                    className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-cyan-200 bg-white px-4 text-sm font-semibold text-cyan-700 transition-colors hover:bg-cyan-50"
+                                >
+                                    <Sparkles size={16} />
+                                    Tìm AI
+                                </button>
                             </div>
+                            {aiSearchError ? (
+                                <p className="mt-3 text-center text-sm font-semibold text-rose-600">{aiSearchError}</p>
+                            ) : null}
                         </div>
                     </div>
                 </div>
@@ -993,10 +1048,10 @@ const SearchBarInner = ({
 
 const SearchBar = ({ variant, forceHidden = false, forceVisible = false, desktopAside }: SearchBarProps) => {
     const location = useLocation();
-    const inferredVariant = variant ?? (location.pathname === APP_ROUTES.search ? "listing" : "home");
+    const inferredVariant = variant ?? (isSearchRoutePath(location.pathname) ? "listing" : "home");
     const initialDraftState = useMemo(
         () =>
-            location.pathname === APP_ROUTES.search
+            isSearchRoutePath(location.pathname)
                 ? parseBookingSearchParams(location.search)
                 : createDefaultBookingSearchState(),
         [location.pathname, location.search],

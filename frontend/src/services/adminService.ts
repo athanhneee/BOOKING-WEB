@@ -93,6 +93,9 @@ export const getPendingListings = (query: { page?: number; limit?: number } = {}
         },
     });
 
+export const getAdminListingDetail = (listingId: number | string) =>
+    apiClient.get(`/api/admin/listings/${listingId}`);
+
 export const approveListing = (listingId: string | number) =>
     apiClient.patch<{ listingId: number; status: string }>(`/api/admin/listings/${listingId}/approve`);
 
@@ -132,6 +135,9 @@ export const updateAdminUser = (
 
 export const updateAdminUserStatus = (userId: string | number, status: ApiUserStatus) =>
     apiClient.patch(`/api/users/${userId}/status`, { status });
+
+export const updateAdminUserAvatar = (userId: string | number, payload: { url: string; key?: string | null }) =>
+    apiClient.patch(`/api/admin/users/${userId}/avatar`, payload);
 
 export const getAdminRevenueReport = (
     query: {

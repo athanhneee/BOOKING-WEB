@@ -3,7 +3,7 @@ import { FiSliders } from "react-icons/fi";
 import { useSearchParams } from "react-router-dom";
 import Pagination from "../../components/common/Pagination";
 import SearchBar from "../../components/search/SearchBar";
-import { getListings, semanticSearchListingsMapped } from "../../../services/listingService";
+import { getListings } from "../../../services/listingService";
 import type { PopularDestination } from "../../../models/entities/Listing";
 import {
     buildGuestSummary,
@@ -68,26 +68,15 @@ const SearchPage = () => {
 
             try {
                 const totalGuests = bookingSearchState.guests.adults + bookingSearchState.guests.children;
-                const trimmedLocation = bookingSearchState.location.trim();
 
-                const result = trimmedLocation
-                    ? await semanticSearchListingsMapped({
-                        query: trimmedLocation,
-                        city: "Vũng Tàu",
-                        checkIn: bookingSearchState.checkIn || undefined,
-                        checkOut: bookingSearchState.checkOut || undefined,
-                        guests: totalGuests > 0 ? totalGuests : undefined,
-                        page: apiPage,
-                        limit: ITEMS_PER_PAGE,
-                    })
-                    : await getListings({
-                        city: "Vũng Tàu",
-                        checkIn: bookingSearchState.checkIn || undefined,
-                        checkOut: bookingSearchState.checkOut || undefined,
-                        guests: totalGuests > 0 ? totalGuests : undefined,
-                        page: apiPage,
-                        limit: ITEMS_PER_PAGE,
-                    });
+                const result = await getListings({
+                    city: "Vũng Tàu",
+                    checkIn: bookingSearchState.checkIn || undefined,
+                    checkOut: bookingSearchState.checkOut || undefined,
+                    guests: totalGuests > 0 ? totalGuests : undefined,
+                    page: apiPage,
+                    limit: ITEMS_PER_PAGE,
+                });
 
                 if (ignore) return;
 

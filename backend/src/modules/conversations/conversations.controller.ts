@@ -15,6 +15,7 @@ import {
     ConversationQuery,
     getConversationMessages,
     getConversations,
+    markConversationRead,
     sendConversationMessage,
     SendMessageInput,
 } from "./conversations.service";
@@ -37,8 +38,8 @@ export const createNewConversation: RequestHandler = asyncHandler(async (req, re
     const result = await createConversation(req.user!, payload);
 
     return sendSuccess(res, {
-        statusCode: 201,
-        message: "Conversation created",
+        statusCode: result.created ? 201 : 200,
+        message: "Conversation ready",
         data: result,
     });
 });
@@ -65,6 +66,17 @@ export const sendMessage: RequestHandler = asyncHandler(async (req, res) => {
     return sendSuccess(res, {
         statusCode: 201,
         message: "Message sent",
+        data: result,
+    });
+});
+
+export const markRead: RequestHandler = asyncHandler(async (req, res) => {
+    assertValidRequest(req);
+
+    const params = getValidatedParams<{ conversationId: number }>(req);
+    const result = await markConversationRead(params.conversationId, req.user!);
+
+    return sendSuccess(res, {
         data: result,
     });
 });

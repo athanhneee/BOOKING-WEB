@@ -133,6 +133,7 @@ export type UserUpdateAttributes = Partial<{
     dateOfBirth: Date | null;
     bio: string | null;
     avatarUrl: string | null;
+    avatarKey: string | null;
     status: UserStatus;
 }>;
 

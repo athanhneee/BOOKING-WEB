@@ -158,6 +158,30 @@ describe("Payments, coupons, payouts, and revenue reports", () => {
         assert.equal(vnpayService.verifyVnpayPayload({ ...payload, vnp_SecureHash: "not-hex" }), false);
     });
 
+    it("builds VNPay payment URL with the official sorted query checksum", () => {
+        const { paymentUrl, txnRef } = vnpayService.buildVnpayPaymentUrl({
+            booking: buildBooking(),
+            payment: buildPayment(),
+            ipAddress: "::1",
+            createdAt: new Date("2026-05-10T00:00:00.000Z"),
+        });
+        const url = new URL(paymentUrl);
+        const params = Object.fromEntries(url.searchParams.entries()) as Record<string, string>;
+        const secureHash = params.vnp_SecureHash;
+
+        assert.equal(`${url.origin}${url.pathname}`, process.env.VNPAY_PAYMENT_URL);
+        assert.equal(txnRef, "8901");
+        assert.equal(params.vnp_Amount, "230000000");
+        assert.equal(params.vnp_CreateDate, "20260510070000");
+        assert.equal(params.vnp_ExpireDate, "20260510071500");
+        assert.equal(params.vnp_IpAddr, "127.0.0.1");
+        assert.equal(params.vnp_OrderInfo, "Thanh toan booking 9001");
+        assert.equal(params.vnp_SecureHashType, undefined);
+
+        delete params.vnp_SecureHash;
+        assert.equal(secureHash, signVnpayPayload(params));
+    });
+
     it("returns VNPay webhook error codes for invalid signature and amount mismatch", async () => {
         const payment = buildPayment();
         patch(AuditLog, "create", async () => ({}));
@@ -298,6 +322,7 @@ describe("Payments, coupons, payouts, and revenue reports", () => {
                         paymentStatus: null,
                         listingTitle: "Seaside villa",
                         accommodationAmount: "2300000.00",
+                        hostAmount: "2300000.00",
                     },
                 ];
             }
@@ -344,6 +369,7 @@ describe("Payments, coupons, payouts, and revenue reports", () => {
                         paymentStatus: "paid",
                         listingTitle: "Seaside villa",
                         accommodationAmount: "2300000.00",
+                        hostAmount: "2300000.00",
                     },
                 ];
             }
@@ -393,6 +419,7 @@ describe("Payments, coupons, payouts, and revenue reports", () => {
                         paymentStatus: "paid",
                         listingTitle: "Seaside villa",
                         accommodationAmount: "2300000.00",
+                        hostAmount: "2300000.00",
                     },
                 ];
             }

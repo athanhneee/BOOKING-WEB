@@ -6,6 +6,7 @@ import {
     FiHome,
     FiLifeBuoy,
     FiMessageCircle,
+    FiMessageSquare,
     FiSettings,
     FiUsers,
 } from "react-icons/fi";
@@ -17,6 +18,7 @@ export const OWNER_SIDEBAR_ITEMS: SidebarMenuItem[] = [
     { id: "dat-phong", label: "Đặt phòng", icon: FiCalendar, to: APP_ROUTES.hostBookings },
     { id: "lich-luu-tru", label: "Lịch lưu trú", icon: FiClock, to: APP_ROUTES.hostCalendar },
     { id: "khach-luu-tru", label: "Khách lưu trú", icon: FiUsers, to: APP_ROUTES.hostGuests },
+    { id: "tin-nhan", label: "Tin nhắn", icon: FiMessageSquare, to: APP_ROUTES.hostMessages },
     { id: "thanh-toan", label: "Thanh toán", icon: FiCreditCard, to: APP_ROUTES.hostPayments },
     { id: "danh-gia", label: "Đánh giá", icon: FiMessageCircle, to: APP_ROUTES.hostReviews },
     { id: "bao-cao", label: "Báo cáo", icon: FiBarChart2, to: APP_ROUTES.hostReports },

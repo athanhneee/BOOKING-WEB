@@ -5,6 +5,7 @@ import {
     createNewConversation,
     listConversationMessages,
     listConversations,
+    markRead,
     sendMessage,
 } from "./conversations.controller";
 import { authenticate } from "../../middlewares/authenticate.middleware";
@@ -28,6 +29,7 @@ router.get(
         query("page").optional().isInt({ min: 1 }).withMessage("page must be at least 1").toInt(),
         query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("limit must be between 1 and 100").toInt(),
         query("unreadOnly").optional().isBoolean().withMessage("unreadOnly must be boolean").toBoolean(),
+        query("scope").optional().isIn(["guest", "host"]).withMessage("scope must be guest or host"),
     ],
     listConversations,
 );
@@ -39,16 +41,21 @@ router.post(
         body("listingId").optional().isInt({ min: 1 }).withMessage("listingId must be a positive integer").toInt(),
         body("bookingId").optional().isInt({ min: 1 }).withMessage("bookingId must be a positive integer").toInt(),
         body("participantId")
+            .optional()
             .isInt({ min: 1 })
             .withMessage("participantId must be a positive integer")
             .toInt(),
+        body("hostUserId")
+            .optional()
+            .isInt({ min: 1 })
+            .withMessage("hostUserId must be a positive integer")
+            .toInt(),
         body("firstMessage")
+            .optional()
             .isString()
             .trim()
-            .notEmpty()
-            .withMessage("firstMessage is required")
-            .isLength({ max: 5000 })
-            .withMessage("firstMessage must be at most 5000 characters"),
+            .isLength({ max: 2000 })
+            .withMessage("firstMessage must be at most 2000 characters"),
     ],
     createNewConversation,
 );
@@ -69,7 +76,12 @@ router.post(
     getMessageWriteRateLimiter(),
     [
         conversationIdParamValidator,
-        body("content").optional().isString().trim().isLength({ max: 5000 }),
+        body("content")
+            .optional()
+            .isString()
+            .trim()
+            .isLength({ max: 2000 })
+            .withMessage("content must be at most 2000 characters"),
         body("messageType").optional().isIn(messageTypeValues).withMessage("messageType is invalid"),
         body("attachments").optional().isArray({ max: 10 }).withMessage("attachments must be an array"),
         body("attachments.*.url")
@@ -81,6 +93,13 @@ router.post(
     ],
     checkConversationParticipant,
     sendMessage,
+);
+
+router.patch(
+    "/:conversationId/read",
+    [conversationIdParamValidator],
+    checkConversationParticipant,
+    markRead,
 );
 
 export default router;

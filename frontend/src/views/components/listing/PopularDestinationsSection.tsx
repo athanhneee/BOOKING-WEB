@@ -99,7 +99,7 @@ const PopularDestinationsSection = ({
         return (
             <section className="bg-[#efefef] py-12 sm:py-16 md:py-20 lg:py-24">
                 <div className="mx-auto w-full max-w-[74rem] px-4 text-center text-sm font-medium text-zinc-500 md:px-6">
-                    Đang tải chỗ nghỉ từ database...
+                    Đang tải chỗ nghỉ ...
                 </div>
             </section>
         );
@@ -141,7 +141,7 @@ const PopularDestinationsSection = ({
                     <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-3 sm:p-5 md:p-7">
                         <div className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
                             <h3 className="text-center text-base font-semibold text-zinc-900 sm:text-lg md:text-xl">
-                                Danh sách chỗ nghỉ đã duyệt từ database
+                                Danh sách chỗ nghỉ đã duyệt
                             </h3>
                             <p className="text-center text-sm font-medium text-zinc-500 sm:text-right">
                                 Trang {safePageIndex + 1} / {totalPages}

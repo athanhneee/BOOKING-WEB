@@ -7,6 +7,15 @@ const mysql = require("mysql2/promise");
 const databaseName =
     process.env.MYSQL_DATABASE || process.env.MYSQLDATABASE || "booking_room";
 
+const dbUser = process.env.MYSQLUSER || process.env.MYSQL_USER || "booking_app";
+
+if (
+    dbUser.toLowerCase() === "root" &&
+    process.env.ALLOW_DATABASE_ROOT_USER !== "true"
+) {
+    throw new Error("Refusing to run migration with MySQL root user.");
+}
+
 const ssl =
     process.env.MYSQL_SSL === "true"
         ? {
@@ -23,7 +32,7 @@ const createConnection = () =>
     mysql.createConnection({
         host: process.env.MYSQLHOST || "127.0.0.1",
         port: Number(process.env.MYSQLPORT || 3306),
-        user: process.env.MYSQLUSER || "root",
+        user: dbUser,
         password: process.env.MYSQLPASSWORD || "",
         database: databaseName,
         ssl,
@@ -542,6 +551,68 @@ const createMissingTables = async (connection) => {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         `,
     );
+
+    await ensureTable(
+        connection,
+        "conversation",
+        `
+        CREATE TABLE \`conversation\` (
+            \`conversation_id\` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            \`created_by_user_id\` BIGINT UNSIGNED NULL,
+            \`listing_id\` INT UNSIGNED NULL,
+            \`guest_user_id\` BIGINT UNSIGNED NULL,
+            \`host_user_id\` BIGINT UNSIGNED NULL,
+            \`booking_order_id\` INT UNSIGNED NULL,
+            \`dedupe_key\` VARCHAR(255) NULL,
+            \`last_message\` TEXT NULL,
+            \`last_message_at\` DATETIME NULL,
+            \`created_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            \`updated_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (\`conversation_id\`),
+            UNIQUE KEY \`uq_conversation_dedupe_key\` (\`dedupe_key\`),
+            INDEX \`idx_conversation_listing\` (\`listing_id\`),
+            INDEX \`idx_conversation_guest\` (\`guest_user_id\`),
+            INDEX \`idx_conversation_host\` (\`host_user_id\`),
+            INDEX \`idx_conversation_booking\` (\`booking_order_id\`),
+            INDEX \`idx_conversation_last_message_at\` (\`last_message_at\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `,
+    );
+
+    await ensureTable(
+        connection,
+        "conversation_participant",
+        `
+        CREATE TABLE \`conversation_participant\` (
+            \`conversation_id\` BIGINT UNSIGNED NOT NULL,
+            \`user_id\` BIGINT UNSIGNED NOT NULL,
+            \`role\` ENUM('guest','host','admin') NULL,
+            \`joined_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            \`last_read_at\` DATETIME NULL,
+            PRIMARY KEY (\`conversation_id\`, \`user_id\`),
+            INDEX \`idx_conversation_participant_user\` (\`user_id\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `,
+    );
+
+    await ensureTable(
+        connection,
+        "message",
+        `
+        CREATE TABLE \`message\` (
+            \`message_id\` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            \`conversation_id\` BIGINT UNSIGNED NOT NULL,
+            \`sender_id\` BIGINT UNSIGNED NOT NULL,
+            \`content\` TEXT NOT NULL,
+            \`message_type\` ENUM('text','image','system','file') NOT NULL DEFAULT 'text',
+            \`attachments_json\` LONGTEXT NULL,
+            \`created_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            \`updated_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (\`message_id\`),
+            INDEX \`idx_message_conversation_created\` (\`conversation_id\`, \`created_at\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `,
+    );
 };
 
 const addColumns = async (connection) => {
@@ -589,6 +660,11 @@ const addColumns = async (connection) => {
     );
 
     await ensureColumn(connection, "payments", "refunded_at", "`refunded_at` DATETIME NULL AFTER `failed_at`");
+    await ensureColumn(connection, "listing_images", "object_key", "`object_key` VARCHAR(1024) NULL AFTER `url`");
+    await ensureColumn(connection, "conversation", "guest_user_id", "`guest_user_id` BIGINT UNSIGNED NULL AFTER `listing_id`");
+    await ensureColumn(connection, "conversation", "host_user_id", "`host_user_id` BIGINT UNSIGNED NULL AFTER `guest_user_id`");
+    await ensureColumn(connection, "message", "attachments_json", "`attachments_json` LONGTEXT NULL AFTER `message_type`");
+    await ensureColumn(connection, "message", "updated_at", "`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `created_at`");
 
     await ensureColumn(connection, "payout_account", "account_number_encrypted", "`account_number_encrypted` TEXT NULL AFTER `account_number`");
     await ensureColumn(connection, "payout_account", "account_number_hash", "`account_number_hash` VARCHAR(128) NULL AFTER `account_number_encrypted`");
@@ -604,6 +680,8 @@ const normalizeColumnTypes = async (connection) => {
     await ensureColumnType(connection, "payments", "user_id", "`user_id` BIGINT UNSIGNED NOT NULL", "bigint unsigned");
     await ensureColumnType(connection, "reviews", "reviewer_user_id", "`reviewer_user_id` BIGINT UNSIGNED NULL", "bigint unsigned");
     await ensureColumnType(connection, "conversation", "listing_id", "`listing_id` INT UNSIGNED NULL", "int unsigned");
+    await ensureColumnType(connection, "conversation", "guest_user_id", "`guest_user_id` BIGINT UNSIGNED NULL", "bigint unsigned");
+    await ensureColumnType(connection, "conversation", "host_user_id", "`host_user_id` BIGINT UNSIGNED NULL", "bigint unsigned");
     await ensureColumnType(connection, "conversation", "booking_order_id", "`booking_order_id` INT UNSIGNED NULL", "int unsigned");
     await ensureColumnType(connection, "host_payout_booking_item", "booking_order_id", "`booking_order_id` INT UNSIGNED NOT NULL", "int unsigned");
     await ensureColumnType(connection, "host_payout_booking_item", "booking_detail_id", "`booking_detail_id` INT UNSIGNED NOT NULL", "int unsigned");
@@ -631,7 +709,7 @@ const extendEnums = async (connection) => {
         connection,
         "bookings",
         "status",
-        ["pending", "pending_payment", "confirmed", "paid", "checked_in", "completed", "cancelled", "rejected", "expired"],
+        ["pending", "pending_host", "pending_payment", "confirmed", "paid", "checked_in", "completed", "cancelled", "rejected", "expired"],
         "NOT NULL",
         "DEFAULT 'pending_payment'",
     );
@@ -647,7 +725,7 @@ const extendEnums = async (connection) => {
         connection,
         "message",
         "message_type",
-        ["text", "image", "file"],
+        ["text", "image", "system", "file"],
         "NOT NULL",
         "DEFAULT 'text'",
     );
@@ -688,6 +766,8 @@ const addIndexes = async (connection) => {
     await ensureIndex(connection, "auth_otp_tokens", "idx_auth_otp_used_at", "`used_at`");
 
     await ensureIndex(connection, "conversation", "idx_conversation_listing", "`listing_id`");
+    await ensureIndex(connection, "conversation", "idx_conversation_guest", "`guest_user_id`");
+    await ensureIndex(connection, "conversation", "idx_conversation_host", "`host_user_id`");
     await ensureIndex(connection, "conversation", "idx_conversation_booking", "`booking_order_id`");
     await ensureIndex(connection, "message", "idx_message_conversation_created", "`conversation_id`, `created_at`");
 
@@ -739,6 +819,8 @@ const addForeignKeys = async (connection) => {
 
     await ensureForeignKey(connection, "conversation", "fk_conversation_created_by", "created_by_user_id", "users", "user_id", "SET NULL");
     await ensureForeignKey(connection, "conversation", "fk_conversation_listing", "listing_id", "listings", "listing_id", "SET NULL");
+    await ensureForeignKey(connection, "conversation", "fk_conversation_guest", "guest_user_id", "users", "user_id", "SET NULL");
+    await ensureForeignKey(connection, "conversation", "fk_conversation_host", "host_user_id", "users", "user_id", "SET NULL");
     await ensureForeignKey(connection, "conversation", "fk_conversation_booking", "booking_order_id", "bookings", "booking_id", "SET NULL");
     await ensureForeignKey(connection, "conversation_participant", "fk_conversation_participant_conversation", "conversation_id", "conversation", "conversation_id", "CASCADE");
     await ensureForeignKey(connection, "conversation_participant", "fk_conversation_participant_user", "user_id", "users", "user_id", "CASCADE");

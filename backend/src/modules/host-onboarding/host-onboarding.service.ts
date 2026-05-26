@@ -1,4 +1,4 @@
-import { QueryTypes, type Transaction } from "sequelize";
+import { type Transaction } from "sequelize";
 
 import { ApiError } from "../../common/api-error";
 import sequelize from "../../config/database";
@@ -49,37 +49,6 @@ export const getLatestHostApplication = async (
         transaction,
     });
 
-const assertPhoneVerifiedIfSupported = async (userId: number, transaction?: Transaction) => {
-    const userColumns = await getExistingColumns("users", ["is_phone_verified"], transaction);
-
-    if (!userColumns.has("is_phone_verified")) {
-        return;
-    }
-
-    const rows = await sequelize.query<{ isPhoneVerified: number | boolean }>(
-        `
-        SELECT is_phone_verified AS isPhoneVerified
-        FROM users
-        WHERE user_id = ?
-        LIMIT 1
-        `,
-        {
-            replacements: [userId],
-            type: QueryTypes.SELECT,
-            transaction,
-        },
-    );
-
-    if (!rows[0]?.isPhoneVerified) {
-        throw new ApiError(422, "Phone number must be verified before becoming a host", [
-            {
-                path: "phone",
-                msg: "Phone number must be verified before becoming a host",
-            },
-        ]);
-    }
-};
-
 const updateUserHostApplicationStatus = async (
     userId: number,
     status: "pending" | "approved" | "rejected",
@@ -116,12 +85,10 @@ export const registerHostApplication = async (
     }
 
     return sequelize.transaction(async (transaction) => {
-        await assertPhoneVerifiedIfSupported(userId, transaction);
-
         const latestApplication = await getLatestHostApplication(userId, transaction);
         const applicationPayload = {
             contactName: nullableTrim(input.contactName),
-            contactEmail: nullableTrim(input.contactEmail),
+            contactEmail: nullableTrim(input.contactEmail) ?? existingUser.email,
             contactPhone: input.contactPhone.trim(),
             businessAddress: input.businessAddress.trim(),
             entityType: input.entityType,

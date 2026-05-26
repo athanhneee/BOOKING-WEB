@@ -26,6 +26,20 @@ const toVnpayDate = (date: Date) => {
     ].join("");
 };
 
+const normalizeIpAddress = (ipAddress?: string | null) => {
+    const firstIp = ipAddress?.split(",")[0]?.trim();
+
+    if (!firstIp || firstIp === "::1") {
+        return "127.0.0.1";
+    }
+
+    if (firstIp.startsWith("::ffff:")) {
+        return firstIp.replace("::ffff:", "");
+    }
+
+    return firstIp;
+};
+
 const normalizeOrderInfo = (value: string) =>
     value
         .normalize("NFD")
@@ -37,28 +51,37 @@ const normalizeOrderInfo = (value: string) =>
 
 const sortVnpayParams = (params: VnpayPayload) =>
     Object.keys(params)
-        .filter((key) => params[key] !== undefined && params[key] !== "")
+        .filter((key) => params[key] !== undefined && params[key] !== null && params[key] !== "")
         .sort()
         .reduce<VnpayPayload>((result, key) => {
-            result[key] = params[key];
+            result[key] = String(params[key]).trim();
             return result;
         }, {});
 
-const toUnsignedPayload = (payload: VnpayPayload) => {
-    const { vnp_SecureHash: _secureHash, vnp_SecureHashType: _secureHashType, ...unsigned } = payload;
-    return sortVnpayParams(unsigned);
-};
+const encodeVnpayComponent = (value: string) => encodeURIComponent(value).replace(/%20/g, "+");
 
-const encodeVnpayComponent = (value: string) =>
-    encodeURIComponent(value).replace(/%20/g, "+");
-
-const stringifyVnpayParams = (params: VnpayPayload) =>
+const buildVnpayQueryString = (params: VnpayPayload) =>
     Object.entries(sortVnpayParams(params))
         .map(([key, value]) => `${encodeVnpayComponent(key)}=${encodeVnpayComponent(value)}`)
         .join("&");
 
-const createSecureHash = (payload: VnpayPayload, secret: string) =>
-    createHmac("sha512", secret).update(Buffer.from(stringifyVnpayParams(payload), "utf-8")).digest("hex");
+const toUnsignedPayload = (payload: VnpayPayload) => {
+    const {
+        vnp_SecureHash: _secureHash,
+        vnp_SecureHashType: _secureHashType,
+        ...unsigned
+    } = payload;
+
+    return sortVnpayParams(unsigned);
+};
+
+const createSecureHash = (payload: VnpayPayload, secret: string) => {
+    const signData = buildVnpayQueryString(payload);
+
+    return createHmac("sha512", secret.trim())
+        .update(Buffer.from(signData, "utf-8"))
+        .digest("hex");
+};
 
 const safeEqual = (left: string, right: string) => {
     if (!/^[a-f0-9]+$/i.test(left) || !/^[a-f0-9]+$/i.test(right)) {
@@ -84,11 +107,11 @@ const assertVnpayConfigured = () => {
     }
 
     return {
-        paymentUrl: env.vnpayPaymentUrl,
-        returnUrl: env.vnpayReturnUrl,
-        tmnCode: env.vnpayTmnCode,
-        hashSecret: env.vnpayHashSecret,
-        locale: env.vnpayLocale,
+        paymentUrl: env.vnpayPaymentUrl.trim(),
+        returnUrl: env.vnpayReturnUrl.trim(),
+        tmnCode: env.vnpayTmnCode.trim(),
+        hashSecret: env.vnpayHashSecret.trim(),
+        locale: env.vnpayLocale.trim() || "vn",
     };
 };
 
@@ -114,16 +137,22 @@ export const buildVnpayPaymentUrl = ({
     createdAt?: Date;
 }) => {
     const config = assertVnpayConfigured();
+    const env = getEnv();
+
     const createdAt = inputCreatedAt ?? payment.createdAt ?? new Date();
-    const expiresAt = new Date(createdAt.getTime() + 15 * 60 * 1000);
+    const expireDate =
+        payment.expiresAt ??
+        booking.lockedUntil ??
+        new Date(createdAt.getTime() + env.paymentHoldMinutes * 60 * 1000);
     const txnRef = String(payment.paymentId);
+
     const params: VnpayPayload = {
         vnp_Amount: String(toVnpayAmount(payment.amount)),
         vnp_Command: "pay",
         vnp_CreateDate: toVnpayDate(createdAt),
         vnp_CurrCode: "VND",
-        vnp_ExpireDate: toVnpayDate(expiresAt),
-        vnp_IpAddr: ipAddress,
+        vnp_ExpireDate: toVnpayDate(expireDate),
+        vnp_IpAddr: normalizeIpAddress(ipAddress),
         vnp_Locale: config.locale,
         vnp_OrderInfo: normalizeOrderInfo(`Thanh toan booking ${booking.bookingId}`),
         vnp_OrderType: "other",
@@ -132,10 +161,16 @@ export const buildVnpayPaymentUrl = ({
         vnp_TxnRef: txnRef,
         vnp_Version: vnpayVersion,
     };
+
     const secureHash = createSecureHash(params, config.hashSecret);
 
+    const paymentUrlParams = buildVnpayQueryString({
+        ...params,
+        vnp_SecureHash: secureHash,
+    });
+
     return {
-        paymentUrl: `${config.paymentUrl}?${stringifyVnpayParams({ ...params, vnp_SecureHash: secureHash })}`,
+        paymentUrl: `${config.paymentUrl}?${paymentUrlParams}`,
         txnRef,
     };
 };

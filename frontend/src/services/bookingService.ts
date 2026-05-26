@@ -32,10 +32,10 @@ export const confirmHostBooking = (bookingId: string | number) =>
     apiClient.patch<ApiBooking>(`/api/host/bookings/${bookingId}/confirm`);
 
 export const checkInHostBooking = (bookingId: string | number) =>
-    apiClient.patch<ApiBooking>(`/api/host/bookings/${bookingId}/check-in`);
+    apiClient.post<ApiBooking>(`/api/host/bookings/${bookingId}/check-in`);
 
 export const checkOutHostBooking = (bookingId: string | number) =>
-    apiClient.patch<ApiBooking>(`/api/host/bookings/${bookingId}/check-out`);
+    apiClient.post<ApiBooking>(`/api/host/bookings/${bookingId}/check-out`);
 
 export const cancelHostBooking = (bookingId: string | number, reason?: string) =>
     apiClient.patch<ApiBooking>(`/api/host/bookings/${bookingId}/cancel`, { reason });

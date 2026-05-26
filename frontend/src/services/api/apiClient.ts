@@ -59,8 +59,11 @@ const buildUrl = (path: string, query?: RequestOptions["query"]) => {
 };
 
 const normalizeUserRole = (role?: string): AuthUser["role"] => {
-    if (role === "admin" || role === "Admin") return "Admin";
-    if (role === "host" || role === "Host") return "Host";
+    const normalizedRole = String(role ?? "").toLowerCase();
+
+    if (normalizedRole === "admin") return "Admin";
+    if (normalizedRole === "moderator") return "Moderator";
+    if (normalizedRole === "host") return "Host";
     return "Guest";
 };
 
@@ -78,7 +81,8 @@ export const normalizeAuthUser = (raw: unknown): AuthUser | null => {
         roles?: string[];
     };
     const id = user.id ?? user.userId;
-    const role = user.role ?? user.roles?.[0];
+    const roles = Array.isArray(user.roles) ? user.roles.map(String) : [];
+    const role = user.role ?? roles[0];
 
     if (id === undefined || !user.email) {
         return null;
@@ -89,6 +93,7 @@ export const normalizeAuthUser = (raw: unknown): AuthUser | null => {
         name: user.name?.trim() || user.email,
         email: user.email,
         role: normalizeUserRole(role),
+        roles,
     };
 };
 

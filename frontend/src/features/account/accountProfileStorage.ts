@@ -12,11 +12,11 @@ const getJoinedYear = (createdAt?: string | null) => {
 
 const getJobLabel = (role: UserRole) => {
     if (role === "Admin") {
-        return "Quản trị viên Minh Thanh Villa";
+        return "Quản trị viênminh thanh villa ";
     }
 
     if (role === "Host") {
-        return "Chủ nhà trên Minh Thanh Villa";
+        return "Chủ nhà trênminh thanh villa ";
     }
 
     if (role === "Host new") {
@@ -28,14 +28,14 @@ const getJobLabel = (role: UserRole) => {
 
 const getDefaultBio = (authUser: AuthUser) => {
     if (authUser.role === "Admin") {
-        return `Xin chào! Tôi là ${authUser.name}, thành viên đội ngũ vận hành Minh Thanh Villa.`;
+        return `Xin chào! Tôi là ${authUser.name}, thành viên đội ngũ vận hànhminh thanh villa .`;
     }
 
     if (authUser.role === "Host" || authUser.role === "Host new") {
-        return `Xin chào! Tôi là ${authUser.name}, đang quản lý các trải nghiệm lưu trú trên Minh Thanh Villa.`;
+        return `Xin chào! Tôi là ${authUser.name}, đang quản lý các trải nghiệm lưu trú trênminh thanh villa .`;
     }
 
-    return `Xin chào! Tôi là ${authUser.name}. Tôi đang tìm kiếm những chỗ ở phù hợp cho các chuyến đi sắp tới trên Minh Thanh Villa.`;
+    return `Xin chào! Tôi là ${authUser.name}. Tôi đang tìm kiếm những chỗ ở phù hợp cho các chuyến đi sắp tới trênminh thanh villa .`;
 };
 
 export const createAccountProfileFromAuthUser = (authUser: AuthUser): AccountUserProfile => ({

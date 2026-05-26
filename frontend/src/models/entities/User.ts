@@ -1,4 +1,4 @@
-export type ApiUserRole = "guest" | "host" | "moderator" | "admin";
+export type ApiUserRole = "guest" | "host" | "admin";
 export type ApiUserStatus = "active" | "inactive" | "blocked" | "suspended" | "deleted" | "locked";
 
 export type ApiUser = {

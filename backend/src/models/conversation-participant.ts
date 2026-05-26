@@ -20,6 +20,7 @@ import {
 export type ConversationParticipantRecord = {
     conversationId: number;
     userId: number;
+    role: "guest" | "host" | "admin" | null;
     joinedAt: Date;
     lastReadAt: Date | null;
 };
@@ -30,6 +31,7 @@ class ConversationParticipantModel extends Model<
 > {
     declare conversationId: number;
     declare userId: number;
+    declare role: CreationOptional<"guest" | "host" | "admin" | null>;
     declare joinedAt: CreationOptional<Date>;
     declare lastReadAt: Date | null;
 }
@@ -47,6 +49,11 @@ ConversationParticipantModel.init(
             allowNull: false,
             primaryKey: true,
             field: "user_id",
+        },
+        role: {
+            type: DataTypes.ENUM("guest", "host", "admin"),
+            allowNull: true,
+            defaultValue: null,
         },
         joinedAt: {
             type: DataTypes.DATE,

@@ -47,7 +47,7 @@ const ProfileSummaryCard = ({ user, onEdit, onAvatarUpload }: ProfileSummaryCard
                     <input
                         ref={inputRef}
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
                         className="hidden"
                         onChange={(event) => {
                             const file = event.target.files?.[0];

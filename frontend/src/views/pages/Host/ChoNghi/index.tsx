@@ -137,7 +137,7 @@ const ChoNghi = () => {
 
                 {loading ? (
                     <div className="rounded-2xl border border-gray-100 bg-white p-10 text-center text-sm font-medium text-gray-500 shadow-sm">
-                        Đang tải chỗ nghỉ từ database...
+                        Đang tải chỗ nghỉ từ ...
                     </div>
                 ) : null}
 
@@ -250,7 +250,7 @@ const ChoNghi = () => {
                 title={dialogProperty?.status === "published" ? "Ẩn chỗ nghỉ này?" : "Hiện lại chỗ nghỉ này?"}
                 description={
                     dialogProperty?.status === "published"
-                        ? "Chỗ nghỉ sẽ tạm thời không hiển thị với khách trên Minh Thanh Villa."
+                        ? "Chỗ nghỉ sẽ tạm thời không hiển thị với khách trênminh thanh villa ."
                         : ""
                 }
                 confirmLabel={dialogProperty?.status === "published" ? "Ẩn chỗ nghỉ" : "Hiện chỗ nghỉ"}

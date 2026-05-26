@@ -21,8 +21,11 @@ export type ConversationRecord = {
     conversationId: number;
     createdByUserId: number | null;
     listingId: number | null;
+    guestUserId: number | null;
+    hostUserId: number | null;
     bookingOrderId: number | null;
     dedupeKey: string | null;
+    lastMessage: string | null;
     lastMessageAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
@@ -35,8 +38,11 @@ class ConversationModel extends Model<
     declare conversationId: CreationOptional<number>;
     declare createdByUserId: number | null;
     declare listingId: number | null;
+    declare guestUserId: number | null;
+    declare hostUserId: number | null;
     declare bookingOrderId: number | null;
     declare dedupeKey: string | null;
+    declare lastMessage: string | null;
     declare lastMessageAt: Date | null;
     declare createdAt: CreationOptional<Date>;
     declare updatedAt: CreationOptional<Date>;
@@ -60,6 +66,16 @@ ConversationModel.init(
             allowNull: true,
             field: "listing_id",
         },
+        guestUserId: {
+            type: DataTypes.BIGINT.UNSIGNED,
+            allowNull: true,
+            field: "guest_user_id",
+        },
+        hostUserId: {
+            type: DataTypes.BIGINT.UNSIGNED,
+            allowNull: true,
+            field: "host_user_id",
+        },
         bookingOrderId: {
             type: DataTypes.INTEGER.UNSIGNED,
             allowNull: true,
@@ -70,6 +86,11 @@ ConversationModel.init(
             allowNull: true,
             unique: true,
             field: "dedupe_key",
+        },
+        lastMessage: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            field: "last_message",
         },
         lastMessageAt: {
             type: DataTypes.DATE,

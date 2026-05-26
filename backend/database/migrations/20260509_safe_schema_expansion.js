@@ -7,6 +7,15 @@ const mysql = require("mysql2/promise");
 const databaseName =
     process.env.MYSQL_DATABASE || process.env.MYSQLDATABASE || "booking_room";
 
+const dbUser = process.env.MYSQLUSER || process.env.MYSQL_USER || "booking_app";
+
+if (
+    dbUser.toLowerCase() === "root" &&
+    process.env.ALLOW_DATABASE_ROOT_USER !== "true"
+) {
+    throw new Error("Refusing to run migration with MySQL root user.");
+}
+
 const ssl =
     process.env.MYSQL_SSL === "true"
         ? {
@@ -23,7 +32,7 @@ const createConnection = () =>
     mysql.createConnection({
         host: process.env.MYSQLHOST || "127.0.0.1",
         port: Number(process.env.MYSQLPORT || 3306),
-        user: process.env.MYSQLUSER || "root",
+        user: dbUser,
         password: process.env.MYSQLPASSWORD || "",
         database: databaseName,
         ssl,
@@ -291,6 +300,7 @@ const createMissingTables = async (connection) => {
             \`id\` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             \`listing_id\` INT UNSIGNED NOT NULL,
             \`url\` VARCHAR(1024) NOT NULL,
+            \`object_key\` VARCHAR(1024) NULL,
             \`caption\` VARCHAR(255) NULL,
             \`sort_order\` INT UNSIGNED NOT NULL DEFAULT 0,
             \`is_cover\` TINYINT(1) NOT NULL DEFAULT 0,
@@ -589,6 +599,7 @@ const addColumns = async (connection) => {
     await ensureColumn(connection, "listings", "rejection_reason", "`rejection_reason` TEXT NULL AFTER `status`");
     await ensureColumn(connection, "listings", "approved_by", "`approved_by` BIGINT UNSIGNED NULL AFTER `rejection_reason`");
     await ensureColumn(connection, "listings", "approved_at", "`approved_at` DATETIME NULL AFTER `approved_by`");
+    await ensureColumn(connection, "listing_images", "object_key", "`object_key` VARCHAR(1024) NULL AFTER `url`");
 
     await ensureColumn(connection, "bookings", "nights", "`nights` INT UNSIGNED NULL AFTER `guest_count`");
     await ensureColumn(
@@ -622,6 +633,11 @@ const addColumns = async (connection) => {
     await ensureColumn(connection, "bookings", "checked_out_at", "`checked_out_at` DATETIME NULL AFTER `checked_in_at`");
 
     await ensureColumn(connection, "payments", "refunded_at", "`refunded_at` DATETIME NULL AFTER `failed_at`");
+
+    await ensureColumn(connection, "conversation", "guest_user_id", "`guest_user_id` BIGINT UNSIGNED NULL AFTER `listing_id`");
+    await ensureColumn(connection, "conversation", "host_user_id", "`host_user_id` BIGINT UNSIGNED NULL AFTER `guest_user_id`");
+    await ensureColumn(connection, "message", "attachments_json", "`attachments_json` LONGTEXT NULL AFTER `message_type`");
+    await ensureColumn(connection, "message", "updated_at", "`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `created_at`");
 
     await ensureColumn(
         connection,
@@ -673,6 +689,8 @@ const addIndexes = async (connection) => {
 
     await ensureIndex(connection, "conversation", "idx_conversation_created_by", "`created_by_user_id`");
     await ensureIndex(connection, "conversation", "idx_conversation_listing", "`listing_id`");
+    await ensureIndex(connection, "conversation", "idx_conversation_guest", "`guest_user_id`");
+    await ensureIndex(connection, "conversation", "idx_conversation_host", "`host_user_id`");
     await ensureIndex(connection, "conversation", "idx_conversation_booking", "`booking_order_id`");
     await ensureIndex(connection, "conversation", "idx_conversation_last_message_at", "`last_message_at`");
     await ensureIndex(connection, "message", "idx_message_conversation_created", "`conversation_id`, `created_at`");
@@ -716,6 +734,8 @@ const addForeignKeys = async (connection) => {
         "user_id",
         "SET NULL",
     );
+    await ensureForeignKey(connection, "conversation", "fk_conversation_guest", "guest_user_id", "users", "user_id", "SET NULL");
+    await ensureForeignKey(connection, "conversation", "fk_conversation_host", "host_user_id", "users", "user_id", "SET NULL");
 
     await ensureForeignKey(
         connection,
@@ -831,7 +851,7 @@ const extendEnums = async (connection) => {
         connection,
         "message",
         "message_type",
-        ["text", "image", "file"],
+        ["text", "image", "system", "file"],
         "NOT NULL",
         "DEFAULT 'text'",
     );

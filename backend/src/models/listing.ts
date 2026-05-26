@@ -19,7 +19,16 @@ import {
     stringifyJsonValue,
 } from "./mysql-helpers";
 
-export const listingStatusValues = ["draft", "pending_approval", "active", "inactive", "rejected", "suspended"] as const;
+export const listingStatusValues = [
+    "draft",
+    "pending_approval",
+    "active",
+    "approved",
+    "published",
+    "inactive",
+    "rejected",
+    "suspended",
+] as const;
 export type ListingStatus = (typeof listingStatusValues)[number];
 
 export const propertyTypeValues = ["apartment", "villa", "hotel", "homestay"] as const;
@@ -33,9 +42,33 @@ export type CancellationPolicy = (typeof cancellationPolicyValues)[number];
 
 export type ListingImageRecord = {
     imageId: number;
+    id?: number;
+    listingImageId?: number;
     url: string;
+    imageUrl?: string | null;
+    image_url?: string | null;
+    secureUrl?: string | null;
+    publicUrl?: string | null;
+    objectKey?: string | null;
+    key?: string | null;
+    originalFilename?: string | null;
+
     caption?: string | null;
     sortOrder: number;
+    sort_order?: number;
+    isCover?: boolean;
+    is_cover?: boolean;
+    displayTitle?: string | null;
+    altText?: string | null;
+    aiImageType?: string | null;
+    aiSceneTags?: string[] | string | null;
+    aiAmenityTags?: string[] | string | null;
+    aiDescription?: string | null;
+    aiConfidence?: number | string | null;
+    aiQualityWarnings?: string[] | string | null;
+    aiAnalysisStatus?: "pending" | "analyzed" | "failed";
+    aiErrorMessage?: string | null;
+    aiAnalyzedAt?: Date | null;
 };
 
 export type ListingAvailabilityDayRecord = {
@@ -90,9 +123,14 @@ export type ListingRecord = {
     partyAllowed: boolean;
     quietHours: string | null;
     availabilityCalendar: ListingAvailabilityDayRecord[];
+    searchText: string | null;
+    searchEmbeddingJson: number[] | null;
+    searchEmbeddingUpdatedAt: Date | null;
     deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    aiImageTags: string[] | null;
+    aiImageSummary: string | null;
 };
 
 class ListingModel extends Model<InferAttributes<ListingModel>, InferCreationAttributes<ListingModel>> {
@@ -115,6 +153,7 @@ class ListingModel extends Model<InferAttributes<ListingModel>, InferCreationAtt
     declare maxGuests: number;
     declare bedrooms: number;
     declare beds: number;
+
     declare bathrooms: number;
     declare basePrice: number;
     declare weekendPrice: number | null;
@@ -138,6 +177,11 @@ class ListingModel extends Model<InferAttributes<ListingModel>, InferCreationAtt
     declare partyAllowed: boolean;
     declare quietHours: string | null;
     declare availabilityCalendar: ListingAvailabilityDayRecord[];
+    declare searchText: string | null;
+    declare aiImageTags: string[] | null;
+    declare aiImageSummary: string | null;
+    declare searchEmbeddingJson: number[] | null;
+    declare searchEmbeddingUpdatedAt: Date | null;
     declare deletedAt: Date | null;
     declare createdAt: CreationOptional<Date>;
     declare updatedAt: CreationOptional<Date>;
@@ -370,6 +414,31 @@ ListingModel.init(
             set(value: ListingAvailabilityDayRecord[]) {
                 this.setDataValue("availabilityCalendar", stringifyJsonValue(value ?? []) as never);
             },
+        },
+        searchText: {
+            type: DataTypes.TEXT("long"),
+            allowNull: true,
+            field: "search_text",
+        },
+        aiImageTags: {
+            type: DataTypes.JSON,
+            allowNull: true,
+            field: "ai_image_tags",
+        },
+        aiImageSummary: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            field: "ai_image_summary",
+        },
+        searchEmbeddingJson: {
+            type: DataTypes.JSON,
+            allowNull: true,
+            field: "search_embedding_json",
+        },
+        searchEmbeddingUpdatedAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            field: "search_embedding_updated_at",
         },
         deletedAt: {
             type: DataTypes.DATE,

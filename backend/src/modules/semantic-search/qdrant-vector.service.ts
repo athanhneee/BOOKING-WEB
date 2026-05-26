@@ -4,6 +4,7 @@ import {
     ListingVectorPayload,
     SemanticSearchFilters,
     VectorSearchHit,
+    semanticPublicListingStatuses,
 } from "./semantic-search.types";
 
 const getQdrantBaseUrl = () => (process.env.QDRANT_URL ?? "http://127.0.0.1:6333").replace(/\/$/, "");
@@ -160,7 +161,7 @@ const buildQdrantFilter = (filters: SemanticSearchFilters) => {
         {
             key: "status",
             match: {
-                value: "active",
+                any: semanticPublicListingStatuses,
             },
         },
     ];

@@ -4,6 +4,7 @@ import {
     LuCircleHelp,
     LuHeart,
     LuHouse,
+    LuLogIn,
     LuLogOut,
     LuMenu,
     LuMessageSquare,
@@ -13,10 +14,11 @@ import {
     LuUserRound,
     LuX,
 } from "react-icons/lu";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { APP_ROUTES } from "../../../config/routes";
 import type { AccountUserProfile } from "../../../models/entities/AccountProfile";
 import { logout } from "../../../services/authService";
+import { getCurrentUser, isHostUser } from "../../../store/authStore";
 import { cn } from "../../../utils";
 
 type MenuItem = {
@@ -34,19 +36,25 @@ type MenuGroup = {
 
 type AccountMenuProps = {
     user: AccountUserProfile;
+    isAuthenticated: boolean;
     hostAction?: {
         label: string;
         to: string;
     };
 };
 
-const createMenuGroups = (hostAction: AccountMenuProps["hostAction"], onLogout: () => void): MenuGroup[] => [
+const createMenuGroups = (
+    hostAction: AccountMenuProps["hostAction"],
+    onMessagesClick: () => void,
+    onLogout: () => void,
+    isAuthenticated: boolean,
+): MenuGroup[] => [
     {
         key: "personal",
         items: [
             { key: "favorites", label: "Danh sách yêu thích", icon: LuHeart, to: APP_ROUTES.search },
             { key: "trips", label: "Chuyến đi", icon: LuPlane, to: APP_ROUTES.accountTrips },
-            { key: "messages", label: "Tin nhắn", icon: LuMessageSquare, to: APP_ROUTES.accountProfile },
+            { key: "messages", label: "Tin nhắn", icon: LuMessageSquare, action: onMessagesClick },
             { key: "profile", label: "Hồ sơ", icon: LuUserRound, to: APP_ROUTES.accountProfile },
         ],
     },
@@ -65,8 +73,12 @@ const createMenuGroups = (hostAction: AccountMenuProps["hostAction"], onLogout: 
         ],
     },
     {
-        key: "logout",
-        items: [{ key: "logout", label: "Đăng xuất", icon: LuLogOut, action: onLogout }],
+        key: "auth",
+        items: [
+            isAuthenticated
+                ? { key: "logout", label: "Đăng xuất", icon: LuLogOut, action: onLogout }
+                : { key: "login", label: "Đăng nhập", icon: LuLogIn, to: APP_ROUTES.login },
+        ],
     },
 ];
 
@@ -81,8 +93,9 @@ const getInitials = (displayName: string) =>
         .map((part) => part.charAt(0).toUpperCase())
         .join("");
 
-const AccountMenu = ({ user, hostAction }: AccountMenuProps) => {
+const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const desktopRef = useRef<HTMLDivElement | null>(null);
     const [isDesktopOpen, setIsDesktopOpen] = useState(false);
     const [isMobileMounted, setIsMobileMounted] = useState(false);
@@ -96,7 +109,18 @@ const AccountMenu = ({ user, hostAction }: AccountMenuProps) => {
         navigate(APP_ROUTES.login, { replace: true });
     };
 
-    const menuGroups = createMenuGroups(hostAction, handleLogout);
+    const handleMessagesClick = () => {
+        const currentUser = getCurrentUser();
+
+        if (!currentUser) {
+            navigate(`${APP_ROUTES.login}?redirectTo=${encodeURIComponent(location.pathname + location.search)}`);
+            return;
+        }
+
+        navigate(isHostUser(currentUser) ? APP_ROUTES.hostMessages : APP_ROUTES.messages);
+    };
+
+    const menuGroups = createMenuGroups(hostAction, handleMessagesClick, handleLogout, isAuthenticated);
 
     useEffect(() => {
         if (!isDesktopOpen) {

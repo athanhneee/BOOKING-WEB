@@ -1,5 +1,6 @@
 import "dotenv/config";
 
+import { createServer } from "node:http";
 import type { Server } from "node:http";
 
 import app from "./app";
@@ -8,9 +9,13 @@ import { getEnv } from "./config/env";
 import { logger } from "./config/logger";
 import "./models";
 import { ensureRuntimeSchema } from "./scripts/ensure-runtime-schema";
-
+import { initializeSocket } from "./socket/socket";
+import {
+    startPaymentExpirationSweep,
+    stopPaymentExpirationSweep,
+} from "./services/booking-expiration.service";
 type ExitProcess = (code: number) => never | void;
-
+const HOST = process.env.HOST || "0.0.0.0";
 export const shutdownServer = async (
     server: Server | undefined,
     signal: NodeJS.Signals,
@@ -31,7 +36,7 @@ export const shutdownServer = async (
                 });
             });
         }
-
+        stopPaymentExpirationSweep();
         await sequelize.close();
         logger.info("Shutdown complete", { signal });
         exitProcess(0);
@@ -65,10 +70,15 @@ export const startServer = async () => {
 
         logger.info("MySQL connected successfully");
 
-        server = app.listen(port, () => {
+        server = createServer(app);
+        initializeSocket(server);
+
+        server.listen(port, HOST, () => {
             logger.info(`Server running at http://localhost:${port}`);
         });
-
+        if (env.nodeEnv !== "test") {
+            startPaymentExpirationSweep();
+        }
         return server;
     } catch (error) {
         logger.error("Failed to start server", error);

@@ -24,7 +24,7 @@ const PopularDestinationCard = ({ destination, onClick }: PopularDestinationCard
                     />
                 ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-200 via-gray-100 to-gray-200">
-                        <span className="text-sm font-medium text-gray-500">Image Placeholder</span>
+                        <span className="text-sm font-medium text-gray-500">Chưa có ảnh</span>
                     </div>
                 )}
 

@@ -2,21 +2,23 @@ import {
     col,
     Op,
     QueryTypes,
-    UniqueConstraintError,
     where as sequelizeWhere,
     type Transaction,
     type WhereOptions,
 } from "sequelize";
-
+import { getEnv } from "../../config/env";
+import {
+    createBookingDateLocks,
+    releaseBookingDateLocksForBooking,
+} from "../../services/booking-date-lock.service";
 import { ApiError } from "../../common/api-error";
 import { buildActiveBookingStatusWhere } from "../../common/booking-availability";
 import { getListingImagesForListing } from "../../common/listing-relations";
-import { getDefaultDailyPrice, serializeListingImage } from "../../common/listing-mappers";
+import { getCoverImage, getDefaultDailyPrice, serializeListingImage } from "../../common/listing-mappers";
 import { sanitizeNullableSingleLineText } from "../../common/sanitization";
 import sequelize from "../../config/database";
 import AvailabilityCalendar from "../../models/availability-calendar";
 import Booking, { BookingDocument, BookingStatus } from "../../models/booking";
-import BookingDateLock from "../../models/booking-date-lock";
 import BookingStatusHistory from "../../models/booking-status-history";
 import Coupon from "../../models/coupon";
 import CouponRedemption from "../../models/coupon-redemption";
@@ -47,13 +49,18 @@ export type CancelBookingInput = {
 };
 
 export type ApiBookingStatus =
+    | "pending"
     | "pending_payment"
+    | "pending_host"
     | "pending_host_confirmation"
     | "confirmed"
+    | "paid"
     | "checked_in"
     | "completed"
+    | "cancelled"
     | "cancelled_by_guest"
     | "cancelled_by_host"
+    | "host_cancelled"
     | "expired"
     | "rejected";
 
@@ -82,17 +89,22 @@ type CancellationActor = "guest" | "host";
 
 const maxPageLimit = 100;
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
-const cancellableStatuses: BookingStatus[] = ["pending", "pending_payment", "confirmed", "paid"];
-const hostConfirmableStatuses: BookingStatus[] = ["pending", "pending_payment", "paid"];
+const cancellableStatuses: BookingStatus[] = ["pending", "pending_host", "pending_payment", "confirmed", "paid"];
+const hostConfirmableStatuses: BookingStatus[] = ["pending", "pending_host"];
 const checkInStatuses: BookingStatus[] = ["confirmed", "paid"];
 const apiStatusToInternalStatuses: Record<ApiBookingStatus, BookingStatus[]> = {
+    pending: ["pending"],
     pending_payment: ["pending_payment"],
-    pending_host_confirmation: ["pending"],
-    confirmed: ["confirmed", "paid"],
+    pending_host: ["pending_host", "pending"],
+    pending_host_confirmation: ["pending_host", "pending"],
+    confirmed: ["confirmed"],
+    paid: ["paid"],
     checked_in: ["checked_in"],
     completed: ["completed"],
+    cancelled: ["cancelled"],
     cancelled_by_guest: ["cancelled"],
     cancelled_by_host: ["cancelled"],
+    host_cancelled: ["cancelled"],
     expired: ["expired"],
     rejected: ["rejected"],
 };
@@ -424,12 +436,14 @@ const calculatePricing = async (
 const toApiBookingStatus = (booking: BookingDocument): ApiBookingStatus => {
     switch (booking.status) {
         case "pending":
-            return "pending_host_confirmation";
+        case "pending_host":
+            return "pending_host";
         case "pending_payment":
             return "pending_payment";
         case "confirmed":
-        case "paid":
             return "confirmed";
+        case "paid":
+            return "paid";
         case "checked_in":
             return "checked_in";
         case "completed":
@@ -439,60 +453,71 @@ const toApiBookingStatus = (booking: BookingDocument): ApiBookingStatus => {
         case "rejected":
             return "rejected";
         case "cancelled":
-            return String(booking.cancelledByUserId) === String(booking.hostUserId)
-                ? "cancelled_by_host"
-                : "cancelled_by_guest";
+            return "cancelled";
         default:
             return "pending_payment";
     }
 };
 
-const getPaymentStatusForBooking = async (bookingId: number) => {
-    const payment = await Payment.findOne({
+const getLatestPaymentForBooking = async (bookingId: number) =>
+    Payment.findOne({
         where: {
             bookingId,
         },
         order: [["createdAt", "DESC"]],
     });
 
-    return payment?.status ?? null;
-};
-
 const serializeBooking = async (booking: BookingDocument, includeImages = false) => {
-    const [paymentStatus, listing] = await Promise.all([
-        getPaymentStatusForBooking(booking.bookingId),
+    const [latestPayment, listing] = await Promise.all([
+        getLatestPaymentForBooking(booking.bookingId),
         Listing.findOne({
             where: {
                 listingId: booking.listingId,
             },
         }),
     ]);
-    const images = includeImages && listing ? await getListingImagesForListing(listing) : [];
+    const images = listing ? await getListingImagesForListing(listing) : [];
+    const coverImage = getCoverImage(images);
+    const serializedCoverImage = coverImage ? serializeListingImage(coverImage) : null;
+    const paymentExpiresAt = latestPayment?.expiresAt ?? booking.lockedUntil;
+    const remainingPaymentSeconds = paymentExpiresAt
+        ? Math.max(
+            0,
+            Math.floor((new Date(paymentExpiresAt).getTime() - Date.now()) / 1000),
+        )
+        : 0;
 
     return {
         bookingId: booking.bookingId,
         listingId: booking.listingId,
         guestUserId: String(booking.guestUserId),
         hostUserId: String(booking.hostUserId),
+        listingTitle: listing?.title ?? null,
         listing: listing
             ? {
-                  listingId: listing.listingId,
-                  title: listing.title,
-                  city: listing.city,
-                  district: listing.district,
-                  addressLine: listing.addressLine,
-                  imageUrl: images[0]?.url ?? null,
-                  images: images.map(serializeListingImage),
-              }
+                listingId: listing.listingId,
+                title: listing.title,
+                city: listing.city,
+                district: listing.district,
+                addressLine: listing.addressLine,
+                imageUrl: coverImage?.url ?? null,
+                coverImageUrl: coverImage?.url ?? null,
+                coverImage: serializedCoverImage,
+                images: includeImages ? images.map(serializeListingImage) : [],
+            }
             : null,
         checkInDate: booking.checkInDate,
         checkOutDate: booking.checkOutDate,
+        guests: booking.guestCount,
         guestCount: booking.guestCount,
         guestsCount: booking.guestCount,
         nights: booking.nights ?? getNightCount(booking.checkInDate, booking.checkOutDate),
         status: toApiBookingStatus(booking),
         internalStatus: booking.status,
-        paymentStatus,
+        paymentStatus: latestPayment?.status ?? null,
+        lockedUntil: booking.lockedUntil,
+        paymentExpiresAt,
+        remainingPaymentSeconds,
         currency: booking.currency,
         subtotalAmount: toNumber(booking.subtotalAmount),
         cleaningFeeAmount: toNumber(booking.cleaningFeeAmount),
@@ -535,49 +560,6 @@ const writeBookingStatusHistory = async (
     );
 };
 
-const createDateLocks = async (
-    booking: BookingDocument,
-    dates: string[],
-    transaction: Transaction,
-) => {
-    try {
-        await BookingDateLock.bulkCreate(
-            dates.map((date) => ({
-                bookingId: booking.bookingId,
-                listingId: booking.listingId,
-                reservedDate: date,
-                status: "held",
-                releasedAt: null,
-            })),
-            { transaction },
-        );
-    } catch (error) {
-        if (error instanceof UniqueConstraintError) {
-            throw new ApiError(409, "Listing is already booked for the selected dates");
-        }
-
-        throw error;
-    }
-};
-
-const releaseDateLocks = async (booking: BookingDocument, transaction: Transaction) => {
-    await BookingDateLock.update(
-        {
-            status: "released",
-            releasedAt: new Date(),
-        },
-        {
-            where: {
-                bookingId: booking.bookingId,
-                releasedAt: {
-                    [Op.is]: null,
-                },
-            },
-            transaction,
-        },
-    );
-};
-
 const buildStatusWhere = (status?: BookingStatus | ApiBookingStatus): WhereOptions<BookingDocument> | undefined => {
     if (!status) {
         return undefined;
@@ -591,6 +573,13 @@ const buildStatusWhere = (status?: BookingStatus | ApiBookingStatus): WhereOptio
     }
 
     if (status === "cancelled_by_host") {
+        return {
+            status: "cancelled",
+            [Op.and]: [sequelizeWhere(col("cancelled_by_user_id"), Op.eq, col("host_user_id"))],
+        } as WhereOptions<BookingDocument>;
+    }
+
+    if (status === "host_cancelled") {
         return {
             status: "cancelled",
             [Op.and]: [sequelizeWhere(col("cancelled_by_user_id"), Op.eq, col("host_user_id"))],
@@ -699,18 +688,6 @@ const createRefundForPaidPaymentIfNeeded = async (
     });
 
     if (!paidPayment) {
-        await Payment.update(
-            {
-                status: "cancelled",
-            },
-            {
-                where: {
-                    bookingId: booking.bookingId,
-                    status: "pending",
-                },
-                transaction,
-            },
-        );
         return null;
     }
 
@@ -775,7 +752,23 @@ const cancelBooking = async (
         existingBooking.cancelledAt = new Date();
         existingBooking.version += 1;
         await existingBooking.save({ transaction });
-        await releaseDateLocks(existingBooking, transaction);
+        await releaseBookingDateLocksForBooking({
+            bookingId: existingBooking.bookingId,
+            transaction,
+        });
+        await Payment.update(
+            {
+                status: "cancelled",
+                failedAt: new Date(),
+            },
+            {
+                where: {
+                    bookingId: existingBooking.bookingId,
+                    status: "pending",
+                },
+                transaction,
+            },
+        );
         await writeBookingStatusHistory(
             existingBooking,
             oldStatus,
@@ -844,7 +837,9 @@ export const createBooking = async (user: AuthenticatedUser, input: CreateBookin
             input,
             transaction,
         );
-        const status: BookingStatus = listing.instantBookEnabled ? "confirmed" : "pending";
+        const env = getEnv();
+        const lockedUntil = new Date(Date.now() + env.paymentHoldMinutes * 60 * 1000);
+        const status: BookingStatus = "pending_payment";
         const createdBooking = await Booking.create(
             {
                 bookingId: await getNextBookingSequence(transaction),
@@ -857,7 +852,7 @@ export const createBooking = async (user: AuthenticatedUser, input: CreateBookin
                 nights: pricing.nights,
                 status,
                 version: 0,
-                lockedUntil: null,
+                lockedUntil,
                 currency: listing.currency,
                 couponId: pricing.couponId,
                 subtotalAmount: pricing.subtotalAmount,
@@ -876,7 +871,13 @@ export const createBooking = async (user: AuthenticatedUser, input: CreateBookin
             { transaction },
         );
 
-        await createDateLocks(createdBooking, reservedDates, transaction);
+        await createBookingDateLocks({
+            bookingId: createdBooking.bookingId,
+            listingId: createdBooking.listingId,
+            checkInDate: toDateAtUtcMidnight(createdBooking.checkInDate),
+            checkOutDate: toDateAtUtcMidnight(createdBooking.checkOutDate),
+            transaction,
+        });
 
         if (pricing.couponId) {
             await CouponRedemption.create(
@@ -1046,8 +1047,8 @@ export const checkInHostBooking = async (user: AuthenticatedUser, bookingId: num
             throw new ApiError(409, "Booking cannot be checked in in its current status");
         }
 
-        if (getTodayInVietnam() < existingBooking.checkInDate) {
-            throw new ApiError(409, "Booking cannot be checked in before check-in date");
+        if (getTodayInVietnam() !== existingBooking.checkInDate) {
+            throw new ApiError(400, "Booking can only be checked in on the check-in date");
         }
 
         const oldStatus = existingBooking.status;
@@ -1090,12 +1091,15 @@ export const checkOutHostBooking = async (user: AuthenticatedUser, bookingId: nu
             throw new ApiError(409, "Booking cannot be checked out in its current status");
         }
 
+        if (getTodayInVietnam() < existingBooking.checkOutDate) {
+            throw new ApiError(400, "Booking can only be checked out on or after the check-out date");
+        }
+
         const oldStatus = existingBooking.status;
         existingBooking.status = "completed";
         existingBooking.checkedOutAt = new Date();
         existingBooking.version += 1;
         await existingBooking.save({ transaction });
-        await releaseDateLocks(existingBooking, transaction);
         await writeBookingStatusHistory(
             existingBooking,
             oldStatus,

@@ -1,6 +1,8 @@
 import express from "express";
+import type { RequestHandler } from "express";
 import { body, param, query } from "express-validator";
 
+import { ApiError } from "../../common/api-error";
 import { listingApiStatuses } from "../../common/listing-mappers";
 import { isValidIsoDate, isValidTime } from "../../common/validation";
 import {
@@ -13,6 +15,7 @@ import {
     getHostListingDetail,
     getMyHostListings,
     replaceHostListingAmenities,
+    setHostListingImageCover,
     updateHostListing,
     updateHostListingRules,
 } from "./host-listings.controller";
@@ -32,6 +35,12 @@ const imageIdParamValidator = param("imageId")
     .withMessage("imageId must be a positive integer")
     .toInt();
 
+const normalizeDecimalInput = (value: unknown) => (typeof value === "string" ? value.trim().replace(",", ".") : value);
+
+const rejectDirectListingImageUpload: RequestHandler = (_req, _res, next) => {
+    next(new ApiError(410, "Direct image upload is disabled. Use /api/uploads/presign and save the R2 URL."));
+};
+
 router.use(authenticate, requireRole("host", "admin"));
 
 router.post(
@@ -41,13 +50,21 @@ router.post(
         body("description").isString().trim().notEmpty().withMessage("description is required").isLength({ max: 5000 }),
         body("addressLine").isString().trim().notEmpty().withMessage("addressLine is required").isLength({ max: 255 }),
         body("ward").isString().trim().notEmpty().withMessage("ward is required").isLength({ max: 255 }),
-        body("district").isString().trim().notEmpty().withMessage("district is required").isLength({ max: 255 }),
-        body("city").isString().trim().notEmpty().withMessage("city is required").isLength({ max: 255 }),
+        body("district").optional({ nullable: true, checkFalsy: true }).isString().trim().isLength({ max: 255 }),
+        body("city").optional({ nullable: true, checkFalsy: true }).isString().trim().isLength({ max: 255 }),
         body("stateRegion").optional({ nullable: true }).isString().trim().isLength({ max: 255 }),
         body("country").equals("VN").withMessage("country must be VN"),
         body("postalCode").optional({ nullable: true }).isString().trim().isLength({ max: 32 }),
-        body("latitude").isFloat({ min: -90, max: 90 }).withMessage("latitude is invalid").toFloat(),
-        body("longitude").isFloat({ min: -180, max: 180 }).withMessage("longitude is invalid").toFloat(),
+        body("latitude")
+            .customSanitizer(normalizeDecimalInput)
+            .isFloat({ min: -90, max: 90 })
+            .withMessage("latitude is invalid")
+            .toFloat(),
+        body("longitude")
+            .customSanitizer(normalizeDecimalInput)
+            .isFloat({ min: -180, max: 180 })
+            .withMessage("longitude is invalid")
+            .toFloat(),
         body("propertyType")
             .isIn(["apartment", "villa", "hotel", "homestay"])
             .withMessage("propertyType is invalid"),
@@ -142,18 +159,64 @@ router.post(
     "/:listingId/images",
     [
         listingIdParamValidator,
-        body("images").isArray({ min: 1, max: 30 }).withMessage("images must contain between 1 and 30 items"),
+        body().custom((value) => {
+            if (Array.isArray(value?.images) && value.images.length >= 1 && value.images.length <= 30) {
+                return true;
+            }
+
+            if (typeof value?.url === "string" && value.url.trim().length > 0) {
+                return true;
+            }
+
+            throw new Error("Provide either url or images with between 1 and 30 items");
+        }),
+        body("images").optional().isArray({ min: 1, max: 30 }).withMessage("images must contain between 1 and 30 items"),
         body("images.*.url")
+            .optional()
             .isURL({ protocols: ["http", "https"], require_protocol: true })
             .withMessage("images.url must be a valid URL"),
+        body("images.*.key").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
+        body("images.*.objectKey").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
+        body("images.*.originalFilename").optional({ nullable: true }).isString().trim().isLength({ max: 255 }),
+        body("images.*.displayTitle").optional({ nullable: true }).isString().trim().isLength({ max: 120 }),
+        body("images.*.altText").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
         body("images.*.caption").optional({ nullable: true }).isString().trim().isLength({ max: 255 }),
         body("images.*.sortOrder")
+            .optional()
             .isInt({ min: 0 })
             .withMessage("images.sortOrder must be 0 or more")
             .toInt(),
         body("images.*.isCover").optional().isBoolean().withMessage("images.isCover must be boolean").toBoolean(),
+        body("url")
+            .optional()
+            .isURL({ protocols: ["http", "https"], require_protocol: true })
+            .withMessage("url must be a valid URL"),
+        body("key").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
+        body("objectKey").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
+        body("originalFilename").optional({ nullable: true }).isString().trim().isLength({ max: 255 }),
+        body("displayTitle").optional({ nullable: true }).isString().trim().isLength({ max: 120 }),
+        body("altText").optional({ nullable: true }).isString().trim().isLength({ max: 500 }),
+        body("caption").optional({ nullable: true }).isString().trim().isLength({ max: 255 }),
+        body("sortOrder")
+            .optional()
+            .isInt({ min: 0 })
+            .withMessage("sortOrder must be 0 or more")
+            .toInt(),
+        body("isCover").optional().isBoolean().withMessage("isCover must be boolean").toBoolean(),
     ],
     addHostListingImages,
+);
+
+router.patch(
+    "/:listingId/images/:imageId/cover",
+    [listingIdParamValidator, imageIdParamValidator],
+    setHostListingImageCover,
+);
+
+router.post(
+    "/:listingId/images/upload",
+    [listingIdParamValidator],
+    rejectDirectListingImageUpload,
 );
 
 router.delete(
@@ -229,8 +292,18 @@ router.patch(
         body("stateRegion").optional({ nullable: true }).isString().trim().isLength({ max: 255 }),
         body("country").optional().equals("VN").withMessage("country must be VN"),
         body("postalCode").optional({ nullable: true }).isString().trim().isLength({ max: 32 }),
-        body("latitude").optional().isFloat({ min: -90, max: 90 }).withMessage("latitude is invalid").toFloat(),
-        body("longitude").optional().isFloat({ min: -180, max: 180 }).withMessage("longitude is invalid").toFloat(),
+        body("latitude")
+            .optional()
+            .customSanitizer(normalizeDecimalInput)
+            .isFloat({ min: -90, max: 90 })
+            .withMessage("latitude is invalid")
+            .toFloat(),
+        body("longitude")
+            .optional()
+            .customSanitizer(normalizeDecimalInput)
+            .isFloat({ min: -180, max: 180 })
+            .withMessage("longitude is invalid")
+            .toFloat(),
         body("propertyType")
             .optional()
             .isIn(["apartment", "villa", "hotel", "homestay"])

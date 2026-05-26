@@ -1,10 +1,11 @@
-export type UserRole = "Guest" | "Host" | "Host new" | "Admin";
+export type UserRole = "Guest" | "Host" | "Host new" | "Admin" | "Moderator" | string;
 
 export type AuthUser = {
     id: string;
     name: string;
     email: string;
     role: UserRole;
+    roles?: string[];
 };
 
 const AUTH_STORAGE_KEY = "minhthanhvilla_current_user";
@@ -26,10 +27,11 @@ export const getCurrentUser = (): AuthUser | null => {
         const parsed = JSON.parse(rawValue) as Partial<AuthUser>;
         if (parsed?.id && parsed?.name && parsed?.email && parsed?.role) {
             return {
-                id: parsed.id,
+                id: String(parsed.id),
                 name: parsed.name,
                 email: parsed.email,
                 role: parsed.role,
+                roles: Array.isArray(parsed.roles) ? parsed.roles.map(String) : undefined,
             };
         }
     } catch {
@@ -80,7 +82,22 @@ export const clearCurrentUser = () => {
     window.sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
 };
 
+const normalizeRole = (role: unknown) => String(role ?? "").trim().toLowerCase();
+
+const getRoleValues = (user: Pick<AuthUser, "role"> & { roles?: string[] } | null | undefined) => {
+    if (!user) {
+        return [];
+    }
+
+    return [user.role, ...(Array.isArray(user.roles) ? user.roles : [])]
+        .map(normalizeRole)
+        .filter(Boolean);
+};
+
 export const isAuthenticated = (user: AuthUser | null | undefined): user is AuthUser => Boolean(user);
-export const isAdminUser = (user: Pick<AuthUser, "role"> | null | undefined) => user?.role === "Admin";
-export const isHostUser = (user: Pick<AuthUser, "role"> | null | undefined) =>
-    user?.role === "Host" || user?.role === "Host new" || user?.role === "Admin";
+export const isAdminUser = (user: (Pick<AuthUser, "role"> & { roles?: string[] }) | null | undefined) =>
+    getRoleValues(user).includes("admin");
+export const isHostUser = (user: (Pick<AuthUser, "role"> & { roles?: string[] }) | null | undefined) =>
+    getRoleValues(user).some((role) =>
+        ["host", "admin", "host new", "host_new", "host-new", "host verified", "host_verified"].includes(role),
+    );

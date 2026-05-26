@@ -3,7 +3,6 @@ import {
     mapListingDetailToDestination,
     mapListingSummaryToDestination,
     type ApiListingDetail,
-    type ApiListingSummary,
     type ApiPropertyType,
     type ApiRoomType,
     type PaginatedListings,
@@ -91,49 +90,3 @@ export const getListingRules = (listingId: string | number) =>
         partyAllowed: boolean;
         quietHours: string | null;
     }>(`/api/listings/${listingId}/rules`);
-
-export const semanticSearchListings = (payload: {
-    query: string;
-    checkIn?: string;
-    checkOut?: string;
-    guests?: number;
-    city?: string;
-    district?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    amenities?: Array<string | number>;
-    propertyType?: ApiPropertyType;
-    roomType?: ApiRoomType;
-    page?: number;
-    limit?: number;
-}) =>
-    apiClient.post<{
-        items: ApiListingSummary[];
-        pagination: PaginatedListings["pagination"];
-        fallback: boolean;
-        searchMeta: unknown;
-    }>("/api/search/semantic", payload);
-
-export const semanticSearchListingsMapped = async (payload: {
-    query: string;
-    checkIn?: string;
-    checkOut?: string;
-    guests?: number;
-    city?: string;
-    district?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    amenities?: Array<string | number>;
-    propertyType?: ApiPropertyType;
-    roomType?: ApiRoomType;
-    page?: number;
-    limit?: number;
-}) => {
-    const result = await semanticSearchListings(payload);
-
-    return {
-        ...result,
-        items: result.items.map(mapListingSummaryToDestination),
-        rawItems: result.items,
-    };
-};

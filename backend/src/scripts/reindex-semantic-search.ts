@@ -54,6 +54,12 @@ const main = async () => {
                 const document = buildListingSearchDocument(record);
                 const vector = await generateEmbedding(document);
 
+                await record.listing.update({
+                    searchText: document,
+                    searchEmbeddingJson: vector,
+                    searchEmbeddingUpdatedAt: new Date(),
+                });
+
                 points.push({
                     id: record.listing.listingId,
                     vector,

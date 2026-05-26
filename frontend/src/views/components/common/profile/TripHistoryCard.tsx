@@ -1,9 +1,26 @@
-import { LuCalendar, LuMapPin, LuMoon } from "react-icons/lu";
+import { useState, type ReactNode } from "react";
+import {
+    LuCalendar,
+    LuChevronDown,
+    LuChevronUp,
+    LuCreditCard,
+    LuMapPin,
+    LuMoon,
+    LuReceiptText,
+    LuStickyNote,
+    LuUsers,
+} from "react-icons/lu";
 import type { TripHistory } from "../../../../models/entities/TripHistory";
 import { cn } from "../../../../utils";
 
 type TripHistoryCardProps = {
     trip: TripHistory;
+};
+
+type DetailItemProps = {
+    icon: ReactNode;
+    label: string;
+    value: ReactNode;
 };
 
 const priceFormatter = new Intl.NumberFormat("vi-VN", {
@@ -22,6 +39,25 @@ const formatTripDate = (value: string) => {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
+    }).format(parsed);
+};
+
+const formatTripDateTime = (value?: string | null) => {
+    if (!value) {
+        return "Chưa cập nhật";
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+        return value;
+    }
+
+    return new Intl.DateTimeFormat("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
     }).format(parsed);
 };
 
@@ -55,33 +91,72 @@ const getStatusMeta = (status: TripHistory["status"]) => {
     }
 };
 
+const getPaymentStatusLabel = (status?: string | null) => {
+    if (!status) {
+        return "Chưa cập nhật";
+    }
+
+    switch (status.toLowerCase()) {
+        case "paid":
+        case "success":
+            return "Đã thanh toán";
+        case "pending":
+        case "pending_payment":
+            return "Chờ thanh toán";
+        case "failed":
+            return "Thanh toán thất bại";
+        case "refunded":
+            return "Đã hoàn tiền";
+        default:
+            return status;
+    }
+};
+
+const DetailItem = ({ icon, label, value }: DetailItemProps) => (
+    <div className="flex gap-3">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cyan-50 text-cyan-700">
+            {icon}
+        </span>
+        <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-normal text-slate-400">{label}</p>
+            <div className="mt-1 text-sm font-medium leading-6 text-slate-700">{value}</div>
+        </div>
+    </div>
+);
+
 const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
     const statusMeta = getStatusMeta(trip.status);
-    const actions =
-        trip.status === "pending_review"
-            ? [
-                  { key: "detail", label: "Xem chi tiết", variant: "secondary" as const },
-                  { key: "review", label: "Viết đánh giá", variant: "primary" as const },
-              ]
-            : trip.status === "cancelled"
-              ? [{ key: "rebook", label: "Đặt lại", variant: "secondary" as const }]
-              : trip.status === "active"
-                ? [{ key: "detail", label: "Xem chi tiết", variant: "secondary" as const }]
+    const guestCountLabel = trip.guestCount ? `${trip.guestCount} khách` : "Chưa cập nhật";
+    const address = trip.address || trip.location || "Chưa cập nhật";
+    const actions = [
+        { key: "detail", label: isDetailOpen ? "Ẩn chi tiết" : "Xem chi tiết", variant: "secondary" as const },
+        ...(trip.status === "pending_review"
+            ? [{ key: "review", label: "Viết đánh giá", variant: "primary" as const }]
+            : trip.status === "active"
+              ? []
               : trip.canReview
                 ? [
                       { key: "review", label: "Viết đánh giá", variant: "primary" as const },
                       { key: "rebook", label: "Đặt lại", variant: "secondary" as const },
                   ]
-                : [{ key: "rebook", label: "Đặt lại", variant: "secondary" as const }];
+                : [{ key: "rebook", label: "Đặt lại", variant: "secondary" as const }]),
+    ];
 
     return (
         <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-5">
             <div className="grid gap-5 md:grid-cols-[160px_minmax(0,1fr)] xl:grid-cols-[160px_minmax(0,1fr)_220px] xl:items-center">
-                <img
-                    src={trip.imageUrl}
-                    alt={trip.propertyName}
-                    className="h-52 w-full rounded-2xl object-cover md:h-[120px] md:w-[160px]"
-                />
+                {trip.imageUrl ? (
+                    <img
+                        src={trip.imageUrl}
+                        alt={trip.propertyName}
+                        className="h-52 w-full rounded-2xl object-cover md:h-[120px] md:w-[160px]"
+                    />
+                ) : (
+                    <div className="flex h-52 w-full items-center justify-center rounded-2xl bg-slate-100 text-sm font-medium text-slate-500 md:h-[120px] md:w-[160px]">
+                        Chưa có ảnh
+                    </div>
+                )}
 
                 <div className="min-w-0">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -118,19 +193,145 @@ const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
                             <button
                                 key={action.key}
                                 type="button"
+                                onClick={
+                                    action.key === "detail"
+                                        ? () => setIsDetailOpen((currentValue) => !currentValue)
+                                        : undefined
+                                }
+                                aria-expanded={action.key === "detail" ? isDetailOpen : undefined}
                                 className={cn(
-                                    "inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
+                                    "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
                                     action.variant === "primary"
                                         ? "bg-cyan-700 text-white hover:bg-cyan-800"
                                         : "border border-cyan-300/50 bg-white text-cyan-800 hover:bg-cyan-300/10",
                                 )}
                             >
                                 {action.label}
+                                {action.key === "detail" ? (
+                                    isDetailOpen ? <LuChevronUp size={16} /> : <LuChevronDown size={16} />
+                                ) : null}
                             </button>
                         ))}
                     </div>
                 </div>
             </div>
+
+            {isDetailOpen ? (
+                <div className="mt-5 border-t border-slate-100 pt-5">
+                    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+                        <div>
+                            <h4 className="text-base font-semibold text-slate-900">Chi tiết đặt phòng</h4>
+                            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                                <DetailItem
+                                    icon={<LuReceiptText size={18} />}
+                                    label="Mã đặt phòng"
+                                    value={`#${trip.id}`}
+                                />
+                                <DetailItem icon={<LuUsers size={18} />} label="Số khách" value={guestCountLabel} />
+                                <DetailItem
+                                    icon={<LuCalendar size={18} />}
+                                    label="Thời gian"
+                                    value={`${formatTripDate(trip.checkIn)} - ${formatTripDate(trip.checkOut)}`}
+                                />
+                                <DetailItem icon={<LuMoon size={18} />} label="Số đêm" value={`${trip.nights} đêm`} />
+                                <DetailItem
+                                    icon={<LuMapPin size={18} />}
+                                    label="Địa chỉ"
+                                    value={<span className="break-words">{address}</span>}
+                                />
+                                <DetailItem
+                                    icon={<LuCreditCard size={18} />}
+                                    label="Thanh toán"
+                                    value={getPaymentStatusLabel(trip.paymentStatus)}
+                                />
+                            </div>
+
+                            <div className="mt-5 grid gap-3 border-t border-slate-100 pt-4 text-sm text-slate-600 sm:grid-cols-2">
+                                <div>
+                                    <span className="font-medium text-slate-900">Ngày đặt:</span>{" "}
+                                    {formatTripDateTime(trip.createdAt)}
+                                </div>
+                                {trip.paidAt ? (
+                                    <div>
+                                        <span className="font-medium text-slate-900">Đã thanh toán:</span>{" "}
+                                        {formatTripDateTime(trip.paidAt)}
+                                    </div>
+                                ) : null}
+                                {trip.checkedInAt ? (
+                                    <div>
+                                        <span className="font-medium text-slate-900">Check-in:</span>{" "}
+                                        {formatTripDateTime(trip.checkedInAt)}
+                                    </div>
+                                ) : null}
+                                {trip.checkedOutAt ? (
+                                    <div>
+                                        <span className="font-medium text-slate-900">Check-out:</span>{" "}
+                                        {formatTripDateTime(trip.checkedOutAt)}
+                                    </div>
+                                ) : null}
+                            </div>
+
+                            <div className="mt-5 flex gap-3 border-t border-slate-100 pt-4">
+                                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+                                    <LuStickyNote size={18} />
+                                </span>
+                                <div>
+                                    <p className="text-xs font-semibold uppercase tracking-normal text-slate-400">
+                                        Ghi chú
+                                    </p>
+                                    <p className="mt-1 whitespace-pre-line text-sm leading-6 text-slate-600">
+                                        {trip.cancellationReason || trip.bookingNote || "Không có ghi chú."}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="border-t border-slate-100 pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                            <h4 className="text-base font-semibold text-slate-900">Chi phí</h4>
+                            <dl className="mt-4 space-y-3 text-sm">
+                                {(trip.subtotalAmount ?? 0) > 0 ? (
+                                    <div className="flex items-center justify-between gap-4">
+                                        <dt className="text-slate-500">Tiền phòng</dt>
+                                        <dd className="font-medium text-slate-700">
+                                            {priceFormatter.format(trip.subtotalAmount ?? 0)}
+                                        </dd>
+                                    </div>
+                                ) : null}
+                                {(trip.cleaningFeeAmount ?? 0) > 0 ? (
+                                    <div className="flex items-center justify-between gap-4">
+                                        <dt className="text-slate-500">Phí vệ sinh</dt>
+                                        <dd className="font-medium text-slate-700">
+                                            {priceFormatter.format(trip.cleaningFeeAmount ?? 0)}
+                                        </dd>
+                                    </div>
+                                ) : null}
+                                {(trip.serviceFeeAmount ?? 0) > 0 ? (
+                                    <div className="flex items-center justify-between gap-4">
+                                        <dt className="text-slate-500">Phí dịch vụ</dt>
+                                        <dd className="font-medium text-slate-700">
+                                            {priceFormatter.format(trip.serviceFeeAmount ?? 0)}
+                                        </dd>
+                                    </div>
+                                ) : null}
+                                {(trip.discountAmount ?? 0) > 0 ? (
+                                    <div className="flex items-center justify-between gap-4">
+                                        <dt className="text-slate-500">Giảm giá</dt>
+                                        <dd className="font-medium text-emerald-700">
+                                            -{priceFormatter.format(trip.discountAmount ?? 0)}
+                                        </dd>
+                                    </div>
+                                ) : null}
+                                <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-3">
+                                    <dt className="font-semibold text-slate-900">Tổng cộng</dt>
+                                    <dd className="text-lg font-semibold text-cyan-700">
+                                        {priceFormatter.format(trip.totalPrice)}
+                                    </dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
         </article>
     );
 };

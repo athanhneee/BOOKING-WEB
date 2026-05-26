@@ -2,6 +2,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import "dotenv/config";
 import express from "express";
+import path from "path";
 
 import { getCorsOptions } from "./config/cors";
 import sequelize from "./config/database";
@@ -20,6 +21,7 @@ import authRoutes from "./modules/auth/auth.routes";
 import bookingsRoutes, { hostBookingsRoutes } from "./modules/bookings/bookings.routes";
 import conversationsRoutes from "./modules/conversations/conversations.routes";
 import couponsRoutes from "./modules/coupons/coupons.routes";
+import hostApplicationRoutes from "./modules/host-applications/host-application.routes";
 import hostListingsRoutes from "./modules/host-listings/host-listings.routes";
 import paymentsRoutes from "./modules/payments/payments.routes";
 import hostPayoutsRoutes from "./modules/payouts/host-payouts.routes";
@@ -30,7 +32,10 @@ import userRoutes from "./modules/users/users.routes";
 import hostVerificationsRoutes from "./modules/verifications/host-verifications.routes";
 import hostOnboardingRoutes from "./modules/host-onboarding/host-onboarding.routes";
 import { sendSuccess } from "./common/http";
-import semanticSearchRoutes from "./modules/semantic-search/semantic-search.routes";
+import semanticSearchRoutes, { aiListingSearchRouter } from "./modules/semantic-search/semantic-search.routes";
+import uploadsRoutes from "./modules/uploads/uploads.routes";
+import listingImageVisionRoutes from "./modules/ai/listing-image-vision.routes";
+
 export const createApp = () => {
     const env = getEnv();
     const app = express();
@@ -46,6 +51,15 @@ export const createApp = () => {
     app.use(express.urlencoded({ extended: true, limit: env.requestBodyLimit, parameterLimit: 100 }));
     app.use(cookieParser(env.cookieSecret));
     app.use(sanitizeInput);
+
+    app.use(
+        "/uploads",
+        express.static(path.resolve(process.cwd(), "uploads"), {
+            dotfiles: "deny",
+            index: false,
+            maxAge: env.nodeEnv === "production" ? "7d" : 0,
+        }),
+    );
 
     app.get("/api/test", (_req, res) => {
         sendSuccess(res, {
@@ -95,15 +109,19 @@ export const createApp = () => {
     app.use("/api/bookings", bookingsRoutes);
     app.use("/api/host/bookings", hostBookingsRoutes);
     app.use("/api/conversations", conversationsRoutes);
+    app.use("/api/host/applications", hostApplicationRoutes);
     app.use("/api/host/listings", hostListingsRoutes);
     app.use("/api/host/verifications", hostVerificationsRoutes);
     app.use("/api/host", hostOnboardingRoutes);
     app.use("/api/host", hostPayoutsRoutes);
+    app.use("/api/ai/listings", listingImageVisionRoutes);
     app.use("/api/admin", adminRoutes);
     app.use("/api/payments", paymentsRoutes);
     app.use("/api/coupons", couponsRoutes);
     app.use("/api/reviews", reviewsRoutes);
+    app.use("/api/uploads", uploadsRoutes);
     app.use("/api/listings", publicListingsRoutes);
+    app.use("/api/ai/listings/search", aiListingSearchRouter);
     app.use("/api/search", semanticSearchRoutes);
     app.use("/api/reports", reportsRoutes);
     app.use("/api/host/reports", hostReportsRouter);

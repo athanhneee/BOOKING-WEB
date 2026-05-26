@@ -16,7 +16,7 @@ const OTP_RESEND_SECONDS = 23;
 const createEmptyOtpDigits = () => Array.from({ length: OTP_LENGTH }, () => "");
 
 const ForgotPasswordPage = () => {
-    const [identifier, setIdentifier] = useState("athanhnee@gmail.com");
+    const [identifier, setIdentifier] = useState("");
     const [step, setStep] = useState<"request" | "otp" | "success">("request");
     const [otpDigits, setOtpDigits] = useState<string[]>(createEmptyOtpDigits);
     const [newPassword, setNewPassword] = useState("");
@@ -172,8 +172,8 @@ const ForgotPasswordPage = () => {
                 isSuccessStep
                     ? "Hệ thống đã xác thực yêu cầu của bạn. Hãy quay lại đăng nhập để tiếp tục."
                     : isOtpStep
-                      ? `Nhập mã OTP gồm 6 chữ số đã được gửi đến ${identifier} để tiếp tục đặt lại mật khẩu.`
-                      : "Nhập email hoặc số điện thoại đã đăng ký, chúng tôi sẽ gửi mã xác thực để bạn tạo mật khẩu mới một cách an toàn."
+                        ? `Nhập mã OTP gồm 6 chữ số đã được gửi đến ${identifier} để tiếp tục đặt lại mật khẩu.`
+                        : "Nhập email hoặc số điện thoại đã đăng ký, chúng tôi sẽ gửi mã xác thực để bạn tạo mật khẩu mới một cách an toàn."
             }
             align={isOtpStep || isSuccessStep ? "left" : "center"}
         >
@@ -247,9 +247,8 @@ const ForgotPasswordPage = () => {
                         <button
                             type="submit"
                             disabled={!isOtpComplete || isSubmitting}
-                            className={`${primaryButtonClass} ${
-                                isOtpComplete && !isSubmitting ? "" : "cursor-not-allowed opacity-60 hover:translate-y-0 hover:bg-[#5d53f7]"
-                            }`}
+                            className={`${primaryButtonClass} ${isOtpComplete && !isSubmitting ? "" : "cursor-not-allowed opacity-60 hover:translate-y-0 hover:bg-[#5d53f7]"
+                                }`}
                         >
                             Xác nhận OTP
                             <LuLock className="text-xl" />

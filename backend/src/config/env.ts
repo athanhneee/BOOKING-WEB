@@ -21,6 +21,15 @@ export type AppEnv = {
     vnpayPaymentUrl: string;
     vnpayReturnUrl?: string;
     vnpayLocale: string;
+    momoPartnerCode?: string;
+    momoAccessKey?: string;
+    momoSecretKey?: string;
+    momoEndpoint: string;
+    momoRedirectUrl?: string;
+    momoIpnUrl?: string;
+    momoRequestType: string;
+    momoLang: string;
+    momoOrderExpireTimeMinutes?: number;
     accessTokenTtlMinutes: number;
     refreshTokenTtlDays: number;
     refreshTokenTtlMs: number;
@@ -57,6 +66,22 @@ export type AppEnv = {
     backupDir: string;
     backupRetentionDays: number;
     allowProductionAutoSchemaSync: boolean;
+    r2AccountId?: string;
+    r2AccessKeyId?: string;
+    r2SecretAccessKey?: string;
+    r2Bucket?: string;
+    r2PublicBaseUrl?: string;
+    r2PrivateAccessKeyId?: string;
+    r2PrivateSecretAccessKey?: string;
+    r2PrivateBucket?: string;
+    r2PrivateEndpoint?: string;
+    r2PrivateRegion: string;
+    r2PrivateSignedUrlExpiresSeconds: number;
+    openaiApiKey?: string;
+    openaiVisionModel: string;
+    paymentHoldMinutes: number;
+    paymentExpirationSweepIntervalSeconds: number;
+    allowDatabaseRootUser: boolean;
 };
 
 const parseNumber = (name: string, value: string | undefined, fallback: number) => {
@@ -73,11 +98,33 @@ const parseNumber = (name: string, value: string | undefined, fallback: number) 
     return parsed;
 };
 
-const parsePositiveInteger = (name: string, value: string | undefined, fallback: number) => {
-    const parsed = parseNumber(name, value, fallback);
+function parsePositiveInteger(
+    name: string,
+    value: string | undefined,
+    fallback: number,
+): number {
+    if (value === undefined || value.trim() === "") {
+        return fallback;
+    }
 
-    if (!Number.isInteger(parsed) || parsed < 0) {
-        throw new Error(`Environment variable ${name} must be a non-negative integer`);
+    const parsed = Number.parseInt(value, 10);
+
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+        throw new Error(`${name} must be a positive integer`);
+    }
+
+    return parsed;
+}
+
+const parseOptionalPositiveInteger = (name: string, value: string | undefined) => {
+    if (value === undefined || value === "") {
+        return undefined;
+    }
+
+    const parsed = parseNumber(name, value, 0);
+
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+        throw new Error(`Environment variable ${name} must be a positive integer`);
     }
 
     return parsed;
@@ -199,12 +246,13 @@ const readEnv = (...names: string[]) => {
         const value = process.env[name];
 
         if (value !== undefined) {
-            return value;
+            return value.trim();
         }
     }
 
     return undefined;
 };
+
 
 export const getEnv = (): AppEnv => {
     const nodeEnv = process.env.NODE_ENV ?? "development";
@@ -263,7 +311,7 @@ export const getEnv = (): AppEnv => {
     const dbUser =
         assertProductionValue(
             "MYSQLUSER",
-            readEnv("MYSQLUSER", "MYSQL_USER") ?? (nodeEnv === "production" ? undefined : "root"),
+            readEnv("MYSQLUSER", "MYSQL_USER") ?? (nodeEnv === "production" ? undefined : "booking_app"),
             nodeEnv,
         ) ?? "root";
     const dbPassword =
@@ -272,6 +320,33 @@ export const getEnv = (): AppEnv => {
             readEnv("MYSQLPASSWORD", "MYSQL_PASSWORD") ?? (nodeEnv === "production" ? undefined : ""),
             nodeEnv,
         ) ?? "";
+    const allowDatabaseRootUser = parseBoolean(
+        "ALLOW_DATABASE_ROOT_USER",
+        process.env.ALLOW_DATABASE_ROOT_USER,
+        false,
+    );
+
+    const paymentHoldMinutes = parsePositiveInteger(
+        "PAYMENT_HOLD_MINUTES",
+        process.env.PAYMENT_HOLD_MINUTES,
+        15,
+    );
+
+    const paymentExpirationSweepIntervalSeconds = parsePositiveInteger(
+        "PAYMENT_EXPIRATION_SWEEP_INTERVAL_SECONDS",
+        process.env.PAYMENT_EXPIRATION_SWEEP_INTERVAL_SECONDS,
+        30,
+    );
+
+    if (
+        dbUser.toLowerCase() === "root" &&
+        (!allowDatabaseRootUser || nodeEnv === "production")
+    ) {
+        throw new Error(
+            "Database root user is not allowed. Use a dedicated MySQL user such as booking_app. " +
+            "Set ALLOW_DATABASE_ROOT_USER=true only for local development, never production.",
+        );
+    }
     const rawAccessSecret = process.env.JWT_ACCESS_SECRET;
     const rawRefreshSecret = readEnv("JWT_REFRESH_SECRET", "REFRESH_SECRET", "REFRESH_TOKEN_SECRET");
     const rawTokenHashSecret = process.env.TOKEN_HASH_SECRET;
@@ -304,6 +379,12 @@ export const getEnv = (): AppEnv => {
             process.env.VNPAY_PAYMENT_URL ?? (nodeEnv === "production" ? undefined : "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"),
             nodeEnv,
         ) ?? "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+    const momoEndpoint =
+        assertProductionValue(
+            "MOMO_ENDPOINT",
+            process.env.MOMO_ENDPOINT ?? (nodeEnv === "production" ? undefined : "https://test-payment.momo.vn/v2/gateway/api/create"),
+            nodeEnv,
+        ) ?? "https://test-payment.momo.vn/v2/gateway/api/create";
     const refreshCookieSecure =
         process.env.REFRESH_TOKEN_COOKIE_SECURE === "true" ||
         process.env.REFRESH_COOKIE_SECURE === "true" ||
@@ -328,6 +409,9 @@ export const getEnv = (): AppEnv => {
         dbSsl: process.env.MYSQL_SSL === "true",
         dbSslCa: process.env.MYSQL_SSL_CA,
         jwtSecret,
+        allowDatabaseRootUser,
+        paymentHoldMinutes,
+        paymentExpirationSweepIntervalSeconds,
         jwtAccessSecret: rawAccessSecret
             ? assertProductionValue("JWT_ACCESS_SECRET", rawAccessSecret, nodeEnv, {
                 secret: true,
@@ -350,13 +434,13 @@ export const getEnv = (): AppEnv => {
             `${jwtSecret}-otp-hash`,
         cookieSecret,
         googleClientId: assertResolvedEnv("GOOGLE_CLIENT_ID", process.env.GOOGLE_CLIENT_ID),
-        vnpayTmnCode: assertProductionValue("VNPAY_TMN_CODE", process.env.VNPAY_TMN_CODE, nodeEnv),
-        vnpayHashSecret: assertProductionValue("VNPAY_HASH_SECRET", process.env.VNPAY_HASH_SECRET, nodeEnv, {
+        vnpayTmnCode: assertProductionValue("VNPAY_TMN_CODE", readEnv("VNPAY_TMN_CODE"), nodeEnv),
+        vnpayHashSecret: assertProductionValue("VNPAY_HASH_SECRET", readEnv("VNPAY_HASH_SECRET"), nodeEnv, {
             secret: true,
         }),
-        vnpayPaymentUrl,
-        vnpayReturnUrl: assertProductionValue("VNPAY_RETURN_URL", process.env.VNPAY_RETURN_URL, nodeEnv),
-        vnpayLocale: process.env.VNPAY_LOCALE ?? "vn",
+        vnpayPaymentUrl: readEnv("VNPAY_PAYMENT_URL") ?? "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
+        vnpayReturnUrl: assertProductionValue("VNPAY_RETURN_URL", readEnv("VNPAY_RETURN_URL"), nodeEnv),
+        vnpayLocale: readEnv("VNPAY_LOCALE") ?? "vn",
         accessTokenTtlMinutes,
         refreshTokenTtlDays,
         refreshTokenTtlMs: refreshTokenTtlDays * 24 * 60 * 60 * 1000,
@@ -434,5 +518,39 @@ export const getEnv = (): AppEnv => {
             process.env.ALLOW_PRODUCTION_AUTO_SCHEMA_SYNC,
             false,
         ),
+        r2AccountId: assertResolvedEnv("R2_ACCOUNT_ID", process.env.R2_ACCOUNT_ID),
+        r2AccessKeyId: assertResolvedEnv("R2_ACCESS_KEY_ID", process.env.R2_ACCESS_KEY_ID),
+        r2SecretAccessKey: assertResolvedEnv("R2_SECRET_ACCESS_KEY", process.env.R2_SECRET_ACCESS_KEY),
+        r2Bucket: assertResolvedEnv("R2_BUCKET", process.env.R2_BUCKET),
+        r2PublicBaseUrl: assertResolvedEnv("R2_PUBLIC_BASE_URL", process.env.R2_PUBLIC_BASE_URL),
+        r2PrivateAccessKeyId: assertResolvedEnv("R2_PRIVATE_ACCESS_KEY_ID", process.env.R2_PRIVATE_ACCESS_KEY_ID),
+        r2PrivateSecretAccessKey: assertResolvedEnv(
+            "R2_PRIVATE_SECRET_ACCESS_KEY",
+            process.env.R2_PRIVATE_SECRET_ACCESS_KEY,
+        ),
+        r2PrivateBucket: assertResolvedEnv("R2_PRIVATE_BUCKET", process.env.R2_PRIVATE_BUCKET),
+        r2PrivateEndpoint: assertResolvedEnv("R2_PRIVATE_ENDPOINT", process.env.R2_PRIVATE_ENDPOINT),
+        r2PrivateRegion: assertResolvedEnv("R2_PRIVATE_REGION", process.env.R2_PRIVATE_REGION) ?? "auto",
+        r2PrivateSignedUrlExpiresSeconds: parsePositiveInteger(
+            "R2_PRIVATE_SIGNED_URL_EXPIRES_SECONDS",
+            process.env.R2_PRIVATE_SIGNED_URL_EXPIRES_SECONDS,
+            300,
+        ),
+        momoPartnerCode: assertProductionValue("MOMO_PARTNER_CODE", process.env.MOMO_PARTNER_CODE, nodeEnv),
+        momoAccessKey: assertProductionValue("MOMO_ACCESS_KEY", process.env.MOMO_ACCESS_KEY, nodeEnv),
+        momoSecretKey: assertProductionValue("MOMO_SECRET_KEY", process.env.MOMO_SECRET_KEY, nodeEnv, {
+            secret: true,
+        }),
+        momoEndpoint,
+        momoRedirectUrl: assertProductionValue("MOMO_REDIRECT_URL", process.env.MOMO_REDIRECT_URL, nodeEnv),
+        momoIpnUrl: assertProductionValue("MOMO_IPN_URL", process.env.MOMO_IPN_URL, nodeEnv),
+        momoRequestType: process.env.MOMO_REQUEST_TYPE ?? "captureWallet",
+        momoLang: process.env.MOMO_LANG ?? "vi",
+        momoOrderExpireTimeMinutes: parseOptionalPositiveInteger(
+            "MOMO_ORDER_EXPIRE_TIME_MINUTES",
+            process.env.MOMO_ORDER_EXPIRE_TIME_MINUTES,
+        ),
+        openaiApiKey: assertResolvedEnv("OPENAI_API_KEY", process.env.OPENAI_API_KEY),
+        openaiVisionModel: assertResolvedEnv("OPENAI_VISION_MODEL", process.env.OPENAI_VISION_MODEL) ?? "gpt-4.1-mini",
     };
 };

@@ -79,6 +79,7 @@ export const bookingsQuerySchema = z.object({
             "pending_host_confirmation",
             "cancelled_by_guest",
             "cancelled_by_host",
+            "host_cancelled",
         ])
         .optional(),
     page: z.coerce.number().int().positive().optional(),

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const createPaymentBodySchema = z.object({
     bookingId: z.coerce.number().int().positive(),
-    method: z.enum(["vnpay", "cod", "bank_transfer"]),
+    method: z.enum(["vnpay", "momo"]),
 });
 
 export const paymentIdParamSchema = z.object({
@@ -37,6 +37,32 @@ export const vnpayCallbackPayloadSchema = z
                 code: "custom",
                 path: ["vnp_Amount"],
                 message: "vnp_Amount must be numeric",
+            });
+        }
+    });
+
+const momoValueSchema = z.union([z.string().trim().max(2048), z.number(), z.boolean(), z.null()]);
+
+export const momoCallbackPayloadSchema = z
+    .record(z.string().trim().min(1).max(128), momoValueSchema)
+    .superRefine((payload, context) => {
+        const requiredFields = ["partnerCode", "orderId", "requestId", "amount", "resultCode", "signature"];
+
+        for (const field of requiredFields) {
+            if (payload[field] === undefined || payload[field] === null || String(payload[field]).trim() === "") {
+                context.addIssue({
+                    code: "custom",
+                    path: [field],
+                    message: `${field} is required`,
+                });
+            }
+        }
+
+        if (payload.amount !== undefined && !/^\d+$/.test(String(payload.amount))) {
+            context.addIssue({
+                code: "custom",
+                path: ["amount"],
+                message: "amount must be numeric",
             });
         }
     });
