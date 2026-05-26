@@ -13,6 +13,7 @@ const cityAliases: Record<string, string> = {
 
 };
 
+
 /**
  * Chỉ phục vụ semantic search cho Vũng Tàu.
  * Không thêm field mới vào ParsedQueryFilters để tránh phải sửa type/schema/service khác.
@@ -27,27 +28,52 @@ type VungTauAreaProfile = {
 };
 
 const vungTauAreaProfiles: Record<string, VungTauAreaProfile> = {
-    bai_truoc: {
-        displayName: "Bãi Trước",
-        aliases: [
-            "bai truoc",
-            "front beach",
-            "tam duong",
-            "cong vien tam duong",
-            "duong quang trung",
-            "gan bai truoc",
-            "gan bien bai truoc",
-        ],
-        semanticBoost:
-            "Ưu tiên khu Bãi Trước Vũng Tàu, gần công viên Tam Dương, đường Quang Trung, trung tâm thành phố, thuận tiện đi dạo biển và ăn uống.",
-    },
-
     bai_sau: {
         displayName: "Bãi Sau",
         aliases: [
             "bai sau",
             "back beach",
+            "hoang hoa tham",
             "thuy van",
+            "doi ngoc tuoc",
+            "hoang le kha",
+            "kim ngan",
+            "kim minh",
+            "to ngoc van",
+            "nguyen huu tien",
+            "dang thuy tram",
+            "tran van thoi",
+            "bau sen",
+            "phan chu trinh",
+            "le hong phong",
+            "nguyen an ninh",
+            "phan van tri",
+            "la van cau",
+            "pho duc chinh",
+            "vo thi sau",
+            "nguyen hien",
+            "tran quy cap",
+            "ho quy ly",
+            "hoang sam",
+            "hoang trong mau",
+            "kieu thanh que",
+            "ta uyen",
+            "thong nhat moi",
+            "thi sach",
+            "mac thanh dam",
+            "phan huy chu",
+            "phan huy ich",
+            "tran binh trong",
+            "thai van lung",
+            "nguyen bieu",
+            "nguyen thi minh khai",
+            "lac long quan",
+            "hoang huu nam",
+            "binh gia",
+            "luong van can",
+            "truong cong dinh",
+            "nam ky khoi nghia",
+            "xo viet nghe tinh",
             "duong thuy van",
             "bien thuy van",
             "gan bai sau",
@@ -58,8 +84,42 @@ const vungTauAreaProfiles: Record<string, VungTauAreaProfile> = {
             "Ưu tiên khu Bãi Sau Vũng Tàu, gần biển Thùy Vân, phù hợp tắm biển, nghỉ dưỡng, căn hộ khách sạn gần biển.",
     },
 
+    bai_truoc: {
+        displayName: "Bãi Trước / Dâu",
+        aliases: [
+            "bai truoc",
+            "bai dau",
+            "front beach",
+            "tam duong",
+            "cong vien tam duong",
+            "dinh tien hoang",
+            "nguyen truong to",
+            "ha long",
+            "quang trung",
+            "ba cu",
+            "le loi",
+            "tran phu",
+            "le ngoc han",
+            "vi ba",
+            "hai dang",
+            "le quy don",
+            "tran hung dao",
+            "do chieu",
+            "trung trac",
+            "trung nhi",
+            "ben dinh",
+            "ly thuong kiet",
+            "le lai",
+            "duong quang trung",
+            "gan bai truoc",
+            "gan bien bai truoc",
+        ],
+        semanticBoost:
+            "Ưu tiên khu Bãi Trước / Bãi Dâu Vũng Tàu, gồm Hạ Long, Quang Trung, Ba Cu, Lê Lợi, Trần Phú và các tuyến trung tâm ven biển.",
+    },
+
     bai_long_cung: {
-        displayName: "Bãi Long Cung",
+        displayName: "Long Cung",
         aliases: [
             "bai long cung",
             "long cung",
@@ -67,13 +127,23 @@ const vungTauAreaProfiles: Record<string, VungTauAreaProfile> = {
             "khu long cung",
             "gan bai long cung",
             "gan bien long cung",
+            "ha huy tap",
+            "nguyen huu canh",
+            "chi linh",
+            "nguyen dinh tu",
+            "3 thang 2",
+            "ba vi",
+            "hoanh son",
+            "tan vien",
+            "an hai",
+            "thuy duong",
         ],
         semanticBoost:
-            "Ưu tiên khu Bãi Long Cung Vũng Tàu, không gian nghỉ dưỡng yên tĩnh, gần biển Long Cung, phù hợp gia đình hoặc nhóm bạn.",
+            "Ưu tiên khu Long Cung Vũng Tàu, gồm Chí Linh, Nguyễn Hữu Cảnh, Hà Huy Tập, Nguyễn Đình Tứ, 3 Tháng 2 và các tuyến gần biển Long Cung.",
     },
 
     bai_dau: {
-        displayName: "Bãi Dâu",
+        displayName: "Bãi Trước / Dâu",
         aliases: [
             "bai dau",
             "bien bai dau",
@@ -82,9 +152,10 @@ const vungTauAreaProfiles: Record<string, VungTauAreaProfile> = {
             "gan bien bai dau",
             "tran phu bai dau",
             "duong tran phu bai dau",
+            "tran phu",
         ],
         semanticBoost:
-            "Ưu tiên khu Bãi Dâu Vũng Tàu, đường Trần Phú, không gian yên tĩnh, gần biển, phù hợp nghỉ dưỡng riêng tư.",
+            "Ưu tiên khu Bãi Trước / Bãi Dâu Vũng Tàu, đặc biệt đường Trần Phú và các tuyến ven biển trung tâm.",
     },
 
     bai_dua: {
@@ -117,7 +188,7 @@ const vungTauAreaProfiles: Record<string, VungTauAreaProfile> = {
     },
 
     chi_linh: {
-        displayName: "Chí Linh",
+        displayName: "Long Cung",
         aliases: [
             "chi linh",
             "bai chi linh",
@@ -127,14 +198,22 @@ const vungTauAreaProfiles: Record<string, VungTauAreaProfile> = {
             "khu do thi chi linh",
         ],
         semanticBoost:
-            "Ưu tiên khu Chí Linh Vũng Tàu, gần biển, khu đô thị yên tĩnh, phù hợp căn hộ nghỉ dưỡng hoặc lưu trú gia đình.",
+            "Ưu tiên khu Long Cung / Chí Linh Vũng Tàu, gần biển, khu đô thị yên tĩnh, phù hợp căn hộ nghỉ dưỡng hoặc lưu trú gia đình.",
     },
 
     ho_tram_ho_coc: {
-        displayName: "Hồ Tràm / Hồ Cốc",
+        displayName: "Hồ Tràm / Long Hải / Phước Hải",
         aliases: [
             "ho tram",
             "ho coc",
+            "long hai",
+            "phuoc hai",
+            "nguyen tat thanh",
+            "ton duc thang",
+            "duong bo ke",
+            "duong ven bien",
+            "duong loc an binh chau",
+            "loc an binh chau",
             "bien ho tram",
             "bien ho coc",
             "gan ho tram",
@@ -142,7 +221,7 @@ const vungTauAreaProfiles: Record<string, VungTauAreaProfile> = {
             "xuyen moc",
         ],
         semanticBoost:
-            "Ưu tiên khu Hồ Tràm hoặc Hồ Cốc gần Vũng Tàu, phù hợp resort, nghỉ dưỡng biển, không gian yên tĩnh và cao cấp.",
+            "Ưu tiên khu Hồ Tràm, Long Hải, Phước Hải, đường ven biển hoặc Lộc An - Bình Châu, phù hợp resort và nghỉ dưỡng biển.",
     },
 };
 
@@ -225,8 +304,8 @@ export const parseSearchQuery = (query: string): ParsedQueryFilters => {
     /**
      * Nếu user chỉ nhập:
      * - "khách sạn gần Bãi Sau"
-     * - "villa Bãi Long Cung"
-     * - "homestay Bãi Dâu"
+     * - "villa Long Cung"
+     * - "homestay Hồ Tràm"
      *
      * Thì vẫn tự hiểu city = Vũng Tàu.
      */
@@ -315,6 +394,5 @@ export const buildSemanticQuery = (input: SemanticSearchRequest, parsed: ParsedQ
             parts.push(area.semanticBoost);
         }
     }
-
     return parts.join(" ").replace(/\s+/g, " ").trim();
 };
