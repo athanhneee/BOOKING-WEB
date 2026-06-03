@@ -1,4 +1,4 @@
-import { apiClient } from "./apiClient";
+import { apiClient, type PaginationMeta } from "./apiClient";
 
 export type HostApplicationStatus = "pending" | "approved" | "rejected" | null;
 export type HostApplicationProfileType = "individual" | "business";
@@ -68,12 +68,7 @@ export type AdminHostApplicationListItem = {
 
 export type AdminHostApplicationsResult = {
     items: AdminHostApplicationListItem[];
-    pagination?: {
-        page: number;
-        limit: number;
-        totalItems: number;
-        totalPages: number;
-    };
+    pagination?: PaginationMeta;
 };
 
 export type AdminHostApplicationDocument = HostApplicationDocumentSummary & {

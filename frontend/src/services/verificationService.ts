@@ -1,4 +1,4 @@
-import { apiClient } from "./api/apiClient";
+import { apiClient, type PaginationMeta } from "./api/apiClient";
 
 export type VerificationType = "identity" | "business" | "bank";
 export type VerificationStatus = "pending" | "approved" | "rejected";
@@ -28,12 +28,7 @@ export type MyVerificationsResult = {
 
 export type AdminVerificationsResult = {
     items: HostVerification[];
-    pagination: {
-        page: number;
-        limit: number;
-        totalItems: number;
-        totalPages: number;
-    };
+    pagination: PaginationMeta;
 };
 
 export const submitHostVerification = (payload: {

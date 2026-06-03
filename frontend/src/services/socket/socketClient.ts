@@ -16,6 +16,20 @@ export type MessageNewEvent = {
     };
 };
 
+export type NotificationNewEvent = {
+    id: number;
+    notificationLogId: number;
+    eventType: string;
+    targetType: string;
+    targetId: string;
+    title: string | null;
+    body: string | null;
+    actionUrl: string | null;
+    payload: Record<string, unknown> | null;
+    readAt: string | null;
+    createdAt: string;
+};
+
 let socket: Socket | null = null;
 let activeToken: string | null = null;
 
@@ -90,4 +104,12 @@ export const onNewMessage = (callback: (payload: MessageNewEvent) => void) => {
 
 export const offNewMessage = (callback: (payload: MessageNewEvent) => void) => {
     socket?.off("message:new", callback);
+};
+
+export const onNewNotification = (callback: (payload: NotificationNewEvent) => void) => {
+    socket?.on("notification:new", callback);
+};
+
+export const offNewNotification = (callback: (payload: NotificationNewEvent) => void) => {
+    socket?.off("notification:new", callback);
 };

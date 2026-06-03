@@ -8,7 +8,9 @@ import {
 type ApiEnvelope<T> = {
     success: boolean;
     message?: string;
+    code?: string;
     data?: T;
+    details?: unknown;
     errors?: Array<{ path?: string; msg?: string }>;
 };
 
@@ -16,6 +18,18 @@ type RequestOptions = Omit<RequestInit, "body" | "method"> & {
     query?: Record<string, string | number | boolean | null | undefined | Array<string | number | boolean>>;
     body?: unknown;
     skipAuthRefresh?: boolean;
+};
+
+export type PaginationMeta = {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+};
+
+export type PaginatedResponse<T> = {
+    items: T[];
+    pagination: PaginationMeta;
 };
 
 type RefreshResponse = {
@@ -28,15 +42,41 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, ""
 
 export class ApiError extends Error {
     status: number;
+    code: string;
+    details: unknown;
     errors: Array<{ path?: string; msg?: string }>;
 
-    constructor(message: string, status: number, errors: Array<{ path?: string; msg?: string }> = []) {
+    constructor(
+        message: string,
+        status: number,
+        code = "INTERNAL_ERROR",
+        details: unknown = {},
+        errors: Array<{ path?: string; msg?: string }> = [],
+    ) {
         super(message);
         this.name = "ApiError";
         this.status = status;
+        this.code = code;
+        this.details = details;
         this.errors = errors;
     }
 }
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
+
+const toApiErrors = (details: unknown, legacyErrors?: Array<{ path?: string; msg?: string }>) => {
+    if (Array.isArray(details)) {
+        return details
+            .filter(isRecord)
+            .map((item) => ({
+                path: typeof item.path === "string" ? item.path : undefined,
+                msg: typeof item.msg === "string" ? item.msg : undefined,
+            }));
+    }
+
+    return legacyErrors ?? [];
+};
 
 const buildUrl = (path: string, query?: RequestOptions["query"]) => {
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -111,22 +151,29 @@ export const normalizeAuthUser = (raw: unknown): AuthUser | null => {
 
 const parseEnvelope = async <T>(response: Response) => {
     let envelope: ApiEnvelope<T> | null = null;
+    let payload: unknown = null;
 
     try {
-        envelope = (await response.json()) as ApiEnvelope<T>;
+        payload = await response.json();
+        envelope = isRecord(payload) && typeof payload.success === "boolean"
+            ? (payload as ApiEnvelope<T>)
+            : null;
     } catch {
         envelope = null;
     }
 
     if (!response.ok || envelope?.success === false) {
+        const details = envelope?.details ?? envelope?.errors ?? {};
         throw new ApiError(
-            envelope?.message || "Không thể kết nối tới máy chủ. Vui lòng thử lại.",
+            envelope?.message || "Khong the ket noi toi may chu. Vui long thu lai.",
             response.status,
-            envelope?.errors ?? [],
+            envelope?.code,
+            details,
+            toApiErrors(details, envelope?.errors),
         );
     }
 
-    return envelope?.data as T;
+    return (envelope ? envelope.data : payload) as T;
 };
 
 const refreshAccessToken = async () => {
@@ -142,7 +189,7 @@ const refreshAccessToken = async () => {
     const user = normalizeAuthUser(data?.user);
 
     if (!token || !user) {
-        throw new ApiError("Phiên đăng nhập đã hết hạn.", 401);
+        throw new ApiError("Phien dang nhap da het han.", 401, "UNAUTHORIZED");
     }
 
     setAuthSession(user, token);

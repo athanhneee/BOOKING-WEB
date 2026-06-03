@@ -1,4 +1,4 @@
-import { apiClient } from "./api/apiClient";
+import { apiClient, type PaginatedResponse } from "./api/apiClient";
 
 export type HostPayoutStatus =
     | "pending"
@@ -37,15 +37,7 @@ export type HostPayout = {
     createdAt: string;
 };
 
-export type PaginatedPayouts = {
-    items: HostPayout[];
-    pagination: {
-        page: number;
-        limit: number;
-        totalItems: number;
-        totalPages: number;
-    };
-};
+export type PaginatedPayouts = PaginatedResponse<HostPayout>;
 
 export const getPayoutAccounts = () =>
     apiClient.get<{ items: PayoutAccount[] }>("/api/host/payout-accounts");

@@ -11,6 +11,7 @@ import type { LocationGroupName } from "../data/vungTauLocationGroups";
 import type { PaginatedReviews } from "../models/entities/Review";
 
 export type ListingQuery = {
+    q?: string;
     city?: string;
     district?: string;
     checkIn?: string;
@@ -18,6 +19,8 @@ export type ListingQuery = {
     guests?: number;
     propertyType?: ApiPropertyType;
     roomType?: ApiRoomType;
+    priceMin?: number;
+    priceMax?: number;
     minPrice?: number;
     maxPrice?: number;
     amenities?: string | string[];

@@ -1,4 +1,4 @@
-import { apiClient } from "./apiClient";
+import { apiClient, type PaginationMeta } from "./apiClient";
 
 export type ConversationUser = {
     userId: number;
@@ -51,12 +51,7 @@ export type ConversationMessage = {
     updatedAt: string | null;
 };
 
-export type Pagination = {
-    page: number;
-    limit: number;
-    totalItems: number;
-    totalPages: number;
-};
+export type Pagination = PaginationMeta;
 
 export type ConversationListResponse = {
     items: Conversation[];

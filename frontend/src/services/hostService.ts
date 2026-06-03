@@ -2,12 +2,21 @@ import { apiClient } from "./api/apiClient";
 import { getMyHostApplication as getMyPrivateHostApplication } from "./api/hostApplicationService";
 import type {
     ApiListingDetail,
+    ApiListingImage,
     ApiListingSummary,
     ApiPropertyType,
     ApiRoomType,
     PaginatedListings,
 } from "../models/entities/Listing";
-import type { ApiBooking, PaginatedBookings } from "../models/entities/Booking";
+
+export {
+    cancelHostBooking,
+    checkInHostBooking,
+    checkOutHostBooking,
+    confirmHostBooking,
+    getHostBookingDetail,
+    getHostBookings,
+} from "./bookingService";
 
 export type HostListingStatus = "draft" | "pending_approval" | "published" | "hidden";
 
@@ -151,6 +160,45 @@ export type HostRevenueReport = {
     }>;
 };
 
+export type VietnamBank = {
+    code: string;
+    name: string;
+    shortName: string;
+    bin: string | null;
+    logo?: string | null;
+};
+
+export type HostBankAccount = {
+    id: number;
+    payoutAccountId: number;
+    bankCode: string;
+    bankName: string;
+    bankShortName: string | null;
+    bankBin: string | null;
+    accountNumber: string;
+    accountHolderName: string;
+    branchName: string | null;
+    isDefault: boolean;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type SaveHostBankAccountPayload = {
+    bankCode: string;
+    bankName: string;
+    bankShortName: string;
+    bankBin?: string | null;
+    accountNumber: string;
+    accountHolderName: string;
+    branchName?: string | null;
+};
+
+export type AddHostListingImagesResult = {
+    count: number;
+    status?: HostListingStatus;
+    images: ApiListingImage[];
+};
+
 export const getMyHostListings = (query: { status?: HostListingStatus | "all"; page?: number; limit?: number } = {}) =>
     apiClient.get<PaginatedHostListings>("/api/host/listings/mine", {
         query: {
@@ -194,7 +242,7 @@ export const addHostListingImages = (
         sortOrder?: number;
         isCover?: boolean;
     }>,
-) => apiClient.post(`/api/host/listings/${listingId}/images`, { images });
+) => apiClient.post<AddHostListingImagesResult>(`/api/host/listings/${listingId}/images`, { images });
 
 export const deleteHostListingImage = (listingId: string | number, imageId: string | number) =>
     apiClient.delete(`/api/host/listings/${listingId}/images/${imageId}`);
@@ -223,34 +271,9 @@ export const getHostListingCalendar = (listingId: string | number, query?: { mon
 export const bulkUpdateHostListingCalendar = (listingId: string | number, payload: BulkUpdateHostCalendarPayload) =>
     apiClient.patch<HostCalendarResult>(`/api/host/listings/${listingId}/calendar/bulk`, payload);
 
-export const getHostBookings = (query: { status?: string | "all"; page?: number; limit?: number } = {}) =>
-    apiClient.get<PaginatedBookings>("/api/host/bookings", {
-        query: {
-            ...query,
-            status: query.status === "all" ? undefined : query.status,
-        },
-    });
-
-export const getHostBookingDetail = (bookingId: string | number) =>
-    apiClient.get<ApiBooking>(`/api/host/bookings/${bookingId}`);
-
-export const confirmHostBooking = (bookingId: string | number) =>
-    apiClient.patch<ApiBooking>(`/api/host/bookings/${bookingId}/confirm`);
-
-export const checkInHostBooking = (bookingId: string | number) =>
-    apiClient.post<ApiBooking>(`/api/host/bookings/${bookingId}/check-in`);
-
-export const checkOutHostBooking = (bookingId: string | number) =>
-    apiClient.post<ApiBooking>(`/api/host/bookings/${bookingId}/check-out`);
-
-export const cancelHostBooking = (bookingId: string | number, reason?: string) =>
-    apiClient.patch<ApiBooking>(`/api/host/bookings/${bookingId}/cancel`, { reason });
-
 export const getHostApplicationMe = () =>
     getMyPrivateHostApplication() as Promise<HostApplicationMeResult>;
 
-export const getHostRegisterStatus = () =>
-    getMyPrivateHostApplication() as Promise<HostApplicationMeResult>;
 
 export const registerHostApplication = (payload: {
     contactName?: string | null;
@@ -260,6 +283,15 @@ export const registerHostApplication = (payload: {
     entityType: "individual" | "business";
     notes?: string | null;
 }) => apiClient.post<HostApplicationMeResult>("/api/host/register", payload);
+
+export const getVietnamBanks = () =>
+    apiClient.get<{ items: VietnamBank[] }>("/api/banks/vn");
+
+export const getHostBankAccount = () =>
+    apiClient.get<HostBankAccount | null>("/api/host/bank-account");
+
+export const saveHostBankAccount = (payload: SaveHostBankAccountPayload) =>
+    apiClient.put<HostBankAccount>("/api/host/bank-account", payload);
 
 export const getHostRevenueReport = (
     query: {

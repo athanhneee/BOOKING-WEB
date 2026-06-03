@@ -1,7 +1,8 @@
-import { apiClient } from "./api/apiClient";
+import { apiClient, type PaginatedResponse } from "./api/apiClient";
 
 export type PaymentMethod = "vnpay" | "momo";
 export type PaymentStatus = "pending" | "paid" | "failed" | "cancelled" | "expired" | "refunded";
+export type PaymentResultStatus = PaymentStatus | "refund_pending";
 export type Payment = {
     paymentId: number;
     bookingId: number;
@@ -10,11 +11,16 @@ export type Payment = {
     currency: string;
     method: PaymentMethod;
     paymentStatus: PaymentStatus;
+    paymentResultStatus?: PaymentResultStatus;
     status?: PaymentStatus;
     provider?: string | null;
     providerTxnRef?: string | null;
     providerTransactionNo?: string | null;
+    providerTransactionId?: string | null;
     providerResponseCode?: string | null;
+    requiresRefund?: boolean;
+    refundStatus?: "pending" | "processing" | "succeeded" | "failed" | "cancelled" | null;
+    latePaymentReason?: string | null;
     paidAt?: string | null;
     failedAt?: string | null;
     createdAt?: string;
@@ -27,13 +33,7 @@ export type CreatePaymentInput = {
     method: PaymentMethod;
 };
 
-export type PaymentListResponse = {
-    items: Payment[];
-    page: number;
-    limit: number;
-    totalItems: number;
-    totalPages: number;
-};
+export type PaymentListResponse = PaginatedResponse<Payment>;
 
 export type PaymentMethodAvailability = {
     method: PaymentMethod;
