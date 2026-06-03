@@ -80,7 +80,15 @@ export const handleVnpayReturn: RequestHandler = asyncHandler(async (req, res) =
 
         redirectUrl.searchParams.set("paymentId", String(result.paymentId));
         redirectUrl.searchParams.set("bookingId", String(result.bookingId));
-        redirectUrl.searchParams.set("status", String(result.paymentStatus));
+        redirectUrl.searchParams.set("status", String(result.paymentResultStatus ?? result.paymentStatus));
+
+        if (result.requiresRefund) {
+            redirectUrl.searchParams.set("requiresRefund", "true");
+        }
+
+        if (result.refundStatus) {
+            redirectUrl.searchParams.set("refundStatus", String(result.refundStatus));
+        }
 
         return res.redirect(redirectUrl.toString());
     }
@@ -120,7 +128,15 @@ export const handleMomoReturn: RequestHandler = asyncHandler(async (req, res) =>
 
         redirectUrl.searchParams.set("paymentId", String(result.paymentId));
         redirectUrl.searchParams.set("bookingId", String(result.bookingId));
-        redirectUrl.searchParams.set("status", String(result.paymentStatus));
+        redirectUrl.searchParams.set("status", String(result.paymentResultStatus ?? result.paymentStatus));
+
+        if (result.requiresRefund) {
+            redirectUrl.searchParams.set("requiresRefund", "true");
+        }
+
+        if (result.refundStatus) {
+            redirectUrl.searchParams.set("refundStatus", String(result.refundStatus));
+        }
 
         return res.redirect(redirectUrl.toString());
     }

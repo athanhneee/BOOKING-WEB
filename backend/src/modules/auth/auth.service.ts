@@ -7,6 +7,7 @@ import { sendAuthOtpEmail } from "./auth-mail.service";
 import { ApiError } from "../../common/api-error";
 import sequelize from "../../config/database";
 import { getEnv } from "../../config/env";
+import { notifyUserRegistered } from "../notifications/notification.service";
 import AuthOtpToken, { AuthOtpPurpose } from "../../models/auth-otp-token";
 import RefreshSession from "../../models/refresh-session";
 import User, { UserDocument, UserRole, UserStatus, userRoleValues } from "../../models/user";
@@ -227,20 +228,6 @@ export const extractAuthToken = (req: Request) => {
 };
 
 export const extractRefreshToken = (req: Request) => {
-    const bodyRefreshToken =
-        typeof req.body?.refreshToken === "string" ? req.body.refreshToken.trim() : undefined;
-
-
-    if (bodyRefreshToken && getEnv().allowRefreshTokenInBody) {
-        return bodyRefreshToken;
-    }
-
-    const headerRefreshToken = req.header("x-refresh-token")?.trim();
-
-    if (headerRefreshToken && getEnv().allowRefreshTokenInHeader) {
-        return headerRefreshToken;
-    }
-
     const cookieName = getEnv().refreshCookieName;
     const parsedCookieToken =
         typeof req.signedCookies?.[cookieName] === "string"
@@ -254,7 +241,26 @@ export const extractRefreshToken = (req: Request) => {
     }
 
     const cookies = parseCookieHeader(req.header("cookie"));
-    return cookies[cookieName];
+    const headerCookieToken = cookies[cookieName];
+
+    if (headerCookieToken) {
+        return headerCookieToken;
+    }
+
+    const bodyRefreshToken =
+        typeof req.body?.refreshToken === "string" ? req.body.refreshToken.trim() : undefined;
+
+    if (bodyRefreshToken && getEnv().allowRefreshTokenInBody) {
+        return bodyRefreshToken;
+    }
+
+    const headerRefreshToken = req.header("x-refresh-token")?.trim();
+
+    if (headerRefreshToken && getEnv().allowRefreshTokenInHeader) {
+        return headerRefreshToken;
+    }
+
+    return undefined;
 };
 
 export const buildAuthCookieOptions = (): CookieOptions => ({
@@ -446,6 +452,7 @@ export const createSocialUser = async (input: CreateSocialUserInput) => {
         );
 
         await ensureUserRole(user._id, input.role ?? "guest", transaction);
+        await notifyUserRegistered(Number(user._id), transaction);
         return user;
     });
 };
@@ -487,6 +494,7 @@ export const registerUser = async (input: RegisterUserInput) => {
         );
 
         await ensureUserRole(user._id, "guest", transaction);
+        await notifyUserRegistered(Number(user._id), transaction);
         return user;
     });
 };

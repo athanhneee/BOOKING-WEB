@@ -315,7 +315,7 @@ export const listUsersForAdmin = async ({ search, role, status, page, limit }: A
         pagination: {
             page,
             limit,
-            totalItems,
+            total: totalItems,
             totalPages: Math.max(1, Math.ceil(totalItems / limit)),
         },
     };

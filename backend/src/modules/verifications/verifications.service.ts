@@ -291,7 +291,7 @@ export const getMyHostVerifications = async (user: AuthenticatedUser, query: MyV
             pagination: {
                 page,
                 limit,
-                totalItems,
+                total: totalItems,
                 totalPages: Math.max(1, Math.ceil(totalItems / limit)),
             },
         };
@@ -342,7 +342,7 @@ export const getAdminVerifications = async (admin: AuthenticatedUser, query: Adm
         pagination: {
             page,
             limit,
-            totalItems,
+            total: totalItems,
             totalPages: Math.max(1, Math.ceil(totalItems / limit)),
         },
     };

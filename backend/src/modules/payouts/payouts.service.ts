@@ -12,6 +12,7 @@ import PayoutAccount, { PayoutAccountDocument } from "../../models/payout-accoun
 import { moneyToVnd, vndToNumber } from "../../utils/money";
 import { writeAuditLog } from "../../services/audit-log-service";
 import { assertUserHasRole } from "../../services/user-access-service";
+import { notifyPayoutCreated } from "../notifications/notification.service";
 
 export type CreatePayoutAccountInput = {
     bankName: string;
@@ -473,7 +474,7 @@ const listPayouts = async (query: PayoutListQuery, hostId?: number) => {
         pagination: {
             page,
             limit,
-            totalItems,
+            total: totalItems,
             totalPages: Math.max(1, Math.ceil(totalItems / limit)),
         },
     };
@@ -618,11 +619,11 @@ export const createHostPayout = async (
         }
 
         const invalidRows = bookingRows.filter(
-            (row) => !["completed", "paid"].includes(row.bookingStatus) || row.paymentStatus !== "paid",
+            (row) => !["checked_out", "completed"].includes(row.bookingStatus) || row.paymentStatus !== "paid",
         );
 
         if (invalidRows.length > 0) {
-            throw new ApiError(409, "Bookings must have paid payment and paid/completed status before payout");
+            throw new ApiError(409, "Bookings must have paid payment and checked_out/completed status before payout");
         }
 
         await assertNoDuplicatePayoutBookings(
@@ -696,6 +697,7 @@ export const createHostPayout = async (
             userAgent: context.userAgent,
             transaction,
         });
+        await notifyPayoutCreated(payout.payoutId, transaction);
 
         return {
             payoutId: payout.payoutId,

@@ -614,7 +614,7 @@ export const listAdminHostApplications = async (
         pagination: {
             page,
             limit,
-            totalItems: Number(counts[0]?.totalItems ?? 0),
+            total: Number(counts[0]?.totalItems ?? 0),
             totalPages: Math.max(1, Math.ceil(Number(counts[0]?.totalItems ?? 0) / limit)),
         },
     };

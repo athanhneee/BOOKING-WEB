@@ -6,6 +6,8 @@ import { ApiError } from "../../common/api-error";
 import { getEnv } from "../../config/env";
 import { UserRole, userRoleValues } from "../../models/user";
 
+const jwtAlgorithm = "HS256" as const;
+
 const isValidUserRole = (value: string): value is UserRole =>
     (userRoleValues as readonly string[]).includes(value);
 
@@ -22,6 +24,7 @@ export const signAuthToken = (userId: string, role: UserRole) =>
         },
         getEnv().jwtAccessSecret,
         {
+            algorithm: jwtAlgorithm,
             subject: userId,
             expiresIn: `${getEnv().accessTokenTtlMinutes}m`,
         },
@@ -34,6 +37,7 @@ export const signRefreshToken = (userId: string, sessionId: string) =>
         },
         getEnv().jwtRefreshSecret,
         {
+            algorithm: jwtAlgorithm,
             subject: userId,
             jwtid: sessionId,
             expiresIn: `${getEnv().refreshTokenTtlDays}d`,
@@ -42,7 +46,9 @@ export const signRefreshToken = (userId: string, sessionId: string) =>
 
 export const verifyAuthToken = (token: string) => {
     try {
-        const decoded = jwt.verify(token, getEnv().jwtAccessSecret);
+        const decoded = jwt.verify(token, getEnv().jwtAccessSecret, {
+            algorithms: [jwtAlgorithm],
+        });
 
         if (!decoded || typeof decoded === "string") {
             throw new ApiError(401, "Unauthorized");
@@ -58,7 +64,7 @@ export const verifyAuthToken = (token: string) => {
 
         return {
             userId: subject,
-            role,
+            role: role as UserRole,
         };
     } catch {
         throw new ApiError(401, "Unauthorized");
@@ -67,7 +73,9 @@ export const verifyAuthToken = (token: string) => {
 
 export const verifyRefreshToken = (token: string) => {
     try {
-        const decoded = jwt.verify(token, getEnv().jwtRefreshSecret);
+        const decoded = jwt.verify(token, getEnv().jwtRefreshSecret, {
+            algorithms: [jwtAlgorithm],
+        });
 
         if (!decoded || typeof decoded === "string") {
             throw new ApiError(403, "Invalid or expired refresh token");
