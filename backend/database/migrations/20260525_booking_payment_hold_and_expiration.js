@@ -75,12 +75,17 @@ async function main() {
         'pending',
         'pending_host',
         'pending_payment',
-        'confirmed',
+        'payment_expired',
         'paid',
+        'confirmed',
         'checked_in',
+        'checked_out',
         'completed',
-        'cancelled',
+        'cancelled_by_guest',
+        'cancelled_by_host',
+        'cancelled_by_admin',
         'rejected',
+        'cancelled',
         'expired'
       ) NOT NULL DEFAULT 'pending_payment'
     `);
