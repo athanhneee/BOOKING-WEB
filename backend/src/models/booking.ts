@@ -18,16 +18,17 @@ import {
 } from "./mysql-helpers";
 
 export const bookingStatusValues = [
-    "pending",
-    "pending_host",
     "pending_payment",
-    "confirmed",
+    "payment_expired",
     "paid",
+    "confirmed",
     "checked_in",
+    "checked_out",
     "completed",
-    "cancelled",
+    "cancelled_by_guest",
+    "cancelled_by_host",
+    "cancelled_by_admin",
     "rejected",
-    "expired",
 ] as const;
 export type BookingStatus = (typeof bookingStatusValues)[number];
 
@@ -41,6 +42,7 @@ export type BookingRecord = {
     checkOutDate: string;
     guestCount: number;
     nights: number | null;
+    totalNights: number | null;
     status: BookingStatus;
     version: number;
     lockedUntil: Date | null;
@@ -51,6 +53,7 @@ export type BookingRecord = {
     serviceFeeAmount: number;
     discountAmount: number;
     totalAmount: number;
+    priceBreakdown: Record<string, unknown> | null;
     bookingNote: string | null;
     cancellationReason: string | null;
     cancelledByUserId: number | null;
@@ -72,6 +75,7 @@ class BookingModel extends Model<InferAttributes<BookingModel>, InferCreationAtt
     declare checkOutDate: string;
     declare guestCount: number;
     declare nights: CreationOptional<number | null>;
+    declare totalNights: CreationOptional<number | null>;
     declare status: BookingStatus;
     declare version: CreationOptional<number>;
     declare lockedUntil: CreationOptional<Date | null>;
@@ -82,6 +86,7 @@ class BookingModel extends Model<InferAttributes<BookingModel>, InferCreationAtt
     declare serviceFeeAmount: number;
     declare discountAmount: CreationOptional<number>;
     declare totalAmount: number;
+    declare priceBreakdown: CreationOptional<Record<string, unknown> | null>;
     declare bookingNote: CreationOptional<string | null>;
     declare cancellationReason: CreationOptional<string | null>;
     declare cancelledByUserId: CreationOptional<number | null>;
@@ -140,6 +145,11 @@ BookingModel.init(
             type: DataTypes.INTEGER.UNSIGNED,
             allowNull: true,
         },
+        totalNights: {
+            type: DataTypes.INTEGER.UNSIGNED,
+            allowNull: true,
+            field: "total_nights",
+        },
         status: {
             type: DataTypes.ENUM(...bookingStatusValues),
             allowNull: false,
@@ -192,6 +202,11 @@ BookingModel.init(
             type: DataTypes.DECIMAL(15, 2),
             allowNull: false,
             field: "total_amount",
+        },
+        priceBreakdown: {
+            type: DataTypes.JSON,
+            allowNull: true,
+            field: "price_breakdown_json",
         },
         bookingNote: {
             type: DataTypes.TEXT,

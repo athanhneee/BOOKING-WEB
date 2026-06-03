@@ -107,6 +107,11 @@ PaymentTransactionModel.init(
         timestamps: true,
         indexes: [
             { unique: true, fields: ["provider_txn_ref"] },
+            {
+                name: "uq_payment_transactions_provider_transaction_id",
+                unique: true,
+                fields: ["provider", "transaction_type", "provider_transaction_no"],
+            },
             { fields: ["payment_id", "status"] },
             { fields: ["booking_id"] },
             { fields: ["provider_transaction_no"] },

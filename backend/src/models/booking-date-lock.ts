@@ -64,9 +64,24 @@ BookingDateLockModel.init(
         underscored: true,
         timestamps: true,
         indexes: [
-            { unique: true, fields: ["booking_id", "reserved_date"] },
-            { fields: ["listing_id", "reserved_date"] },
-            { fields: ["released_at"] },
+            {
+                name: "uq_booking_date_locks_booking_date",
+                unique: true,
+                fields: ["booking_id", "reserved_date"],
+            },
+            {
+                name: "uq_booking_date_locks_active",
+                unique: true,
+                fields: ["listing_id", "reserved_date", "active_lock_key"],
+            },
+            {
+                name: "idx_booking_date_locks_listing_date",
+                fields: ["listing_id", "reserved_date"],
+            },
+            {
+                name: "idx_booking_date_locks_released_at",
+                fields: ["released_at"],
+            },
         ],
     },
 );

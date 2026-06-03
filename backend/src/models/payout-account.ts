@@ -22,7 +22,10 @@ export type PayoutAccountRecord = {
     userId: number;
     bankName: string;
     bankCode: string | null;
+    bankShortName: string | null;
+    bankBin: string | null;
     accountName: string;
+    branchName: string | null;
     accountNumber: string;
     accountNumberEncrypted: string | null;
     accountNumberHash: string | null;
@@ -41,7 +44,10 @@ class PayoutAccountModel extends Model<
     declare userId: number;
     declare bankName: string;
     declare bankCode: string | null;
+    declare bankShortName: CreationOptional<string | null>;
+    declare bankBin: CreationOptional<string | null>;
     declare accountName: string;
+    declare branchName: CreationOptional<string | null>;
     declare accountNumber: string;
     declare accountNumberEncrypted: CreationOptional<string | null>;
     declare accountNumberHash: CreationOptional<string | null>;
@@ -75,10 +81,25 @@ PayoutAccountModel.init(
             allowNull: true,
             field: "bank_code",
         },
+        bankShortName: {
+            type: DataTypes.STRING(100),
+            allowNull: true,
+            field: "bank_short_name",
+        },
+        bankBin: {
+            type: DataTypes.STRING(16),
+            allowNull: true,
+            field: "bank_bin",
+        },
         accountName: {
             type: DataTypes.STRING(255),
             allowNull: false,
             field: "account_name",
+        },
+        branchName: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+            field: "branch_name",
         },
         accountNumber: {
             type: DataTypes.STRING(64),

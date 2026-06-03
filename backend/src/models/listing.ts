@@ -98,6 +98,7 @@ export type ListingRecord = {
     propertyType: PropertyType;
     roomType: RoomType;
     maxGuests: number;
+    includedGuests: number | null;
     bedrooms: number;
     beds: number;
     bathrooms: number;
@@ -105,6 +106,7 @@ export type ListingRecord = {
     weekendPrice: number | null;
     cleaningFee: number | null;
     serviceFeePct: number | null;
+    extraGuestFee: number | null;
     currency: string;
     minNights: number;
     maxNights: number | null;
@@ -151,6 +153,7 @@ class ListingModel extends Model<InferAttributes<ListingModel>, InferCreationAtt
     declare propertyType: PropertyType;
     declare roomType: RoomType;
     declare maxGuests: number;
+    declare includedGuests: CreationOptional<number | null>;
     declare bedrooms: number;
     declare beds: number;
 
@@ -159,6 +162,7 @@ class ListingModel extends Model<InferAttributes<ListingModel>, InferCreationAtt
     declare weekendPrice: number | null;
     declare cleaningFee: number | null;
     declare serviceFeePct: number | null;
+    declare extraGuestFee: CreationOptional<number | null>;
     declare currency: string;
     declare minNights: number;
     declare maxNights: number | null;
@@ -269,6 +273,11 @@ ListingModel.init(
             allowNull: false,
             field: "max_guests",
         },
+        includedGuests: {
+            type: DataTypes.INTEGER.UNSIGNED,
+            allowNull: true,
+            field: "included_guests",
+        },
         bedrooms: {
             type: DataTypes.INTEGER.UNSIGNED,
             allowNull: false,
@@ -300,6 +309,11 @@ ListingModel.init(
             type: DataTypes.DECIMAL(5, 2),
             allowNull: true,
             field: "service_fee_pct",
+        },
+        extraGuestFee: {
+            type: DataTypes.DECIMAL(15, 2),
+            allowNull: true,
+            field: "extra_guest_fee",
         },
         currency: {
             type: DataTypes.STRING(8),

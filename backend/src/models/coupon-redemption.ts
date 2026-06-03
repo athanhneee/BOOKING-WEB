@@ -61,6 +61,7 @@ CouponRedemptionModel.init(
         underscored: true,
         timestamps: false,
         indexes: [
+            { unique: true, fields: ["coupon_id", "user_id", "booking_id"] },
             { unique: true, fields: ["coupon_id", "booking_id"] },
             { fields: ["coupon_id"] },
             { fields: ["user_id"] },
