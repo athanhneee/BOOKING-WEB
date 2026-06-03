@@ -365,12 +365,24 @@ export const blogPosts: BlogPost[] = [
     },
 ];
 
-export const featuredBlogPost = blogPosts[0];
 
-export const homeBlogPosts = blogPosts.slice(1, 4);
+const blogCoverImageBySlug = blogPosts.reduce<Record<string, string>>((result, post) => {
+    result[post.slug] = post.coverImage;
+    return result;
+}, {});
+
+export const resolveBlogCoverImage = (coverImage: string | null | undefined, slug: string) => {
+    const normalizedCoverImage = coverImage?.trim();
+
+    if (normalizedCoverImage && !normalizedCoverImage.startsWith("/src/assets/")) {
+        return normalizedCoverImage;
+    }
+
+    return blogCoverImageBySlug[slug] ?? normalizedCoverImage ?? featuredBlogPost.coverImage;
+};
 
 export const formatBlogDate = (publishedAt: string) => {
     const [year, month, day] = publishedAt.split("-");
 
-    return `${day}/${month}/${year}`;
+    return year && month && day ? `${day}/${month}/${year}` : "";
 };
