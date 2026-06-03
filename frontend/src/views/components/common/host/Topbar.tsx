@@ -1,6 +1,7 @@
 import { FiMenu, FiPlus } from "react-icons/fi";
 import { Link, matchPath, useLocation } from "react-router-dom";
 import { APP_ROUTES } from "../../../../config/routes";
+import NotificationBell from "../../notifications/NotificationBell";
 
 interface TopbarProps {
     onOpenSidebar: () => void;
@@ -30,7 +31,12 @@ const pageMeta = [
     {
         pattern: APP_ROUTES.hostGuests,
         title: "Khách lưu trú",
-        subtitle: "Xem hồ sơ khách, lịch sử lưu trú và ghi chú nội bộ.",
+        subtitle: "Xem hồ sơ khách, lịch sử lưu trú.",
+    },
+    {
+        pattern: APP_ROUTES.hostMessages,
+        title: "Tin nhắn",
+        subtitle: "Theo dõi hội thoại với khách và phản hồi các yêu cầu mới.",
     },
     {
         pattern: APP_ROUTES.hostPayments,
@@ -90,6 +96,8 @@ const Topbar = ({ onOpenSidebar }: TopbarProps) => {
                     <p className="mt-1 text-sm text-gray-500">{activeMeta.subtitle}</p>
                     <p className="mt-2 text-xs font-medium capitalize text-gray-400">{today}</p>
                 </div>
+
+                <NotificationBell buttonClassName="border-gray-200 text-gray-600 shadow-none hover:bg-gray-50" />
 
                 {location.pathname !== APP_ROUTES.hostNewProperty ? (
                     <Link

@@ -11,7 +11,7 @@ import {
     LuUsers,
 } from "react-icons/lu";
 import type { TripHistory } from "../../../../models/entities/TripHistory";
-import { cn } from "../../../../utils";
+import { bookingStatusToneClassNames, cn } from "../../../../utils";
 
 type TripHistoryCardProps = {
     trip: TripHistory;
@@ -61,11 +61,18 @@ const formatTripDateTime = (value?: string | null) => {
     }).format(parsed);
 };
 
-const getStatusMeta = (status: TripHistory["status"]) => {
-    switch (status) {
+const getStatusMeta = (trip: TripHistory) => {
+    if (trip.bookingStatusLabel) {
+        return {
+            label: trip.bookingStatusLabel,
+            className: bookingStatusToneClassNames[trip.bookingStatusTone ?? "muted"],
+        };
+    }
+
+    switch (trip.status) {
         case "completed":
             return {
-                label: "Hoàn thành",
+                label: "Hoàn tất",
                 className: "bg-emerald-50 text-emerald-700",
             };
         case "pending_review":
@@ -105,6 +112,12 @@ const getPaymentStatusLabel = (status?: string | null) => {
             return "Chờ thanh toán";
         case "failed":
             return "Thanh toán thất bại";
+        case "expired":
+            return "Quá hạn thanh toán";
+        case "refund_pending":
+            return "Đang chờ hoàn tiền";
+        case "cancelled":
+            return "Đã hủy";
         case "refunded":
             return "Đã hoàn tiền";
         default:
@@ -126,7 +139,7 @@ const DetailItem = ({ icon, label, value }: DetailItemProps) => (
 
 const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
     const [isDetailOpen, setIsDetailOpen] = useState(false);
-    const statusMeta = getStatusMeta(trip.status);
+    const statusMeta = getStatusMeta(trip);
     const guestCountLabel = trip.guestCount ? `${trip.guestCount} khách` : "Chưa cập nhật";
     const address = trip.address || trip.location || "Chưa cập nhật";
     const actions = [

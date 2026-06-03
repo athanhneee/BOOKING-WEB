@@ -4,7 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { APP_ROUTES } from "../../../config/routes";
 import { getPaymentDetail, type Payment } from "../../../services/paymentService";
-import { formatCurrency } from "../host/sharedStyles";
+import { formatCurrency } from "../Host/sharedStyles";
 
 function getProviderLabel(payment: any, searchParams: URLSearchParams): string {
     const method = String(
@@ -15,6 +15,27 @@ function getProviderLabel(payment: any, searchParams: URLSearchParams): string {
     if (method === "vnpay") return "VNPay";
 
     return "cổng thanh toán";
+}
+
+function getPaymentResultStatusLabel(status?: string | null): string {
+    switch (String(status ?? "").toLowerCase()) {
+        case "paid":
+            return "Thanh toán thành công";
+        case "pending":
+            return "Đang chờ xác nhận thanh toán";
+        case "expired":
+            return "Quá hạn thanh toán";
+        case "refund_pending":
+            return "Đang chờ hoàn tiền";
+        case "refunded":
+            return "Đã hoàn tiền";
+        case "failed":
+            return "Thanh toán thất bại";
+        case "cancelled":
+            return "Đã hủy";
+        default:
+            return status || "unknown";
+    }
 }
 
 const PaymentResultPage = () => {
@@ -63,16 +84,37 @@ const PaymentResultPage = () => {
         };
     }, [paymentId]);
 
-    const finalStatus = payment?.paymentStatus ?? status;
+    const finalStatus = payment?.paymentResultStatus ?? payment?.paymentStatus ?? status;
+    const requiresRefund =
+        finalStatus === "refund_pending" ||
+        payment?.requiresRefund === true ||
+        searchParams.get("requiresRefund") === "true" ||
+        searchParams.get("refundStatus") === "pending";
 
     const resultView = useMemo(() => {
         const providerLabel = getProviderLabel(payment, searchParams);
+
+        if (requiresRefund) {
+            return {
+                icon: <FiClock className="text-amber-500" size={64} />,
+                title: "Đang chờ hoàn tiền",
+                description: "Giao dịch đã thành công sau khi phiên giữ chỗ hết hạn. Booking không được xác nhận và yêu cầu hoàn tiền đã được ghi nhận.",
+            };
+        }
+
+        if (finalStatus === "refunded" || payment?.refundStatus === "succeeded") {
+            return {
+                icon: <FiCheckCircle className="text-emerald-500" size={64} />,
+                title: "Đã hoàn tiền",
+                description: "Giao dịch đã được hoàn tiền. Booking không còn hiệu lực.",
+            };
+        }
 
         if (finalStatus === "paid") {
             return {
                 icon: <FiCheckCircle className="text-emerald-500" size={64} />,
                 title: "Thanh toán thành công",
-                description: "Thanh toán thành công. Hệ thống đã gửi email xác nhận đặt phòng cho bạn.",
+                description: "Thanh toán đã thành công. Booking đang chờ host xác nhận trước khi hoàn tất giữ chỗ.",
             };
         }
 
@@ -97,7 +139,7 @@ const PaymentResultPage = () => {
             title: "Thanh toán chưa thành công",
             description: `Giao dịch bị hủy hoặc không được ${providerLabel} xác nhận.`,
         };
-    }, [finalStatus, payment, searchParams]);
+    }, [finalStatus, payment, requiresRefund, searchParams]);
 
     if (isLoading) {
         return (
@@ -133,8 +175,15 @@ const PaymentResultPage = () => {
 
                     <div className="flex justify-between gap-4 border-b border-gray-200 py-2">
                         <span>Trạng thái</span>
-                        <strong>{finalStatus ?? "unknown"}</strong>
+                        <strong>{getPaymentResultStatusLabel(finalStatus)}</strong>
                     </div>
+
+                    {requiresRefund ? (
+                        <div className="flex justify-between gap-4 border-b border-gray-200 py-2">
+                            <span>Hoàn tiền</span>
+                            <strong>Đang chờ hoàn tiền</strong>
+                        </div>
+                    ) : null}
 
                     {payment ? (
                         <div className="flex justify-between gap-4 py-2">

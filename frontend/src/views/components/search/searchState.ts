@@ -9,6 +9,7 @@ import {
 import type { GuestSelection } from "./booking/Guest";
 
 export type BookingSearchState = {
+    q: string;
     location: string;
     locationGroup: LocationGroupName | "";
     mapLat: string;
@@ -66,6 +67,7 @@ export const guestFieldConfigs: GuestFieldConfig[] = [
 ];
 
 export const createDefaultBookingSearchState = (): BookingSearchState => ({
+    q: "",
     location: "",
     locationGroup: "",
     mapLat: "",
@@ -156,6 +158,7 @@ export const formatSearchDateRange = (checkIn: string, checkOut: string) => {
 
 export const sanitizeBookingSearchState = (state: BookingSearchState): BookingSearchState => {
     const trimmedLocation = state.location.trim();
+    const trimmedKeyword = state.q?.trim() ?? "";
     const locationGroup =
         state.locationGroup && isLocationGroupName(state.locationGroup)
             ? state.locationGroup
@@ -195,6 +198,7 @@ export const sanitizeBookingSearchState = (state: BookingSearchState): BookingSe
     }
 
     return {
+        q: trimmedKeyword || (!locationGroup && !mapLat && !mapLng ? trimmedLocation : ""),
         location: trimmedLocation,
         locationGroup,
         mapLat,
@@ -216,7 +220,8 @@ export const parseBookingSearchParams = (paramsLike: URLSearchParams | string) =
     const locationGroupParam = params.get("locationGroup") ?? "";
 
     return sanitizeBookingSearchState({
-        location: params.get("location") ?? "",
+        q: params.get("q") ?? "",
+        location: params.get("location") ?? params.get("q") ?? "",
         locationGroup: isLocationGroupName(locationGroupParam) ? locationGroupParam : "",
         mapLat: params.get("lat") ?? "",
         mapLng: params.get("lng") ?? "",
@@ -235,8 +240,15 @@ export const parseBookingSearchParams = (paramsLike: URLSearchParams | string) =
 export const buildBookingSearchParams = (state: BookingSearchState) => {
     const sanitizedState = sanitizeBookingSearchState(state);
     const params = new URLSearchParams();
+    const isAreaSearch = Boolean(
+        sanitizedState.locationGroup || (sanitizedState.mapLat && sanitizedState.mapLng),
+    );
 
-    if (sanitizedState.location) {
+    if (sanitizedState.q && !isAreaSearch) {
+        params.set("q", sanitizedState.q);
+    }
+
+    if (sanitizedState.location && isAreaSearch) {
         params.set("location", sanitizedState.location);
     }
 
@@ -285,7 +297,7 @@ export const filterStaysByBookingSearch = (stays: PopularDestination[], state: B
     const normalizedLocation =
         state.locationGroup || isMapSearchState(state)
             ? ""
-            : normalizeSearchText(state.location);
+            : normalizeSearchText(state.q || state.location);
     const requiredGuests = getGuestCount(state.guests);
 
     return stays.filter((stay) => {

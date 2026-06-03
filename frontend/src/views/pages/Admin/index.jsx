@@ -5,7 +5,7 @@ import { APP_ROUTES } from "../../../config/routes";
 import { getAdminBookingsReport, getAdminHostsReport, getAdminListingsReport, getAdminRevenueReport } from "../../../services/adminService";
 import { getAdminUsers } from "../../../services/userService";
 import { getPendingListings } from "../../../services/adminService";
-import { formatCurrency, pageWrapperClass } from "../host/sharedStyles";
+import { formatCurrency, pageWrapperClass } from "../Host/sharedStyles";
 
 const today = new Date();
 const from = new Date();
@@ -32,8 +32,8 @@ const AdminOverview = () => {
                 ]);
 
                 setStats({
-                    users: users.pagination?.totalItems ?? users.items?.length ?? 0,
-                    pendingListings: pendingListings.pagination?.totalItems ?? pendingListings.items?.length ?? 0,
+                    users: users.pagination?.total ?? users.items?.length ?? 0,
+                    pendingListings: pendingListings.pagination?.total ?? pendingListings.items?.length ?? 0,
                     grossRevenue: revenue.totals?.grossRevenue ?? 0,
                     bookings: bookings.totals?.totalBookings ?? 0,
                     hosts: hosts.totals?.totalHosts ?? 0,

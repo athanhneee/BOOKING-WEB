@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { FiRefreshCw, FiSearch } from "react-icons/fi";
 import { getAdminUsers, updateAdminUserStatus } from "../../../../services/userService";
-import { pageWrapperClass, secondaryButtonClass, tableClassName } from "../../host/sharedStyles";
+import { pageWrapperClass, reloadButtonClass, tableClassName } from "../../Host/sharedStyles";
 
 const statusOptions = [
     { label: "Tất cả", value: "all" },
@@ -55,7 +55,7 @@ const QuanLyNguoiDung = () => {
                 <section className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:flex-row">
                     <div className="relative flex-1"><FiSearch className="absolute left-3 top-3 text-gray-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm email, số điện thoại, tên..." className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-3" /></div>
                     <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-xl border border-gray-200 px-3 py-2.5">{statusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
-                    <button type="button" onClick={fetchUsers} className={secondaryButtonClass}><FiRefreshCw className="mr-2 inline" />Tải lại</button>
+                    <button type="button" onClick={fetchUsers} className={reloadButtonClass}><FiRefreshCw className="shrink-0" />Tải lại</button>
                 </section>
                 <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                     <table className={`${tableClassName} text-left text-sm`}>

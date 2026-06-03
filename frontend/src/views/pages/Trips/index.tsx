@@ -11,7 +11,7 @@ import { getMyBookings } from "../../../services/bookingService";
 import { getMe, updateMe, updateMyAvatar } from "../../../services/userService";
 import { uploadFileToR2 } from "../../../services/api/uploadsApi";
 import { getCurrentUser, setCurrentUser } from "../../../store/authStore";
-import { cn } from "../../../utils";
+import { cn, getBookingDisplayStatus } from "../../../utils";
 import EditProfileModal from "../../components/common/profile/EditProfileModal";
 import ProfileInfoList from "../../components/common/profile/ProfileInfoList";
 import ProfileSidebar, { type AccountTab } from "../../components/common/profile/ProfileSidebar";
@@ -153,23 +153,29 @@ const calculateNights = (checkIn: string, checkOut: string) => {
     return Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000));
 };
 
-const mapBookingStatusToTripStatus = (booking: ApiBooking): TripHistory["status"] => {
-    const normalizedStatus = booking.status.toLowerCase();
+const mapBookingStatusToTripStatus = (
+    displayStatus: ReturnType<typeof getBookingDisplayStatus>,
+): TripHistory["status"] => {
+    const normalizedStatus = displayStatus.normalizedStatus;
 
-    if (normalizedStatus.includes("cancel")) {
+    if (
+        normalizedStatus.includes("cancel") ||
+        ["payment_expired", "rejected", "refund_pending", "refunded"].includes(normalizedStatus)
+    ) {
         return "cancelled";
     }
 
-    if (normalizedStatus === "completed" || normalizedStatus === "checked_out") {
+    if (normalizedStatus === "completed") {
         return "completed";
     }
 
     return "active";
 };
 
-const mapBookingToTrip = (booking: ApiBooking): TripHistory => {
+const mapBookingToTrip = (booking: ApiBooking, now: Date): TripHistory => {
     const totalPrice = Number(booking.totalAmount || booking.totalPrice || 0);
-    const status = mapBookingStatusToTripStatus(booking);
+    const displayStatus = getBookingDisplayStatus(booking, { role: "guest", now });
+    const status = mapBookingStatusToTripStatus(displayStatus);
     const location = [booking.listing?.city, booking.listing?.district].filter(Boolean).join(", ");
     const address = [booking.listing?.addressLine, booking.listing?.district, booking.listing?.city]
         .filter(Boolean)
@@ -193,6 +199,9 @@ const mapBookingToTrip = (booking: ApiBooking): TripHistory => {
         totalPrice,
         currency: booking.currency || "VND",
         status,
+        bookingStatusCode: displayStatus.normalizedStatus,
+        bookingStatusLabel: displayStatus.label,
+        bookingStatusTone: displayStatus.tone,
         canReview: status === "completed",
         canRebook: status === "completed" || status === "cancelled",
         guestCount: booking.guestCount ?? booking.guestsCount,
@@ -254,6 +263,7 @@ const ProfilePage = () => {
     const activeTab: AccountTab = location.pathname === APP_ROUTES.accountTrips ? "trips" : "profile";
     const [profile, setProfile] = useState<AccountUserProfile | null>(null);
     const [bookings, setBookings] = useState<ApiBooking[]>([]);
+    const [statusNow, setStatusNow] = useState(() => new Date());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -290,7 +300,12 @@ const ProfilePage = () => {
         void fetchData();
     }, [fetchData]);
 
-    const trips = useMemo(() => bookings.map(mapBookingToTrip), [bookings]);
+    useEffect(() => {
+        const timer = window.setInterval(() => setStatusNow(new Date()), 60_000);
+        return () => window.clearInterval(timer);
+    }, []);
+
+    const trips = useMemo(() => bookings.map((booking) => mapBookingToTrip(booking, statusNow)), [bookings, statusNow]);
     const copy = pageCopy[activeTab];
 
     const handleTabChange = (nextTab: AccountTab) => {

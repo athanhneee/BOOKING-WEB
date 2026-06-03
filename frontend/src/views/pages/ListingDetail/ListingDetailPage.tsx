@@ -883,7 +883,6 @@ type BookingCardProps = {
     variant: "mobile" | "desktop";
     nightlyRate: number;
     nights: number;
-    totalPrice: number;
     guestCount: number;
     guestSummary: string;
     checkIn: string;
@@ -918,7 +917,6 @@ const BookingCard = ({
     variant,
     nightlyRate,
     nights,
-    totalPrice,
     guestCount,
     guestSummary,
     checkIn,
@@ -1010,11 +1008,11 @@ const BookingCard = ({
                     </div>
                     <div className="mt-5 flex items-end justify-between gap-4">
                         <div>
-                            <p className="text-[1.9rem] font-semibold tracking-tight text-[#231a12]">
-                                {currencyFormatter.format(totalPrice)}
+                            <p className="text-base font-semibold text-[#231a12]">
+                                Tổng tiền được xác nhận ở bước thanh toán
                             </p>
                             <p className="mt-1 text-xs text-zinc-500">
-                                {currencyFormatter.format(nightlyRate)} x {nights} đêm
+                                Áp dụng lịch giá và ưu đãi hiện hành
                             </p>
                         </div>
                     </div>
@@ -1035,8 +1033,8 @@ const BookingCard = ({
                 <div className="mt-6 border-t border-[#ece2d8] pt-4">
                     <div className="flex items-center justify-between gap-4">
                         <span className="text-sm text-zinc-500">Tổng {nights} đêm</span>
-                        <span className="text-[1.75rem] font-semibold tracking-tight text-[#231a12]">
-                            {currencyFormatter.format(totalPrice)}
+                        <span className="text-sm font-semibold text-[#231a12]">
+                            Xác nhận sau khi tạo đặt phòng
                         </span>
                     </div>
                     <div className="mt-4 flex items-center gap-2 rounded-[24px] bg-cyan-50 px-4 py-3 text-xs font-medium text-zinc-600">
@@ -1384,7 +1382,12 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
     const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
     const bookingQueue = useBookingQueue();
-    const { isSaved, toggleSaved } = useSavedListings();
+    const {
+        isSaved,
+        toggleSaved,
+        isLoading: isWishlistLoading,
+        error: wishlistError,
+    } = useSavedListings();
 
     const desktopBookingRef = useRef<HTMLDivElement | null>(null);
     const desktopPopoverRef = useRef<HTMLDivElement | null>(null);
@@ -1429,6 +1432,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
     );
     const recommendationSearchState = useMemo<BookingSearchState>(
         () => ({
+            q: bookingSearchState.q,
             location: bookingSearchState.location,
             locationGroup: bookingSearchState.locationGroup,
             mapLat: bookingSearchState.mapLat,
@@ -1439,6 +1443,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
             guests: guestSelection,
         }),
         [
+            bookingSearchState.q,
             bookingSearchState.location,
             bookingSearchState.locationGroup,
             bookingSearchState.mapLat,
@@ -1456,7 +1461,6 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
     const guestSummary = buildGuestSummary(guestSelection);
     const nights = getNightCount(checkIn, checkOut);
     const nightlyRate = destination?.pricePerNight ?? 0;
-    const totalPrice = nightlyRate * nights;
     const currentUser = getCurrentUser();
     const listingHostUserId = rawListing?.host?.userId ?? null;
     const isCurrentUserListingHost =
@@ -1703,17 +1707,21 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
         }
     };
 
-    const handleToggleSaved = () => {
+    const handleToggleSaved = async () => {
         if (!destination) {
             return;
         }
 
-        const nextSaved = toggleSaved(destination.id);
-        showActionFeedback(
-            nextSaved
-                ? "Đã lưu villa vào danh sách xem sau."
-                : "Đã bỏ lưu villa này.",
-        );
+        try {
+            const nextSaved = await toggleSaved(destination.id);
+            showActionFeedback(
+                nextSaved
+                    ? "Đã lưu villa vào danh sách xem sau."
+                    : "Đã bỏ lưu villa này.",
+            );
+        } catch {
+            showActionFeedback("Không cập nhật được wishlist. Vui lòng thử lại.");
+        }
     };
 
     const handleToggleBookingQueue = () => {
@@ -1809,9 +1817,9 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
         try {
             const booking = await createBooking({
                 listingId: Number(destination.id),
-                checkInDate: checkIn,
-                checkOutDate: checkOut,
-                guestCount,
+                checkIn,
+                checkOut,
+                guests: guestCount,
             });
 
             navigate(APP_ROUTES.guestPaymentDetail(String(booking.bookingId)), {
@@ -2044,15 +2052,16 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                                     <button
                                         type="button"
                                         onClick={handleToggleSaved}
+                                        disabled={isWishlistLoading}
                                         className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors ${isListingSaved
                                             ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
                                             : "border-[#e0d1c1] bg-white/90 text-zinc-900 hover:border-rose-200 hover:text-rose-600"
-                                            }`}
+                                            } disabled:cursor-not-allowed disabled:opacity-60`}
                                     >
                                         <FiHeart
                                             className={isListingSaved ? "fill-current" : undefined}
                                         />
-                                        {isListingSaved ? "Đã lưu" : "Lưu"}
+                                        {isWishlistLoading ? "Đang đồng bộ" : isListingSaved ? "Đã lưu" : "Lưu"}
                                     </button>
                                     <button
                                         type="button"
@@ -2067,9 +2076,12 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                                     </button>
                                 </div>
 
-                                {actionFeedback ? (
-                                    <p className="rounded-[24px] border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-700">
-                                        {actionFeedback}
+                                {actionFeedback || wishlistError ? (
+                                    <p className={`rounded-[24px] border px-4 py-3 text-sm font-medium ${wishlistError && !actionFeedback
+                                        ? "border-amber-100 bg-amber-50 text-amber-700"
+                                        : "border-cyan-100 bg-cyan-50 text-cyan-700"
+                                        }`}>
+                                        {actionFeedback ?? wishlistError}
                                     </p>
                                 ) : null}
                             </header>
@@ -2091,7 +2103,6 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                                     variant="mobile"
                                     nightlyRate={nightlyRate}
                                     nights={nights}
-                                    totalPrice={totalPrice}
                                     guestCount={guestCount}
                                     guestSummary={guestSummary}
                                     checkIn={checkIn}
@@ -2192,7 +2203,6 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                                 variant="desktop"
                                 nightlyRate={nightlyRate}
                                 nights={nights}
-                                totalPrice={totalPrice}
                                 guestCount={guestCount}
                                 guestSummary={guestSummary}
                                 checkIn={checkIn}

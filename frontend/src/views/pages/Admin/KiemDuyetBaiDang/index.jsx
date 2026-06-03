@@ -5,9 +5,9 @@ import { API_BASE_URL } from "../../../../services/api/apiClient";
 import {
     formatCurrency,
     pageWrapperClass,
-    secondaryButtonClass,
+    reloadButtonClass,
     tableClassName,
-} from "../../host/sharedStyles";
+} from "../../Host/sharedStyles";
 
 const getAddress = (listing) =>
     [listing.addressLine, listing.ward, listing.district, listing.city].filter(Boolean).join(", ");
@@ -295,8 +295,8 @@ const KiemDuyetBaiDang = () => {
                             Duyệt hoặc từ chối các chỗ nghỉ host đã gửi lên.
                         </p>
                     </div>
-                    <button type="button" onClick={fetchPendingListings} className={secondaryButtonClass}>
-                        <FiRefreshCw className="mr-2 inline" />
+                    <button type="button" onClick={fetchPendingListings} className={reloadButtonClass}>
+                        <FiRefreshCw className="shrink-0" />
                         Tải lại
                     </button>
                 </div>

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { FiSliders, FiX } from "react-icons/fi";
 import { LuCircleCheckBig } from "react-icons/lu";
-import type { PopularDestination } from "../../../../models/entities/Listing";
 import Modal from "../../ui/Modal";
 import CounterFilter from "./CounterFilter";
 import FilterChipGroup from "./FilterChipGroup";
@@ -16,19 +15,18 @@ import {
     stayQuickChoiceOptions,
     staySortOptions,
 } from "./filterOptions";
-import { countActiveFilters, createDefaultStayFilters, filterAndSortStays } from "./stayFilterUtils";
+import { countActiveFilters, createDefaultStayFilters } from "./stayFilterUtils";
 import type { PriceBounds, StayFilterState, StaySortOption } from "./types";
 
 type StayFilterModalProps = {
     isOpen: boolean;
     onClose: () => void;
-    stays: PopularDestination[];
     value: StayFilterState;
     bounds: PriceBounds;
     onApply: (nextFilters: StayFilterState) => void;
 };
 
-const StayFilterModal = ({ isOpen, onClose, stays, value, bounds, onApply }: StayFilterModalProps) => {
+const StayFilterModal = ({ isOpen, onClose, value, bounds, onApply }: StayFilterModalProps) => {
     const defaultFilters = useMemo(() => createDefaultStayFilters(bounds), [bounds]);
     const [draftFilters, setDraftFilters] = useState<StayFilterState>(value);
 
@@ -42,7 +40,6 @@ const StayFilterModal = ({ isOpen, onClose, stays, value, bounds, onApply }: Sta
         }
     }, [isOpen, value]);
 
-    const matchingCount = filterAndSortStays(stays, draftFilters).length;
     const activeCount = countActiveFilters(draftFilters, defaultFilters);
 
     const updateCounter = (key: keyof Pick<StayFilterState, "guests" | "bedrooms" | "beds" | "bathrooms">, nextValue: number) => {
@@ -232,7 +229,7 @@ const StayFilterModal = ({ isOpen, onClose, stays, value, bounds, onApply }: Sta
                         onClick={handleApply}
                         className="inline-flex items-center justify-center rounded-xl bg-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_-20px_rgba(8,145,178,0.8)] transition hover:bg-cyan-500"
                     >
-                        Xem {matchingCount} nơi lưu trú
+                        Áp dụng bộ lọc
                     </button>
                 </div>
             </div>

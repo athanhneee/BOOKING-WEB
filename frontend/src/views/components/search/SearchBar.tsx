@@ -469,6 +469,7 @@ const SearchBarInner = ({
     const setLocationText = (value: string) =>
         setDraftState((current) => ({
             ...current,
+            q: value,
             location: value,
             locationGroup: "",
             mapLat: "",
@@ -509,6 +510,7 @@ const SearchBarInner = ({
 
         setDraftState((current) => ({
             ...current,
+            q: "",
             location: item.title,
             locationGroup: item.locationGroup ?? "",
             mapLat: "",
@@ -521,6 +523,7 @@ const SearchBarInner = ({
     const handleMapSearchConfirm = (position: MapSearchPosition) => {
         const nextState: BookingSearchState = {
             ...draftState,
+            q: "",
             location: MAP_SEARCH_LABEL,
             locationGroup: "",
             mapLat: position.lat.toFixed(6),

@@ -7,7 +7,6 @@ import { getListings } from "../../../services/listingService";
 import type { PopularDestination } from "../../../models/entities/Listing";
 import {
     buildGuestSummary,
-    filterStaysByBookingSearch,
     formatSearchDateRange,
     isMapSearchState,
     parseBookingSearchParams,
@@ -18,7 +17,6 @@ import { applyStayFiltersToSearchParams, parseStayFiltersFromSearchParams } from
 import {
     countActiveFilters,
     createDefaultStayFilters,
-    filterAndSortStays,
     getStayPriceBounds,
 } from "../../components/stays/filter/stayFilterUtils";
 import type { StayFilterState } from "../../components/stays/filter/types";
@@ -31,6 +29,12 @@ const parsePage = (value: string | null, totalPages: number) => {
     const parsed = Number.parseInt(value ?? "1", 10);
     if (Number.isNaN(parsed) || parsed < 1) return 1;
     return Math.min(parsed, totalPages);
+};
+
+const mapStaySortToListingSort = (sortBy: StayFilterState["sortBy"]) => {
+    if (sortBy === "gia-thap-den-cao") return "price_asc";
+    if (sortBy === "danh-gia-cao-nhat") return "rating_desc";
+    return undefined;
 };
 
 const SearchPage = () => {
@@ -51,7 +55,7 @@ const SearchPage = () => {
     const [pagination, setPagination] = useState({
         page: 1,
         limit: ITEMS_PER_PAGE,
-        totalItems: 0,
+        total: 0,
         totalPages: 1,
     });
     const priceBounds = useMemo(() => getStayPriceBounds(stays), [stays]);
@@ -60,6 +64,10 @@ const SearchPage = () => {
     const requestedPage = Number.parseInt(searchParams.get("page") ?? "1", 10);
     const apiPage = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
     const isMapSearch = isMapSearchState(bookingSearchState);
+    const appliedFilters = useMemo(
+        () => parseStayFiltersFromSearchParams(searchParams, defaultFilters, priceBounds),
+        [defaultFilters, priceBounds, searchParams],
+    );
 
     useEffect(() => {
         let ignore = false;
@@ -69,13 +77,20 @@ const SearchPage = () => {
             setError("");
 
             try {
-                const totalGuests = bookingSearchState.guests.adults + bookingSearchState.guests.children;
+                const bookingGuests = bookingSearchState.guests.adults + bookingSearchState.guests.children;
+                const totalGuests = Math.max(bookingGuests, appliedFilters.guests);
                 const lat = Number(bookingSearchState.mapLat);
                 const lng = Number(bookingSearchState.mapLng);
                 const radius = Number(bookingSearchState.mapRadius || 800);
+                const isAreaSearch = Boolean(bookingSearchState.locationGroup) || isMapSearch;
+                const keyword =
+                    isAreaSearch
+                        ? bookingSearchState.q
+                        : bookingSearchState.q || bookingSearchState.location;
 
                 const result = await getListings({
-                    city: bookingSearchState.locationGroup ? undefined : "Vũng Tàu",
+                    q: keyword || undefined,
+                    city: "Vũng Tàu",
                     locationGroup: bookingSearchState.locationGroup || undefined,
                     lat: isMapSearch && Number.isFinite(lat) ? lat : undefined,
                     lng: isMapSearch && Number.isFinite(lng) ? lng : undefined,
@@ -83,6 +98,10 @@ const SearchPage = () => {
                     checkIn: bookingSearchState.checkIn || undefined,
                     checkOut: bookingSearchState.checkOut || undefined,
                     guests: totalGuests > 0 ? totalGuests : undefined,
+                    priceMin: appliedFilters.priceMin ?? undefined,
+                    priceMax: appliedFilters.priceMax ?? undefined,
+                    amenities: appliedFilters.amenities.length > 0 ? appliedFilters.amenities : undefined,
+                    sort: mapStaySortToListingSort(appliedFilters.sortBy),
                     page: apiPage,
                     limit: ITEMS_PER_PAGE,
                 });
@@ -109,6 +128,12 @@ const SearchPage = () => {
         };
     }, [
         apiPage,
+        appliedFilters.amenities,
+        appliedFilters.guests,
+        appliedFilters.priceMax,
+        appliedFilters.priceMin,
+        appliedFilters.sortBy,
+        bookingSearchState.q,
         bookingSearchState.location,
         bookingSearchState.locationGroup,
         bookingSearchState.mapLat,
@@ -122,25 +147,12 @@ const SearchPage = () => {
     ]);
 
 
-    const appliedFilters = useMemo(
-        () => parseStayFiltersFromSearchParams(searchParams, defaultFilters, priceBounds),
-        [defaultFilters, priceBounds, searchParams],
-    );
-
-    const searchMatchedDestinations = useMemo(
-        () => filterStaysByBookingSearch(stays, bookingSearchState),
-        [bookingSearchState, stays],
-    );
-    const filteredDestinations = useMemo(
-        () => filterAndSortStays(searchMatchedDestinations, appliedFilters),
-        [appliedFilters, searchMatchedDestinations],
-    );
-
     const totalPages = pagination.totalPages;
     const currentPage = parsePage(searchParams.get("page"), totalPages);
-    const currentItems = filteredDestinations;
+    const currentItems = stays;
     const activeFilterCount = countActiveFilters(appliedFilters, defaultFilters);
     const hasSearchCriteria =
+        Boolean(bookingSearchState.q) ||
         Boolean(bookingSearchState.location) ||
         Boolean(bookingSearchState.locationGroup) ||
         isMapSearch ||
@@ -287,7 +299,6 @@ const SearchPage = () => {
             <StayFilterModal
                 isOpen={isFilterOpen}
                 onClose={() => setIsFilterOpen(false)}
-                stays={stays}
                 value={appliedFilters}
                 bounds={priceBounds}
                 onApply={handleApplyFilters}

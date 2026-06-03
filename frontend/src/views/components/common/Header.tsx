@@ -8,6 +8,7 @@ import useScrollVisibility from "../../../hooks/useScrollVisibility";
 import { getHostApplicationMe, type HostApplicationStatus } from "../../../services/hostService";
 import { getCurrentUser } from "../../../store/authStore";
 import AccountMenu from "../navbar/AccountMenu";
+import NotificationBell from "../notifications/NotificationBell";
 
 const navLinks = [
     { to: APP_ROUTES.home, label: "Trang chủ" },
@@ -181,6 +182,8 @@ const Header = () => {
 
                 <div className="flex items-center gap-2 md:gap-3">
                     {renderBecomeHostLink()}
+
+                    {currentUser ? <NotificationBell /> : null}
 
                     <AccountMenu
                         key={location.pathname}

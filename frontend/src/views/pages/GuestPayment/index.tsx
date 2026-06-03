@@ -11,28 +11,20 @@ import {
     type PaymentMethod,
     type PaymentMethodAvailability,
 } from "../../../services/paymentService";
-import { daysBetween, formatCurrency, formatDate } from "../host/sharedStyles";
+import { getBookingDisplayStatus, getRemainingBookingPaymentSeconds } from "../../../utils/bookingStatus";
+import { daysBetween, formatCurrency, formatDate } from "../Host/sharedStyles";
 
 const defaultPaymentMethods: PaymentMethodAvailability[] = [
     { method: "vnpay", label: "VNPay", available: true },
     { method: "momo", label: "MoMo", available: false },
 ];
 
-function getRemainingPaymentSeconds(booking: any): number {
+function getRemainingPaymentSeconds(booking: ApiBooking): number {
     if (typeof booking?.remainingPaymentSeconds === "number") {
         return Math.max(0, booking.remainingPaymentSeconds);
     }
 
-    const expiresAt = booking?.paymentExpiresAt ?? booking?.lockedUntil;
-
-    if (!expiresAt) {
-        return 0;
-    }
-
-    return Math.max(
-        0,
-        Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000),
-    );
+    return getRemainingBookingPaymentSeconds(booking);
 }
 
 const getErrorStatus = (error: unknown) => {
@@ -148,12 +140,15 @@ const GuestPayment = () => {
         method === "momo"
             ? momoUnavailableReason
             : selectedMethod?.unavailableReason ?? "Phương thức thanh toán chưa khả dụng.";
-    const isExpired = remaining <= 0;
+    const displayStatus = booking ? getBookingDisplayStatus(booking, { role: "guest" }) : null;
+    const isPayable = displayStatus?.normalizedStatus === "pending_payment";
+    const isExpired = displayStatus?.normalizedStatus === "payment_expired" || (isPayable && remaining <= 0);
+    const displayStatusLabel = isExpired ? "Quá hạn thanh toán" : displayStatus?.label ?? "Không rõ";
 
     const handlePay = async () => {
         if (!booking) return;
 
-        if (isExpired) {
+        if (!isPayable || isExpired) {
             setError("Phiên giữ chỗ đã hết hạn, vui lòng đặt lại.");
             return;
         }
@@ -225,8 +220,14 @@ const GuestPayment = () => {
 
     const checkIn = booking.checkInDate;
     const checkOut = booking.checkOutDate;
-    const nights = booking.nights || daysBetween(checkIn, checkOut);
-    const totalAmount = Number(booking.totalAmount ?? booking.totalPrice ?? 0);
+    const priceBreakdown = booking.priceBreakdown;
+    const nights = Number(priceBreakdown?.totalNights ?? booking.totalNights ?? booking.nights ?? daysBetween(checkIn, checkOut));
+    const subtotalAmount = Number(priceBreakdown?.subtotalAmount ?? booking.subtotalAmount ?? 0);
+    const cleaningFeeAmount = Number(priceBreakdown?.cleaningFeeAmount ?? booking.cleaningFeeAmount ?? 0);
+    const serviceFeeAmount = Number(priceBreakdown?.serviceFeeAmount ?? booking.serviceFeeAmount ?? 0);
+    const extraGuestFeeAmount = Number(priceBreakdown?.extraGuestFeeAmount ?? booking.extraGuestFeeAmount ?? 0);
+    const discountAmount = Number(priceBreakdown?.discountAmount ?? booking.discountAmount ?? 0);
+    const totalAmount = Number(priceBreakdown?.totalAmount ?? booking.totalAmount ?? booking.totalPrice ?? 0);
     const listingName = booking.listing?.title ?? `Villa #${booking.listingId}`;
     const listingAddress = [booking.listing?.addressLine, booking.listing?.district, booking.listing?.city]
         .filter(Boolean)
@@ -290,18 +291,32 @@ const GuestPayment = () => {
                         <div className="mt-6 rounded-2xl border border-gray-100">
                             <div className="flex items-center justify-between px-4 py-3 text-sm text-gray-500">
                                 <span>{nights} đêm</span>
-                                <span>{formatCurrency(booking.subtotalAmount)}</span>
+                                <span>{formatCurrency(subtotalAmount)}</span>
                             </div>
+
+                            {extraGuestFeeAmount > 0 ? (
+                                <div className="flex items-center justify-between px-4 py-3 text-sm text-gray-500">
+                                    <span>Phí khách vượt chuẩn</span>
+                                    <span>{formatCurrency(extraGuestFeeAmount)}</span>
+                                </div>
+                            ) : null}
 
                             <div className="flex items-center justify-between px-4 py-3 text-sm text-gray-500">
                                 <span>Phí dọn dẹp</span>
-                                <span>{formatCurrency(booking.cleaningFeeAmount)}</span>
+                                <span>{formatCurrency(cleaningFeeAmount)}</span>
                             </div>
 
                             <div className="flex items-center justify-between px-4 py-3 text-sm text-gray-500">
                                 <span>Phí dịch vụ</span>
-                                <span>{formatCurrency(booking.serviceFeeAmount)}</span>
+                                <span>{formatCurrency(serviceFeeAmount)}</span>
                             </div>
+
+                            {discountAmount > 0 ? (
+                                <div className="flex items-center justify-between px-4 py-3 text-sm text-gray-500">
+                                    <span>Ưu đãi</span>
+                                    <span>-{formatCurrency(discountAmount)}</span>
+                                </div>
+                            ) : null}
 
                             <div className="flex items-center justify-between border-t border-gray-100 px-4 py-4 text-lg font-semibold text-cyan-700">
                                 <span>Tổng cộng</span>
@@ -356,12 +371,18 @@ const GuestPayment = () => {
 
                         </div>
 
-                        <p className="text-sm font-medium text-gray-700">
-                            Phiên thanh toán còn{" "}
-                            <strong>
-                                {minutes}:{seconds}
-                            </strong>
-                        </p>
+                        {isPayable && !isExpired ? (
+                            <p className="text-sm font-medium text-gray-700">
+                                Phiên thanh toán còn{" "}
+                                <strong>
+                                    {minutes}:{seconds}
+                                </strong>
+                            </p>
+                        ) : (
+                            <p className="text-sm font-medium text-gray-700">
+                                Trạng thái booking: <strong>{displayStatusLabel}</strong>
+                            </p>
+                        )}
 
                         {isExpired && (
                             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -376,7 +397,7 @@ const GuestPayment = () => {
                         <button
                             type="button"
                             onClick={handlePay}
-                            disabled={isSubmitting || isExpired || !selectedMethod || !isSelectedMethodAvailable}
+                            disabled={isSubmitting || isExpired || !isPayable || !selectedMethod || !isSelectedMethodAvailable}
                             className="w-full rounded-xl bg-cyan-500 px-4 py-3 font-medium text-white transition-colors hover:bg-cyan-500 disabled:opacity-60"
                         >
                             {isSubmitting ? (

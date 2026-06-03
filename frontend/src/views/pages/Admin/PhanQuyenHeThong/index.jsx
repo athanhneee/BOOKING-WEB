@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getAdminUsers, updateAdminUser } from "../../../../services/userService";
-import { pageWrapperClass, primaryButtonClass, secondaryButtonClass, tableClassName } from "../../host/sharedStyles";
+import { pageWrapperClass, primaryButtonClass, secondaryButtonClass, tableClassName } from "../../Host/sharedStyles";
 
 const roles = ["Guest", "host", "Admin"];
 

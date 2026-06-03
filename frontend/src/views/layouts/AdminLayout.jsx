@@ -1,10 +1,11 @@
-import { FiBell, FiClipboard, FiFileText, FiGrid, FiLogOut, FiMenu, FiShield, FiUsers, FiX } from "react-icons/fi";
+import { FiClipboard, FiFileText, FiGrid, FiLogOut, FiMenu, FiShield, FiUsers, FiX } from "react-icons/fi";
 import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import logo from "../../assets/img/logo_mau.svg";
 import { APP_ROUTES } from "../../config/routes";
 import { clearCurrentUser, getCurrentUser, isAdminUser } from "../../store/authStore";
 import { cn } from "../../utils";
 import { useState } from "react";
+import NotificationBell from "../components/notifications/NotificationBell";
 
 const adminNavItems = [
     { id: "tong-quan", label: "Tổng quan", to: APP_ROUTES.adminOverview, icon: FiGrid },
@@ -77,7 +78,7 @@ const AdminLayout = () => {
                         <div className="flex flex-wrap items-center gap-4 px-4 py-4 sm:px-6">
                             <button type="button" onClick={() => setSidebarOpen(true)} className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-600 transition-colors hover:bg-gray-50 lg:hidden" aria-label="Mở menu admin"><FiMenu size={18} /></button>
                             <div className="min-w-[220px] flex-1"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">Admin Center</p><h1 className="mt-1 text-xl font-bold text-gray-900 sm:text-2xl">{activeMeta.title}</h1><p className="mt-1 text-sm text-gray-500">{activeMeta.subtitle}</p></div>
-                            <button type="button" aria-label="Thông báo quản trị" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 text-gray-600 transition-colors hover:bg-gray-50"><FiBell size={18} /></button>
+                            <NotificationBell buttonClassName="border-gray-200 text-gray-600 shadow-none hover:bg-gray-50" />
                         </div>
                     </header>
                     <main className="min-w-0 flex-1"><Outlet /></main>

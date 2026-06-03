@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { ArrowRightLeft, Search, Sparkles } from "lucide-react";
+import { ArrowRightLeft, Bug, Search, Sparkles } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import ListingCard from "../../../components/listings/ListingCard";
 import { APP_ROUTES } from "../../../config/routes";
 import {
     searchAiListings,
     type AiListingSearchItem,
+    type AiListingSearchResponse,
     type AiSearchMode,
 } from "../../../services/api/semanticSearchApi";
 
@@ -49,6 +50,7 @@ const AiSearchPage = () => {
     const [lastSubmittedQuery, setLastSubmittedQuery] = useState("");
     const [items, setItems] = useState<AiListingSearchItem[]>([]);
     const [mode, setMode] = useState<AiSearchMode | null>(null);
+    const [searchMeta, setSearchMeta] = useState<AiListingSearchResponse["searchMeta"] | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [hasSearched, setHasSearched] = useState(false);
@@ -60,6 +62,7 @@ const AiSearchPage = () => {
             setError("Nhập nội dung bạn muốn tìm bằng AI.");
             setItems([]);
             setMode(null);
+            setSearchMeta(null);
             setHasSearched(false);
             return;
         }
@@ -78,6 +81,7 @@ const AiSearchPage = () => {
 
             setItems(result.items);
             setMode(result.mode);
+            setSearchMeta(result.searchMeta ?? null);
 
             if (typeof window !== "undefined") {
                 window.sessionStorage.setItem(LAST_AI_SEARCH_QUERY_KEY, nextQuery);
@@ -85,6 +89,7 @@ const AiSearchPage = () => {
         } catch (searchError) {
             setItems([]);
             setMode(null);
+            setSearchMeta(null);
             setError(searchError instanceof Error ? searchError.message : "Không thể tìm kiếm AI lúc này.");
         } finally {
             setIsLoading(false);
@@ -180,6 +185,18 @@ const AiSearchPage = () => {
                             </button>
                         ))}
                     </div>
+
+                    {import.meta.env.DEV && searchMeta ? (
+                        <div className="mt-7 rounded-2xl border border-slate-200 bg-slate-950 p-4 text-left text-xs text-slate-100">
+                            <div className="mb-3 flex items-center gap-2 font-bold text-cyan-200">
+                                <Bug size={15} />
+                                Debug
+                            </div>
+                            <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words">
+                                {JSON.stringify(searchMeta, null, 2)}
+                            </pre>
+                        </div>
+                    ) : null}
                 </section>
 
                 <section className="mt-8 rounded-[36px] border border-slate-100 bg-white/60 p-5 shadow-sm backdrop-blur md:p-7">
@@ -194,6 +211,12 @@ const AiSearchPage = () => {
                             {lastSubmittedQuery ? (
                                 <p className="mt-2 text-base font-medium text-slate-500">
                                     “{lastSubmittedQuery}”
+                                </p>
+                            ) : null}
+
+                            {mode ? (
+                                <p className="mt-2 text-sm font-bold text-cyan-700">
+                                    {mode === "semantic" ? "Semantic search" : "Keyword fallback"}
                                 </p>
                             ) : null}
                         </div>
@@ -226,9 +249,21 @@ const AiSearchPage = () => {
                                 {items.map((listing) => (
                                     <div
                                         key={listing.listingId}
-                                        className="overflow-hidden rounded-[28px]"
+                                        className="overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-sm"
                                     >
                                         <ListingCard listing={listing} />
+                                        {listing.matchedReasons?.length ? (
+                                            <div className="space-y-2 border-t border-slate-100 p-4">
+                                                {listing.matchedReasons.slice(0, 3).map((reason) => (
+                                                    <p
+                                                        key={reason}
+                                                        className="rounded-xl bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-800"
+                                                    >
+                                                        {reason}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        ) : null}
                                     </div>
                                 ))}
                             </div>

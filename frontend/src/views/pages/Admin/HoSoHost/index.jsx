@@ -9,9 +9,9 @@ import {
 import {
     pageWrapperClass,
     primaryButtonClass,
-    secondaryButtonClass,
+    reloadButtonClass,
     tableClassName,
-} from "../../host/sharedStyles";
+} from "../../Host/sharedStyles";
 
 const statusOptions = [
     { value: "pending", label: "Chờ duyệt" },
@@ -186,8 +186,8 @@ const HoSoHost = () => {
                                 </option>
                             ))}
                         </select>
-                        <button type="button" onClick={fetchApplications} className={secondaryButtonClass}>
-                            <FiRefreshCw className="mr-2 inline" />
+                        <button type="button" onClick={fetchApplications} className={reloadButtonClass}>
+                            <FiRefreshCw className="shrink-0" />
                             Tải lại
                         </button>
                     </div>
