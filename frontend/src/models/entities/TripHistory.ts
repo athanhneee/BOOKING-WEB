@@ -11,6 +11,9 @@ export type TripHistory = {
     totalPrice: number;
     currency: string;
     status: TripHistoryStatus;
+    bookingStatusCode?: string;
+    bookingStatusLabel?: string;
+    bookingStatusTone?: "warning" | "danger" | "success" | "info" | "muted";
     canReview: boolean;
     canRebook: boolean;
     guestCount?: number;

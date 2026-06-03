@@ -16,7 +16,7 @@ export type PaginatedReviews = {
     pagination: {
         page: number;
         limit: number;
-        totalItems: number;
+        total: number;
         totalPages: number;
     };
 };

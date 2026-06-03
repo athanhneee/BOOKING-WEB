@@ -131,6 +131,31 @@ export type ApiListingImage = {
     aiAnalyzedAt?: string | null;
     ai_analyzed_at?: string | null;
 
+    tags?: Array<{
+        tag: string;
+        code?: string;
+        labelVi: string;
+        tagGroup: string;
+        confidence: number | null;
+        source: "ai" | "host" | "admin";
+    }>;
+    aiTags?: Array<{
+        tag: string;
+        code?: string;
+        labelVi: string;
+        tagGroup: string;
+        confidence: number | null;
+        source: "ai" | "host" | "admin";
+    }>;
+    analysis?: {
+        status: "pending" | "analyzed" | "failed";
+        caption: string | null;
+        roomType: string | null;
+        confidence: number | null;
+        errorMessage: string | null;
+        analyzedAt: string | null;
+    } | null;
+
     sortOrder: number;
     sort_order?: number;
     isCover?: boolean;
@@ -145,8 +170,10 @@ export type ApiListingDetail = {
     weekendPrice: number | null;
     cleaningFee: number | null;
     serviceFeePct: number | null;
+    extraGuestFee: number | null;
     currency: string;
     maxGuests: number;
+    includedGuests: number | null;
     bedrooms: number;
     beds: number;
     bathrooms: number;
@@ -178,7 +205,7 @@ export type PaginatedListings = {
     pagination: {
         page: number;
         limit: number;
-        totalItems: number;
+        total: number;
         totalPages: number;
     };
 };
