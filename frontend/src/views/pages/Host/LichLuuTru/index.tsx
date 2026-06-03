@@ -112,7 +112,7 @@ const LichLuuTru = () => {
                         </label>
                         <label className="space-y-2">
                             <span className="text-sm font-medium text-gray-700">Năm</span>
-                            <input type="number" min={2024} max={2100} value={year} onChange={(event) => setYear(Number(event.target.value))} className="w-full rounded-xl border border-gray-200 px-3 py-2.5" />
+                            <input type="number" min={2026} max={2030} value={year} onChange={(event) => setYear(Number(event.target.value))} className="w-full rounded-xl border border-gray-200 px-3 py-2.5" />
                         </label>
                     </div>
 

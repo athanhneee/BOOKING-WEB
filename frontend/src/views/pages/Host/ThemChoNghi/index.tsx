@@ -20,7 +20,6 @@ import {
 import {
     addHostListingImages,
     createHostListing,
-    deleteHostListingImage,
     getHostListingDetail,
     setHostListingImageCover,
     updateHostListing,
@@ -28,7 +27,16 @@ import {
     type HostListingDetail,
     type UpdateHostListingPayload,
 } from "../../../../services/hostService";
-import { analyzeListingImages } from "../../../../services/api/listingImageAiService";
+import {
+    analyzeListingImage,
+    analyzeListingImages,
+    deleteHostImage,
+    getListingImageAnalysis,
+    updateListingImageTags,
+    type ImageAiTag,
+    type ImageTagTaxonomy,
+    type ListingImageAiResult,
+} from "../../../../services/api/listingImageAiService";
 import { uploadFileToR2 } from "../../../../services/api/uploadsApi";
 import { PageHeader } from "../shared";
 import {
@@ -94,12 +102,13 @@ type SelectedImage = {
     id: string;
     file: File;
     previewUrl: string;
-    status: "queued" | "uploading" | "success" | "failed";
+    status: "queued" | "uploading" | "analyzing" | "success" | "tagged" | "analysis_failed" | "failed";
     error?: string;
 };
 
 type ExistingListingImage = {
     imageId: number;
+    listingId?: number;
     url: string;
     key?: string | null;
     objectKey?: string | null;
@@ -119,8 +128,24 @@ type ExistingListingImage = {
     aiDescription?: string | null;
     ai_description?: string | null;
 
+    aiSceneTags?: string[];
+    ai_scene_tags?: string[];
+
+    aiAmenityTags?: string[];
+    ai_amenity_tags?: string[];
+
     aiAnalysisStatus?: "pending" | "analyzed" | "failed";
     ai_analysis_status?: "pending" | "analyzed" | "failed";
+
+    aiErrorMessage?: string | null;
+    ai_error_message?: string | null;
+
+    aiAnalyzedAt?: string | null;
+    ai_analyzed_at?: string | null;
+
+    tags?: ImageAiTag[];
+    aiTags?: ImageAiTag[];
+    analysis?: ListingImageAiResult["analysis"];
 
     sortOrder: number;
     isCover?: boolean;
@@ -209,6 +234,31 @@ const aiImageTypeTitleMap: Record<string, string> = {
     other: "Ảnh chỗ nghỉ",
 };
 
+const defaultImageTagTaxonomies: ImageTagTaxonomy[] = [
+    { code: "bedroom", labelVi: "phòng ngủ", group: "room", aliases: ["phong ngu"], isSearchable: true },
+    { code: "double_bed", labelVi: "giường đôi", group: "object", aliases: ["giuong doi"], isSearchable: true },
+    { code: "pool", labelVi: "hồ bơi", group: "amenity", aliases: ["ho boi"], isSearchable: true },
+    { code: "garden", labelVi: "sân vườn", group: "amenity", aliases: ["san vuon"], isSearchable: true },
+    { code: "bbq", labelVi: "BBQ", group: "amenity", aliases: ["barbecue"], isSearchable: true },
+    { code: "kitchen", labelVi: "bếp", group: "room", aliases: ["bep"], isSearchable: true },
+    { code: "living_room", labelVi: "phòng khách", group: "room", aliases: ["phong khach"], isSearchable: true },
+    { code: "toilet", labelVi: "toilet", group: "room", aliases: ["bathroom", "wc"], isSearchable: true },
+    { code: "bathtub", labelVi: "bồn tắm", group: "object", aliases: ["bon tam"], isSearchable: true },
+    { code: "balcony", labelVi: "ban công", group: "amenity", aliases: ["ban cong"], isSearchable: true },
+    { code: "sea_view", labelVi: "view biển", group: "view", aliases: ["view bien"], isSearchable: true },
+    { code: "karaoke", labelVi: "karaoke", group: "amenity", aliases: ["phong karaoke"], isSearchable: true },
+    { code: "billiards", labelVi: "bàn bida", group: "amenity", aliases: ["ban bida"], isSearchable: true },
+    { code: "front_view", labelVi: "mặt tiền", group: "exterior", aliases: ["mat tien"], isSearchable: true },
+    { code: "garage", labelVi: "gara", group: "amenity", aliases: ["nha xe"], isSearchable: true },
+    { code: "air_conditioner", labelVi: "máy lạnh", group: "amenity", aliases: ["may lanh", "dieu hoa"], isSearchable: true },
+    { code: "sofa", labelVi: "sofa", group: "object", aliases: ["ghe sofa"], isSearchable: true },
+    { code: "dining_table", labelVi: "bàn ăn", group: "object", aliases: ["ban an"], isSearchable: true },
+    { code: "modern", labelVi: "hiện đại", group: "style", aliases: ["hien dai"], isSearchable: true },
+    { code: "luxury", labelVi: "sang trọng", group: "style", aliases: ["sang trong"], isSearchable: true },
+    { code: "family_friendly", labelVi: "phù hợp gia đình", group: "quality", aliases: ["gia dinh"], isSearchable: true },
+    { code: "large_group_friendly", labelVi: "phù hợp nhóm đông người", group: "quality", aliases: ["nhom dong nguoi"], isSearchable: true },
+];
+
 const buildExistingImageLabel = (image: ExistingListingImage, index: number) => {
     const directTitle = image.displayTitle ?? image.display_title ?? image.aiDisplayTitle;
 
@@ -231,33 +281,138 @@ const buildExistingImageLabel = (image: ExistingListingImage, index: number) => 
     return `Ảnh chỗ nghỉ ${index + 1}`;
 };
 
-const mapHostListingImageToExisting = (image: HostListingDetail["images"][number]): ExistingListingImage => ({
-    imageId: image.imageId,
-    url: image.url,
-    key: image.key,
-    objectKey: image.objectKey,
-    caption: image.caption,
+const mapHostListingImageToExisting = (image: HostListingDetail["images"][number] | ListingImageAiResult): ExistingListingImage => {
+    const rawImage = image as HostListingDetail["images"][number] & Partial<ListingImageAiResult>;
 
-    displayTitle: image.displayTitle,
-    display_title: image.display_title,
+    return {
+        imageId: rawImage.imageId,
+        listingId: rawImage.listingId,
+        url: rawImage.url,
+        key: rawImage.key,
+        objectKey: rawImage.objectKey,
+        caption: rawImage.caption,
 
-    altText: image.altText,
-    alt_text: image.alt_text,
+        displayTitle: rawImage.displayTitle,
+        display_title: rawImage.display_title,
 
-    aiDisplayTitle: image.aiDisplayTitle,
+        altText: rawImage.altText,
+        alt_text: rawImage.alt_text,
 
-    aiImageType: image.aiImageType,
-    ai_image_type: image.ai_image_type,
+        aiDisplayTitle: rawImage.aiDisplayTitle,
 
-    aiDescription: image.aiDescription,
-    ai_description: image.ai_description,
+        aiImageType: rawImage.aiImageType,
+        ai_image_type: rawImage.ai_image_type,
 
-    aiAnalysisStatus: image.aiAnalysisStatus,
-    ai_analysis_status: image.ai_analysis_status,
+        aiDescription: rawImage.aiDescription,
+        ai_description: rawImage.ai_description,
+        aiSceneTags: rawImage.aiSceneTags,
+        ai_scene_tags: rawImage.ai_scene_tags,
+        aiAmenityTags: rawImage.aiAmenityTags,
+        ai_amenity_tags: rawImage.ai_amenity_tags,
 
-    sortOrder: image.sortOrder,
-    isCover: image.isCover,
-});
+        aiAnalysisStatus: rawImage.aiAnalysisStatus,
+        ai_analysis_status: rawImage.ai_analysis_status,
+        aiErrorMessage: rawImage.aiErrorMessage,
+        ai_error_message: rawImage.ai_error_message,
+        aiAnalyzedAt: rawImage.aiAnalyzedAt,
+        ai_analyzed_at: rawImage.ai_analyzed_at,
+        tags: rawImage.tags,
+        aiTags: rawImage.aiTags,
+        analysis: rawImage.analysis,
+
+        sortOrder: rawImage.sortOrder ?? rawImage.sort_order ?? 0,
+        isCover: rawImage.isCover,
+    };
+};
+
+const normalizeTagText = (value: string) =>
+    value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "d")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+
+const resolveTaxonomy = (taxonomies: ImageTagTaxonomy[], value: string) => {
+    const normalizedValue = normalizeTagText(value);
+
+    return taxonomies.find((taxonomy) => {
+        const aliases = [taxonomy.code, taxonomy.labelVi, ...taxonomy.aliases].map(normalizeTagText);
+        return aliases.includes(normalizedValue);
+    });
+};
+
+const buildFallbackTag = (taxonomies: ImageTagTaxonomy[], value: string): ImageAiTag | null => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    const taxonomy = resolveTaxonomy(taxonomies, trimmed);
+    return {
+        tag: taxonomy?.code ?? trimmed,
+        code: taxonomy?.code ?? trimmed,
+        labelVi: taxonomy?.labelVi ?? trimmed,
+        tagGroup: taxonomy?.group ?? "custom",
+        confidence: null,
+        source: "ai",
+    };
+};
+
+const getImageTags = (image: ExistingListingImage, taxonomies: ImageTagTaxonomy[]) => {
+    const directTags = image.tags?.length ? image.tags : image.aiTags;
+
+    if (directTags?.length) {
+        return directTags.map((tag) => ({
+            ...tag,
+            tag: tag.code ?? tag.tag,
+            labelVi: tag.labelVi || tag.tag,
+        }));
+    }
+
+    const legacyTags = [
+        ...(image.aiSceneTags ?? image.ai_scene_tags ?? []),
+        ...(image.aiAmenityTags ?? image.ai_amenity_tags ?? []),
+    ];
+    const tags = legacyTags
+        .map((tag) => buildFallbackTag(taxonomies, tag))
+        .filter((tag): tag is ImageAiTag => Boolean(tag));
+    const seen = new Set<string>();
+
+    return tags.filter((tag) => {
+        const key = tag.tag;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+};
+
+const getSelectedImageStatusText = (status: SelectedImage["status"]) => {
+    if (status === "uploading") return "Đang tải ảnh";
+    if (status === "analyzing") return "Đang phân tích ảnh bằng AI";
+    if (status === "tagged") return "Đã gắn tag";
+    if (status === "analysis_failed") return "Phân tích lỗi, thử lại";
+    if (status === "success") return "Upload thành công";
+    if (status === "failed") return "Upload thất bại";
+    return "Chờ upload";
+};
+
+const getSelectedImageStatusClass = (status: SelectedImage["status"]) => {
+    if (status === "tagged" || status === "success") return "font-semibold text-emerald-600";
+    if (status === "failed" || status === "analysis_failed") return "font-semibold text-rose-600";
+    if (status === "uploading" || status === "analyzing") return "font-semibold text-cyan-600";
+    return "text-gray-500";
+};
+
+const getExistingImageAnalysisStatus = (image: ExistingListingImage, tags: ImageAiTag[]) => {
+    const status = image.aiAnalysisStatus ?? image.ai_analysis_status ?? image.analysis?.status;
+
+    if (status === "failed") return { label: "Phân tích lỗi, thử lại", className: "text-rose-600" };
+    if (status === "pending") return { label: "Chưa phân tích AI", className: "text-gray-500" };
+    if (status === "analyzed" && tags.length > 0) return { label: "Đã gắn tag", className: "text-emerald-600" };
+    if (status === "analyzed") return { label: "AI không thấy tag rõ", className: "text-gray-500" };
+    return { label: "Chưa phân tích AI", className: "text-gray-500" };
+};
 const normalizeDecimalInput = (value: string) => value.trim().replace(",", ".");
 const coordinateToInputValue = (value: number) => Number(value.toFixed(6)).toString();
 const toNumber = (value: string, fallback = 0) => {
@@ -431,6 +586,9 @@ const ThemChoNghi = () => {
     const [weekendPriceChanged, setWeekendPriceChanged] = useState(false);
     const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
     const [existingImages, setExistingImages] = useState<ExistingListingImage[]>([]);
+    const [tagTaxonomies, setTagTaxonomies] = useState<ImageTagTaxonomy[]>(defaultImageTagTaxonomies);
+    const [analyzingImageIds, setAnalyzingImageIds] = useState<Set<number>>(() => new Set());
+    const [savingTagImageIds, setSavingTagImageIds] = useState<Set<number>>(() => new Set());
     const [saving, setSaving] = useState(false);
     const [loadingDetail, setLoadingDetail] = useState(false);
     const [aiAnalyzing, setAiAnalyzing] = useState(false);
@@ -448,6 +606,13 @@ const ThemChoNghi = () => {
         selectedImagesRef.current = selectedImages;
     }, [selectedImages]);
 
+    const refreshExistingImages = async (listingId: string | number) => {
+        const analysis = await getListingImageAnalysis(listingId);
+        setTagTaxonomies(analysis.tagTaxonomies.length ? analysis.tagTaxonomies : defaultImageTagTaxonomies);
+        setExistingImages((analysis.images ?? []).map(mapHostListingImageToExisting));
+        return analysis;
+    };
+
     useEffect(() => {
         return () => {
             selectedImagesRef.current.forEach((image) => URL.revokeObjectURL(image.previewUrl));
@@ -457,6 +622,7 @@ const ThemChoNghi = () => {
     useEffect(() => {
         if (!listingIdForEdit) {
             setExistingImages([]);
+            setTagTaxonomies(defaultImageTagTaxonomies);
             setWeekendPriceChanged(false);
             setForm(initialForm);
             return;
@@ -482,6 +648,11 @@ const ThemChoNghi = () => {
                     String(detail.weekendPrice) !== String(detail.basePrice ?? ""),
                 );
                 setExistingImages((detail.images ?? []).map(mapHostListingImageToExisting));
+                try {
+                    await refreshExistingImages(listingIdForEdit);
+                } catch {
+                    setTagTaxonomies(defaultImageTagTaxonomies);
+                }
             } catch (loadError) {
                 if (!ignore) {
                     setError(loadError instanceof Error ? loadError.message : "Không thể tải chỗ nghỉ để sửa.");
@@ -699,6 +870,23 @@ const ThemChoNghi = () => {
         );
     };
 
+    const mergeExistingImage = (updatedImage: ListingImageAiResult) => {
+        const mappedImage = mapHostListingImageToExisting(updatedImage);
+
+        setExistingImages((current) => {
+            const exists = current.some((image) => image.imageId === mappedImage.imageId);
+            if (!exists) {
+                return [...current, mappedImage].sort((left, right) => left.sortOrder - right.sortOrder);
+            }
+
+            return current.map((image) =>
+                image.imageId === mappedImage.imageId
+                    ? { ...image, ...mappedImage, isCover: mappedImage.isCover ?? image.isCover }
+                    : image,
+            );
+        });
+    };
+
     const uploadSelectedImagesForListing = async (
         listingId: string | number,
         imagesToUpload: SelectedImage[],
@@ -706,15 +894,16 @@ const ThemChoNghi = () => {
         initialSortOrder: number,
     ) => {
         const failures: string[] = [];
+        const analysisFailures: string[] = [];
         let successCount = 0;
 
         for (const [index, image] of imagesToUpload.entries()) {
-            setUploadMessage(`Đang upload ảnh ${index + 1}/${imagesToUpload.length}...`);
+            setUploadMessage(`Đang tải ảnh ${index + 1}/${imagesToUpload.length}...`);
             setImageUploadState(image.id, { status: "uploading", error: undefined });
 
             try {
                 const uploaded = await uploadFileToR2(image.file, { listingId });
-                await addHostListingImages(listingId, [
+                const savedImages = await addHostListingImages(listingId, [
                     {
                         url: uploaded.publicUrl,
                         key: uploaded.key,
@@ -729,6 +918,29 @@ const ThemChoNghi = () => {
 
                 successCount += 1;
                 setImageUploadState(image.id, { status: "success", error: undefined });
+
+                const createdImage = savedImages.images?.[0];
+                if (createdImage?.imageId) {
+                    setUploadMessage(`Đang phân tích ảnh bằng AI ${index + 1}/${imagesToUpload.length}...`);
+                    setImageUploadState(image.id, { status: "analyzing", error: undefined });
+
+                    try {
+                        const analyzedImage = await analyzeListingImage(listingId, createdImage.imageId);
+                        mergeExistingImage(analyzedImage);
+
+                        if (analyzedImage.aiAnalysisStatus === "analyzed") {
+                            setImageUploadState(image.id, { status: "tagged", error: undefined });
+                        } else {
+                            const message = analyzedImage.aiErrorMessage ?? "Phân tích lỗi, thử lại.";
+                            analysisFailures.push(`${image.file.name}: ${message}`);
+                            setImageUploadState(image.id, { status: "analysis_failed", error: message });
+                        }
+                    } catch (analysisError) {
+                        const message = analysisError instanceof Error ? analysisError.message : "Phân tích lỗi, thử lại.";
+                        analysisFailures.push(`${image.file.name}: ${message}`);
+                        setImageUploadState(image.id, { status: "analysis_failed", error: message });
+                    }
+                }
             } catch (uploadError) {
                 const message = uploadError instanceof Error ? uploadError.message : "Upload ảnh thất bại.";
                 failures.push(`${image.file.name}: ${message}`);
@@ -736,8 +948,14 @@ const ThemChoNghi = () => {
             }
         }
 
-        setUploadMessage(successCount > 0 ? "Upload thành công" : "");
-        return { successCount, failures };
+        setUploadMessage(
+            analysisFailures.length > 0
+                ? "Một số ảnh phân tích lỗi, thử lại."
+                : successCount > 0
+                    ? "Đã gắn tag"
+                    : "",
+        );
+        return { successCount, failures, analysisFailures };
     };
 
     const handleDeleteExistingImage = async (imageId: number) => {
@@ -747,7 +965,7 @@ const ThemChoNghi = () => {
         setSuccess("");
 
         try {
-            await deleteHostListingImage(listingIdForEdit, imageId);
+            await deleteHostImage(imageId);
             setExistingImages((current) => current.filter((image) => image.imageId !== imageId));
             setSuccess("Đã xóa ảnh");
         } catch (deleteError) {
@@ -774,6 +992,64 @@ const ThemChoNghi = () => {
             setError(coverError instanceof Error ? coverError.message : "Không thể cập nhật ảnh bìa.");
         }
     };
+
+    const handleAnalyzeSingleImage = async (imageId: number) => {
+        if (!listingIdForEdit) return;
+
+        setAnalyzingImageIds((current) => new Set(current).add(imageId));
+        setAiMessage("Đang phân tích ảnh bằng AI...");
+        setError("");
+        setSuccess("");
+
+        try {
+            const result = await analyzeListingImage(listingIdForEdit, imageId);
+            mergeExistingImage(result);
+            setAiMessage(result.aiAnalysisStatus === "analyzed" ? "Đã gắn tag" : "Phân tích lỗi, thử lại.");
+        } catch (analyzeError) {
+            setAiMessage("");
+            setError(analyzeError instanceof Error ? analyzeError.message : "Không thể phân tích ảnh bằng AI.");
+        } finally {
+            setAnalyzingImageIds((current) => {
+                const next = new Set(current);
+                next.delete(imageId);
+                return next;
+            });
+        }
+    };
+
+    const handleUpdateImageTags = async (image: ExistingListingImage, nextTags: string[]) => {
+        setSavingTagImageIds((current) => new Set(current).add(image.imageId));
+        setError("");
+        setSuccess("");
+
+        try {
+            const result = await updateListingImageTags(image.imageId, nextTags);
+            mergeExistingImage(result);
+            setSuccess("Đã cập nhật tag ảnh.");
+        } catch (tagError) {
+            setError(tagError instanceof Error ? tagError.message : "Không thể cập nhật tag ảnh.");
+        } finally {
+            setSavingTagImageIds((current) => {
+                const next = new Set(current);
+                next.delete(image.imageId);
+                return next;
+            });
+        }
+    };
+
+    const handleRemoveImageTag = (image: ExistingListingImage, tagCode: string) => {
+        const nextTags = getImageTags(image, tagTaxonomies)
+            .map((tag) => tag.tag)
+            .filter((tag) => tag !== tagCode);
+        void handleUpdateImageTags(image, nextTags);
+    };
+
+    const handleAddImageTag = (image: ExistingListingImage, tagCode: string) => {
+        const currentTags = getImageTags(image, tagTaxonomies).map((tag) => tag.tag);
+        if (currentTags.includes(tagCode)) return;
+        void handleUpdateImageTags(image, [...currentTags, tagCode]);
+    };
+
     const handleAnalyzeImagesWithAi = async () => {
         if (!listingIdForEdit) {
             setAiMessage("Bạn cần lưu chỗ nghỉ trước khi phân tích ảnh bằng AI.");
@@ -792,9 +1068,7 @@ const ThemChoNghi = () => {
 
         try {
             const result = await analyzeListingImages(listingIdForEdit, true);
-            const detail = await getHostListingDetail(listingIdForEdit);
-
-            setExistingImages((detail.images ?? []).map(mapHostListingImageToExisting));
+            await refreshExistingImages(listingIdForEdit);
 
             setAiMessage(
                 `Đã phân tích ${result.analyzedCount} ảnh${result.failedCount ? `, ${result.failedCount} ảnh lỗi` : ""
@@ -830,7 +1104,8 @@ const ThemChoNghi = () => {
 
         setSaving(true);
 
-        const imagesToUpload = selectedImages.filter((image) => image.status !== "success");
+        const completedUploadStatuses = new Set<SelectedImage["status"]>(["success", "tagged", "analysis_failed"]);
+        const imagesToUpload = selectedImages.filter((image) => !completedUploadStatuses.has(image.status));
 
         try {
             if (isEditMode && listingIdForEdit) {
@@ -845,19 +1120,27 @@ const ThemChoNghi = () => {
                         existingImages.length,
                         nextSortOrder,
                     )
-                    : { successCount: 0, failures: [] };
+                    : { successCount: 0, failures: [], analysisFailures: [] };
 
                 if (uploadResult.failures.length > 0) {
-                    const detail = await getHostListingDetail(listingIdForEdit);
-                    setExistingImages((detail.images ?? []).map(mapHostListingImageToExisting));
+                    await refreshExistingImages(listingIdForEdit).catch(async () => {
+                        const detail = await getHostListingDetail(listingIdForEdit);
+                        setExistingImages((detail.images ?? []).map(mapHostListingImageToExisting));
+                    });
                     setError(`Đã lưu thông tin chỗ nghỉ nhưng một số ảnh upload thất bại: ${uploadResult.failures.join("; ")}`);
                     return;
                 }
 
                 clearSelectedImages();
-                const detail = await getHostListingDetail(listingIdForEdit);
-                setExistingImages((detail.images ?? []).map(mapHostListingImageToExisting));
-                setSuccess("Đã cập nhật chỗ nghỉ và ảnh thành công.");
+                await refreshExistingImages(listingIdForEdit).catch(async () => {
+                    const detail = await getHostListingDetail(listingIdForEdit);
+                    setExistingImages((detail.images ?? []).map(mapHostListingImageToExisting));
+                });
+                setSuccess(
+                    uploadResult.analysisFailures.length > 0
+                        ? `Đã cập nhật chỗ nghỉ. Một số ảnh phân tích lỗi: ${uploadResult.analysisFailures.join("; ")}`
+                        : "Đã cập nhật chỗ nghỉ và ảnh thành công.",
+                );
                 return;
             }
 
@@ -865,7 +1148,7 @@ const ThemChoNghi = () => {
             const createdListingId = created.listingId;
             const uploadResult = imagesToUpload.length
                 ? await uploadSelectedImagesForListing(createdListingId, imagesToUpload, 0, 0)
-                : { successCount: 0, failures: [] };
+                : { successCount: 0, failures: [], analysisFailures: [] };
 
             if (uploadResult.failures.length > 0) {
                 navigate(`${APP_ROUTES.hostNewProperty}?listingId=${createdListingId}`, { replace: true });
@@ -873,8 +1156,13 @@ const ThemChoNghi = () => {
                 return;
             }
 
-            setSuccess("Đã tạo chỗ nghỉ thành công.");
-            resetForm();
+            navigate(`${APP_ROUTES.hostNewProperty}?listingId=${createdListingId}`, { replace: true });
+            setSuccess(
+                uploadResult.analysisFailures.length > 0
+                    ? `Đã tạo chỗ nghỉ. Một số ảnh phân tích lỗi: ${uploadResult.analysisFailures.join("; ")}`
+                    : "Đã tạo chỗ nghỉ thành công.",
+            );
+            clearSelectedImages();
         } catch (submitError) {
             setError(submitError instanceof Error ? submitError.message : "Không thể lưu chỗ nghỉ.");
         } finally {
@@ -1195,23 +1483,80 @@ const ThemChoNghi = () => {
                                     ) : null}
                                 </div>
                                 <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
-                                    {existingImages.map((image, index) => (
-                                        <div key={image.imageId} className="overflow-hidden rounded-xl border border-gray-100 bg-white">
-                                            <img src={image.url} alt={buildExistingImageLabel(image, index)} className="h-32 w-full object-cover" />
-                                            <div className="space-y-2 px-3 py-2">
-                                                <div className="truncate text-xs text-gray-500">{buildExistingImageLabel(image, index)}</div>
-                                                <div className="flex items-center justify-between gap-2">
-                                                    {image.isCover ? <span className="text-xs font-semibold text-cyan-700">Ảnh bìa</span> : <span />}
-                                                    <div className="flex items-center gap-2">
-                                                        {!image.isCover ? (
-                                                            <button type="button" onClick={() => handleSetCoverImage(image.imageId)} className="text-xs font-semibold text-cyan-700 hover:text-cyan-800">Đặt bìa</button>
-                                                        ) : null}
-                                                        <button type="button" onClick={() => handleDeleteExistingImage(image.imageId)} className="text-xs font-semibold text-rose-600 hover:text-rose-700">Xóa</button>
+                                    {existingImages.map((image, index) => {
+                                        const tags = getImageTags(image, tagTaxonomies);
+                                        const tagCodes = new Set(tags.map((tag) => tag.tag));
+                                        const analysisStatus = getExistingImageAnalysisStatus(image, tags);
+                                        const isAnalyzingImage = analyzingImageIds.has(image.imageId);
+                                        const isSavingTags = savingTagImageIds.has(image.imageId);
+                                        const availableTags = tagTaxonomies.filter((taxonomy) => !tagCodes.has(taxonomy.code));
+
+                                        return (
+                                            <div key={image.imageId} className="overflow-hidden rounded-xl border border-gray-100 bg-white">
+                                                <img src={image.url} alt={buildExistingImageLabel(image, index)} className="h-32 w-full object-cover" />
+                                                <div className="space-y-2 px-3 py-2">
+                                                    <div className="truncate text-xs text-gray-500">{buildExistingImageLabel(image, index)}</div>
+                                                    <div className={`text-xs font-semibold ${analysisStatus.className}`}>
+                                                        {isAnalyzingImage ? "Đang phân tích ảnh bằng AI" : analysisStatus.label}
+                                                    </div>
+
+                                                    {tags.length > 0 ? (
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {tags.map((tag) => (
+                                                                <span key={tag.tag} className="inline-flex max-w-full items-center gap-1 rounded-full bg-cyan-50 px-2 py-1 text-[11px] font-semibold text-cyan-700">
+                                                                    <span className="truncate">{tag.labelVi}</span>
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled={isSavingTags}
+                                                                        onClick={() => handleRemoveImageTag(image, tag.tag)}
+                                                                        className="text-cyan-500 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                        aria-label={`Xóa tag ${tag.labelVi}`}
+                                                                    >
+                                                                        x
+                                                                    </button>
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    ) : null}
+
+                                                    <select
+                                                        value=""
+                                                        disabled={isSavingTags || availableTags.length === 0}
+                                                        onChange={(event) => {
+                                                            const tagCode = event.target.value;
+                                                            if (tagCode) handleAddImageTag(image, tagCode);
+                                                        }}
+                                                        className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                                                    >
+                                                        <option value="">Thêm tag thiếu</option>
+                                                        {availableTags.map((taxonomy) => (
+                                                            <option key={taxonomy.code} value={taxonomy.code}>
+                                                                {taxonomy.labelVi}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        {image.isCover ? <span className="text-xs font-semibold text-cyan-700">Ảnh bìa</span> : <span />}
+                                                        <div className="flex flex-wrap items-center justify-end gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleAnalyzeSingleImage(image.imageId)}
+                                                                disabled={isAnalyzingImage}
+                                                                className="text-xs font-semibold text-violet-700 hover:text-violet-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                                            >
+                                                                {analysisStatus.label.includes("lỗi") ? "Thử lại" : "Phân tích"}
+                                                            </button>
+                                                            {!image.isCover ? (
+                                                                <button type="button" onClick={() => handleSetCoverImage(image.imageId)} className="text-xs font-semibold text-cyan-700 hover:text-cyan-800">Đặt bìa</button>
+                                                            ) : null}
+                                                            <button type="button" onClick={() => handleDeleteExistingImage(image.imageId)} className="text-xs font-semibold text-rose-600 hover:text-rose-700">Xóa</button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         ) : null}
@@ -1226,18 +1571,10 @@ const ThemChoNghi = () => {
                                             <div className="space-y-2 px-3 py-2">
                                                 <div className="truncate text-xs text-gray-500">{`Ảnh chỗ nghỉ ${existingImages.length + index + 1}`}</div>
                                                 <div className="flex items-center justify-between gap-2 text-xs">
-                                                    <span className={
-                                                        image.status === "success"
-                                                            ? "font-semibold text-emerald-600"
-                                                            : image.status === "failed"
-                                                                ? "font-semibold text-rose-600"
-                                                                : image.status === "uploading"
-                                                                    ? "font-semibold text-cyan-500"
-                                                                    : "text-gray-500"
-                                                    }>
-                                                        {image.status === "success" ? "Upload thành công" : image.status === "failed" ? "Upload thất bại" : image.status === "uploading" ? "Đang upload ảnh..." : "Chờ upload"}
+                                                    <span className={getSelectedImageStatusClass(image.status)}>
+                                                        {getSelectedImageStatusText(image.status)}
                                                     </span>
-                                                    {image.status !== "uploading" && image.status !== "success" ? (
+                                                    {!["uploading", "analyzing", "success", "tagged"].includes(image.status) ? (
                                                         <button type="button" onClick={() => removeSelectedImage(image.id)} className="font-semibold text-rose-600 hover:text-rose-700">Xóa</button>
                                                     ) : null}
                                                 </div>

@@ -1,27 +1,60 @@
-import { useEffect, useRef, useState } from "react";
-import { PageHeader, ToggleSwitch } from "../shared";
-import { getInitials, hostCardClass, inputClassName, pageWrapperClass, primaryButtonClass, secondaryButtonClass } from "../sharedStyles";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { PageHeader } from "../shared";
+import {
+    getInitials,
+    hostCardClass,
+    inputClassName,
+    labelClassName,
+    pageWrapperClass,
+    primaryButtonClass,
+    secondaryButtonClass,
+} from "../sharedStyles";
 import type { ApiUser } from "../../../../models/entities/User";
 import { getMe, updateMe, updateMyAvatar } from "../../../../services/userService";
 import { uploadFileToR2 } from "../../../../services/api/uploadsApi";
+import {
+    getHostBankAccount,
+    getVietnamBanks,
+    saveHostBankAccount,
+    type VietnamBank,
+} from "../../../../services/hostService";
 
-type SettingsTab = "profile" | "security" | "notifications" | "bank" | "locale";
+type SettingsTab = "profile" | "bank";
+
+type BankForm = {
+    bankCode: string;
+    bankName: string;
+    bankShortName: string;
+    bankBin: string;
+    accountNumber: string;
+    accountHolderName: string;
+    branchName: string;
+};
 
 const tabs: Array<{ value: SettingsTab; label: string }> = [
     { value: "profile", label: "Hồ sơ" },
-    { value: "security", label: "Bảo mật" },
-    { value: "notifications", label: "Thông báo" },
     { value: "bank", label: "Tài khoản ngân hàng" },
-    { value: "locale", label: "Ngôn ngữ & múi giờ" },
 ];
 
-const notificationItems = [
-    { key: "booking", label: "Đặt phòng mới", description: "Nhận thông báo khi có booking mới." },
-    { key: "checkout", label: "Trả phòng", description: "Nhắc lịch khách sắp trả phòng." },
-    { key: "payment", label: "Thanh toán", description: "Cập nhật giao dịch và đối soát." },
-    { key: "review", label: "Đánh giá mới", description: "Thông báo khi khách để lại nhận xét." },
-    { key: "system", label: "Cảnh báo hệ thống", description: "Thông báo quan trọng về tài khoản host." },
-];
+const emptyBankForm: BankForm = {
+    bankCode: "",
+    bankName: "",
+    bankShortName: "",
+    bankBin: "",
+    accountNumber: "",
+    accountHolderName: "",
+    branchName: "",
+};
+
+const normalizeSearchText = (value: string) =>
+    value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+
+const formatBankLabel = (bank: Pick<VietnamBank, "code" | "name" | "shortName" | "bin">) =>
+    `${bank.shortName || bank.code} - ${bank.name}${bank.bin ? ` (${bank.bin})` : ""}`;
 
 const CaiDat = () => {
     const [tab, setTab] = useState<SettingsTab>("profile");
@@ -36,13 +69,16 @@ const CaiDat = () => {
     const [savingProfile, setSavingProfile] = useState(false);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const avatarInputRef = useRef<HTMLInputElement | null>(null);
-    const [notifications, setNotifications] = useState<Record<string, boolean>>({
-        booking: true,
-        checkout: true,
-        payment: true,
-        review: true,
-        system: true,
-    });
+
+    const [banks, setBanks] = useState<VietnamBank[]>([]);
+    const [bankForm, setBankForm] = useState<BankForm>(emptyBankForm);
+    const [bankSearch, setBankSearch] = useState("");
+    const [bankDropdownOpen, setBankDropdownOpen] = useState(false);
+    const [bankError, setBankError] = useState("");
+    const [bankMessage, setBankMessage] = useState("");
+    const [loadingBankData, setLoadingBankData] = useState(false);
+    const [savingBank, setSavingBank] = useState(false);
+    const bankPickerRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         let ignore = false;
@@ -71,6 +107,88 @@ const CaiDat = () => {
             ignore = true;
         };
     }, []);
+
+    useEffect(() => {
+        let ignore = false;
+
+        const loadBankData = async () => {
+            setLoadingBankData(true);
+            setBankError("");
+
+            try {
+                const [bankResult, account] = await Promise.all([
+                    getVietnamBanks(),
+                    getHostBankAccount(),
+                ]);
+
+                if (ignore) return;
+
+                setBanks(bankResult.items ?? []);
+
+                if (account) {
+                    const nextForm = {
+                        bankCode: account.bankCode ?? "",
+                        bankName: account.bankName ?? "",
+                        bankShortName: account.bankShortName ?? "",
+                        bankBin: account.bankBin ?? "",
+                        accountNumber: account.accountNumber ?? "",
+                        accountHolderName: account.accountHolderName ?? "",
+                        branchName: account.branchName ?? "",
+                    };
+
+                    setBankForm(nextForm);
+                    setBankSearch(
+                        `${nextForm.bankShortName || nextForm.bankCode} - ${nextForm.bankName}${nextForm.bankBin ? ` (${nextForm.bankBin})` : ""}`,
+                    );
+                }
+            } catch (error) {
+                if (!ignore) {
+                    setBankError(error instanceof Error ? error.message : "Không thể tải thông tin tài khoản ngân hàng.");
+                }
+            } finally {
+                if (!ignore) {
+                    setLoadingBankData(false);
+                }
+            }
+        };
+
+        void loadBankData();
+
+        return () => {
+            ignore = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        const handleMouseDown = (event: MouseEvent) => {
+            if (!bankPickerRef.current?.contains(event.target as Node)) {
+                setBankDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleMouseDown);
+
+        return () => {
+            document.removeEventListener("mousedown", handleMouseDown);
+        };
+    }, []);
+
+    const selectedBank = useMemo(
+        () => banks.find((bank) => bank.code === bankForm.bankCode) ?? null,
+        [banks, bankForm.bankCode],
+    );
+
+    const filteredBanks = useMemo(() => {
+        const query = normalizeSearchText(bankSearch);
+
+        if (!query) {
+            return banks;
+        }
+
+        return banks.filter((bank) =>
+            normalizeSearchText(`${bank.code} ${bank.shortName} ${bank.name} ${bank.bin ?? ""}`).includes(query),
+        );
+    }, [banks, bankSearch]);
 
     const handleAvatarChange = async (file: File | undefined) => {
         if (!file) return;
@@ -116,10 +234,82 @@ const CaiDat = () => {
         }
     };
 
+    const handleSelectBank = (bank: VietnamBank) => {
+        setBankForm((current) => ({
+            ...current,
+            bankCode: bank.code,
+            bankName: bank.name,
+            bankShortName: bank.shortName,
+            bankBin: bank.bin ?? "",
+        }));
+        setBankSearch(formatBankLabel(bank));
+        setBankError("");
+        setBankDropdownOpen(false);
+    };
+
+    const handleSaveBankAccount = async () => {
+        setBankError("");
+        setBankMessage("");
+
+        if (!selectedBank) {
+            setBankError("Vui lòng chọn ngân hàng từ danh sách.");
+            return;
+        }
+
+        if (!bankForm.accountNumber.trim()) {
+            setBankError("Số tài khoản là bắt buộc.");
+            return;
+        }
+
+        if (!/^\d{6,30}$/.test(bankForm.accountNumber.trim())) {
+            setBankError("Số tài khoản chỉ được chứa số và dài từ 6 đến 30 ký tự.");
+            return;
+        }
+
+        if (!bankForm.accountHolderName.trim()) {
+            setBankError("Chủ tài khoản là bắt buộc.");
+            return;
+        }
+
+        setSavingBank(true);
+
+        try {
+            const payload = {
+                bankCode: selectedBank.code,
+                bankName: selectedBank.name,
+                bankShortName: selectedBank.shortName,
+                bankBin: selectedBank.bin,
+                accountNumber: bankForm.accountNumber.trim(),
+                accountHolderName: bankForm.accountHolderName.trim().toUpperCase(),
+                branchName: bankForm.branchName.trim() || null,
+            };
+            const saved = await saveHostBankAccount(payload);
+            const nextForm = {
+                bankCode: saved.bankCode,
+                bankName: saved.bankName,
+                bankShortName: saved.bankShortName ?? "",
+                bankBin: saved.bankBin ?? "",
+                accountNumber: saved.accountNumber,
+                accountHolderName: saved.accountHolderName,
+                branchName: saved.branchName ?? "",
+            };
+
+            setBankForm(nextForm);
+            setBankSearch(
+                `${nextForm.bankShortName || nextForm.bankCode} - ${nextForm.bankName}${nextForm.bankBin ? ` (${nextForm.bankBin})` : ""}`,
+            );
+            setBankMessage("Đã lưu thông tin tài khoản ngân hàng.");
+        } catch (error) {
+            setBankError(error instanceof Error ? error.message : "Không thể lưu thông tin tài khoản ngân hàng.");
+        } finally {
+            setSavingBank(false);
+        }
+    };
+
     return (
         <div className={pageWrapperClass}>
             <div className="mx-auto max-w-6xl space-y-6">
-                <PageHeader title="Cài đặt" subtitle="Quản lý hồ sơ host, bảo mật tài khoản và phương thức nhận thanh toán." />
+                <PageHeader title="Cài đặt" subtitle="Quản lý hồ sơ host và tài khoản nhận thanh toán." />
 
                 <div className="flex flex-wrap gap-2 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
                     {tabs.map((item) => (
@@ -157,7 +347,7 @@ const CaiDat = () => {
                                         event.target.value = "";
                                     }}
                                 />
-                                <button type="button" disabled={uploadingAvatar} onClick={() => avatarInputRef.current?.click()} className={secondaryButtonClass}>
+                                <button type="button" disabled={uploadingAvatar} onClick={() => avatarInputRef.current?.click()} className={`${secondaryButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}>
                                     {uploadingAvatar ? "Đang upload..." : "Thay đổi ảnh"}
                                 </button>
                             </div>
@@ -168,54 +358,122 @@ const CaiDat = () => {
                                 <input placeholder="CMND/CCCD" className={inputClassName} />
                                 <input placeholder="Địa chỉ" className={`${inputClassName} md:col-span-2`} />
                             </div>
-                            <button type="button" disabled={savingProfile} onClick={handleSaveProfile} className={primaryButtonClass}>{savingProfile ? "Đang lưu..." : "Lưu thay đổi"}</button>
-                        </div>
-                    ) : null}
-
-                    {tab === "security" ? (
-                        <div className="space-y-6">
-                            <div className="grid gap-5 md:grid-cols-3">
-                                <input type="password" placeholder="Mật khẩu hiện tại" className={inputClassName} />
-                                <input type="password" placeholder="Mật khẩu mới" className={inputClassName} />
-                                <input type="password" placeholder="Xác nhận mật khẩu" className={inputClassName} />
-                            </div>
-                            <ToggleSwitch checked onChange={() => { }} label="Xác thực 2 bước" />
-                            <button type="button" className="inline-flex items-center justify-center rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50">Đăng xuất tất cả thiết bị</button>
-                        </div>
-                    ) : null}
-
-                    {tab === "notifications" ? (
-                        <div className="space-y-4">
-                            {notificationItems.map((item) => (
-                                <div key={item.key} className="flex flex-col gap-3 rounded-2xl border border-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <div>
-                                        <p className="font-medium text-gray-900">{item.label}</p>
-                                        <p className="mt-1 text-sm text-gray-500">{item.description}</p>
-                                    </div>
-                                    <ToggleSwitch checked={notifications[item.key]} onChange={(value) => setNotifications((current) => ({ ...current, [item.key]: value }))} />
-                                </div>
-                            ))}
+                            <button type="button" disabled={savingProfile} onClick={handleSaveProfile} className={`${primaryButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}>
+                                {savingProfile ? "Đang lưu..." : "Lưu thay đổi"}
+                            </button>
                         </div>
                     ) : null}
 
                     {tab === "bank" ? (
                         <div className="space-y-6">
-                            <div className="grid gap-5 md:grid-cols-2">
-                                <select className={inputClassName}><option>Chọn ngân hàng</option><option>MB Bank</option><option>Vietcombank</option><option>ACB</option></select>
-                                <input placeholder="Số tài khoản" className={inputClassName} />
-                                <input placeholder="Chủ tài khoản" className={inputClassName} />
-                                <input placeholder="Chi nhánh" className={inputClassName} />
-                            </div>
-                            <p className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-500">Thông tin này dùng để nhận thanh toán từ minh thanh villa.</p>
-                            <button type="button" className={primaryButtonClass}>Lưu thông tin</button>
-                        </div>
-                    ) : null}
+                            {bankError ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{bankError}</div> : null}
+                            {bankMessage ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{bankMessage}</div> : null}
 
-                    {tab === "locale" ? (
-                        <div className="grid gap-5 md:grid-cols-2">
-                            <select className={inputClassName}><option>Tiếng Việt</option><option>English</option></select>
-                            <select className={inputClassName}><option>(GMT+7) Hà Nội, Bangkok, Jakarta</option></select>
-                            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700">VND (cố định)</div>
+                            <div className="grid gap-5 md:grid-cols-2">
+                                <div ref={bankPickerRef} className="relative md:col-span-2">
+                                    <label htmlFor="host-bank-search" className={labelClassName}>Chọn ngân hàng</label>
+                                    <div className="relative">
+                                        <input
+                                            id="host-bank-search"
+                                            role="combobox"
+                                            aria-expanded={bankDropdownOpen}
+                                            aria-controls="host-bank-options"
+                                            autoComplete="off"
+                                            value={bankSearch}
+                                            onFocus={() => setBankDropdownOpen(true)}
+                                            onChange={(event) => {
+                                                setBankSearch(event.target.value);
+                                                setBankForm((current) => ({
+                                                    ...current,
+                                                    bankCode: "",
+                                                    bankName: "",
+                                                    bankShortName: "",
+                                                    bankBin: "",
+                                                }));
+                                                setBankDropdownOpen(true);
+                                            }}
+                                            placeholder={loadingBankData ? "Đang tải danh sách ngân hàng..." : "Tìm ngân hàng theo tên, mã hoặc BIN"}
+                                            className={`${inputClassName} pr-11`}
+                                        />
+                                        <button
+                                            type="button"
+                                            aria-label="Mở danh sách ngân hàng"
+                                            onClick={() => setBankDropdownOpen((current) => !current)}
+                                            className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-50"
+                                        >
+                                            <ChevronDown className="h-4 w-4" />
+                                        </button>
+                                    </div>
+
+                                    {bankDropdownOpen ? (
+                                        <div id="host-bank-options" className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+                                            {loadingBankData ? (
+                                                <div className="px-3 py-3 text-sm text-gray-500">Đang tải danh sách ngân hàng...</div>
+                                            ) : null}
+                                            {!loadingBankData && filteredBanks.length === 0 ? (
+                                                <div className="px-3 py-3 text-sm text-gray-500">Không tìm thấy ngân hàng phù hợp.</div>
+                                            ) : null}
+                                            {!loadingBankData && filteredBanks.map((bank) => (
+                                                <button
+                                                    key={`${bank.code}-${bank.bin ?? ""}`}
+                                                    type="button"
+                                                    onClick={() => handleSelectBank(bank)}
+                                                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-cyan-50 ${bank.code === bankForm.bankCode ? "bg-cyan-300/15" : ""}`}
+                                                >
+                                                    {bank.logo ? <img src={bank.logo} alt="" className="h-7 w-7 shrink-0 rounded-full object-contain" /> : <span className="h-7 w-7 shrink-0 rounded-full bg-cyan-50" />}
+                                                    <span className="min-w-0">
+                                                        <span className="block text-sm font-semibold text-gray-900">{bank.shortName} - {bank.name}</span>
+                                                        <span className="block text-xs text-gray-500">{bank.code}{bank.bin ? ` • BIN ${bank.bin}` : ""}</span>
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : null}
+                                </div>
+
+                                <div>
+                                    <label htmlFor="host-account-number" className={labelClassName}>Số tài khoản</label>
+                                    <input
+                                        id="host-account-number"
+                                        value={bankForm.accountNumber}
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
+                                        maxLength={30}
+                                        onChange={(event) => setBankForm((current) => ({ ...current, accountNumber: event.target.value.replace(/\D/g, "").slice(0, 30) }))}
+                                        placeholder="Nhập số tài khoản"
+                                        className={inputClassName}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label htmlFor="host-account-holder" className={labelClassName}>Chủ tài khoản</label>
+                                    <input
+                                        id="host-account-holder"
+                                        value={bankForm.accountHolderName}
+                                        onChange={(event) => setBankForm((current) => ({ ...current, accountHolderName: event.target.value.toUpperCase() }))}
+                                        placeholder="NGUYEN VAN A"
+                                        className={inputClassName}
+                                    />
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label htmlFor="host-bank-branch" className={labelClassName}>Chi nhánh</label>
+                                    <input
+                                        id="host-bank-branch"
+                                        value={bankForm.branchName}
+                                        onChange={(event) => setBankForm((current) => ({ ...current, branchName: event.target.value }))}
+                                        placeholder="Chi nhánh Vũng Tàu (không bắt buộc)"
+                                        className={inputClassName}
+                                    />
+                                </div>
+                            </div>
+
+                            <p className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                                Thông tin này dùng để nhận thanh toán từ minh thanh villa.
+                            </p>
+                            <button type="button" disabled={savingBank || loadingBankData} onClick={handleSaveBankAccount} className={`${primaryButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}>
+                                {savingBank ? "Đang lưu..." : "Lưu thông tin"}
+                            </button>
                         </div>
                     ) : null}
                 </div>

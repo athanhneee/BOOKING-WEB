@@ -17,6 +17,7 @@ import {
     type MessageNewEvent,
 } from "../../../../services/socket/socketClient";
 import { getAccessToken, getCurrentUser } from "../../../../store/authStore";
+import { cn } from "../../../../utils";
 import { PageHeader } from "../shared";
 
 type ChatMessage = ConversationMessage & {
@@ -340,25 +341,30 @@ const HostTinNhan = () => {
     };
 
     return (
-        <section className="px-4 py-6 sm:px-6 lg:px-8">
+        <section className="px-3 py-4 sm:px-6 lg:px-8">
             <PageHeader
                 title="Tin nhắn"
                 subtitle=""
             />
 
-            <div className="mt-6 grid min-h-[640px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm lg:grid-cols-[340px_minmax(0,1fr)]">
-                <aside className="border-b border-gray-200 bg-gray-50 lg:border-b-0 lg:border-r">
-                    <div className="border-b border-gray-200 px-4 py-4">
+            <div className="mt-5 grid overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)] lg:min-h-[640px] lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
+                <aside className="flex min-h-0 flex-col border-b border-gray-200 bg-slate-50/80 lg:border-b-0 lg:border-r">
+                    <div className="flex items-center justify-between gap-3 border-b border-gray-200 bg-white/90 px-4 py-4">
                         <h2 className="text-sm font-semibold text-gray-900">Hội thoại</h2>
+                        {conversations.length > 0 ? (
+                            <span className="rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700">
+                                {conversations.length}
+                            </span>
+                        ) : null}
                     </div>
 
-                    <div className="max-h-[584px] overflow-y-auto">
+                    <div className="max-h-[260px] space-y-2 overflow-y-auto p-3 sm:max-h-[320px] lg:max-h-none lg:flex-1">
                         {isLoadingConversations ? (
-                            <div className="px-4 py-8 text-sm text-gray-500">Đang tải hội thoại...</div>
+                            <div className="rounded-2xl bg-white px-4 py-8 text-sm text-gray-500">Đang tải hội thoại...</div>
                         ) : error ? (
-                            <div className="px-4 py-8 text-sm text-rose-600">{error}</div>
+                            <div className="rounded-2xl bg-white px-4 py-8 text-sm text-rose-600">{error}</div>
                         ) : conversations.length === 0 ? (
-                            <div className="px-4 py-12 text-center">
+                            <div className="rounded-2xl bg-white px-4 py-12 text-center">
                                 <FiInbox className="mx-auto text-3xl text-gray-400" />
                                 <p className="mt-3 text-sm font-semibold text-gray-900">Chưa có tin nhắn nào từ khách.</p>
                             </div>
@@ -372,9 +378,14 @@ const HostTinNhan = () => {
                                         key={conversation.id}
                                         type="button"
                                         onClick={() => handleSelectConversation(conversation)}
-                                        className={`flex w-full gap-3 border-b border-gray-200 px-4 py-4 text-left transition-colors ${isActive ? "bg-white" : "hover:bg-white"}`}
+                                        className={cn(
+                                            "group flex w-full gap-3 rounded-2xl border px-3 py-3 text-left transition sm:px-4",
+                                            isActive
+                                                ? "border-cyan-200 bg-white shadow-sm ring-1 ring-cyan-100"
+                                                : "border-transparent bg-white/60 hover:border-gray-200 hover:bg-white",
+                                        )}
                                     >
-                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cyan-500 text-sm font-bold text-white">
+                                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cyan-500 text-sm font-bold text-white shadow-sm">
                                             {getInitials(guestName)}
                                         </span>
                                         <span className="min-w-0 flex-1">
@@ -387,12 +398,12 @@ const HostTinNhan = () => {
                                             <span className="mt-1 block truncate text-xs font-medium text-gray-500">
                                                 {conversation.listing?.title || "Chỗ nghỉ"}
                                             </span>
-                                            <span className="mt-1 flex items-center gap-2">
-                                                <span className="truncate text-sm text-gray-500">
+                                            <span className="mt-1 flex min-w-0 items-center gap-2">
+                                                <span className="min-w-0 flex-1 truncate text-sm text-gray-500">
                                                     {conversation.lastMessage || "Chưa có tin nhắn."}
                                                 </span>
                                                 {conversation.unreadCount > 0 ? (
-                                                    <span className="ml-auto rounded-full bg-cyan-500 px-2 py-0.5 text-[11px] font-bold text-white">
+                                                    <span className="ml-auto shrink-0 rounded-full bg-cyan-500 px-2 py-0.5 text-[11px] font-bold text-white">
                                                         {conversation.unreadCount}
                                                     </span>
                                                 ) : null}
@@ -405,11 +416,11 @@ const HostTinNhan = () => {
                     </div>
                 </aside>
 
-                <main className="flex min-w-0 flex-col">
+                <main className="flex min-w-0 flex-col bg-white lg:min-h-0">
                     {selectedConversation ? (
                         <>
-                            <div className="flex items-center gap-3 border-b border-gray-200 px-5 py-4">
-                                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-cyan-500 text-sm font-bold text-white">
+                            <div className="flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
+                                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cyan-500 text-sm font-bold text-white shadow-sm">
                                     {getInitials(selectedConversation.otherParticipant?.fullName)}
                                 </span>
                                 <div className="min-w-0">
@@ -422,7 +433,7 @@ const HostTinNhan = () => {
                                 </div>
                             </div>
 
-                            <div className="min-h-0 flex-1 overflow-y-auto bg-[#f8fafc] px-5 py-5">
+                            <div className="min-h-[360px] max-h-[56vh] flex-1 overflow-y-auto bg-[#f8fafc] px-3 py-4 sm:px-5 sm:py-5 lg:min-h-0 lg:max-h-none">
                                 {isLoadingMessages ? (
                                     <div className="py-10 text-center text-sm text-gray-500">Đang tải tin nhắn...</div>
                                 ) : messageError && messages.length === 0 ? (
@@ -442,7 +453,12 @@ const HostTinNhan = () => {
                                             return (
                                                 <div
                                                     key={message.id}
-                                                    className={`max-w-[78%] rounded-2xl px-4 py-3 ${isMine ? "ml-auto bg-cyan-500 text-white" : "mr-auto bg-white text-gray-900 shadow-sm"}`}
+                                                    className={cn(
+                                                        "max-w-[86%] break-words rounded-[22px] px-4 py-3 shadow-sm sm:max-w-[74%]",
+                                                        isMine
+                                                            ? "ml-auto bg-cyan-500 text-white"
+                                                            : "mr-auto border border-gray-100 bg-white text-gray-900",
+                                                    )}
                                                 >
                                                     <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>
                                                     <p className={`mt-1 text-right text-[11px] ${isMine ? "text-white/70" : "text-gray-400"}`}>
@@ -456,23 +472,23 @@ const HostTinNhan = () => {
                                 )}
                             </div>
 
-                            <form onSubmit={handleSendMessage} className="border-t border-gray-200 bg-white px-5 py-4">
+                            <form onSubmit={handleSendMessage} className="border-t border-gray-200 bg-white px-3 py-3 sm:px-5 sm:py-4">
                                 {messageError && messages.length > 0 ? (
                                     <p className="mb-3 text-sm text-rose-600">{messageError}</p>
                                 ) : null}
-                                <div className="flex gap-3">
+                                <div className="flex items-end gap-2 sm:gap-3">
                                     <textarea
                                         value={messageDraft}
                                         onChange={(event) => setMessageDraft(event.target.value)}
                                         rows={2}
                                         maxLength={2000}
                                         placeholder="Nhập phản hồi..."
-                                        className="min-h-12 flex-1 resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
+                                        className="max-h-36 min-h-12 min-w-0 flex-1 resize-none rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
                                     />
                                     <button
                                         type="submit"
                                         disabled={isSending}
-                                        className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-cyan-500 text-white transition-colors hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-cyan-300"
+                                        className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-500 text-white transition-colors hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-cyan-300"
                                         aria-label="Gửi tin nhắn"
                                     >
                                         <FiSend />
@@ -481,7 +497,7 @@ const HostTinNhan = () => {
                             </form>
                         </>
                     ) : (
-                        <div className="flex min-h-[520px] flex-1 items-center justify-center text-center">
+                        <div className="flex min-h-[360px] flex-1 items-center justify-center px-4 text-center sm:min-h-[520px]">
                             <div>
                                 <FiInbox className="mx-auto text-4xl text-gray-400" />
                                 <p className="mt-3 text-sm font-semibold text-gray-900">Chưa có tin nhắn nào từ khách.</p>

@@ -9,44 +9,46 @@ import {
     getHostBookings,
 } from "../../../../services/hostService";
 import {
+    bookingMatchesDisplayStatus,
     bookingStatusToneClassNames,
-    canShowBookingCheckIn,
-    canShowBookingCheckOut,
-    canShowBookingConfirm,
-    canShowHostBookingCancel,
     getBookingDisplayStatus,
+    getBookingStatusActions,
 } from "../../../../utils/bookingStatus";
 import { PageHeader } from "../shared";
-import { formatCurrency, formatDate, pageWrapperClass, primaryButtonClass, secondaryButtonClass, tableClassName } from "../sharedStyles";
+import { formatCurrency, formatDate, pageWrapperClass, primaryButtonClass, reloadButtonClass, secondaryButtonClass, tableClassName } from "../sharedStyles";
 
 type BookingFilter =
     | "all"
     | "pending_payment"
-    | "pending_host"
+    | "payment_expired"
     | "paid"
     | "confirmed"
     | "checked_in"
+    | "checked_out"
     | "completed"
-    | "cancelled"
-    | "expired";
+    | "cancelled";
 
 const filters: Array<{ label: string; value: BookingFilter }> = [
     { label: "Tất cả", value: "all" },
     { label: "Chờ thanh toán", value: "pending_payment" },
-    { label: "Chờ host xác nhận", value: "pending_host" },
+    { label: "Quá hạn thanh toán", value: "payment_expired" },
     { label: "Thanh toán thành công", value: "paid" },
     { label: "Đã xác nhận", value: "confirmed" },
-    { label: "Đang lưu trú", value: "checked_in" },
+    { label: "Đã nhận phòng", value: "checked_in" },
+    { label: "Đã trả phòng", value: "checked_out" },
     { label: "Hoàn tất", value: "completed" },
-    { label: "Quá hạn", value: "expired" },
     { label: "Đã hủy", value: "cancelled" },
 ];
 
 const getBookingAmount = (booking: ApiBooking) => Number(booking.totalAmount || booking.totalPrice || 0);
+const hostRejectedReason = "HOST_REJECTED";
+const shouldShowInHostBookings = (_booking: ApiBooking) => true;
 
 const DatPhong = () => {
     const [filter, setFilter] = useState<BookingFilter>("all");
     const [bookings, setBookings] = useState<ApiBooking[]>([]);
+    const [summaryBookings, setSummaryBookings] = useState<ApiBooking[]>([]);
+    const [statusNow, setStatusNow] = useState(() => new Date());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [actionId, setActionId] = useState<number | null>(null);
@@ -56,32 +58,51 @@ const DatPhong = () => {
         setError("");
 
         try {
-            const result = await getHostBookings({ status: filter, page: 1, limit: 100 });
+            const result = await getHostBookings({ status: "all", page: 1, limit: 100 });
+
+            setSummaryBookings(result.items ?? []);
             setBookings(result.items ?? []);
         } catch (fetchError) {
             setError(fetchError instanceof Error ? fetchError.message : "Không thể tải danh sách đặt phòng.");
         } finally {
             setLoading(false);
         }
-    }, [filter]);
+    }, []);
 
     useEffect(() => {
         void fetchBookings();
     }, [fetchBookings]);
 
+    useEffect(() => {
+        const timer = window.setInterval(() => setStatusNow(new Date()), 60_000);
+        return () => window.clearInterval(timer);
+    }, []);
+
+    const visibleBookings = useMemo(
+        () =>
+            bookings.filter(
+                (booking) =>
+                    shouldShowInHostBookings(booking) &&
+                    bookingMatchesDisplayStatus(booking, filter, { role: "host", now: statusNow }),
+            ),
+        [bookings, filter, statusNow],
+    );
+    const summaryVisibleBookings = useMemo(() => summaryBookings.filter(shouldShowInHostBookings), [summaryBookings]);
+
     const summary = useMemo(() => {
-        const displayStatuses = bookings.map((booking) => getBookingDisplayStatus(booking).normalizedStatus);
-        const totalRevenue = bookings
-            .filter((_booking, index) => ["paid", "confirmed", "checked_in", "completed"].includes(displayStatuses[index]))
+        const displayStatuses = summaryVisibleBookings.map((booking) => getBookingDisplayStatus(booking, { role: "host", now: statusNow }).normalizedStatus);
+        const revenueStatuses = new Set(["paid", "confirmed", "checked_in", "checked_out", "completed", "payout_pending", "payout_paid"]);
+        const totalRevenue = summaryVisibleBookings
+            .filter((_booking, index) => revenueStatuses.has(displayStatuses[index]))
             .reduce((sum, booking) => sum + getBookingAmount(booking), 0);
 
         return [
-            { label: "Tổng đơn", value: String(bookings.length), icon: <FiClock /> },
+            { label: "Tổng đơn", value: String(summaryVisibleBookings.length), icon: <FiClock /> },
             { label: "Chờ thanh toán", value: String(displayStatuses.filter((status) => status === "pending_payment").length), icon: <FiClock /> },
-            { label: "Thanh toán thành công", value: String(displayStatuses.filter((status) => status === "paid").length), icon: <FiCheckCircle /> },
+            { label: "Quá hạn thanh toán", value: String(displayStatuses.filter((status) => status === "payment_expired").length), icon: <FiXCircle /> },
             { label: "Doanh thu dự kiến", value: formatCurrency(totalRevenue), icon: <FiCheckCircle /> },
         ];
-    }, [bookings]);
+    }, [summaryVisibleBookings, statusNow]);
 
     const runAction = async (bookingId: number, action: () => Promise<unknown>) => {
         setActionId(bookingId);
@@ -103,7 +124,16 @@ const DatPhong = () => {
                 <PageHeader
                     title="Đặt phòng"
                     subtitle="Danh sách booking của các chỗ nghỉ bạn quản lý."
-                    actions={<button type="button" onClick={fetchBookings} className={secondaryButtonClass}><FiRefreshCw className="mr-2 inline" />Tải lại</button>}
+                    actions={
+                        <button
+                            type="button"
+                            onClick={fetchBookings}
+                            className={reloadButtonClass}
+                        >
+                            <FiRefreshCw className="shrink-0" />
+                            Tải lại
+                        </button>
+                    }
                 />
 
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
@@ -146,16 +176,20 @@ const DatPhong = () => {
                         <tbody className="divide-y divide-gray-100 bg-white">
                             {loading ? (
                                 <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-500">Đang tải booking...</td></tr>
-                            ) : bookings.length === 0 ? (
+                            ) : visibleBookings.length === 0 ? (
                                 <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-500">Chưa có booking phù hợp.</td></tr>
                             ) : (
-                                bookings.map((booking) => {
+                                visibleBookings.map((booking) => {
                                     const isBusy = actionId === booking.bookingId;
-                                    const displayStatus = getBookingDisplayStatus(booking);
-                                    const canConfirm = canShowBookingConfirm(booking);
-                                    const canCheckIn = canShowBookingCheckIn(booking);
-                                    const canCheckOut = canShowBookingCheckOut(booking);
-                                    const canCancel = canShowHostBookingCancel(booking);
+                                    const displayStatus = getBookingDisplayStatus(booking, { role: "host", now: statusNow });
+                                    const actions = getBookingStatusActions(booking, { role: "host", today: statusNow });
+                                    const canConfirm = actions.canConfirm;
+                                    const canCheckIn = actions.canCheckIn;
+                                    const canCheckOut = actions.canCheckOut;
+                                    const canCancel = actions.canCancel;
+                                    const cancelLabel = displayStatus.normalizedStatus === "paid"
+                                        ? "Từ chối"
+                                        : "Hủy";
 
                                     return (
                                         <tr key={booking.bookingId}>
@@ -179,12 +213,12 @@ const DatPhong = () => {
                                                             disabled={isBusy}
                                                             type="button"
                                                             onClick={() => {
-                                                                const reason = window.prompt("Lý do hủy/từ chối booking?") || "host hủy hoặc từ chối booking";
-                                                                void runAction(booking.bookingId, () => cancelHostBooking(booking.bookingId, reason));
+                                                                const note = window.prompt(`Lý do ${cancelLabel.toLowerCase()} booking?`, hostRejectedReason) || hostRejectedReason;
+                                                                void runAction(booking.bookingId, () => cancelHostBooking(booking.bookingId, note));
                                                             }}
                                                             className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm text-rose-600 transition-colors hover:bg-rose-50"
                                                         >
-                                                            <FiXCircle className="mr-1 inline" /> Hủy/Từ chối
+                                                            <FiXCircle className="mr-1 inline" /> {cancelLabel}
                                                         </button>
                                                     ) : null}
                                                     {!canConfirm && !canCheckIn && !canCheckOut && !canCancel ? (

@@ -12,7 +12,7 @@ import {
     type HostListingSummary,
 } from "../../../../services/hostService";
 import { PageHeader } from "../shared";
-import { formatCurrency, pageWrapperClass, primaryButtonClass, secondaryButtonClass, tableClassName } from "../sharedStyles";
+import { formatCurrency, pageWrapperClass, primaryButtonClass, reloadButtonClass, secondaryButtonClass, tableClassName } from "../sharedStyles";
 
 const statusLabels: Record<HostListingStatus, string> = {
     draft: "Bản nháp",
@@ -103,8 +103,8 @@ const ChoNghi = () => {
                     subtitle="Danh sách chỗ nghỉ"
                     actions={
                         <>
-                            <button type="button" onClick={fetchListings} className={secondaryButtonClass}>
-                                <FiRefreshCw className="mr-2 inline" /> Tải lại
+                            <button type="button" onClick={fetchListings} className={reloadButtonClass}>
+                                <FiRefreshCw className="shrink-0" /> Tải lại
                             </button>
                             <button type="button" onClick={() => navigate(APP_ROUTES.hostNewProperty)} className={primaryButtonClass}>
                                 <FiPlus className="mr-2 inline" /> Thêm chỗ nghỉ

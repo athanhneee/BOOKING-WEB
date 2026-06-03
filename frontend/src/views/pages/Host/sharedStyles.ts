@@ -3,6 +3,7 @@ export const primaryButtonClass =
     "bg-cyan-500 hover:bg-cyan-500 text-white rounded-xl px-4 py-2.5 font-medium transition-colors";
 export const secondaryButtonClass =
     "border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl px-4 py-2.5 transition-colors";
+export const reloadButtonClass = `${secondaryButtonClass} inline-flex flex-row items-center justify-center gap-2 whitespace-nowrap min-w-max`;
 export const inputClassName =
     "w-full border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500";
 export const textareaClassName = `${inputClassName} min-h-[120px]`;

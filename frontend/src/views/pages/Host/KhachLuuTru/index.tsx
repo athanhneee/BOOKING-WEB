@@ -7,6 +7,7 @@ import { formatDate, maskEmail, pageWrapperClass, tableClassName } from "../shar
 
 const KhachLuuTru = () => {
     const [bookings, setBookings] = useState<ApiBooking[]>([]);
+    const [statusNow, setStatusNow] = useState(() => new Date());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -28,10 +29,15 @@ const KhachLuuTru = () => {
         void loadBookings();
     }, []);
 
+    useEffect(() => {
+        const timer = window.setInterval(() => setStatusNow(new Date()), 60_000);
+        return () => window.clearInterval(timer);
+    }, []);
+
     const guests = useMemo(
         () =>
             bookings.map((booking) => {
-                const displayStatus = getBookingDisplayStatus(booking);
+                const displayStatus = getBookingDisplayStatus(booking, { role: "host", now: statusNow });
 
                 return {
                     id: booking.bookingId,
@@ -44,7 +50,7 @@ const KhachLuuTru = () => {
                     statusTone: displayStatus.tone,
                 };
             }),
-        [bookings],
+        [bookings, statusNow],
     );
 
     return (
