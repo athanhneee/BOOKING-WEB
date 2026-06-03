@@ -18,14 +18,13 @@ export const createBookingBodySchema = z.object({
     checkOutDate: isoDateSchema.optional(),
     checkOut: isoDateSchema.optional(),
     guestCount: z.coerce.number().int().positive().optional(),
+    guests: z.coerce.number().int().positive().optional(),
     guestsCount: z.coerce.number().int().positive().optional(),
     couponCode: z.string().trim().min(1).max(64).optional(),
-    couponId: z.coerce.number().int().positive().optional(),
-    bookingNote: z.string().trim().max(2000).optional(),
 }).superRefine((value, ctx) => {
     const checkInDate = value.checkInDate ?? value.checkIn;
     const checkOutDate = value.checkOutDate ?? value.checkOut;
-    const guestCount = value.guestCount ?? value.guestsCount;
+    const guestCount = value.guestCount ?? value.guests ?? value.guestsCount;
 
     if (!checkInDate) {
         ctx.addIssue({
@@ -62,10 +61,8 @@ export const createBookingBodySchema = z.object({
     listingId: value.listingId,
     checkInDate: value.checkInDate ?? value.checkIn!,
     checkOutDate: value.checkOutDate ?? value.checkOut!,
-    guestCount: value.guestCount ?? value.guestsCount!,
+    guestCount: value.guestCount ?? value.guests ?? value.guestsCount!,
     couponCode: value.couponCode,
-    couponId: value.couponId,
-    bookingNote: value.bookingNote,
 }));
 
 export const cancelBookingBodySchema = z.object({
@@ -76,10 +73,12 @@ export const bookingsQuerySchema = z.object({
     status: z
         .enum([
             ...bookingStatusValues,
+            "pending",
+            "pending_host",
             "pending_host_confirmation",
-            "cancelled_by_guest",
-            "cancelled_by_host",
+            "cancelled",
             "host_cancelled",
+            "expired",
         ])
         .optional(),
     page: z.coerce.number().int().positive().optional(),
