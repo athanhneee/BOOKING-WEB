@@ -2,14 +2,9 @@ import "dotenv/config";
 
 import sequelize from "../config/database";
 import { logger } from "../config/logger";
-import { generateEmbedding } from "../modules/semantic-search/embedding.service";
+import { ensureListingVectorCollection } from "../modules/semantic-search/qdrant-vector.service";
+import { reindexListingRecord } from "../modules/semantic-search/semantic-search.indexer";
 import {
-    ensureListingVectorCollection,
-    upsertListingVectors,
-} from "../modules/semantic-search/qdrant-vector.service";
-import {
-    buildListingSearchDocument,
-    buildListingVectorPayload,
     getActiveListingIndexRecords,
 } from "../modules/semantic-search/semantic-search.repository";
 import { shouldForceVungTauOnly } from "../modules/semantic-search/semantic-search.utils";
@@ -43,28 +38,10 @@ const main = async () => {
     });
 
     for (const batch of chunk(records, batchSize)) {
-        const points: Array<{
-            id: number;
-            vector: number[];
-            payload: ReturnType<typeof buildListingVectorPayload>;
-        }> = [];
-
         for (const record of batch) {
             try {
-                const document = buildListingSearchDocument(record);
-                const vector = await generateEmbedding(document);
-
-                await record.listing.update({
-                    searchText: document,
-                    searchEmbeddingJson: vector,
-                    searchEmbeddingUpdatedAt: new Date(),
-                });
-
-                points.push({
-                    id: record.listing.listingId,
-                    vector,
-                    payload: buildListingVectorPayload(record),
-                });
+                await reindexListingRecord(record);
+                successCount += 1;
             } catch (error) {
                 failedCount += 1;
 
@@ -74,22 +51,11 @@ const main = async () => {
             }
         }
 
-        try {
-            await upsertListingVectors(points);
-            successCount += points.length;
-
-            logger.info("Vung Tau semantic search reindex batch upserted", {
-                batchSize: points.length,
-                successCount,
-                failedCount,
-            });
-        } catch (error) {
-            failedCount += points.length;
-
-            logger.error("Failed to upsert semantic search batch", error, {
-                listingIds: points.map((point) => point.id),
-            });
-        }
+        logger.info("Vung Tau semantic search reindex batch processed", {
+            batchSize: batch.length,
+            successCount,
+            failedCount,
+        });
     }
 
     logger.info("Vung Tau semantic search reindex completed", {

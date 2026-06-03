@@ -1,30 +1,21 @@
 import {
     detectLocationGroupsFromQuery,
+    getLocationGroupAreaKey,
     type LocationGroupName,
 } from "../../common/vung-tau-location-groups";
+import type { PropertyType } from "../../models/listing";
 import { ParsedQueryFilters, SemanticSearchRequest } from "./semantic-search.types";
 import { normalizeVietnameseText, uniqueStrings } from "./semantic-search.utils";
 
 const cityAliases: Record<string, string> = {
-    "ho chi minh": "TP Hồ Chí Minh",
-    "tp ho chi minh": "TP Hồ Chí Minh",
-    "sai gon": "TP Hồ Chí Minh",
-    saigon: "TP Hồ Chí Minh",
-    "vung tau": "Vũng Tàu",
-    vungtau: "Vũng Tàu",
-    "tp vung tau": "Vũng Tàu",
-    "thanh pho vung tau": "Vũng Tàu",
-};
-
-const locationSemanticBoosts: Record<LocationGroupName, string> = {
-    "Bãi Sau":
-        "Ưu tiên khu Bãi Sau Vũng Tàu, gồm Thùy Vân, Hoàng Hoa Thám, Phan Chu Trinh, Lê Hồng Phong, Võ Thị Sáu và các tuyến gần biển.",
-    "Bãi Trước / Dâu":
-        "Ưu tiên khu Bãi Trước / Dâu Vũng Tàu, gồm Trần Phú, Hạ Long, Quang Trung, Ba Cu, Lê Lợi, Vi Ba và các tuyến trung tâm ven biển.",
-    "Long Cung":
-        "Ưu tiên khu Long Cung Vũng Tàu, gồm Hoành Sơn, Chí Linh, Hà Huy Tập, Nguyễn Hữu Cảnh, 3 Tháng 2, An Hải và Thùy Dương.",
-    "Hồ Tràm / Long Hải / Phước Hải":
-        "Ưu tiên khu Hồ Tràm, Long Hải, Phước Hải, đường ven biển, đường bờ kè hoặc Lộc An - Bình Châu, phù hợp resort và nghỉ dưỡng biển.",
+    "ho chi minh": "TP Ho Chi Minh",
+    "tp ho chi minh": "TP Ho Chi Minh",
+    "sai gon": "TP Ho Chi Minh",
+    saigon: "TP Ho Chi Minh",
+    "vung tau": "Vung Tau",
+    vungtau: "Vung Tau",
+    "tp vung tau": "Vung Tau",
+    "thanh pho vung tau": "Vung Tau",
 };
 
 const amenitySynonyms: Record<string, string[]> = {
@@ -43,6 +34,18 @@ const amenitySynonyms: Record<string, string[]> = {
     garden: ["san vuon", "vuon", "garden"],
     desk: ["ban lam viec", "cong tac", "workspace", "desk"],
     gym: ["phong gym", "gym", "fitness"],
+};
+
+const propertyTypeSynonyms: Record<PropertyType, string[]> = {
+    villa: ["villa", "biet thu", "biet thu nghi duong"],
+    apartment: ["can ho", "apartment", "chung cu", "studio"],
+    hotel: ["khach san", "hotel"],
+    homestay: ["homestay", "home stay", "nha nghi homestay"],
+};
+
+type SemanticSynonymInput = {
+    keyword: string;
+    synonyms: string[] | string;
 };
 
 const parsePriceToVnd = (amount: string, unit?: string) => {
@@ -65,10 +68,90 @@ const parsePriceToVnd = (amount: string, unit?: string) => {
     return Math.round(numeric);
 };
 
-export const parseSearchQuery = (query: string): ParsedQueryFilters => {
+const formatDate = (date: Date) => date.toISOString().slice(0, 10);
+
+const addDays = (date: Date, days: number) => {
+    const next = new Date(date);
+    next.setUTCDate(next.getUTCDate() + days);
+    return next;
+};
+
+const parseDateIntent = (normalized: string, now = new Date()): ParsedQueryFilters["dateIntent"] | undefined => {
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+    if (normalized.includes("cuoi tuan nay")) {
+        const daysUntilSaturday = (6 - today.getUTCDay() + 7) % 7;
+        const checkIn = addDays(today, daysUntilSaturday);
+
+        return {
+            label: "this_weekend",
+            checkIn: formatDate(checkIn),
+            checkOut: formatDate(addDays(checkIn, 2)),
+        };
+    }
+
+    if (normalized.includes("cuoi tuan sau")) {
+        const daysUntilNextSaturday = ((6 - today.getUTCDay() + 7) % 7) + 7;
+        const checkIn = addDays(today, daysUntilNextSaturday);
+
+        return {
+            label: "next_weekend",
+            checkIn: formatDate(checkIn),
+            checkOut: formatDate(addDays(checkIn, 2)),
+        };
+    }
+
+    if (normalized.includes("ngay mai")) {
+        const checkIn = addDays(today, 1);
+
+        return {
+            label: "tomorrow",
+            checkIn: formatDate(checkIn),
+            checkOut: formatDate(addDays(checkIn, 1)),
+        };
+    }
+
+    if (normalized.includes("hom nay")) {
+        return {
+            label: "today",
+            checkIn: formatDate(today),
+            checkOut: formatDate(addDays(today, 1)),
+        };
+    }
+
+    return undefined;
+};
+
+const normalizeSynonymRows = (synonymRows: SemanticSynonymInput[]) => {
+    const normalized: Record<string, string[]> = {};
+
+    for (const row of synonymRows) {
+        const synonyms = Array.isArray(row.synonyms)
+            ? row.synonyms
+            : (() => {
+                  try {
+                      const parsed = JSON.parse(row.synonyms) as unknown;
+                      return Array.isArray(parsed) ? parsed.map(String) : [];
+                  } catch {
+                      return [];
+                  }
+              })();
+
+        normalized[row.keyword] = [row.keyword, ...synonyms];
+    }
+
+    return normalized;
+};
+
+export const parseSearchQuery = (
+    query: string,
+    synonymRows: SemanticSynonymInput[] = [],
+    now = new Date(),
+): ParsedQueryFilters => {
     const normalized = normalizeVietnameseText(query);
     const filters: ParsedQueryFilters = {
         amenityCodes: [],
+        proximity: [],
     };
 
     for (const [alias, city] of Object.entries(cityAliases)) {
@@ -81,7 +164,15 @@ export const parseSearchQuery = (query: string): ParsedQueryFilters => {
     const matchedLocationGroups = detectLocationGroupsFromQuery(query);
 
     if (matchedLocationGroups.length > 0 && !filters.city) {
-        filters.city = "Vũng Tàu";
+        filters.city = "Vung Tau";
+    }
+
+    if (matchedLocationGroups.length > 0) {
+        filters.locationIntent = {
+            city: filters.city,
+            locationGroups: matchedLocationGroups,
+            areaKeys: matchedLocationGroups.map(getLocationGroupAreaKey),
+        };
     }
 
     const underPriceMatch = normalized.match(
@@ -104,27 +195,58 @@ export const parseSearchQuery = (query: string): ParsedQueryFilters => {
 
     if (guestMatch) {
         filters.guests = Number(guestMatch[1]);
+        filters.capacity = filters.guests;
     }
 
-    for (const [code, synonyms] of Object.entries(amenitySynonyms)) {
+    for (const [propertyType, synonyms] of Object.entries(propertyTypeSynonyms) as Array<[PropertyType, string[]]>) {
+        if (synonyms.some((word) => normalized.includes(normalizeVietnameseText(word)))) {
+            filters.propertyType = propertyType;
+            break;
+        }
+    }
+
+    const mergedAmenitySynonyms = {
+        ...amenitySynonyms,
+        ...normalizeSynonymRows(synonymRows),
+    };
+
+    for (const [code, synonyms] of Object.entries(mergedAmenitySynonyms)) {
         if (synonyms.some((word) => normalized.includes(normalizeVietnameseText(word)))) {
             filters.amenityCodes.push(code);
         }
     }
 
+    if (
+        normalized.includes("gan bien") ||
+        normalized.includes("sat bien") ||
+        normalized.includes("di bo ra bien") ||
+        normalized.includes("ven bien")
+    ) {
+        filters.proximity.push("near_beach");
+    }
+
+    if (normalized.includes("view bien") || normalized.includes("huong bien")) {
+        filters.proximity.push("sea_view");
+    }
+
+    filters.dateIntent = parseDateIntent(normalized, now);
     filters.amenityCodes = uniqueStrings(filters.amenityCodes);
+    filters.proximity = uniqueStrings(filters.proximity);
 
     return filters;
 };
+
+const buildLocationSemanticBoost = (groupName: LocationGroupName) =>
+    `Uu tien khu vuc ${groupName} Vung Tau va cac dia chi lien quan trong cung location group.`;
 
 export const buildSemanticQuery = (input: SemanticSearchRequest, parsed: ParsedQueryFilters) => {
     const parts = [input.query.trim()];
     const guests = input.guests ?? parsed.guests;
 
     if (guests === 2) {
-        parts.push("Phù hợp cho cặp đôi hoặc hai người.");
+        parts.push("Phu hop cho cap doi hoac hai nguoi.");
     } else if (guests && guests >= 4) {
-        parts.push("Phù hợp cho gia đình hoặc nhóm bạn.");
+        parts.push("Phu hop cho gia dinh hoac nhom ban.");
     }
 
     const amenityCodes = uniqueStrings([
@@ -133,28 +255,42 @@ export const buildSemanticQuery = (input: SemanticSearchRequest, parsed: ParsedQ
     ]);
 
     if (amenityCodes.includes("sea_view")) {
-        parts.push("Ưu tiên gần biển, hướng biển, view biển, nghỉ dưỡng.");
+        parts.push("Uu tien gan bien, huong bien, view bien, nghi duong.");
+    }
+
+    if (parsed.proximity.includes("near_beach")) {
+        parts.push("Uu tien cho o gan bien, di chuyen nhanh ra bai tam.");
     }
 
     if (amenityCodes.includes("pool")) {
-        parts.push("Có hồ bơi hoặc bể bơi.");
+        parts.push("Co ho boi hoac be boi.");
     }
 
     if (amenityCodes.includes("bathtub")) {
-        parts.push("Có bồn tắm, phù hợp nghỉ dưỡng lãng mạn.");
+        parts.push("Co bon tam, phu hop nghi duong lang man.");
     }
 
     if (amenityCodes.includes("desk")) {
-        parts.push("Phù hợp khách công tác, có khu vực làm việc.");
+        parts.push("Phu hop khach cong tac, co khu vuc lam viec.");
+    }
+
+    const propertyType = input.propertyType ?? parsed.propertyType;
+
+    if (propertyType) {
+        parts.push(`Loai cho o mong muon: ${propertyType}.`);
+    }
+
+    if (parsed.dateIntent?.label) {
+        parts.push(`Ngu canh thoi gian: ${parsed.dateIntent.label}.`);
     }
 
     const matchedLocationGroups = detectLocationGroupsFromQuery(input.query);
 
     if (matchedLocationGroups.length > 0) {
-        parts.push("Ưu tiên lưu trú tại khu vực kinh doanh được nhận diện từ địa chỉ hoặc tên đường.");
+        parts.push("Uu tien luu tru tai khu vuc duoc nhan dien tu dia chi hoac ten duong.");
 
         for (const groupName of matchedLocationGroups) {
-            parts.push(locationSemanticBoosts[groupName]);
+            parts.push(buildLocationSemanticBoost(groupName));
         }
     }
 

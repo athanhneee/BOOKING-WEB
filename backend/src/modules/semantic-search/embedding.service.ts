@@ -30,6 +30,8 @@ const isEmbeddingResponse = (value: unknown): value is { data: Array<{ embedding
 };
 
 export const getEmbeddingDimension = () => Number(process.env.EMBEDDING_DIMENSIONS ?? 1536);
+export const getEmbeddingProvider = () => process.env.EMBEDDING_PROVIDER ?? "openai";
+export const getEmbeddingModel = () => process.env.EMBEDDING_MODEL ?? defaultEmbeddingModel;
 
 export const generateEmbedding = async (text: string): Promise<number[]> => {
     const apiKey = process.env.OPENAI_API_KEY;
@@ -38,7 +40,7 @@ export const generateEmbedding = async (text: string): Promise<number[]> => {
         throw new ApiError(503, "OPENAI_API_KEY is not configured");
     }
 
-    const model = process.env.EMBEDDING_MODEL ?? defaultEmbeddingModel;
+    const model = getEmbeddingModel();
     const dimensions = getEmbeddingDimension();
     const timeoutMs = Number(process.env.EMBEDDING_TIMEOUT_MS ?? defaultTimeoutMs);
     const maxRetries = Number(process.env.EMBEDDING_MAX_RETRIES ?? defaultMaxRetries);

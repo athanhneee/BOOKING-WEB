@@ -1,18 +1,23 @@
 import { Op } from "sequelize";
 
-import { buildActiveBookingStatusWhere } from "../../common/booking-availability";
+import { buildActiveBookingStatusWhere, buildBookingDateOverlapWhere } from "../../common/booking-availability";
 import {
     getAvailabilityCalendarMap,
     getListingAmenityIdsMap,
     getListingImagesMap,
+    getListingRulesForListing,
 } from "../../common/listing-relations";
+import { getDistanceMeters } from "../../common/vung-tau-location-groups";
 import Amenity from "../../models/amenity";
 import Booking from "../../models/booking";
+import ListingEmbedding from "../../models/listing-embedding";
 import Listing, {
     ListingAvailabilityDayRecord,
     ListingDocument,
 } from "../../models/listing";
 import Review from "../../models/review";
+import SearchLog from "../../models/search-log";
+import SemanticSynonym from "../../models/semantic-synonym";
 import {
     ListingVectorPayload,
     SemanticSearchFilters,
@@ -38,11 +43,21 @@ type ReviewSummary = {
     reviewSnippets: string[];
 };
 
+type ListingRulesSummary = {
+    checkInFrom: string | null;
+    checkOutBefore: string | null;
+    smokingAllowed: boolean;
+    petsAllowed: boolean;
+    partyAllowed: boolean;
+    quietHours: string | null;
+};
+
 export type ListingIndexRecord = {
     listing: ListingDocument;
     amenityIds: number[];
     amenityNames: string[];
     reviewSummary: ReviewSummary;
+    rules: ListingRulesSummary;
 };
 
 const defaultAmenityAliases: Record<string, number> = {
@@ -84,6 +99,59 @@ const defaultAmenityAliases: Record<string, number> = {
 
     iron: 12,
     banui: 12,
+};
+
+const beachAnchors = [
+    { name: "Bai Sau", latitude: 10.334, longitude: 107.087 },
+    { name: "Bai Truoc", latitude: 10.346, longitude: 107.075 },
+    { name: "Thuy Van", latitude: 10.333, longitude: 107.088 },
+    { name: "Tran Phu", latitude: 10.369, longitude: 107.065 },
+    { name: "Long Cung", latitude: 10.374, longitude: 107.151 },
+];
+
+const safeStringArray = (value: unknown): string[] => {
+    if (Array.isArray(value)) {
+        return value.map(String).map((item) => item.trim()).filter(Boolean);
+    }
+
+    if (typeof value === "string") {
+        try {
+            const parsed = JSON.parse(value) as unknown;
+            return Array.isArray(parsed)
+                ? parsed.map(String).map((item) => item.trim()).filter(Boolean)
+                : [];
+        } catch {
+            return [];
+        }
+    }
+
+    return [];
+};
+
+const getDistanceToBeachMeters = (listing: ListingDocument) => {
+    const latitude = toNumber(listing.latitude, Number.NaN);
+    const longitude = toNumber(listing.longitude, Number.NaN);
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        return null;
+    }
+
+    const nearest = beachAnchors.reduce(
+        (best, beach) => {
+            const distance = getDistanceMeters(latitude, longitude, beach.latitude, beach.longitude);
+            return !best || distance < best.distance ? { ...beach, distance } : best;
+        },
+        null as null | { name: string; latitude: number; longitude: number; distance: number },
+    );
+
+    if (!nearest) {
+        return null;
+    }
+
+    return {
+        beachName: nearest.name,
+        meters: Math.round(nearest.distance),
+    };
 };
 
 export const getAmenityLookup = async () => {
@@ -244,8 +312,7 @@ const getBookedListingIds = async (listingIds: number[], checkIn?: string, check
         where: {
             listingId: { [Op.in]: listingIds },
             ...buildActiveBookingStatusWhere(),
-            checkInDate: { [Op.lt]: checkOut },
-            checkOutDate: { [Op.gt]: checkIn },
+            ...buildBookingDateOverlapWhere(checkIn, checkOut),
         },
         attributes: ["listingId"],
     });
@@ -286,11 +353,18 @@ export const getActiveListingIndexRecords = async (
 
     const listingIds = filteredListings.map((listing) => listing.listingId);
 
-    const [amenityIdsMap, reviewSummaryMap, amenityLookup] = await Promise.all([
+    const [amenityIdsMap, reviewSummaryMap, amenityLookup, listingRulesEntries] = await Promise.all([
         getListingAmenityIdsMap(filteredListings),
         getReviewSummaryMap(listingIds),
         getAmenityLookup(),
+        Promise.all(
+            filteredListings.map(async (listing) => [
+                listing.listingId,
+                await getListingRulesForListing(listing),
+            ] as const),
+        ),
     ]);
+    const listingRulesMap = new Map(listingRulesEntries);
 
     return filteredListings.map((listing) => {
         const amenityIds = amenityIdsMap.get(listing.listingId) ?? [];
@@ -306,11 +380,58 @@ export const getActiveListingIndexRecords = async (
                 reviewCount: 0,
                 reviewSnippets: [],
             },
+            rules: listingRulesMap.get(listing.listingId) ?? {
+                checkInFrom: listing.checkInFrom,
+                checkOutBefore: listing.checkOutBefore,
+                smokingAllowed: listing.smokingAllowed,
+                petsAllowed: listing.petsAllowed,
+                partyAllowed: listing.partyAllowed,
+                quietHours: listing.quietHours ?? null,
+            },
         };
     });
 };
 
-export const buildListingSearchDocument = (record: ListingIndexRecord) => {
+export const getListingIndexRecord = async (
+    listingId: number,
+    forceVungTauOnly = true,
+): Promise<ListingIndexRecord | null> => {
+    const listing = await Listing.findOne({
+        where: {
+            listingId,
+            status: { [Op.in]: semanticPublicListingStatuses },
+            deletedAt: null,
+        },
+    });
+
+    if (!listing || !isListingAllowedForVungTauSearch(listing, forceVungTauOnly)) {
+        return null;
+    }
+
+    const [amenityIdsMap, reviewSummaryMap, amenityLookup, rules] = await Promise.all([
+        getListingAmenityIdsMap([listing]),
+        getReviewSummaryMap([listing.listingId]),
+        getAmenityLookup(),
+        getListingRulesForListing(listing),
+    ]);
+    const amenityIds = amenityIdsMap.get(listing.listingId) ?? [];
+
+    return {
+        listing,
+        amenityIds,
+        amenityNames: amenityIds
+            .map((amenityId) => amenityLookup.byId.get(amenityId)?.name)
+            .filter((name): name is string => Boolean(name)),
+        reviewSummary: reviewSummaryMap.get(listing.listingId) ?? {
+            ratingAvg: 0,
+            reviewCount: 0,
+            reviewSnippets: [],
+        },
+        rules,
+    };
+};
+
+const buildLegacyListingSearchDocument = (record: ListingIndexRecord) => {
     const { listing, amenityNames, reviewSummary } = record;
     const locationText = getListingLocationText(listing);
     const vungTauAreaKeys = inferVungTauAreaKeys(locationText);
@@ -344,6 +465,49 @@ export const buildListingSearchDocument = (record: ListingIndexRecord) => {
         `Nhận xét nổi bật: ${reviewSummary.reviewSnippets.join(" | ") || "chưa có nhận xét"}.`,
         `Ngữ cảnh tìm kiếm: du lịch biển Vũng Tàu, nghỉ dưỡng cuối tuần, gần biển, căn hộ, khách sạn, villa, homestay.`,
     ]
+        .join("\n")
+        .replace(/\s+/g, " ")
+        .trim();
+};
+
+export const buildListingSearchDocument = (record: ListingIndexRecord) => {
+    const { listing, amenityNames, reviewSummary, rules } = record;
+    const locationText = getListingLocationText(listing);
+    const vungTauAreaKeys = inferVungTauAreaKeys(locationText);
+    const vungTauAreaNames = getVungTauAreaDisplayNames(vungTauAreaKeys);
+    const distanceToBeach = getDistanceToBeachMeters(listing);
+    const aiImageTags = safeStringArray(listing.aiImageTags);
+    const aiImageSummary = listing.aiImageSummary?.trim() ?? "";
+
+    const stayPurposeHints = [
+        listing.maxGuests >= 4 ? "phu hop gia dinh hoac nhom ban" : "",
+        listing.maxGuests === 2 ? "phu hop cap doi hoac hai nguoi" : "",
+        listing.roomType === "entire_place" ? "nguyen can, rieng tu" : "",
+        listing.propertyType === "villa" ? "villa nghi duong" : "",
+        listing.propertyType === "hotel" ? "khach san luu tru ngan ngay" : "",
+        listing.propertyType === "apartment" ? "can ho tien nghi" : "",
+        vungTauAreaNames.length > 0 ? `locationGroup: ${vungTauAreaNames.join(", ")}` : "",
+    ].filter(Boolean);
+
+    return [
+        `title: ${listing.title}.`,
+        `description: ${listing.description}.`,
+        `address: ${listing.addressLine}, ${listing.ward}, ${listing.district}, ${listing.city}, ${listing.stateRegion ?? listing.city}.`,
+        `locationGroup: ${vungTauAreaNames.join(", ") || "unknown"}.`,
+        `propertyType: ${listing.propertyType}. roomType: ${listing.roomType}.`,
+        `maxGuests: ${listing.maxGuests}. bedrooms: ${listing.bedrooms}. beds: ${listing.beds}. bathrooms: ${listing.bathrooms}.`,
+        `amenities: ${amenityNames.join(", ") || "none"}.`,
+        `rules: checkInFrom ${rules.checkInFrom ?? listing.checkInFrom}, checkOutBefore ${rules.checkOutBefore ?? listing.checkOutBefore}, smokingAllowed ${rules.smokingAllowed}, petsAllowed ${rules.petsAllowed}, partyAllowed ${rules.partyAllowed}, quietHours ${rules.quietHours ?? "none"}.`,
+        distanceToBeach ? `distanceToBeach: ${distanceToBeach.meters} meters to ${distanceToBeach.beachName}.` : "",
+        `basePricePerNight: ${toNumber(listing.basePrice)} ${listing.currency}. weekendPrice: ${listing.weekendPrice ? toNumber(listing.weekendPrice) : "none"}.`,
+        `fit: ${stayPurposeHints.join(", ") || "du lich bien Vung Tau"}.`,
+        aiImageTags.length > 0 ? `aiImageTags: ${aiImageTags.join(", ")}.` : "",
+        aiImageSummary ? `aiImageSummary: ${aiImageSummary}.` : "",
+        `reviewHighlights: ${reviewSummary.reviewSnippets.join(" | ") || "none"}.`,
+        `rating: ${reviewSummary.ratingAvg}/5 from ${reviewSummary.reviewCount} reviews.`,
+        "searchContext: du lich bien Vung Tau, nghi duong cuoi tuan, gan bien, can ho, khach san, villa, homestay.",
+    ]
+        .filter(Boolean)
         .join("\n")
         .replace(/\s+/g, " ")
         .trim();
@@ -388,6 +552,70 @@ export const buildListingVectorPayload = (record: ListingIndexRecord): ListingVe
 
         status: listing.status as ListingVectorPayload["status"],
     };
+};
+
+export const listSemanticSynonymRows = async () => {
+    try {
+        return await SemanticSynonym.findAll({
+            attributes: ["keyword", "synonyms"],
+            order: [["keyword", "ASC"]],
+        });
+    } catch {
+        return [];
+    }
+};
+
+export const upsertListingEmbeddingRecord = async (input: {
+    listingId: number;
+    embeddingProvider: string;
+    embeddingModel: string;
+    embeddingVector?: number[] | null;
+    qdrantPointId?: string | null;
+    searchableText: string;
+    version: string;
+}) => {
+    const where = {
+        listingId: input.listingId,
+        embeddingProvider: input.embeddingProvider,
+        embeddingModel: input.embeddingModel,
+        version: input.version,
+    };
+    const existing = await ListingEmbedding.findOne({ where });
+    const values = {
+        ...where,
+        embeddingVector: input.embeddingVector ?? null,
+        qdrantPointId: input.qdrantPointId ?? null,
+        searchableText: input.searchableText,
+    };
+
+    if (existing) {
+        await existing.update(values);
+        return existing;
+    }
+
+    return ListingEmbedding.create(values);
+};
+
+export const recordSemanticSearchLog = async (input: {
+    userId?: number | null;
+    query: string;
+    parsedFilters: Record<string, unknown>;
+    resultListingIds: number[];
+    clickedListingId?: number | null;
+    bookedListingId?: number | null;
+}) => {
+    try {
+        await SearchLog.create({
+            userId: input.userId ?? null,
+            query: input.query.slice(0, 500),
+            parsedFilters: input.parsedFilters,
+            resultListingIds: input.resultListingIds,
+            clickedListingId: input.clickedListingId ?? null,
+            bookedListingId: input.bookedListingId ?? null,
+        });
+    } catch {
+        // Search logging should never make the user-facing query fail.
+    }
 };
 
 export const findAvailableListingItems = async (
@@ -524,7 +752,18 @@ export const findAvailableListingItems = async (
                 imageUrl: images[0]?.url ?? null,
 
                 semanticScore,
+                keywordScore: 0,
+                locationScore: 0,
+                availabilityScore: 1,
+                popularityScore: 0,
                 finalScore: 0,
+                scoreBreakdown: {
+                    semanticScore,
+                    keywordScore: 0,
+                    locationScore: 0,
+                    availabilityScore: 1,
+                    popularityScore: 0,
+                },
                 matchedReasons: [],
             };
         });
@@ -533,24 +772,10 @@ export const findAvailableListingItems = async (
 export const keywordSearchFallback = async (
     filters: SemanticSearchFilters,
 ): Promise<SemanticSearchItem[]> => {
-    const keyword = `%${filters.query.trim()}%`;
-
     const where: Record<string, unknown> = {
         status: { [Op.in]: semanticPublicListingStatuses },
         deletedAt: null,
         maxGuests: { [Op.gte]: filters.guests },
-        ...(filters.vungTauAreaKeys.length === 0
-            ? {
-                  [Op.or]: [
-            { title: { [Op.like]: keyword } },
-            { description: { [Op.like]: keyword } },
-            { city: { [Op.like]: keyword } },
-            { district: { [Op.like]: keyword } },
-            { ward: { [Op.like]: keyword } },
-            { addressLine: { [Op.like]: keyword } },
-                  ],
-              }
-            : {}),
     };
 
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {

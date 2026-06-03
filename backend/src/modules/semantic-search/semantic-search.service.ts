@@ -1,5 +1,9 @@
 import { ApiError } from "../../common/api-error";
 import { isValidIsoDate } from "../../common/validation";
+import {
+    getLocationGroupAreaKey,
+    isValidLocationGroup,
+} from "../../common/vung-tau-location-groups";
 import { logger } from "../../config/logger";
 import { generateEmbedding } from "./embedding.service";
 import { searchListingVectors } from "./qdrant-vector.service";
@@ -7,6 +11,8 @@ import { buildSemanticQuery, parseSearchQuery } from "./semantic-search.parser";
 import {
     findAvailableListingItems,
     keywordSearchFallback,
+    listSemanticSynonymRows,
+    recordSemanticSearchLog,
     resolveAmenityIds,
 } from "./semantic-search.repository";
 import {
@@ -20,68 +26,126 @@ import {
     getVungTauAreaDisplayName,
     inferVungTauAreaKeys,
     normalizeKey,
+    normalizeVietnameseText,
     shouldForceVungTauOnly,
+    uniqueNumbers,
     uniqueStrings,
 } from "./semantic-search.utils";
 
 const maxQueryLength = 500;
 const maxLimit = 30;
 
-const calculatePriceScore = (price: number, minPrice?: number, maxPrice?: number) => {
-    if (maxPrice === undefined && minPrice === undefined) return 0.7;
-    if (maxPrice !== undefined && price > maxPrice) return 0;
-    if (minPrice !== undefined && price < minPrice) return 0;
-    if (maxPrice === undefined) return 0.7;
-
-    return Math.max(0, Math.min(1, 1 - price / Math.max(maxPrice, 1)));
+type SemanticSearchContext = {
+    userId?: number | null;
 };
 
-const calculateVungTauAreaScore = (item: SemanticSearchItem, filters: SemanticSearchFilters) => {
-    if (filters.vungTauAreaKeys.length === 0) {
-        return item.vungTauAreaKeys.length > 0 ? 0.8 : 0.5;
+const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+
+const queryTokens = (query: string) =>
+    uniqueStrings(normalizeVietnameseText(query).split(" ").filter((token) => token.length >= 2));
+
+const calculateKeywordScore = (item: SemanticSearchItem, filters: SemanticSearchFilters) => {
+    const normalizedQuery = normalizeVietnameseText(filters.query);
+    const searchable = normalizeVietnameseText(
+        [
+            item.title,
+            item.description,
+            item.addressLine,
+            item.ward,
+            item.district,
+            item.city,
+            item.propertyType,
+            item.roomType,
+            item.vungTauAreas.join(" "),
+        ].join(" "),
+    );
+
+    if (!normalizedQuery) {
+        return 0;
     }
 
-    return filters.vungTauAreaKeys.some((areaKey) => item.vungTauAreaKeys.includes(areaKey))
-        ? 1
-        : 0;
+    if (searchable.includes(normalizedQuery)) {
+        return 1;
+    }
+
+    const tokens = queryTokens(filters.query);
+    if (tokens.length === 0) {
+        return 0;
+    }
+
+    const matchedTokenCount = tokens.filter((token) => searchable.includes(token)).length;
+    const amenityBoost = filters.amenityIds.length > 0 ? 0.15 : 0;
+
+    return clamp01(matchedTokenCount / tokens.length + amenityBoost);
 };
 
-const calculateBusinessScore = (item: SemanticSearchItem) => {
-    if (item.ratingAvg >= 4.7 && item.reviewCount >= 5) return 1;
-    if (item.ratingAvg >= 4.4) return 0.8;
-    if (item.reviewCount > 0) return 0.6;
-    return 0.5;
+const calculateLocationScore = (item: SemanticSearchItem, filters: SemanticSearchFilters) => {
+    if (filters.vungTauAreaKeys.length > 0) {
+        return filters.vungTauAreaKeys.some((areaKey) => item.vungTauAreaKeys.includes(areaKey)) ? 1 : 0;
+    }
+
+    if (filters.districtKey && normalizeKey(item.district) === filters.districtKey) {
+        return 1;
+    }
+
+    if (normalizeKey(item.city) === filters.cityKey) {
+        return item.vungTauAreaKeys.length > 0 ? 0.85 : 0.65;
+    }
+
+    return item.vungTauAreaKeys.length > 0 ? 0.6 : 0.35;
+};
+
+const calculatePopularityScore = (item: SemanticSearchItem) => {
+    const ratingComponent = clamp01(item.ratingAvg / 5) * 0.7;
+    const reviewComponent = clamp01(Math.log10(item.reviewCount + 1) / 2) * 0.3;
+
+    return clamp01(ratingComponent + reviewComponent);
+};
+
+const buildScoreBreakdown = (item: SemanticSearchItem, filters: SemanticSearchFilters) => {
+    const semanticScore = clamp01(item.semanticScore);
+    const keywordScore = calculateKeywordScore(item, filters);
+    const locationScore = calculateLocationScore(item, filters);
+    const availabilityScore = item.isAvailable ? 1 : 0;
+    const popularityScore = calculatePopularityScore(item);
+
+    return {
+        semanticScore,
+        keywordScore,
+        locationScore,
+        availabilityScore,
+        popularityScore,
+    };
 };
 
 const calculateFinalScore = (item: SemanticSearchItem, filters: SemanticSearchFilters) => {
-    const semanticScore = Math.max(0, Math.min(1, item.semanticScore));
-    const ratingScore = Math.max(0, Math.min(1, item.ratingAvg / 5));
-    const priceScore = calculatePriceScore(item.basePrice, filters.minPrice, filters.maxPrice);
-    const availabilityScore = item.isAvailable ? 1 : 0;
-    const vungTauAreaScore = calculateVungTauAreaScore(item, filters);
-    const businessScore = calculateBusinessScore(item);
+    const scoreBreakdown = buildScoreBreakdown(item, filters);
+    const finalScore =
+        scoreBreakdown.semanticScore * 0.5 +
+        scoreBreakdown.keywordScore * 0.2 +
+        scoreBreakdown.locationScore * 0.15 +
+        scoreBreakdown.availabilityScore * 0.1 +
+        scoreBreakdown.popularityScore * 0.05;
 
-    return Number(
-        (
-            semanticScore * 0.45 +
-            ratingScore * 0.15 +
-            priceScore * 0.1 +
-            availabilityScore * 0.15 +
-            vungTauAreaScore * 0.1 +
-            businessScore * 0.05
-        ).toFixed(4),
-    );
+    return {
+        scoreBreakdown,
+        finalScore: Number(finalScore.toFixed(4)),
+    };
 };
 
-const buildMatchedReasons = (item: SemanticSearchItem, filters: SemanticSearchFilters) => {
+const buildMatchedReasons = (
+    item: SemanticSearchItem,
+    filters: SemanticSearchFilters,
+    scoreBreakdown: SemanticSearchItem["scoreBreakdown"],
+) => {
     const reasons: string[] = [];
 
     if (filters.forceVungTauOnly) {
-        reasons.push("Thuộc phạm vi tìm kiếm Vũng Tàu");
+        reasons.push("Nam trong pham vi tim kiem Vung Tau");
     }
 
     if (item.vungTauAreas.length > 0) {
-        reasons.push(`Khu vực phù hợp: ${item.vungTauAreas.join(", ")}`);
+        reasons.push(`Khu vuc phu hop: ${item.vungTauAreas.join(", ")}`);
     }
 
     if (filters.vungTauAreaKeys.length > 0) {
@@ -90,40 +154,40 @@ const buildMatchedReasons = (item: SemanticSearchItem, filters: SemanticSearchFi
             .map(getVungTauAreaDisplayName);
 
         if (matchedAreaNames.length > 0) {
-            reasons.push(`Khớp khu vực người dùng hỏi: ${matchedAreaNames.join(", ")}`);
+            reasons.push(`Khop locationGroup: ${matchedAreaNames.join(", ")}`);
         }
     }
 
     if (filters.district && normalizeKey(item.district) === filters.districtKey) {
-        reasons.push(`Đúng khu vực ${item.district}`);
+        reasons.push(`Dung khu vuc ${item.district}`);
     }
 
     if (item.maxGuests >= filters.guests) {
-        reasons.push(`Phù hợp ${filters.guests} khách`);
+        reasons.push(`Phu hop ${filters.guests} khach`);
     }
 
     if (filters.maxPrice !== undefined && item.basePrice <= filters.maxPrice) {
-        reasons.push(`Giá không vượt ${filters.maxPrice.toLocaleString("vi-VN")} VND`);
+        reasons.push(`Gia khong vuot ${filters.maxPrice.toLocaleString("vi-VN")} VND`);
     }
 
     if (filters.minPrice !== undefined && item.basePrice >= filters.minPrice) {
-        reasons.push(`Giá từ ${filters.minPrice.toLocaleString("vi-VN")} VND`);
+        reasons.push(`Gia tu ${filters.minPrice.toLocaleString("vi-VN")} VND`);
     }
 
     if (filters.amenityIds.length > 0) {
-        reasons.push("Khớp tiện nghi có trong database");
-    }
-
-    if (filters.amenityCodes.length > filters.amenityIds.length) {
-        reasons.push("Một số tiện nghi được dùng để boost semantic thay vì hard filter");
+        reasons.push("Khop tien nghi co trong database");
     }
 
     if (item.semanticScore > 0) {
-        reasons.push(`Gần nghĩa với câu tìm kiếm, semanticScore=${item.semanticScore.toFixed(3)}`);
+        reasons.push(`Semantic score ${scoreBreakdown.semanticScore.toFixed(3)}`);
+    }
+
+    if (scoreBreakdown.keywordScore > 0) {
+        reasons.push(`Keyword score ${scoreBreakdown.keywordScore.toFixed(3)}`);
     }
 
     if (item.isAvailable) {
-        reasons.push("Còn khả dụng theo ngày đã chọn hoặc chưa yêu cầu ngày");
+        reasons.push("Con kha dung theo ngay da chon hoac chua yeu cau ngay");
     }
 
     return reasons;
@@ -145,6 +209,18 @@ const validateDateRange = (input: SemanticSearchRequest) => {
     if (input.checkOut <= input.checkIn) {
         throw new ApiError(422, "checkOut must be after checkIn");
     }
+};
+
+const getExplicitLocationAreaKeys = (locationGroup?: string) => {
+    if (!locationGroup) {
+        return [];
+    }
+
+    if (isValidLocationGroup(locationGroup)) {
+        return [getLocationGroupAreaKey(locationGroup)];
+    }
+
+    return inferVungTauAreaKeys(locationGroup);
 };
 
 const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearchFilters> => {
@@ -170,9 +246,11 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
         throw new ApiError(422, "maxPrice must be greater than or equal to minPrice");
     }
 
-    const parsed = parseSearchQuery(query);
+    const synonymRows = await listSemanticSynonymRows();
+    const parsed = parseSearchQuery(query, synonymRows);
+    const checkIn = input.checkIn ?? parsed.dateIntent?.checkIn;
+    const checkOut = input.checkOut ?? parsed.dateIntent?.checkOut;
     const forceVungTauOnly = shouldForceVungTauOnly();
-
     const city = forceVungTauOnly
         ? getSemanticDefaultCity()
         : input.city ?? parsed.city ?? getSemanticDefaultCity();
@@ -181,6 +259,8 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
         {
             ...input,
             city,
+            checkIn,
+            checkOut,
         },
         parsed,
     );
@@ -188,26 +268,29 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
     const requestAmenities = Array.isArray(input.amenities)
         ? input.amenities
         : [];
-
     const amenityCodes = uniqueStrings([
         ...(parsed.amenityCodes ?? []),
         ...requestAmenities.map(String),
     ]);
-
     const amenityIds = await resolveAmenityIds(amenityCodes);
 
     const district = input.district ?? parsed.district;
     const page = Math.max(1, Math.floor(input.page ?? 1));
     const limit = Math.min(maxLimit, Math.max(1, Math.floor(input.limit ?? 12)));
-
-    const vungTauAreaKeys = inferVungTauAreaKeys(`${query} ${semanticQuery}`);
+    const explicitLocationAreaKeys = getExplicitLocationAreaKeys(input.locationGroup);
+    const inferredAreaKeys = inferVungTauAreaKeys(`${query} ${semanticQuery}`);
+    const vungTauAreaKeys = uniqueStrings([
+        ...explicitLocationAreaKeys,
+        ...(parsed.locationIntent?.areaKeys ?? []),
+        ...inferredAreaKeys,
+    ]);
 
     return {
         query,
         semanticQuery,
 
-        checkIn: input.checkIn,
-        checkOut: input.checkOut,
+        checkIn,
+        checkOut,
 
         guests: Math.max(1, Math.floor(input.guests ?? parsed.guests ?? 1)),
 
@@ -222,7 +305,10 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
         amenityIds,
         amenityCodes,
 
-        propertyType: input.propertyType,
+        locationGroup: input.locationGroup,
+        explicitLocationAreaKeys,
+
+        propertyType: input.propertyType ?? parsed.propertyType,
         roomType: input.roomType,
 
         page,
@@ -230,18 +316,21 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
 
         forceVungTauOnly,
         vungTauAreaKeys,
+        parsedFilters: parsed,
     };
 };
 
 const rankItems = (items: SemanticSearchItem[], filters: SemanticSearchFilters) =>
     items
         .map((item) => {
-            const finalScore = calculateFinalScore(item, filters);
+            const { finalScore, scoreBreakdown } = calculateFinalScore(item, filters);
 
             return {
                 ...item,
+                ...scoreBreakdown,
                 finalScore,
-                matchedReasons: buildMatchedReasons(item, filters),
+                scoreBreakdown,
+                matchedReasons: buildMatchedReasons(item, filters, scoreBreakdown),
             };
         })
         .sort((left, right) => right.finalScore - left.finalScore || right.listingId - left.listingId);
@@ -258,11 +347,13 @@ const paginate = (
     const paginatedItems = items.slice(start, start + filters.limit);
 
     return {
+        query: filters.query,
+        mode: fallback ? "keyword_fallback" : "semantic",
         items: paginatedItems,
         pagination: {
             page: filters.page,
             limit: filters.limit,
-            totalItems,
+            total: totalItems,
             totalPages: Math.max(1, Math.ceil(totalItems / filters.limit)),
         },
         fallback,
@@ -280,46 +371,61 @@ const paginate = (
                 guests: filters.guests,
                 amenityIds: filters.amenityIds,
                 amenityCodes: filters.amenityCodes,
+                locationGroup: filters.locationGroup,
                 vungTauAreaKeys: filters.vungTauAreaKeys,
+                proximity: filters.parsedFilters.proximity,
                 propertyType: filters.propertyType,
                 roomType: filters.roomType,
             },
+            parsedFilters: filters.parsedFilters,
         },
     };
 };
 
+const logSearch = async (
+    response: SemanticSearchResponse,
+    filters: SemanticSearchFilters,
+    context: SemanticSearchContext,
+) => {
+    await recordSemanticSearchLog({
+        userId: context.userId ?? null,
+        query: filters.query,
+        parsedFilters: filters.parsedFilters as unknown as Record<string, unknown>,
+        resultListingIds: response.items.map((item) => item.listingId),
+    });
+};
+
 export const semanticSearchListings = async (
     input: SemanticSearchRequest,
+    context: SemanticSearchContext = {},
 ): Promise<SemanticSearchResponse> => {
     const filters = await buildFilters(input);
 
     try {
         const vector = await generateEmbedding(filters.semanticQuery);
         const vectorHits = await searchListingVectors(vector, filters, 250);
-
-        const listingIds = vectorHits.map((hit) => hit.payload.listing_id);
-
+        const listingIds = uniqueNumbers(vectorHits.map((hit) => hit.payload.listing_id));
         const semanticScoreMap = new Map(
-            vectorHits.map((hit) => [hit.payload.listing_id, hit.score]),
+            vectorHits.map((hit) => [hit.payload.listing_id, clamp01(hit.score)]),
         );
-
         const availableItems = await findAvailableListingItems(
             listingIds,
             filters,
             semanticScoreMap,
         );
+        const response = paginate(rankItems(availableItems, filters), filters, false, true, vectorHits.length);
 
-        const rankedItems = rankItems(availableItems, filters);
-
-        return paginate(rankedItems, filters, false, true, vectorHits.length);
+        await logSearch(response, filters, context);
+        return response;
     } catch (error) {
         logger.warn("Semantic vector search failed. Falling back to keyword search", {
             errorMessage: error instanceof Error ? error.message : String(error),
         });
 
         const fallbackItems = await keywordSearchFallback(filters);
-        const rankedItems = rankItems(fallbackItems, filters);
+        const response = paginate(rankItems(fallbackItems, filters), filters, true, false, fallbackItems.length);
 
-        return paginate(rankedItems, filters, true, false, fallbackItems.length);
+        await logSearch(response, filters, context);
+        return response;
     }
 };

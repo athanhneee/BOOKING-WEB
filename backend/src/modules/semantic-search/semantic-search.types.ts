@@ -1,4 +1,5 @@
 import type { PropertyType, RoomType } from "../../models/listing";
+import type { LocationGroupName } from "../../common/vung-tau-location-groups";
 
 export const semanticPublicListingStatuses = ["active", "approved", "published"] as const;
 export type SemanticPublicListingStatus = (typeof semanticPublicListingStatuses)[number];
@@ -13,6 +14,7 @@ export type SemanticSearchRequest = {
     minPrice?: number;
     maxPrice?: number;
     amenities?: Array<string | number>;
+    locationGroup?: LocationGroupName | string;
     propertyType?: PropertyType;
     roomType?: RoomType;
     page?: number;
@@ -27,6 +29,12 @@ export type AiListingSearchRequest = {
         minPrice?: number;
         maxPrice?: number;
         guests?: number;
+        checkIn?: string;
+        checkOut?: string;
+        amenities?: Array<string | number>;
+        locationGroup?: LocationGroupName | string;
+        propertyType?: PropertyType;
+        roomType?: RoomType;
     };
 };
 
@@ -36,7 +44,20 @@ export type ParsedQueryFilters = {
     minPrice?: number;
     maxPrice?: number;
     guests?: number;
+    capacity?: number;
+    propertyType?: PropertyType;
+    proximity: string[];
     amenityCodes: string[];
+    locationIntent?: {
+        city?: string;
+        locationGroups: string[];
+        areaKeys: string[];
+    };
+    dateIntent?: {
+        label: string;
+        checkIn?: string;
+        checkOut?: string;
+    };
 };
 
 export type SemanticSearchFilters = {
@@ -59,6 +80,9 @@ export type SemanticSearchFilters = {
     amenityIds: number[];
     amenityCodes: string[];
 
+    locationGroup?: string;
+    explicitLocationAreaKeys: string[];
+
     propertyType?: PropertyType;
     roomType?: RoomType;
 
@@ -67,6 +91,7 @@ export type SemanticSearchFilters = {
 
     forceVungTauOnly: boolean;
     vungTauAreaKeys: string[];
+    parsedFilters: ParsedQueryFilters;
 };
 
 export type ListingVectorPayload = {
@@ -135,16 +160,29 @@ export type SemanticSearchItem = {
     imageUrl: string | null;
 
     semanticScore: number;
+    keywordScore: number;
+    locationScore: number;
+    availabilityScore: number;
+    popularityScore: number;
     finalScore: number;
+    scoreBreakdown: {
+        semanticScore: number;
+        keywordScore: number;
+        locationScore: number;
+        availabilityScore: number;
+        popularityScore: number;
+    };
     matchedReasons: string[];
 };
 
 export type SemanticSearchResponse = {
+    query: string;
+    mode: "semantic" | "keyword_fallback";
     items: SemanticSearchItem[];
     pagination: {
         page: number;
         limit: number;
-        totalItems: number;
+        total: number;
         totalPages: number;
     };
     fallback: boolean;
@@ -162,10 +200,13 @@ export type SemanticSearchResponse = {
             guests: number;
             amenityIds: number[];
             amenityCodes: string[];
+            locationGroup?: string;
             vungTauAreaKeys: string[];
+            proximity: string[];
             propertyType?: PropertyType;
             roomType?: RoomType;
         };
+        parsedFilters: ParsedQueryFilters;
     };
 };
 
@@ -173,4 +214,7 @@ export type AiListingSearchResponse = {
     query: string;
     mode: "semantic" | "keyword_fallback";
     items: SemanticSearchItem[];
+    pagination: SemanticSearchResponse["pagination"];
+    fallback: boolean;
+    searchMeta: SemanticSearchResponse["searchMeta"];
 };

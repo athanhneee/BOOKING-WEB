@@ -21,7 +21,9 @@ export const semanticSearchListings: RequestHandler = asyncHandler(async (req, r
     const payload = getValidatedBody<SemanticSearchRequest>(req);
 
     // 3. Gọi service xử lý logic tìm kiếm
-    const result = await searchService(payload);
+    const result = await searchService(payload, {
+        userId: req.user?.id ? Number(req.user.id) : null,
+    });
 
     // 4. Trả về kết quả thành công
     return sendSuccess(res, {
@@ -41,13 +43,21 @@ export const aiListingSearch: RequestHandler = asyncHandler(async (req, res) => 
         minPrice: payload.filters?.minPrice,
         maxPrice: payload.filters?.maxPrice,
         guests: payload.filters?.guests,
+        checkIn: payload.filters?.checkIn,
+        checkOut: payload.filters?.checkOut,
+        locationGroup: payload.filters?.locationGroup,
+        amenities: payload.filters?.amenities,
+        propertyType: payload.filters?.propertyType,
+        roomType: payload.filters?.roomType,
+    }, {
+        userId: req.user?.id ? Number(req.user.id) : null,
     });
 
     return sendSuccess(res, {
         data: {
-            query,
-            mode: result.fallback ? "keyword_fallback" : "semantic",
-            items: result.items,
+            ...result,
+            query: result.query ?? query,
+            mode: result.mode ?? (result.fallback ? "keyword_fallback" : "semantic"),
         },
     });
 });

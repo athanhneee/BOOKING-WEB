@@ -77,6 +77,14 @@ router.post(
             .custom((value) => ["string", "number"].includes(typeof value))
             .withMessage("amenities values must be strings or numbers"),
 
+        body("locationGroup")
+            .optional()
+            .isString()
+            .trim()
+            .notEmpty()
+            .isLength({ max: 120 })
+            .withMessage("locationGroup is invalid"),
+
         body("propertyType")
             .optional()
             .isIn(["apartment", "villa", "hotel", "homestay"])
@@ -154,6 +162,46 @@ aiListingSearchRouter.post(
             .isInt({ min: 1 })
             .withMessage("filters.guests must be at least 1")
             .toInt(),
+
+        body("filters.checkIn")
+            .optional()
+            .custom((value) => isValidIsoDate(String(value)))
+            .withMessage("filters.checkIn must use YYYY-MM-DD format"),
+
+        body("filters.checkOut")
+            .optional()
+            .custom((value) => isValidIsoDate(String(value)))
+            .withMessage("filters.checkOut must use YYYY-MM-DD format")
+            .custom((value, { req }) => !req.body?.filters?.checkIn || String(req.body.filters.checkIn) < String(value))
+            .withMessage("filters.checkOut must be after filters.checkIn"),
+
+        body("filters.amenities")
+            .optional()
+            .isArray()
+            .withMessage("filters.amenities must be an array"),
+
+        body("filters.amenities.*")
+            .optional()
+            .custom((value) => ["string", "number"].includes(typeof value))
+            .withMessage("filters.amenities values must be strings or numbers"),
+
+        body("filters.locationGroup")
+            .optional()
+            .isString()
+            .trim()
+            .notEmpty()
+            .isLength({ max: 120 })
+            .withMessage("filters.locationGroup is invalid"),
+
+        body("filters.propertyType")
+            .optional()
+            .isIn(["apartment", "villa", "hotel", "homestay"])
+            .withMessage("filters.propertyType is invalid"),
+
+        body("filters.roomType")
+            .optional()
+            .isIn(["entire_place", "private_room", "shared_room"])
+            .withMessage("filters.roomType is invalid"),
     ],
     aiListingSearch,
 );
