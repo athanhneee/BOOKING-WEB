@@ -476,7 +476,7 @@ const getConversationRowsForUser = async (
         pagination: {
             page,
             limit,
-            totalItems: Number(countRows[0]?.totalItems ?? 0),
+            total: Number(countRows[0]?.totalItems ?? 0),
             totalPages: Math.max(1, Math.ceil(Number(countRows[0]?.totalItems ?? 0) / limit)),
         },
     };
@@ -819,7 +819,7 @@ export const getConversationMessages = async (
         pagination: {
             page,
             limit,
-            totalItems,
+            total: totalItems,
             totalPages: Math.max(1, Math.ceil(totalItems / limit)),
         },
     };

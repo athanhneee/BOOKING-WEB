@@ -18,13 +18,16 @@ const Coupon = require("../dist/models/coupon").default;
 const CouponRedemption = require("../dist/models/coupon-redemption").default;
 const HostPayoutBatch = require("../dist/models/host-payout-batch").default;
 const HostPayoutBookingItem = require("../dist/models/host-payout-booking-item").default;
+const NotificationLog = require("../dist/models/notification-log").default;
 const Payment = require("../dist/models/payment").default;
 const PaymentTransaction = require("../dist/models/payment-transaction").default;
 const PayoutAccount = require("../dist/models/payout-account").default;
+const Refund = require("../dist/models/refund").default;
 const userAccessService = require("../dist/services/user-access-service");
 const paymentsService = require("../dist/modules/payments/payments.service");
 const vnpayService = require("../dist/modules/payments/vnpay.service");
 const couponsService = require("../dist/modules/coupons/coupons.service");
+const hostBankAccountService = require("../dist/modules/host-bank-account/host-bank-account.service");
 const payoutsService = require("../dist/modules/payouts/payouts.service");
 const reportsService = require("../dist/modules/reports/reports.service");
 
@@ -65,6 +68,12 @@ const adminUser = {
     ...guestUser,
     id: "1",
     roles: ["admin"],
+};
+
+const hostUser = {
+    ...guestUser,
+    id: "101",
+    roles: ["host"],
 };
 
 const buildBooking = (overrides: Record<string, unknown> = {}) => ({
@@ -205,14 +214,24 @@ describe("Payments, coupons, payouts, and revenue reports", () => {
         const booking = buildBooking();
         let redemptionCreated = 0;
         let redemptionExists = false;
+        let couponUsageIncremented = 0;
         let paymentSaves = 0;
         let bookingSaves = 0;
+        let paymentTransactionSaves = 0;
         const paymentTransaction = {
+            paymentId: 8901,
+            bookingId: 9001,
+            provider: "vnpay",
+            providerTxnRef: "8901",
             providerTransactionNo: null,
+            transactionType: "payment",
             status: "pending",
+            amount: 2300000,
+            currency: "VND",
             rawPayloadJson: null,
             processedAt: null,
             async save() {
+                paymentTransactionSaves += 1;
                 return this;
             },
         };
@@ -242,7 +261,9 @@ describe("Payments, coupons, payouts, and revenue reports", () => {
             return { id: 1 };
         });
         patch(Coupon, "findOne", async () => ({ couponId: 7, deletedAt: null }));
-        patch(Coupon, "increment", async () => {});
+        patch(Coupon, "increment", async () => {
+            couponUsageIncremented += 1;
+        });
         patch(AuditLog, "create", async () => ({}));
 
         const payload = buildVnpayCallback();
@@ -254,8 +275,111 @@ describe("Payments, coupons, payouts, and revenue reports", () => {
         assert.equal(payment.status, "paid");
         assert.equal(booking.status, "paid");
         assert.equal(redemptionCreated, 1);
-        assert.equal(paymentSaves, 2);
-        assert.equal(bookingSaves, 2);
+        assert.equal(couponUsageIncremented, 1);
+        assert.equal(paymentSaves, 1);
+        assert.equal(bookingSaves, 1);
+        assert.equal(paymentTransactionSaves, 1);
+        assert.equal(paymentTransaction.providerTransactionNo, "14123456");
+        assert.equal(paymentTransaction.status, "succeeded");
+    });
+
+    it("keeps late successful VNPay payments expired and creates one refund on duplicate callbacks", async () => {
+        const payment = buildPayment({
+            expiresAt: new Date("2026-05-10T00:00:00.000Z"),
+        });
+        const booking = buildBooking({
+            status: "payment_expired",
+            lockedUntil: null,
+            cancellationReason: "PAYMENT_EXPIRED",
+        });
+        let paymentSaves = 0;
+        let bookingSaves = 0;
+        let paymentTransactionSaves = 0;
+        let refundCreated = 0;
+        let refundExists = false;
+        let notificationCreated = 0;
+        const paymentTransaction = {
+            paymentId: 8901,
+            bookingId: 9001,
+            provider: "vnpay",
+            providerTxnRef: "8901",
+            providerTransactionNo: null,
+            transactionType: "payment",
+            status: "pending",
+            amount: 2300000,
+            currency: "VND",
+            rawPayloadJson: null,
+            processedAt: null,
+            async save() {
+                paymentTransactionSaves += 1;
+                return this;
+            },
+        };
+
+        patch(sequelize, "transaction", async (callback: TransactionCallback) =>
+            callback({
+                LOCK: {
+                    UPDATE: "UPDATE",
+                },
+            }),
+        );
+        patch(Payment, "findOne", async () => payment);
+        patch(Booking, "findOne", async () => booking);
+        patch(payment, "save", async () => {
+            paymentSaves += 1;
+            return payment;
+        });
+        patch(booking, "save", async () => {
+            bookingSaves += 1;
+            return booking;
+        });
+        patch(PaymentTransaction, "findOne", async (options: { where?: Record<string, unknown> } = {}) => {
+            const where = options.where ?? {};
+
+            if (
+                where.providerTransactionNo &&
+                paymentTransaction.providerTransactionNo !== where.providerTransactionNo
+            ) {
+                return null;
+            }
+
+            if (where.providerTxnRef && paymentTransaction.providerTxnRef !== where.providerTxnRef) {
+                return null;
+            }
+
+            return paymentTransaction;
+        });
+        patch(Refund, "findOne", async () => (refundExists ? { refundId: 71 } : null));
+        patch(Refund, "create", async () => {
+            refundCreated += 1;
+            refundExists = true;
+            return { refundId: 71 };
+        });
+        patch(NotificationLog, "create", async () => {
+            notificationCreated += 1;
+            return { notificationLogId: notificationCreated };
+        });
+        patch(AuditLog, "create", async () => ({}));
+
+        const payload = buildVnpayCallback();
+        const first = await paymentsService.processVnpayWebhook(payload);
+        const second = await paymentsService.processVnpayWebhook(payload);
+
+        assert.deepEqual(first, { RspCode: "00", Message: "Confirm Success" });
+        assert.deepEqual(second, { RspCode: "00", Message: "Confirm Success" });
+        assert.equal(payment.status, "paid");
+        assert.equal(booking.status, "payment_expired");
+        const providerPayload = payment.providerPayload as unknown as Record<string, unknown>;
+
+        assert.equal(providerPayload.latePaymentAfterBookingExpired, true);
+        assert.equal(providerPayload.refundStatus, "pending");
+        assert.equal(refundCreated, 1);
+        assert.equal(notificationCreated, 2);
+        assert.equal(paymentSaves, 1);
+        assert.equal(bookingSaves, 1);
+        assert.equal(paymentTransactionSaves, 1);
+        assert.equal(paymentTransaction.providerTransactionNo, "14123456");
+        assert.equal(paymentTransaction.status, "succeeded");
     });
 
     it("rejects payment creation by a user that does not own the booking", async () => {
@@ -265,6 +389,16 @@ describe("Payments, coupons, payouts, and revenue reports", () => {
         await assertRejectsApiError(
             () => paymentsService.createPayment(otherGuestUser, { bookingId: 9001, method: "vnpay" }),
             403,
+        );
+    });
+
+    it("rejects payment creation for bookings that are already paid", async () => {
+        patch(sequelize, "transaction", async (callback: TransactionCallback) => callback({}));
+        patch(Booking, "findOne", async () => buildBooking({ status: "paid" }));
+
+        await assertRejectsApiError(
+            () => paymentsService.createPayment(guestUser, { bookingId: 9001, method: "vnpay" }),
+            409,
         );
     });
 
@@ -298,6 +432,65 @@ describe("Payments, coupons, payouts, and revenue reports", () => {
         assert.equal(result.valid, true);
         assert.equal(result.discountAmount, 50000);
         assert.equal(result.finalAmount, 950000);
+    });
+
+    it("upserts host bank account with the authenticated host id and normalized holder name", async () => {
+        let createdPayload: Record<string, unknown> = {};
+
+        patch(sequelize, "transaction", async (callback: TransactionCallback) => callback({}));
+        patch(PayoutAccount, "findOne", async () => null);
+        patch(PayoutAccount, "update", async () => [0]);
+        patch(PayoutAccount, "create", async (payload: Record<string, unknown>) => {
+            createdPayload = payload;
+            return {
+                payoutAccountId: 77,
+                ...payload,
+                createdAt: new Date("2026-05-28T00:00:00.000Z"),
+                updatedAt: new Date("2026-05-28T00:00:00.000Z"),
+            };
+        });
+
+        const result = await hostBankAccountService.saveHostBankAccount(hostUser, {
+            userId: 999,
+            bankCode: "VCB",
+            bankName: "Ngân hàng TMCP Ngoại thương Việt Nam",
+            bankShortName: "Vietcombank",
+            bankBin: "970436",
+            accountNumber: "123456789",
+            accountHolderName: "nguyen van a",
+            branchName: " Chi nhánh Vũng Tàu ",
+        });
+
+        assert.equal(createdPayload?.userId, 101);
+        assert.equal(createdPayload?.bankCode, "VCB");
+        assert.equal(createdPayload?.accountName, "NGUYEN VAN A");
+        assert.equal(createdPayload?.branchName, "Chi nhánh Vũng Tàu");
+        assert.equal(createdPayload?.isDefault, true);
+        assert.equal(result.accountNumber, "123456789");
+        assert.equal(result.accountHolderName, "NGUYEN VAN A");
+    });
+
+    it("rejects invalid host bank account payloads before saving", async () => {
+        await assertRejectsApiError(
+            () =>
+                hostBankAccountService.saveHostBankAccount(hostUser, {
+                    bankCode: "VCB",
+                    bankName: "Ngân hàng TMCP Ngoại thương Việt Nam",
+                    accountNumber: "123ABC",
+                    accountHolderName: "Nguyen Van A",
+                }),
+            400,
+        );
+
+        await assertRejectsApiError(
+            () =>
+                hostBankAccountService.saveHostBankAccount(hostUser, {
+                    bankName: "Ngân hàng TMCP Ngoại thương Việt Nam",
+                    accountNumber: "123456789",
+                    accountHolderName: "Nguyen Van A",
+                }),
+            400,
+        );
     });
 
     it("rejects payout creation for bookings without a paid payment", async () => {

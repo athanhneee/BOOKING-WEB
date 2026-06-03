@@ -78,6 +78,8 @@ router.post(
         body("basePrice").isFloat({ min: 0 }).withMessage("basePrice must be 0 or more").toFloat(),
         body("weekendPrice").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("weekendPrice must be 0 or more").toFloat(),
         body("cleaningFee").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("cleaningFee must be 0 or more").toFloat(),
+        body("extraGuestFee").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("extraGuestFee must be 0 or more").toFloat(),
+        body("includedGuests").optional({ nullable: true }).isInt({ min: 1 }).withMessage("includedGuests must be at least 1").toInt(),
         body("serviceFeePct")
             .optional({ nullable: true })
             .isFloat({ min: 0, max: 100 })
@@ -315,6 +317,8 @@ router.patch(
         body("basePrice").optional().isFloat({ min: 0 }).withMessage("basePrice must be 0 or more").toFloat(),
         body("weekendPrice").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("weekendPrice must be 0 or more").toFloat(),
         body("cleaningFee").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("cleaningFee must be 0 or more").toFloat(),
+        body("extraGuestFee").optional({ nullable: true }).isFloat({ min: 0 }).withMessage("extraGuestFee must be 0 or more").toFloat(),
+        body("includedGuests").optional({ nullable: true }).isInt({ min: 1 }).withMessage("includedGuests must be at least 1").toInt(),
         body("serviceFeePct")
             .optional({ nullable: true })
             .isFloat({ min: 0, max: 100 })

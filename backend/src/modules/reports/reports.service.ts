@@ -320,7 +320,7 @@ export const getMyReports = async (user: AuthenticatedUser, query: ReportListQue
         pagination: {
             page,
             limit,
-            totalItems: result.count,
+            total: result.count,
             totalPages: Math.max(1, Math.ceil(result.count / limit)),
         },
     };
@@ -360,7 +360,7 @@ export const getAdminReports = async (admin: AuthenticatedUser, query: AdminRepo
         pagination: {
             page,
             limit,
-            totalItems: result.count,
+            total: result.count,
             totalPages: Math.max(1, Math.ceil(result.count / limit)),
         },
     };
@@ -548,11 +548,11 @@ export const getAdminBookingsReport = async (admin: AuthenticatedUser, query: An
         SELECT
             ${groupBy} AS period,
             COUNT(*) AS totalBookings,
-            SUM(b.status IN ('pending','pending_host','pending_payment')) AS pendingBookings,
-            SUM(b.status IN ('paid','confirmed','checked_in')) AS paidBookings,
+            SUM(b.status = 'pending_payment') AS pendingBookings,
+            SUM(b.status IN ('paid','confirmed','checked_in','checked_out')) AS paidBookings,
             SUM(b.status = 'completed') AS completedBookings,
-            SUM(b.status = 'cancelled') AS cancelledBookings,
-            SUM(b.status = 'expired') AS expiredBookings,
+            SUM(b.status IN ('cancelled_by_guest','cancelled_by_host','cancelled_by_admin','rejected')) AS cancelledBookings,
+            SUM(b.status = 'payment_expired') AS expiredBookings,
             COALESCE(SUM(b.total_amount), 0) AS totalAmount
         FROM bookings b
         WHERE b.created_at BETWEEN :from AND :to

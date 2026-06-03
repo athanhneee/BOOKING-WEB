@@ -149,7 +149,16 @@ const ensureHostVerificationSchema = async () => {
 
 const ensurePayoutSchema = async () => {
     await ensureColumn("payout_account", "bank_code", "`bank_code` VARCHAR(32) NULL AFTER `bank_name`");
+    await ensureColumn("payout_account", "bank_short_name", "`bank_short_name` VARCHAR(100) NULL AFTER `bank_code`");
+    await ensureColumn("payout_account", "bank_bin", "`bank_bin` VARCHAR(16) NULL AFTER `bank_short_name`");
+    await ensureColumn("payout_account", "branch_name", "`branch_name` VARCHAR(255) NULL AFTER `account_name`");
     await ensureColumn("payout_account", "deleted_at", "`deleted_at` DATETIME NULL AFTER `is_default`");
+    await ensureIndex(
+        "payout_account",
+        "idx_payout_account_user_deleted_default",
+        "INDEX",
+        "`user_id`, `deleted_at`, `is_default`",
+    );
 
     if (!(await tableExists("host_payout_batch"))) {
         await sequelize.query(`

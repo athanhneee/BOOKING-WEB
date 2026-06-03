@@ -25,6 +25,14 @@ const listingIdParamValidator = param("listingId")
 router.get(
     "/",
     [
+        query("q")
+            .optional()
+            .isString()
+            .trim()
+            .notEmpty()
+            .withMessage("q must be a non-empty string")
+            .isLength({ max: 255 })
+            .withMessage("q must be 255 characters or fewer"),
         query("city")
             .optional()
             .isString()
@@ -58,12 +66,26 @@ router.get(
             .optional()
             .isIn(["entire_place", "private_room", "shared_room"])
             .withMessage("roomType is invalid"),
+        query("priceMin").optional().isFloat({ min: 0 }).withMessage("priceMin must be 0 or more").toFloat(),
+        query("priceMax")
+            .optional()
+            .isFloat({ min: 0 })
+            .withMessage("priceMax must be 0 or more")
+            .custom((value, { req }) => {
+                const minValue = req.query?.priceMin ?? req.query?.minPrice;
+                return minValue === undefined || Number(value) >= Number(minValue);
+            })
+            .withMessage("priceMax must be greater than or equal to priceMin")
+            .toFloat(),
         query("minPrice").optional().isFloat({ min: 0 }).withMessage("minPrice must be 0 or more").toFloat(),
         query("maxPrice")
             .optional()
             .isFloat({ min: 0 })
             .withMessage("maxPrice must be 0 or more")
-            .custom((value, { req }) => req.query?.minPrice === undefined || Number(value) >= Number(req.query.minPrice))
+            .custom((value, { req }) => {
+                const minValue = req.query?.minPrice ?? req.query?.priceMin;
+                return minValue === undefined || Number(value) >= Number(minValue);
+            })
             .withMessage("maxPrice must be greater than or equal to minPrice")
             .toFloat(),
         query("amenities").optional().isString().trim().notEmpty().withMessage("amenities must be a non-empty string"),

@@ -167,7 +167,7 @@ describe("GET /api/listings", () => {
         assert.equal(response.body.data.items.length, 1);
         assert.equal(response.body.data.pagination.page, 2);
         assert.equal(response.body.data.pagination.limit, 1);
-        assert.equal(response.body.data.pagination.totalItems, 3);
+        assert.equal(response.body.data.pagination.total, 3);
         assert.equal(response.body.data.pagination.totalPages, 3);
     });
 
@@ -373,7 +373,7 @@ describe("GET /api/listings/:listingId/reviews", () => {
         assert.equal(response.status, 200);
         assert.equal(response.body.data.items.length, 1);
         assert.equal(response.body.data.pagination.page, 2);
-        assert.equal(response.body.data.pagination.totalItems, 3);
+        assert.equal(response.body.data.pagination.total, 3);
     });
 
     it("filters reviews by rating while preserving overall summary", async () => {

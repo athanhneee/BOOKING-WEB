@@ -266,7 +266,7 @@ export const listAdminCoupons = async (admin: AuthenticatedUser, query: ListCoup
         items: rows.map(serializeCoupon),
         page,
         limit,
-        totalItems: count,
+        total: count,
         totalPages: Math.max(1, Math.ceil(count / limit)),
     };
 };

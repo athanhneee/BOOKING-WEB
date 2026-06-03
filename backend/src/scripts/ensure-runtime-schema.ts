@@ -331,6 +331,79 @@ const ensureAuditLogsSchema = async () => {
     `);
 };
 
+const ensureNotificationLogsSchema = async () => {
+    if (!(await tableExists("notification_logs"))) {
+        await sequelize.query(`
+            CREATE TABLE \`notification_logs\` (
+                \`notification_log_id\` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                \`event_type\` VARCHAR(100) NOT NULL,
+                \`target_type\` VARCHAR(64) NOT NULL,
+                \`target_id\` VARCHAR(64) NOT NULL,
+                \`recipient\` VARCHAR(255) NOT NULL,
+                \`recipient_user_id\` BIGINT UNSIGNED NULL,
+                \`title\` VARCHAR(255) NULL,
+                \`body\` TEXT NULL,
+                \`action_url\` VARCHAR(1024) NULL,
+                \`payload_json\` JSON NULL,
+                \`status\` ENUM('pending','sent','failed','skipped') NOT NULL DEFAULT 'pending',
+                \`provider\` VARCHAR(64) NULL,
+                \`provider_message_id\` VARCHAR(255) NULL,
+                \`error_message\` TEXT NULL,
+                \`sent_at\` DATETIME NULL,
+                \`read_at\` DATETIME NULL,
+                \`created_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                \`updated_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (\`notification_log_id\`),
+                UNIQUE KEY \`uniq_notification_event_target_recipient\` (
+                    \`event_type\`,
+                    \`target_type\`,
+                    \`target_id\`,
+                    \`recipient\`
+                ),
+                INDEX \`idx_notification_logs_status\` (\`status\`),
+                INDEX \`idx_notification_logs_target\` (\`target_type\`, \`target_id\`),
+                INDEX \`idx_notification_logs_recipient_user_read\` (\`recipient_user_id\`, \`read_at\`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+        return;
+    }
+
+    await ensureColumn("notification_logs", "recipient_user_id", "`recipient_user_id` BIGINT UNSIGNED NULL");
+    await ensureColumn("notification_logs", "title", "`title` VARCHAR(255) NULL");
+    await ensureColumn("notification_logs", "body", "`body` TEXT NULL");
+    await ensureColumn("notification_logs", "action_url", "`action_url` VARCHAR(1024) NULL");
+    await ensureColumn("notification_logs", "payload_json", "`payload_json` JSON NULL");
+    await ensureColumn("notification_logs", "read_at", "`read_at` DATETIME NULL");
+    await ensureIndex(
+        "notification_logs",
+        "idx_notification_logs_recipient_user_read",
+        "INDEX",
+        "`recipient_user_id`, `read_at`",
+    );
+};
+
+const ensurePayoutAccountSchema = async () => {
+    if (!(await tableExists("payout_account"))) {
+        return;
+    }
+
+    await ensureColumn("payout_account", "bank_code", "`bank_code` VARCHAR(32) NULL");
+    await ensureColumn("payout_account", "bank_short_name", "`bank_short_name` VARCHAR(100) NULL");
+    await ensureColumn("payout_account", "bank_bin", "`bank_bin` VARCHAR(16) NULL");
+    await ensureColumn("payout_account", "branch_name", "`branch_name` VARCHAR(255) NULL");
+    await ensureColumn("payout_account", "account_number_encrypted", "`account_number_encrypted` TEXT NULL");
+    await ensureColumn("payout_account", "account_number_hash", "`account_number_hash` VARCHAR(128) NULL");
+    await ensureColumn("payout_account", "account_number_last4", "`account_number_last4` CHAR(4) NULL");
+    await ensureColumn("payout_account", "is_default", "`is_default` TINYINT(1) NOT NULL DEFAULT 0");
+    await ensureColumn("payout_account", "deleted_at", "`deleted_at` DATETIME NULL");
+    await ensureIndex(
+        "payout_account",
+        "idx_payout_account_user_deleted_default",
+        "INDEX",
+        "`user_id`, `deleted_at`, `is_default`",
+    );
+};
+
 const ensureMessagingSchema = async () => {
     if (!(await tableExists("conversation"))) {
         await sequelize.query(`
@@ -438,6 +511,8 @@ export const ensureRuntimeSchema = async () => {
     await ensureRolesSchema();
     await ensureAuthOtpSchema();
     await ensureAuditLogsSchema();
+    await ensureNotificationLogsSchema();
+    await ensurePayoutAccountSchema();
     await ensureMessagingSchema();
 };
 

@@ -15,6 +15,11 @@ import User from "../../models/user";
 import type { AuthenticatedUser } from "../auth/auth.service";
 import { writeAuditLog } from "../../services/audit-log-service";
 import { isHostVerifiedForPublishing } from "../../services/host-verification-status-service";
+import {
+    notifyListingApproved,
+    notifyListingRejected,
+} from "../notifications/notification.service";
+import { scheduleSemanticReindex } from "../semantic-search/semantic-search.indexer";
 
 export type AdminListingQuery = {
     page?: number;
@@ -113,7 +118,7 @@ export const listPendingAdminListings = async (actor: AuthenticatedUser, query: 
         pagination: {
             page,
             limit,
-            totalItems,
+            total: totalItems,
             totalPages: Math.max(1, Math.ceil(totalItems / limit)),
         },
     };
@@ -123,8 +128,8 @@ export const approveAdminListing = async (
     listingId: number,
     admin: AuthenticatedUser,
     context: AdminListingActionContext = {},
-) =>
-    sequelize.transaction(async (transaction) => {
+) => {
+    const result = await sequelize.transaction(async (transaction) => {
         assertCanModerateListings(admin);
 
         const listing = await getListingOrThrow(listingId, transaction);
@@ -157,9 +162,14 @@ export const approveAdminListing = async (
             userAgent: context.userAgent,
             transaction,
         });
+        await notifyListingApproved(listing.listingId, transaction);
 
         return serializeAdminListing(listing);
     });
+
+    scheduleSemanticReindex(listingId, "listing_approved");
+    return result;
+};
 
 export const rejectAdminListing = async (
     listingId: number,
@@ -208,6 +218,7 @@ export const rejectAdminListing = async (
             userAgent: context.userAgent,
             transaction,
         });
+        await notifyListingRejected(listing.listingId, transaction);
 
         return serializeAdminListing(listing);
     });

@@ -18,7 +18,6 @@ export const normalizePagination = ({ page = 1, limit = 10, maxLimit = 100 }: Pa
 export const buildPaginationMeta = (page: number, limit: number, totalItems: number) => ({
     page,
     limit,
-    totalItems,
+    total: totalItems,
     totalPages: Math.max(1, Math.ceil(totalItems / limit)),
 });
-

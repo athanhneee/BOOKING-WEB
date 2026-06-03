@@ -7,6 +7,7 @@ export const listingIdParamSchema = z.object({
 });
 
 export const publicListingsQuerySchema = z.object({
+    q: z.string().trim().min(1).max(255).optional(),
     city: z.string().trim().min(1).optional(),
     district: z.string().trim().min(1).optional(),
     checkIn: z.string().optional(),
@@ -14,6 +15,8 @@ export const publicListingsQuerySchema = z.object({
     guests: z.coerce.number().int().positive().optional(),
     propertyType: z.enum(["apartment", "villa", "hotel", "homestay"]).optional(),
     roomType: z.enum(["entire_place", "private_room", "shared_room"]).optional(),
+    priceMin: z.coerce.number().min(0).optional(),
+    priceMax: z.coerce.number().min(0).optional(),
     minPrice: z.coerce.number().min(0).optional(),
     maxPrice: z.coerce.number().min(0).optional(),
     amenities: z.string().trim().min(1).optional(),

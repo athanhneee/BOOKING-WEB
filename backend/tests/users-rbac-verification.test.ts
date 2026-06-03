@@ -262,7 +262,7 @@ hostVerificationsService.getMyHostVerifications = async (user: AuthenticatedTest
     pagination: {
         page: 1,
         limit: 10,
-        totalItems: verifications.filter((item) => String(item.hostId) === user.id).length,
+        total: verifications.filter((item) => String(item.hostId) === user.id).length,
         totalPages: 1,
     },
 });
@@ -277,7 +277,7 @@ hostVerificationsService.getAdminVerifications = async (admin: AuthenticatedTest
         pagination: {
             page: 1,
             limit: 10,
-            totalItems: verifications.length,
+            total: verifications.length,
             totalPages: 1,
         },
     };
@@ -332,7 +332,7 @@ adminListingsService.listPendingAdminListings = async (actor: AuthenticatedTestU
         pagination: {
             page: 1,
             limit: 10,
-            totalItems: 0,
+            total: 0,
             totalPages: 1,
         },
     };

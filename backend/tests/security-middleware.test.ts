@@ -10,10 +10,12 @@ process.env.CORS_ORIGIN = "https://app.example.com";
 process.env.GLOBAL_RATE_LIMIT_MAX = "1000";
 
 const app = require("../dist/app").default;
+const { getCorsOptions } = require("../dist/config/cors");
 const sequelize = require("../dist/config/database").default;
 const { getEnv } = require("../dist/config/env");
 const { logger } = require("../dist/config/logger");
 const { sanitizePayload } = require("../dist/middlewares/sanitizeInput");
+const authService = require("../dist/modules/auth/auth.service");
 const { vnpayCallbackPayloadSchema } = require("../dist/modules/payments/payments.validator");
 const { shutdownServer } = require("../dist/server");
 
@@ -55,7 +57,7 @@ const productionEnv = {
     MYSQLDATABASE: "booking",
     MYSQLUSER: "booking_app",
     MYSQLPASSWORD: "prod-db-password",
-    CLIENT_ORIGIN: "https://app.example.com",
+    CLIENT_URL: "https://app.example.com",
     CORS_ORIGINS: "https://app.example.com",
     VNPAY_TMN_CODE: "TESTTMN",
     VNPAY_HASH_SECRET: "prod-vnpay-hash-secret-value-with-more-than-32-chars",
@@ -65,6 +67,12 @@ const productionEnv = {
     MAIL_USER: "mailer",
     MAIL_PASSWORD: "prod-mail-password",
     MAIL_FROM: "Booking <no-reply@example.com>",
+    MOMO_PARTNER_CODE: "MOMO",
+    MOMO_ACCESS_KEY: "prod-momo-access-key",
+    MOMO_SECRET_KEY: "prod-momo-secret-key-value-with-more-than-32-chars",
+    MOMO_ENDPOINT: "https://payment.example.com/create",
+    MOMO_REDIRECT_URL: "https://api.example.com/api/payments/momo/return",
+    MOMO_IPN_URL: "https://api.example.com/api/payments/webhooks/momo",
 };
 
 describe("Security middleware", () => {
@@ -141,6 +149,18 @@ describe("Security middleware", () => {
             assert.throws(() => getEnv(), /JWT_SECRET/);
         });
 
+        await withEnv({ ...productionEnv, ALLOW_REFRESH_TOKEN_IN_BODY: "true" }, () => {
+            assert.throws(() => getEnv(), /allowed only in development/);
+        });
+
+        await withEnv({ ...productionEnv, ALLOW_REFRESH_TOKEN_IN_HEADER: "true" }, () => {
+            assert.throws(() => getEnv(), /allowed only in development/);
+        });
+
+        await withEnv({ ...productionEnv, NODE_ENV: "test", ALLOW_REFRESH_TOKEN_IN_BODY: "true" }, () => {
+            assert.throws(() => getEnv(), /allowed only in development/);
+        });
+
         await withEnv(productionEnv, () => {
             const env = getEnv();
 
@@ -150,6 +170,104 @@ describe("Security middleware", () => {
             assert.equal(env.authDebugOtp, false);
             assert.equal(env.allowProductionAutoSchemaSync, false);
         });
+    });
+
+    it("allows only CLIENT_URL for production CORS and ignores body/header refresh tokens", async () => {
+        await withEnv(
+            {
+                ...productionEnv,
+                CORS_ORIGINS: "https://admin.example.com",
+                CORS_ORIGIN: "https://legacy.example.com",
+            },
+            async () => {
+                const corsOptions = getCorsOptions();
+                assert.equal(corsOptions.credentials, true);
+                assert.equal(typeof corsOptions.origin, "function");
+
+                await new Promise<void>((resolve, reject) => {
+                    corsOptions.origin("https://app.example.com", (error: Error | null, allowed?: boolean) => {
+                        try {
+                            assert.equal(error, null);
+                            assert.equal(allowed, true);
+                            resolve();
+                        } catch (assertionError) {
+                            reject(assertionError);
+                        }
+                    });
+                });
+
+                await new Promise<void>((resolve, reject) => {
+                    corsOptions.origin("https://admin.example.com", (error: Error | null) => {
+                        try {
+                            assert.ok(error);
+                            resolve();
+                        } catch (assertionError) {
+                            reject(assertionError);
+                        }
+                    });
+                });
+
+                const fromCookie = authService.extractRefreshToken({
+                    body: { refreshToken: "body-token" },
+                    header(name: string) {
+                        if (name === "x-refresh-token") return "header-token";
+                        if (name === "cookie") return "refreshToken=cookie-token";
+                        return undefined;
+                    },
+                    cookies: {},
+                    signedCookies: {},
+                });
+                assert.equal(fromCookie, "cookie-token");
+
+                const withoutCookie = authService.extractRefreshToken({
+                    body: { refreshToken: "body-token" },
+                    header(name: string) {
+                        return name === "x-refresh-token" ? "header-token" : undefined;
+                    },
+                    cookies: {},
+                    signedCookies: {},
+                });
+                assert.equal(withoutCookie, undefined);
+            },
+        );
+    });
+
+    it("prefers CLIENT_URL over legacy CORS origins whenever credentials are enabled", async () => {
+        await withEnv(
+            {
+                ...productionEnv,
+                NODE_ENV: "development",
+                CLIENT_URL: "https://client.example.com",
+                CORS_ORIGIN: "https://legacy.example.com",
+                CORS_ORIGINS: "https://admin.example.com",
+            },
+            async () => {
+                const corsOptions = getCorsOptions();
+
+                await new Promise<void>((resolve, reject) => {
+                    corsOptions.origin("https://client.example.com", (error: Error | null, allowed?: boolean) => {
+                        try {
+                            assert.equal(error, null);
+                            assert.equal(allowed, true);
+                            resolve();
+                        } catch (assertionError) {
+                            reject(assertionError);
+                        }
+                    });
+                });
+
+                await new Promise<void>((resolve, reject) => {
+                    corsOptions.origin("https://legacy.example.com", (error: Error | null) => {
+                        try {
+                            assert.ok(error);
+                            resolve();
+                        } catch (assertionError) {
+                            reject(assertionError);
+                        }
+                    });
+                });
+            },
+        );
     });
 
     it("redacts sensitive values from structured and error logs", () => {

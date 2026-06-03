@@ -6,6 +6,7 @@ import { getNextSequence } from "../../models/counter";
 import Listing from "../../models/listing";
 import Review, { ReviewDocument } from "../../models/review";
 import { sanitizeAndModerateText, sanitizeUserText } from "../../services/trust-safety-service";
+import { notifyReviewCreated } from "../notifications/notification.service";
 
 export type CreateReviewInput = {
     bookingId: number;
@@ -111,6 +112,7 @@ export const createReview = async (user: AuthenticatedUser, input: CreateReviewI
         });
 
         await review.save({ transaction });
+        await notifyReviewCreated(review.reviewId, transaction);
 
         return {
             reviewId: review.reviewId,

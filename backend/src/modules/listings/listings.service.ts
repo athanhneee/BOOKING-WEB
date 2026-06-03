@@ -1,7 +1,7 @@
 import { Op } from "sequelize";
 
 import { ApiError } from "../../common/api-error";
-import { buildActiveBookingStatusWhere } from "../../common/booking-availability";
+import { buildActiveBookingStatusWhere, buildBookingDateOverlapWhere } from "../../common/booking-availability";
 import {
     getAvailabilityCalendarForListing,
     getAvailabilityCalendarMap,
@@ -14,12 +14,14 @@ import {
 import { getCoverImage, getDefaultDailyPrice, serializeListingImage } from "../../common/listing-mappers";
 import { sanitizeSingleLineText, sanitizeText } from "../../common/sanitization";
 import {
+    detectLocationGroupsFromQuery,
     getDistanceMeters,
     isCoordinateInVungTauBounds,
     isAddressInLocationGroup,
     isValidLatitude,
     isValidLocationGroup,
     isValidLongitude,
+    VUNG_TAU_LOCATION_GROUP_NAMES,
     type LocationGroupName,
 } from "../../common/vung-tau-location-groups";
 import Amenity from "../../models/amenity";
@@ -39,6 +41,7 @@ export const publicListingsMaxPageLimit = 50;
 const defaultBusinessCity = "Vung Tau";
 
 export type PublicListingsQuery = {
+    q?: string;
     city?: string;
     district?: string;
     checkIn?: string;
@@ -46,6 +49,8 @@ export type PublicListingsQuery = {
     guests?: number;
     propertyType?: PropertyType;
     roomType?: RoomType;
+    priceMin?: number;
+    priceMax?: number;
     minPrice?: number;
     maxPrice?: number;
     amenities?: string;
@@ -101,6 +106,22 @@ type PublicListingSearchItem = {
     distanceMeters?: number;
 };
 
+type AmenityLookup = {
+    amenities: Array<{
+        amenityId: number;
+        name: string;
+        active: boolean;
+        isActive: boolean;
+    }>;
+    aliasMap: Map<string, number>;
+    searchTermsById: Map<number, string[]>;
+};
+
+type ResolvedAmenityFilters = {
+    amenityIds: number[];
+    textTokens: string[];
+};
+
 const normalizeComparableText = (value: string) =>
     value
         .normalize("NFD")
@@ -120,6 +141,8 @@ const normalizeAmenityToken = (value: string) =>
 
 const compareStrings = (left: string, right: string) => normalizeComparableText(left) === normalizeComparableText(right);
 
+const getQueryTokens = (value: string) => normalizeComparableText(value).split(" ").filter(Boolean);
+
 const parsePagination = (page?: number, limit?: number) => ({
     page: Math.max(1, page ?? 1),
     limit: Math.min(publicListingsMaxPageLimit, Math.max(1, limit ?? 10)),
@@ -138,6 +161,111 @@ const buildSearchableListingAddress = (listing: ListingDocument) =>
     ]
         .filter(Boolean)
         .join(" ");
+
+const getListingLocationGroupNames = (listing: ListingDocument) => {
+    const address = buildSearchableListingAddress(listing);
+
+    return VUNG_TAU_LOCATION_GROUP_NAMES.filter((groupName) => isAddressInLocationGroup(address, groupName));
+};
+
+const getListingLocationSearchTerms = (listing: ListingDocument) => {
+    const locationGroups = getListingLocationGroupNames(listing);
+    const nearBeachGroups = new Set<LocationGroupName>([
+        "Bãi Sau",
+        "Bãi Trước",
+        "Long Cung",
+        "Thủy Tiên",
+        "Trần Phú",
+        "Thùy Vân",
+    ]);
+
+    return [
+        ...locationGroups,
+        locationGroups.some((groupName) => nearBeachGroups.has(groupName)) ? "Gần biển gan bien beach biển" : "",
+    ];
+};
+
+const getListingAmenitySearchTerms = (amenityIds: number[], amenityLookup?: AmenityLookup) => {
+    if (!amenityLookup) {
+        return [];
+    }
+
+    return Array.from(
+        new Set(
+            amenityIds.flatMap((amenityId) => amenityLookup.searchTermsById.get(amenityId) ?? []),
+        ),
+    );
+};
+
+const buildListingKeywordSearchText = (
+    listing: ListingDocument,
+    listingAmenityIds: number[],
+    amenityLookup?: AmenityLookup,
+) =>
+    [
+        listing.title,
+        listing.description,
+        buildSearchableListingAddress(listing),
+        listing.searchText ?? "",
+        listing.aiImageSummary ?? "",
+        ...(Array.isArray(listing.aiImageTags) ? listing.aiImageTags : []),
+        ...getListingLocationSearchTerms(listing),
+        ...getListingAmenitySearchTerms(listingAmenityIds, amenityLookup),
+        listing.petsAllowed ? "Cho mang thú cưng pets allowed pet friendly" : "",
+        listing.instantBookEnabled ? "Tự check-in self check in nhận phòng nhanh" : "",
+    ]
+        .filter(Boolean)
+        .join(" ");
+
+const matchesKeywordQuery = (
+    listing: ListingDocument,
+    listingAmenityIds: number[],
+    rawQuery?: string,
+    amenityLookup?: AmenityLookup,
+) => {
+    const normalizedQuery = normalizeComparableText(rawQuery ?? "");
+
+    if (!normalizedQuery) {
+        return true;
+    }
+
+    const searchableText = buildListingKeywordSearchText(listing, listingAmenityIds, amenityLookup);
+    const normalizedSearchText = normalizeComparableText(searchableText);
+    const queryTokens = getQueryTokens(rawQuery ?? "");
+
+    if (normalizedSearchText.includes(normalizedQuery)) {
+        return true;
+    }
+
+    if (queryTokens.length > 0 && queryTokens.every((token) => normalizedSearchText.includes(token))) {
+        return true;
+    }
+
+    const detectedLocationGroups = detectLocationGroupsFromQuery(rawQuery ?? "");
+    if (detectedLocationGroups.length === 0) {
+        return false;
+    }
+
+    const address = buildSearchableListingAddress(listing);
+    return detectedLocationGroups.some((groupName) => isAddressInLocationGroup(address, groupName));
+};
+
+const matchesAmenityTextToken = (
+    listing: ListingDocument,
+    listingAmenityIds: number[],
+    textToken: string,
+    amenityLookup?: AmenityLookup,
+) => {
+    if (!textToken) {
+        return true;
+    }
+
+    const searchableText = buildListingKeywordSearchText(listing, listingAmenityIds, amenityLookup);
+    const normalizedText = normalizeComparableText(searchableText);
+    const compactText = normalizeAmenityToken(searchableText);
+
+    return normalizedText.includes(normalizeComparableText(textToken)) || compactText.includes(textToken);
+};
 
 const hasValidListingCoordinates = (listing: ListingDocument) =>
     isValidLatitude(Number(listing.latitude)) && isValidLongitude(Number(listing.longitude));
@@ -230,7 +358,7 @@ const isDateRangeAvailable = (
     });
 };
 
-const buildAmenityLookup = async () => {
+const buildAmenityLookup = async (): Promise<AmenityLookup> => {
     const amenities = (await Amenity.find({
         active: true,
         isActive: true,
@@ -242,32 +370,74 @@ const buildAmenityLookup = async () => {
         isActive: boolean;
     }>;
     const aliasMap = new Map<string, number>();
+    const searchTermsById = new Map<number, Set<string>>();
+
+    const addAlias = (value: string, amenityId: number) => {
+        aliasMap.set(normalizeAmenityToken(value), amenityId);
+
+        const terms = searchTermsById.get(amenityId) ?? new Set<string>();
+        terms.add(value);
+        searchTermsById.set(amenityId, terms);
+    };
 
     for (const amenity of amenities) {
-        aliasMap.set(normalizeAmenityToken(amenity.name), amenity.amenityId);
+        addAlias(amenity.name, amenity.amenityId);
     }
 
-    aliasMap.set("wifi", 1);
-    aliasMap.set("pool", 5);
-    aliasMap.set("parking", 6);
-    aliasMap.set("airconditioning", 2);
-    aliasMap.set("washer", 3);
-    aliasMap.set("kitchen", 4);
-    aliasMap.set("tv", 7);
-    aliasMap.set("balcony", 8);
-    aliasMap.set("fireplace", 9);
-    aliasMap.set("fridge", 10);
-    aliasMap.set("refrigerator", 10);
-    aliasMap.set("hairdryer", 11);
-    aliasMap.set("iron", 12);
+    [
+        ["wifi", 1],
+        ["wi-fi", 1],
+        ["air conditioning", 2],
+        ["airconditioning", 2],
+        ["điều hòa", 2],
+        ["dieu hoa", 2],
+        ["máy lạnh", 2],
+        ["washer", 3],
+        ["máy giặt", 3],
+        ["may giat", 3],
+        ["kitchen", 4],
+        ["bếp", 4],
+        ["bep", 4],
+        ["pool", 5],
+        ["hồ bơi", 5],
+        ["ho boi", 5],
+        ["parking", 6],
+        ["chỗ đậu xe", 6],
+        ["cho dau xe", 6],
+        ["đậu xe", 6],
+        ["dau xe", 6],
+        ["tv", 7],
+        ["television", 7],
+        ["balcony", 8],
+        ["ban công", 8],
+        ["ban cong", 8],
+        ["fireplace", 9],
+        ["fridge", 10],
+        ["refrigerator", 10],
+        ["tủ lạnh", 10],
+        ["tu lanh", 10],
+        ["hair dryer", 11],
+        ["hairdryer", 11],
+        ["máy sấy tóc", 11],
+        ["may say toc", 11],
+        ["iron", 12],
+        ["bàn ủi", 12],
+        ["ban ui", 12],
+    ].forEach(([value, amenityId]) => addAlias(String(value), Number(amenityId)));
 
     return {
         amenities,
         aliasMap,
+        searchTermsById: new Map(
+            Array.from(searchTermsById.entries()).map(([amenityId, terms]) => [amenityId, Array.from(terms)]),
+        ),
     };
 };
 
-const resolveAmenityIds = async (amenitiesQuery?: string) => {
+const resolveAmenityFilters = async (
+    amenitiesQuery?: string,
+    amenityLookup?: AmenityLookup,
+): Promise<ResolvedAmenityFilters | undefined> => {
     if (!amenitiesQuery) {
         return undefined;
     }
@@ -285,19 +455,25 @@ const resolveAmenityIds = async (amenitiesQuery?: string) => {
         return undefined;
     }
 
-    const { aliasMap } = await buildAmenityLookup();
-    const amenityIds = requestedTokens.map((token) => aliasMap.get(token) ?? null);
+    const { aliasMap } = amenityLookup ?? (await buildAmenityLookup());
+    const amenityIds: number[] = [];
+    const textTokens: string[] = [];
 
-    if (amenityIds.some((amenityId) => amenityId === null)) {
-        throw new ApiError(422, "Validation error", [
-            {
-                path: "amenities",
-                msg: "amenities contains an unknown value",
-            },
-        ]);
+    for (const token of requestedTokens) {
+        const amenityId = aliasMap.get(token);
+
+        if (amenityId === undefined) {
+            textTokens.push(token);
+            continue;
+        }
+
+        amenityIds.push(amenityId);
     }
 
-    return amenityIds as number[];
+    return {
+        amenityIds: Array.from(new Set(amenityIds)),
+        textTokens,
+    };
 };
 
 const getReviewSummaryMap = async (listingIds: number[]): Promise<ReviewSummaryMap> => {
@@ -388,12 +564,7 @@ const getBookedListingIdsForRange = async (listingIds: number[], checkIn?: strin
                 [Op.in]: listingIds,
             },
             ...buildActiveBookingStatusWhere(),
-            checkInDate: {
-                [Op.lt]: checkOut,
-            },
-            checkOutDate: {
-                [Op.gt]: checkIn,
-            },
+            ...buildBookingDateOverlapWhere(checkIn, checkOut),
         },
         attributes: ["listingId"],
     });
@@ -411,12 +582,7 @@ const getBookedDatesForMonth = async (listingId: number, month: number, year: nu
         where: {
             listingId,
             ...buildActiveBookingStatusWhere(),
-            checkInDate: {
-                [Op.lt]: end,
-            },
-            checkOutDate: {
-                [Op.gt]: start,
-            },
+            ...buildBookingDateOverlapWhere(start, end),
         },
     });
 
@@ -438,6 +604,10 @@ export const getPublicListings = async (query: PublicListingsQuery) => {
     const { page, limit } = parsePagination(query.page, query.limit);
     const mapSearch = resolveMapSearchInput(query);
     const distanceByListingId = new Map<number, number>();
+    const effectiveCity = query.city ?? defaultBusinessCity;
+    const priceMin = query.priceMin ?? query.minPrice;
+    const priceMax = query.priceMax ?? query.maxPrice;
+    const shouldUseAmenityLookup = Boolean(query.q?.trim() || query.amenities?.trim());
 
     if ((query.checkIn && !query.checkOut) || (!query.checkIn && query.checkOut)) {
         throw new ApiError(422, "Validation error", [
@@ -457,11 +627,11 @@ export const getPublicListings = async (query: PublicListingsQuery) => {
         }
     }
 
-    if (query.minPrice !== undefined && query.maxPrice !== undefined && query.minPrice > query.maxPrice) {
+    if (priceMin !== undefined && priceMax !== undefined && priceMin > priceMax) {
         throw new ApiError(422, "Validation error", [
             {
-                path: "maxPrice",
-                msg: "maxPrice must be greater than or equal to minPrice",
+                path: "priceMax",
+                msg: "priceMax must be greater than or equal to priceMin",
             },
         ]);
     }
@@ -491,13 +661,14 @@ export const getPublicListings = async (query: PublicListingsQuery) => {
     if (query.roomType) publicFilter.roomType = query.roomType;
     if (query.guests !== undefined) publicFilter.maxGuests = { $gte: query.guests };
 
-    if (query.minPrice !== undefined || query.maxPrice !== undefined) {
+    if (priceMin !== undefined || priceMax !== undefined) {
         publicFilter.basePrice = {};
-        if (query.minPrice !== undefined) publicFilter.basePrice.$gte = query.minPrice;
-        if (query.maxPrice !== undefined) publicFilter.basePrice.$lte = query.maxPrice;
+        if (priceMin !== undefined) publicFilter.basePrice.$gte = priceMin;
+        if (priceMax !== undefined) publicFilter.basePrice.$lte = priceMax;
     }
 
-    const amenityIds = await resolveAmenityIds(query.amenities);
+    const amenityLookup = shouldUseAmenityLookup ? await buildAmenityLookup() : undefined;
+    const amenityFilters = await resolveAmenityFilters(query.amenities, amenityLookup);
     const listings = await Listing.find(publicFilter);
     const listingIds = listings.map((listing) => listing.listingId);
     const [reviewSummaryMap, amenityIdsMap, imageMap, availabilityMap, bookedListingIds] = await Promise.all([
@@ -509,7 +680,7 @@ export const getPublicListings = async (query: PublicListingsQuery) => {
     ]);
 
     const filteredListings = listings.filter((listing) => {
-        if (query.city && !compareStrings(listing.city, query.city)) {
+        if (effectiveCity && !compareStrings(listing.city, effectiveCity)) {
             return false;
         }
 
@@ -545,7 +716,23 @@ export const getPublicListings = async (query: PublicListingsQuery) => {
 
         const listingAmenityIds = amenityIdsMap.get(listing.listingId) ?? [];
 
-        if (amenityIds && !amenityIds.every((amenityId) => listingAmenityIds.includes(amenityId))) {
+        if (
+            amenityFilters &&
+            !amenityFilters.amenityIds.every((amenityId) => listingAmenityIds.includes(amenityId))
+        ) {
+            return false;
+        }
+
+        if (
+            amenityFilters &&
+            !amenityFilters.textTokens.every((token) =>
+                matchesAmenityTextToken(listing, listingAmenityIds, token, amenityLookup),
+            )
+        ) {
+            return false;
+        }
+
+        if (!matchesKeywordQuery(listing, listingAmenityIds, query.q, amenityLookup)) {
             return false;
         }
 
@@ -638,7 +825,7 @@ export const getPublicListings = async (query: PublicListingsQuery) => {
         pagination: {
             page,
             limit,
-            totalItems,
+            total: totalItems,
             totalPages: Math.max(1, Math.ceil(totalItems / limit)),
         },
     };
@@ -663,8 +850,10 @@ export const getPublicListingDetail = async (listingId: number) => {
         weekendPrice: listing.weekendPrice ?? null,
         cleaningFee: listing.cleaningFee ?? null,
         serviceFeePct: listing.serviceFeePct ?? null,
+        extraGuestFee: listing.extraGuestFee ?? null,
         currency: listing.currency,
         maxGuests: listing.maxGuests,
+        includedGuests: listing.includedGuests ?? null,
         bedrooms: listing.bedrooms,
         beds: listing.beds,
         bathrooms: listing.bathrooms,
@@ -781,7 +970,7 @@ export const getPublicListingReviews = async (listingId: number, query: PublicLi
         pagination: {
             page,
             limit,
-            totalItems: filteredReviews.length,
+            total: filteredReviews.length,
             totalPages: Math.max(1, Math.ceil(filteredReviews.length / limit)),
         },
     };

@@ -47,6 +47,20 @@ type MessageNewPayload = {
     senderUserId: number;
 };
 
+export type NotificationNewPayload = {
+    id: number;
+    notificationLogId: number;
+    eventType: string;
+    targetType: string;
+    targetId: string;
+    title: string | null;
+    body: string | null;
+    actionUrl: string | null;
+    payload: Record<string, unknown> | null;
+    readAt: Date | null;
+    createdAt: Date;
+};
+
 let io: SocketIOServer | null = null;
 
 const userRoom = (userId: string | number) => `user:${userId}`;
@@ -226,4 +240,13 @@ export const emitMessageNew = (payload: MessageNewPayload) => {
             message: payload.message,
             conversation: payload.conversation,
         });
+};
+
+export const emitNotificationNew = (userId: string | number, payload: NotificationNewPayload) => {
+    if (!io) {
+        return;
+    }
+
+    debugSocket("[socket] emit notification:new to", userRoom(userId));
+    io.to(userRoom(userId)).emit("notification:new", payload);
 };

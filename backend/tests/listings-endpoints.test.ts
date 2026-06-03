@@ -13,6 +13,7 @@ const { ApiError } = require("../dist/common/api-error");
 const authService = require("../dist/modules/auth/auth.service");
 const User = require("../dist/models/user").default;
 const AvailabilityCalendar = require("../dist/models/availability-calendar").default;
+const Amenity = require("../dist/models/amenity").default;
 const Booking = require("../dist/models/booking").default;
 const Listing = require("../dist/models/listing").default;
 const ListingAmenity = require("../dist/models/listing-amenity").default;
@@ -38,6 +39,7 @@ type TestUserRecord = {
 };
 
 type PublicSearchQuery = {
+    q?: string;
     city?: string;
     district?: string;
     checkIn?: string;
@@ -45,6 +47,8 @@ type PublicSearchQuery = {
     guests?: number;
     propertyType?: string;
     roomType?: string;
+    priceMin?: number;
+    priceMax?: number;
     minPrice?: number;
     maxPrice?: number;
     amenities?: string;
@@ -124,6 +128,19 @@ const users = new Map<string, TestUserRecord>([
         },
     ],
     [
+        "201",
+        {
+            _id: 201,
+            id: 201,
+            email: "guest@example.com",
+            phone: "0900000201",
+            username: "guest",
+            fullName: "Guest User",
+            status: "active",
+            roles: ["guest"],
+        },
+    ],
+    [
         "900",
         {
             _id: 900,
@@ -134,6 +151,19 @@ const users = new Map<string, TestUserRecord>([
             fullName: "Admin User",
             status: "active",
             roles: ["admin"],
+        },
+    ],
+    [
+        "901",
+        {
+            _id: 901,
+            id: 901,
+            email: "moderator@example.com",
+            phone: "0909999998",
+            username: "moderator",
+            fullName: "Moderator User",
+            status: "active",
+            roles: ["moderator"],
         },
     ],
 ]);
@@ -157,6 +187,14 @@ before(() => {
 
         if (token === "admin-token") {
             return { userId: "900", role: "admin" };
+        }
+
+        if (token === "moderator-token") {
+            return { userId: "901", role: "moderator" };
+        }
+
+        if (token === "guest-token") {
+            return { userId: "201", role: "guest" };
         }
 
         throw new ApiError(401, "Unauthorized");
@@ -198,7 +236,7 @@ before(() => {
                     imageUrl: "https://example.com/listing.jpg",
                 },
             ],
-            pagination: { page: query.page ?? 1, limit: query.limit ?? 10, totalItems: 1, totalPages: 1 },
+            pagination: { page: query.page ?? 1, limit: query.limit ?? 10, total: 1, totalPages: 1 },
         };
     };
     publicListingsService.getPublicListingDetail = async (listingId: number) => ({
@@ -309,7 +347,7 @@ before(() => {
                     matchedReasons: ["Semantic match"],
                 },
             ],
-            pagination: { page: 1, limit: payload.limit ?? 12, totalItems: 1, totalPages: 1 },
+            pagination: { page: 1, limit: payload.limit ?? 12, total: 1, totalPages: 1 },
             fallback: false,
             searchMeta: {
                 query: payload.query,
@@ -336,6 +374,8 @@ const app = require("../dist/app").default;
 const hostAuth = { Authorization: "Bearer host-token" };
 const otherHostAuth = { Authorization: "Bearer other-host-token" };
 const adminAuth = { Authorization: "Bearer admin-token" };
+const moderatorAuth = { Authorization: "Bearer moderator-token" };
+const guestAuth = { Authorization: "Bearer guest-token" };
 
 const createListingPayload = () => ({
     title: "Villa gan bien",
@@ -396,14 +436,17 @@ describe("Listings endpoint contracts", () => {
 
     it("passes supported public search filters to the listing service", async () => {
         const response = await request(app).get(
-            "/api/listings?city=Vung%20Tau&district=District%201&checkIn=2026-04-20&checkOut=2026-04-22&guests=4&propertyType=villa&roomType=entire_place&minPrice=1000000&maxPrice=2000000&amenities=wifi,pool&locationGroup=B%C3%A3i%20Sau&lat=10.345&lng=107.084&radius=800&sort=price_asc&page=2&limit=5",
+            "/api/listings?q=pool%20villa&city=Vung%20Tau&district=District%201&checkIn=2026-04-20&checkOut=2026-04-22&guests=4&propertyType=villa&roomType=entire_place&priceMin=1000000&priceMax=2000000&amenities=wifi,pool&locationGroup=B%C3%A3i%20Sau&lat=10.345&lng=107.084&radius=800&sort=price_asc&page=2&limit=5",
         );
 
         assert.equal(response.status, 200);
         assert.equal(response.body.data.items[0].title, "Open stay");
+        assert.equal(capturedPublicSearch.q, "pool villa");
         assert.equal(capturedPublicSearch.city, "Vung Tau");
         assert.equal(capturedPublicSearch.checkIn, "2026-04-20");
         assert.equal(capturedPublicSearch.guests, 4);
+        assert.equal(capturedPublicSearch.priceMin, 1000000);
+        assert.equal(capturedPublicSearch.priceMax, 2000000);
         assert.equal(capturedPublicSearch.locationGroup, "Bãi Sau");
         assert.equal(capturedPublicSearch.lat, 10.345);
         assert.equal(capturedPublicSearch.lng, 107.084);
@@ -439,6 +482,14 @@ describe("Listings endpoint contracts", () => {
         assert.equal(response.body.data.status, "pending_approval");
         assert.equal(capturedCreatePayload.userId, "101");
         assert.equal(capturedCreatePayload.payload!.status, "pending_approval");
+    });
+
+    it("rejects guest access to host listing routes", async () => {
+        const response = await request(app)
+            .get("/api/host/listings/mine")
+            .set(guestAuth);
+
+        assert.equal(response.status, 403);
     });
 
     it("allows missing district and city while normalizing comma decimal coordinates", async () => {
@@ -558,11 +609,52 @@ describe("Listings endpoint contracts", () => {
         assert.equal(capturedAdminApproval.listingId, 900);
         assert.equal(capturedAdminApproval.admin!.roles.includes("admin"), true);
     });
+
+    it("rejects moderator access to admin listing routes", async () => {
+        const response = await request(app)
+            .get("/api/admin/listings/pending")
+            .set(moderatorAuth);
+
+        assert.equal(response.status, 403);
+    });
 });
 
 export {};
 
 describe("Listings service availability rules", () => {
+    const createPublicListingMock = (
+        listingId: number,
+        overrides: Record<string, unknown> = {},
+    ) => ({
+        listingId,
+        title: "Open stay",
+        description: "Available listing",
+        basePrice: 1500000,
+        addressLine: "12 Nguyen Hue",
+        ward: "Ward 1",
+        city: "Vung Tau",
+        district: "District 1",
+        stateRegion: "Ba Ria - Vung Tau",
+        propertyType: "villa",
+        roomType: "entire_place",
+        maxGuests: 6,
+        bedrooms: 3,
+        beds: 4,
+        bathrooms: 2,
+        currency: "VND",
+        amenityIds: [],
+        images: [],
+        availabilityCalendar: [],
+        petsAllowed: false,
+        instantBookEnabled: false,
+        searchText: null,
+        aiImageTags: null,
+        aiImageSummary: null,
+        latitude: 10.345,
+        longitude: 107.084,
+        ...overrides,
+    });
+
     it("rejects public map searches outside Vung Tau before querying listings", async () => {
         await assert.rejects(
             () => originalGetPublicListings({ lat: 10.7769, lng: 106.7009 }),
@@ -573,6 +665,77 @@ describe("Listings service availability rules", () => {
                 return true;
             },
         );
+    });
+
+    it("searches q across listing fields, location groups, and amenities before paginating", async () => {
+        const originals = {
+            listingFind: Listing.find,
+            reviewFind: Review.find,
+            listingAmenityFindAll: ListingAmenity.findAll,
+            listingImageFindAll: ListingImage.findAll,
+            availabilityCalendarFindAll: AvailabilityCalendar.findAll,
+            bookingFindAll: Booking.findAll,
+            amenityFind: Amenity.find,
+        };
+
+        try {
+            Listing.find = async () => [
+                createPublicListingMock(801, { title: "Sunrise villa" }),
+                createPublicListingMock(802, {
+                    title: "Garden villa",
+                    description: "Không gian có karaoke cho nhóm đông",
+                }),
+                createPublicListingMock(803, {
+                    title: "Seaside apartment",
+                    addressLine: "12 Tran Phu",
+                }),
+                createPublicListingMock(804, {
+                    title: "Quiet homestay",
+                    addressLine: "88 Hoang Hoa Tham",
+                }),
+                createPublicListingMock(805, {
+                    title: "Relax house",
+                    amenityIds: [5],
+                }),
+            ];
+            Review.find = () => ({
+                lean: async () => [],
+            });
+            ListingAmenity.findAll = async () => [];
+            ListingImage.findAll = async () => [];
+            AvailabilityCalendar.findAll = async () => [];
+            Booking.findAll = async () => [];
+            Amenity.find = () => ({
+                lean: async () => [
+                    { amenityId: 1, name: "WiFi", active: true, isActive: true },
+                    { amenityId: 5, name: "Pool", active: true, isActive: true },
+                ],
+            });
+
+            const byTitle = await originalGetPublicListings({ q: "sunrise", limit: 10 });
+            const byDescription = await originalGetPublicListings({ q: "karaoke", limit: 10 });
+            const byAddress = await originalGetPublicListings({ q: "Tran Phu", limit: 10 });
+            const byLocationGroup = await originalGetPublicListings({ q: "Bãi Sau", limit: 10 });
+            const byAmenity = await originalGetPublicListings({ q: "hồ bơi", limit: 10 });
+            const paginated = await originalGetPublicListings({ q: "villa", page: 2, limit: 1 });
+
+            assert.deepEqual(byTitle.items.map((item: { title: string }) => item.title), ["Sunrise villa"]);
+            assert.deepEqual(byDescription.items.map((item: { title: string }) => item.title), ["Garden villa"]);
+            assert.deepEqual(byAddress.items.map((item: { title: string }) => item.title), ["Seaside apartment"]);
+            assert.deepEqual(byLocationGroup.items.map((item: { title: string }) => item.title), ["Quiet homestay"]);
+            assert.deepEqual(byAmenity.items.map((item: { title: string }) => item.title), ["Relax house"]);
+            assert.equal(paginated.pagination.total, 2);
+            assert.equal(paginated.items.length, 1);
+            assert.equal(paginated.pagination.page, 2);
+        } finally {
+            Listing.find = originals.listingFind;
+            Review.find = originals.reviewFind;
+            ListingAmenity.findAll = originals.listingAmenityFindAll;
+            ListingImage.findAll = originals.listingImageFindAll;
+            AvailabilityCalendar.findAll = originals.availabilityCalendarFindAll;
+            Booking.findAll = originals.bookingFindAll;
+            Amenity.find = originals.amenityFind;
+        }
     });
 
     it("treats expired pending payment bookings as non-blocking", async () => {
@@ -632,11 +795,7 @@ describe("Listings service availability rules", () => {
             if (!pendingPaymentClause) {
                 throw new Error("Missing pending payment status clause");
             }
-            const pendingPaymentConditions = pendingPaymentClause[Op.or] as Array<{
-                lockedUntil: Record<PropertyKey, unknown>;
-            }>;
-            assert.equal(pendingPaymentConditions[0].lockedUntil[Op.is], null);
-            assert.ok(pendingPaymentConditions[1].lockedUntil[Op.gt] instanceof Date);
+            assert.ok((pendingPaymentClause.lockedUntil as Record<PropertyKey, unknown>)[Op.gt] instanceof Date);
         } finally {
             Listing.find = originals.listingFind;
             Review.find = originals.reviewFind;
@@ -651,7 +810,7 @@ describe("Listings service availability rules", () => {
 describe("Vung Tau location group helpers", () => {
     it("matches Vietnamese and non-accented street names to the right groups", () => {
         assert.equal(
-            locationGroups.isAddressInLocationGroup("87 Trần Phú, Vũng Tàu", "Bãi Trước / Dâu"),
+            locationGroups.isAddressInLocationGroup("87 Trần Phú, Vũng Tàu", "Trần Phú"),
             true,
         );
         assert.equal(
@@ -659,7 +818,7 @@ describe("Vung Tau location group helpers", () => {
             false,
         );
         assert.equal(
-            locationGroups.isAddressInLocationGroup("Thuy Van, Vung Tau", "Bãi Sau"),
+            locationGroups.isAddressInLocationGroup("Thuy Van, Vung Tau", "Thùy Vân"),
             true,
         );
         assert.equal(
@@ -668,8 +827,8 @@ describe("Vung Tau location group helpers", () => {
         );
         assert.equal(
             locationGroups.isAddressInLocationGroup(
-                "Đường Ven Biển Hồ Tràm",
-                "Hồ Tràm / Long Hải / Phước Hải",
+                "Bãi Thủy Tiên, Vũng Tàu",
+                "Thủy Tiên",
             ),
             true,
         );
@@ -677,11 +836,11 @@ describe("Vung Tau location group helpers", () => {
 
     it("detects location groups from semantic-style queries", () => {
         assert.equal(locationGroups.detectLocationGroupFromQuery("villa bãi sau có hồ bơi"), "Bãi Sau");
-        assert.equal(locationGroups.detectLocationGroupFromQuery("căn ở Tran Phu view biển"), "Bãi Trước / Dâu");
+        assert.equal(locationGroups.detectLocationGroupFromQuery("căn ở Tran Phu view biển"), "Trần Phú");
         assert.equal(locationGroups.detectLocationGroupFromQuery("villa Hoanh Son có karaoke"), "Long Cung");
         assert.equal(
-            locationGroups.detectLocationGroupFromQuery("resort Ho Tram yên tĩnh"),
-            "Hồ Tràm / Long Hải / Phước Hải",
+            locationGroups.detectLocationGroupFromQuery("villa Thuy Tien yên tĩnh"),
+            "Thủy Tiên",
         );
     });
 });

@@ -4,6 +4,7 @@ import { ApiError } from "../../common/api-error";
 import {
     alwaysBlockingBookingStatuses,
     buildActiveBookingStatusWhere,
+    checkedOutBlockingStatus,
     pendingPaymentBlockingStatus,
 } from "../../common/booking-availability";
 import {
@@ -44,6 +45,8 @@ import ListingRule from "../../models/listing-rule";
 import type { AuthenticatedUser } from "../auth/auth.service";
 import { writeAuditLog } from "../../services/audit-log-service";
 import { isHostVerifiedForPublishing } from "../../services/host-verification-status-service";
+import { notifyListingSubmitted } from "../notifications/notification.service";
+import { scheduleSemanticReindex } from "../semantic-search/semantic-search.indexer";
 
 export type CreateListingInput = {
     title: string;
@@ -60,6 +63,7 @@ export type CreateListingInput = {
     propertyType: "apartment" | "villa" | "hotel" | "homestay";
     roomType: "entire_place" | "private_room" | "shared_room";
     maxGuests: number;
+    includedGuests?: number | null;
     bedrooms: number;
     beds: number;
     bathrooms: number;
@@ -67,6 +71,7 @@ export type CreateListingInput = {
     weekendPrice?: number | null;
     cleaningFee?: number | null;
     serviceFeePct?: number | null;
+    extraGuestFee?: number | null;
     currency: "VND";
     minNights: number;
     maxNights?: number | null;
@@ -98,7 +103,9 @@ export type UpdateListingInput = Partial<
         | "weekendPrice"
         | "cleaningFee"
         | "serviceFeePct"
+        | "extraGuestFee"
         | "maxGuests"
+        | "includedGuests"
         | "bedrooms"
         | "beds"
         | "bathrooms"
@@ -167,7 +174,11 @@ export type HostActor = {
 
 const maxImagesPerListing = 30;
 export const hostListingsMaxPageLimit = 50;
-const bookingBlockingStatuses = [pendingPaymentBlockingStatus, ...alwaysBlockingBookingStatuses] as const;
+const bookingBlockingStatuses = [
+    pendingPaymentBlockingStatus,
+    ...alwaysBlockingBookingStatuses,
+    checkedOutBlockingStatus,
+] as const;
 
 const uniqueNumbers = (values: number[] = []) => Array.from(new Set(values));
 const hasOwn = <T extends object>(value: T, key: keyof T) =>
@@ -284,6 +295,8 @@ const sensitiveListingFields = new Set<keyof UpdateListingInput>([
     "weekendPrice",
     "cleaningFee",
     "serviceFeePct",
+    "extraGuestFee",
+    "includedGuests",
 ]);
 
 type CreateListingOptions = {
@@ -632,10 +645,12 @@ const serializeHostListingSummary = async (listing: ListingDocument) => {
         propertyType: listing.propertyType,
         roomType: listing.roomType,
         maxGuests: listing.maxGuests,
+        includedGuests: listing.includedGuests ?? null,
         bedrooms: listing.bedrooms,
         beds: listing.beds,
         bathrooms: listing.bathrooms,
         basePrice: listing.basePrice,
+        extraGuestFee: listing.extraGuestFee ?? null,
         currency: listing.currency,
         imageUrl: getCoverImage(images)?.url ?? null,
         coverImage: getCoverImage(images) ? serializeListingImage(getCoverImage(images)!) : null,
@@ -668,6 +683,7 @@ const serializeHostListingDetail = async (listing: ListingDocument) => {
         propertyType: listing.propertyType,
         roomType: listing.roomType,
         maxGuests: listing.maxGuests,
+        includedGuests: listing.includedGuests ?? null,
         bedrooms: listing.bedrooms,
         beds: listing.beds,
         bathrooms: listing.bathrooms,
@@ -675,6 +691,7 @@ const serializeHostListingDetail = async (listing: ListingDocument) => {
         weekendPrice: listing.weekendPrice ?? null,
         cleaningFee: listing.cleaningFee ?? null,
         serviceFeePct: listing.serviceFeePct ?? null,
+        extraGuestFee: listing.extraGuestFee ?? null,
         currency: listing.currency,
         minNights: listing.minNights,
         maxNights: listing.maxNights ?? null,
@@ -748,8 +765,14 @@ export const createListing = async (
             status: toApiListingStatus(createdListing.status),
         }, transaction);
 
+        if (createdListing.status === "pending_approval") {
+            await notifyListingSubmitted(createdListing.listingId, transaction);
+        }
+
         return createdListing;
     });
+
+    scheduleSemanticReindex(listing.listingId, "listing_create");
 
     return {
         listingId: listing.listingId,
@@ -786,10 +809,12 @@ export const getMyListings = async (actor: HostActor, query: ListMineQuery) => {
 
     return {
         items: await Promise.all(items.map(serializeHostListingSummary)),
-        page,
-        limit,
-        totalItems,
-        totalPages: Math.max(1, Math.ceil(totalItems / limit)),
+        pagination: {
+            page,
+            limit,
+            total: totalItems,
+            totalPages: Math.max(1, Math.ceil(totalItems / limit)),
+        },
     };
 };
 
@@ -848,7 +873,9 @@ export const updateListing = async (listingId: number, actor: HostActor, input: 
         if (hasOwn(sanitizedInput, "weekendPrice")) listing.weekendPrice = sanitizedInput.weekendPrice ?? null;
         if (hasOwn(sanitizedInput, "cleaningFee")) listing.cleaningFee = sanitizedInput.cleaningFee ?? null;
         if (hasOwn(sanitizedInput, "serviceFeePct")) listing.serviceFeePct = sanitizedInput.serviceFeePct ?? null;
+        if (hasOwn(sanitizedInput, "extraGuestFee")) listing.extraGuestFee = sanitizedInput.extraGuestFee ?? null;
         if (sanitizedInput.maxGuests !== undefined) listing.maxGuests = sanitizedInput.maxGuests;
+        if (hasOwn(sanitizedInput, "includedGuests")) listing.includedGuests = sanitizedInput.includedGuests ?? null;
         if (sanitizedInput.bedrooms !== undefined) listing.bedrooms = sanitizedInput.bedrooms;
         if (sanitizedInput.beds !== undefined) listing.beds = sanitizedInput.beds;
         if (sanitizedInput.bathrooms !== undefined) listing.bathrooms = sanitizedInput.bathrooms;
@@ -870,6 +897,10 @@ export const updateListing = async (listingId: number, actor: HostActor, input: 
             status: toApiListingStatus(listing.status),
         }, transaction);
 
+        if (previousStatus !== listing.status && listing.status === "pending_approval") {
+            await notifyListingSubmitted(listing.listingId, transaction);
+        }
+
         if (previousStatus !== listing.status && listing.status === "inactive") {
             await writeListingAudit(actor, "host_listing.hide", listing.listingId, {
                 fromStatus: toApiListingStatus(previousStatus),
@@ -879,6 +910,8 @@ export const updateListing = async (listingId: number, actor: HostActor, input: 
 
         return listing;
     });
+
+    scheduleSemanticReindex(updated.listingId, "listing_update");
 
     return {
         listingId: updated.listingId,
@@ -894,6 +927,8 @@ export const deleteListing = async (listingId: number, actor: HostActor) => {
         await listing.save({ transaction });
         await writeListingAudit(actor, "host_listing.delete", listing.listingId, undefined, transaction);
     });
+
+    scheduleSemanticReindex(listingId, "listing_delete");
 };
 
 export const addListingImages = async (listingId: number, actor: HostActor, input: AddListingImagesInput) => {
@@ -1034,9 +1069,14 @@ export const addListingImages = async (listingId: number, actor: HostActor, inpu
             forcedPendingApproval,
         }, transaction);
 
+        if (forcedPendingApproval) {
+            await notifyListingSubmitted(listing.listingId, transaction);
+        }
+
         return {
             count: appendedImages.length,
             status: toApiListingStatus(listing.status),
+            images: appendedImages.map(serializeListingImage),
         };
     });
 
@@ -1068,6 +1108,10 @@ export const deleteListingImage = async (listingId: number, imageId: number, act
             imageId,
             forcedPendingApproval,
         }, transaction);
+
+        if (forcedPendingApproval) {
+            await notifyListingSubmitted(listing.listingId, transaction);
+        }
     });
 };
 
@@ -1113,6 +1157,10 @@ export const setListingImageCover = async (listingId: number, imageId: number, a
             forcedPendingApproval,
         }, transaction);
 
+        if (forcedPendingApproval) {
+            await notifyListingSubmitted(listing.listingId, transaction);
+        }
+
         return image;
     });
 
@@ -1147,6 +1195,8 @@ export const replaceListingAmenities = async (listingId: number, actor: HostActo
         }, transaction);
         return existingListing;
     });
+
+    scheduleSemanticReindex(listing.listingId, "listing_amenities_replace");
 
     return {
         listingId: listing.listingId,
@@ -1186,6 +1236,8 @@ export const updateListingRules = async (listingId: number, actor: HostActor, in
 
         return existingListing;
     });
+
+    scheduleSemanticReindex(listing.listingId, "listing_rules_update");
 
     return {
         listingId: listing.listingId,

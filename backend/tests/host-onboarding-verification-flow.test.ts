@@ -176,7 +176,7 @@ before(() => {
         pagination: {
             page: 1,
             limit: 10,
-            totalItems: verifications.length,
+            total: verifications.length,
             totalPages: 1,
         },
     });
@@ -225,7 +225,7 @@ before(() => {
         pagination: {
             page: 1,
             limit: 10,
-            totalItems: listings.filter((listing) => listing.status === "pending_approval").length,
+            total: listings.filter((listing) => listing.status === "pending_approval").length,
             totalPages: 1,
         },
     });

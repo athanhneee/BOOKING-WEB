@@ -18,7 +18,7 @@ const listingIdParamValidator = param("listingId")
     .withMessage("listingId must be a positive integer")
     .toInt();
 
-router.use(authenticate, requireRole("admin", "moderator"));
+router.use(authenticate, requireRole("admin"));
 
 router.get(
     "/pending",

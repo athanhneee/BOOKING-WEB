@@ -180,8 +180,8 @@ describe("GET /api/host/listings/mine", () => {
             .set("Authorization", buildAuthHeader(host));
 
         assert.equal(response.status, 200);
-        assert.equal(response.body.data.totalItems, 2);
-        assert.equal(response.body.data.totalPages, 2);
+        assert.equal(response.body.data.pagination.total, 2);
+        assert.equal(response.body.data.pagination.totalPages, 2);
         assert.equal(response.body.data.items.length, 1);
         assert.notEqual(response.body.data.items[0].listingId, firstListing.listingId + 2);
     });
