@@ -28,8 +28,9 @@ const buildLimiter = (
         validate: { keyGeneratorIpFallback: false },
         message: {
             success: false,
-            code: "RATE_LIMITED",
             message,
+            code: "RATE_LIMITED",
+            details: {},
         },
     });
 

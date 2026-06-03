@@ -75,7 +75,7 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {
             path: req.originalUrl,
         });
 
-        return sendError(res, 500, "Database error");
+        return sendError(res, 500, isProduction() ? "Internal server error" : "Database error");
     }
 
     const httpStatus = getHttpErrorStatus(error);
