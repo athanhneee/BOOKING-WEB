@@ -109,15 +109,3 @@ export const removeBookingQueueItem = (listingId: string) => {
     writeBookingQueueItems(nextItems);
     return nextItems;
 };
-
-export const mergeBookingQueueItems = (items: BookingQueueItem[]) => {
-    const uniqueItems = items.reduce<BookingQueueItem[]>((result, item) => {
-        if (!result.some((currentItem) => currentItem.listingId === item.listingId)) {
-            result.push(item);
-        }
-
-        return result;
-    }, []);
-
-    return uniqueItems.slice(0, BOOKING_QUEUE_LIMIT);
-};
