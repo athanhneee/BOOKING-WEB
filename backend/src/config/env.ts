@@ -290,7 +290,7 @@ export const getEnv = (): AppEnv => {
         60,
     );
     const otpMaxAttempts = parsePositiveInteger("OTP_MAX_ATTEMPTS", process.env.OTP_MAX_ATTEMPTS, 5);
-    const clientOrigin = assertResolvedEnv("CLIENT_ORIGIN", process.env.CLIENT_ORIGIN);
+    const clientOrigin = assertResolvedEnv("CLIENT_URL or CLIENT_ORIGIN", readEnv("CLIENT_URL", "CLIENT_ORIGIN"));
     const corsOrigins = [
         ...parseList(process.env.CORS_ORIGIN),
         ...parseList(process.env.CORS_ORIGINS),
@@ -397,6 +397,24 @@ export const getEnv = (): AppEnv => {
         throw new Error("REFRESH_TOKEN_COOKIE_SAME_SITE=none requires REFRESH_TOKEN_COOKIE_SECURE=true");
     }
 
+    const allowRefreshTokenInBody = parseBoolean(
+        "ALLOW_REFRESH_TOKEN_IN_BODY",
+        process.env.ALLOW_REFRESH_TOKEN_IN_BODY,
+        nodeEnv === "development",
+    );
+    const allowRefreshTokenInHeader = parseBoolean(
+        "ALLOW_REFRESH_TOKEN_IN_HEADER",
+        process.env.ALLOW_REFRESH_TOKEN_IN_HEADER,
+        nodeEnv === "development",
+    );
+
+    if (nodeEnv !== "development" && (allowRefreshTokenInBody || allowRefreshTokenInHeader)) {
+        throw new Error(
+            "Refresh tokens in request bodies or headers are allowed only in development. " +
+            "Use the httpOnly refresh-token cookie.",
+        );
+    }
+
     return {
         port: parsePositiveInteger("PORT", process.env.PORT, 7000),
         nodeEnv,
@@ -454,16 +472,8 @@ export const getEnv = (): AppEnv => {
             "/api/auth",
         refreshCookieSameSite,
         refreshCookieSecure,
-        allowRefreshTokenInBody: parseBoolean(
-            "ALLOW_REFRESH_TOKEN_IN_BODY",
-            process.env.ALLOW_REFRESH_TOKEN_IN_BODY,
-            nodeEnv !== "production",
-        ),
-        allowRefreshTokenInHeader: parseBoolean(
-            "ALLOW_REFRESH_TOKEN_IN_HEADER",
-            process.env.ALLOW_REFRESH_TOKEN_IN_HEADER,
-            nodeEnv !== "production",
-        ),
+        allowRefreshTokenInBody,
+        allowRefreshTokenInHeader,
         authDebugOtp: parseBoolean("AUTH_DEBUG_OTP", process.env.AUTH_DEBUG_OTP, false),
         otpTtlMinutes,
         otpRateLimitWindowMinutes,

@@ -18,23 +18,32 @@ import { securityHeaders } from "./middlewares/securityHeaders";
 import adminRoutes from "./modules/admin/admin.routes";
 import amenitiesRoutes from "./modules/amenities/amenities.routes";
 import authRoutes from "./modules/auth/auth.routes";
+import banksRoutes from "./modules/banks/banks.routes";
+import blogsRoutes from "./modules/blogs/blogs.routes";
 import bookingsRoutes, { hostBookingsRoutes } from "./modules/bookings/bookings.routes";
 import conversationsRoutes from "./modules/conversations/conversations.routes";
 import couponsRoutes from "./modules/coupons/coupons.routes";
 import hostApplicationRoutes from "./modules/host-applications/host-application.routes";
+import hostBankAccountRoutes from "./modules/host-bank-account/host-bank-account.routes";
 import hostListingsRoutes from "./modules/host-listings/host-listings.routes";
+import notificationsRoutes from "./modules/notifications/notifications.routes";
 import paymentsRoutes from "./modules/payments/payments.routes";
 import hostPayoutsRoutes from "./modules/payouts/host-payouts.routes";
 import publicListingsRoutes from "./modules/listings/listings.routes";
 import reportsRoutes, { hostReportsRouter } from "./modules/reports/reports.routes";
 import reviewsRoutes from "./modules/reviews/reviews.routes";
 import userRoutes from "./modules/users/users.routes";
+import wishlistRoutes from "./modules/wishlist/wishlist.routes";
 import hostVerificationsRoutes from "./modules/verifications/host-verifications.routes";
 import hostOnboardingRoutes from "./modules/host-onboarding/host-onboarding.routes";
 import { sendSuccess } from "./common/http";
 import semanticSearchRoutes, { aiListingSearchRouter } from "./modules/semantic-search/semantic-search.routes";
 import uploadsRoutes from "./modules/uploads/uploads.routes";
-import listingImageVisionRoutes from "./modules/ai/listing-image-vision.routes";
+import listingImageVisionRoutes, {
+    adminImageVisionRoutes,
+    hostImageVisionRoutes,
+    hostListingImageVisionRoutes,
+} from "./modules/ai/listing-image-vision.routes";
 
 export const createApp = () => {
     const env = getEnv();
@@ -105,17 +114,25 @@ export const createApp = () => {
     });
 
     app.use("/api/auth", authRoutes);
+    app.use("/api/banks", banksRoutes);
+    app.use("/api/blogs", blogsRoutes);
     app.use("/api/users", userRoutes);
+    app.use("/api/wishlist", wishlistRoutes);
     app.use("/api/bookings", bookingsRoutes);
     app.use("/api/host/bookings", hostBookingsRoutes);
     app.use("/api/conversations", conversationsRoutes);
+    app.use("/api/notifications", notificationsRoutes);
     app.use("/api/host/applications", hostApplicationRoutes);
     app.use("/api/host/listings", hostListingsRoutes);
+    app.use("/api/host/listings", hostListingImageVisionRoutes);
+    app.use("/api/host/images", hostImageVisionRoutes);
     app.use("/api/host/verifications", hostVerificationsRoutes);
+    app.use("/api/host", hostBankAccountRoutes);
     app.use("/api/host", hostOnboardingRoutes);
     app.use("/api/host", hostPayoutsRoutes);
     app.use("/api/ai/listings/search", aiListingSearchRouter);
     app.use("/api/ai/listings", listingImageVisionRoutes);
+    app.use("/api/admin/images", adminImageVisionRoutes);
     app.use("/api/admin", adminRoutes);
     app.use("/api/payments", paymentsRoutes);
     app.use("/api/coupons", couponsRoutes);

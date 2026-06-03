@@ -5,15 +5,15 @@ import { getEnv } from "./env";
 
 export const getCorsOptions = (): CorsOptions => {
     const env = getEnv();
-    const allowedOrigins = env.corsOrigins;
+    const allowedOrigins = env.clientOrigin ? [env.clientOrigin] : env.corsOrigins;
 
-    if (allowedOrigins.includes("*")) {
+    if (env.corsOrigins.includes("*") || allowedOrigins.includes("*")) {
         throw new Error("Wildcard CORS origin is not allowed when credentials are enabled");
     }
 
     if (env.nodeEnv === "production") {
-        if (allowedOrigins.length === 0) {
-            throw new Error("CORS_ORIGIN, CORS_ORIGINS, or CLIENT_ORIGIN is required in production");
+        if (!env.clientOrigin) {
+            throw new Error("CLIENT_URL or CLIENT_ORIGIN is required in production");
         }
     }
 
