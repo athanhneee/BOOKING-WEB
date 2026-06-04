@@ -26,7 +26,8 @@ dist/
 build/
 coverage/
 .nyc_output/
-uploads/
+/backend/uploads/
+/uploads/
 storage/
 logs/
 tmp/
