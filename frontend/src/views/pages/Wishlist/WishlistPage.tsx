@@ -6,7 +6,7 @@ import { LuHeart, LuHeartOff, LuSparkles } from "react-icons/lu";
 import { APP_ROUTES } from "../../../config/routes";
 import { getWishlist, removeWishlistListing, type WishlistItem } from "../../../services/wishlistService";
 import { getCurrentUser } from "../../../store/authStore";
-import { formatCurrency } from "../Host/sharedStyles";
+
 
 const formatPrice = (price: number, currency = "VND") =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);

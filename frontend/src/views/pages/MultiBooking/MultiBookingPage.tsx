@@ -7,12 +7,11 @@ import {
     FiHome,
     FiLoader,
     FiMapPin,
-    FiShoppingCart,
     FiTrash2,
     FiUsers,
     FiX,
 } from "react-icons/fi";
-import { LuShoppingCart, LuSparkles } from "react-icons/lu";
+import { LuShoppingCart } from "react-icons/lu";
 
 import { APP_ROUTES } from "../../../config/routes";
 import { clearBookingQueue, readBookingQueueItems, removeBookingQueueItem, type BookingQueueItem } from "../../../features/bookingQueue/bookingQueueStorage";
