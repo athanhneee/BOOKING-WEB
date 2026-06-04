@@ -11,6 +11,8 @@
   },
   "scripts": {
     "search:reindex": "ts-node src/scripts/reindex-semantic-search.ts",
+    "qdrant:check": "ts-node src/scripts/check-qdrant.ts",
+    "ai:check": "ts-node src/scripts/check-qdrant.ts",
     "dev": "nodemon --exec ts-node src/index.ts",
     "db:check": "ts-node src/scripts/check-db-connection.ts",
     "db:ensure-runtime-schema": "ts-node src/scripts/ensure-runtime-schema.ts",

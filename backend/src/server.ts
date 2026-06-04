@@ -14,6 +14,7 @@ import {
     startPaymentExpirationSweep,
     stopPaymentExpirationSweep,
 } from "./services/booking-expiration.service";
+import { initQdrantCollections } from "./modules/semantic-search/qdrant-vector.service";
 type ExitProcess = (code: number) => never | void;
 const HOST = process.env.HOST || "0.0.0.0";
 export const shutdownServer = async (
@@ -69,6 +70,9 @@ export const startServer = async () => {
         }
 
         logger.info("MySQL connected successfully");
+
+        // Initialize Qdrant collection (non-blocking: logs error but does not crash)
+        await initQdrantCollections();
 
         server = createServer(app);
         initializeSocket(server);

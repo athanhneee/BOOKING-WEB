@@ -44,6 +44,7 @@ import listingImageVisionRoutes, {
     hostImageVisionRoutes,
     hostListingImageVisionRoutes,
 } from "./modules/ai/listing-image-vision.routes";
+import { checkQdrantHealth, getQdrantCollectionName } from "./modules/semantic-search/qdrant-vector.service";
 
 export const createApp = () => {
     const env = getEnv();
@@ -79,6 +80,7 @@ export const createApp = () => {
     app.get("/api/health", async (req, res, next) => {
         try {
             await sequelize.authenticate();
+            const qdrantStatus = await checkQdrantHealth();
 
             return sendSuccess(res, {
                 message: "OK",
@@ -86,9 +88,14 @@ export const createApp = () => {
                     status: "ok",
                     requestId: req.requestId,
                     uptime: process.uptime(),
+                    time: new Date().toISOString(),
                     database: {
                         dialect: "mysql",
                         status: "up",
+                    },
+                    qdrant: {
+                        status: qdrantStatus,
+                        collection: getQdrantCollectionName(),
                     },
                 },
             });
