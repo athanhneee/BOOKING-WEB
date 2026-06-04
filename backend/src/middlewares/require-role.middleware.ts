@@ -18,3 +18,15 @@ export const requireRole = (...roles: UserRole[]): RequestHandler => {
         return next();
     };
 };
+
+export const requireHostOnly: RequestHandler = (req, _res, next) => {
+    if (!req.user) {
+        return next(new ApiError(401, "Unauthorized"));
+    }
+
+    if (req.user.roles.includes("admin") || !req.user.roles.includes("host")) {
+        return next(new ApiError(403, "Forbidden"));
+    }
+
+    return next();
+};

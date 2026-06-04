@@ -6,7 +6,7 @@ import { APP_ROUTES } from "../../../config/routes";
 import { createGuestMenuProfile, getAccountProfileForUser } from "../../../features/account/accountProfileStorage";
 import useScrollVisibility from "../../../hooks/useScrollVisibility";
 import { getHostApplicationMe, type HostApplicationStatus } from "../../../services/hostService";
-import { getCurrentUser } from "../../../store/authStore";
+import { getCurrentUser, isAdminUser } from "../../../store/authStore";
 import AccountMenu from "../navbar/AccountMenu";
 import NotificationBell from "../notifications/NotificationBell";
 
@@ -21,6 +21,7 @@ const Header = () => {
     const show = useScrollVisibility({ threshold: 12, topOffset: 64, hideStartRatio: 0.5 });
     const location = useLocation();
     const currentUser = getCurrentUser();
+    const isAdmin = isAdminUser(currentUser);
     const [hostApplicationStatus, setHostApplicationStatus] = useState<HostApplicationStatus>(null);
     const [useDarkText, setUseDarkText] = useState(location.pathname !== APP_ROUTES.home);
     const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
@@ -56,7 +57,12 @@ const Header = () => {
                 return;
             }
 
-            if (currentUser.role === "Admin" || currentUser.role === "host") {
+            if (isAdmin) {
+                setHostApplicationStatus(null);
+                return;
+            }
+
+            if (currentUser.role === "host") {
                 setHostApplicationStatus("approved");
                 return;
             }
@@ -78,7 +84,7 @@ const Header = () => {
         return () => {
             cancelled = true;
         };
-    }, [currentUser]);
+    }, [currentUser, isAdmin]);
 
     const desktopLinkClass = useDarkText
         ? "transition-colors hover:text-cyan-800"
@@ -96,7 +102,9 @@ const Header = () => {
     );
 
     const hostAction =
-        hostApplicationStatus === "approved"
+        isAdmin
+            ? { label: "Khu vực admin", to: APP_ROUTES.adminOverview }
+            : hostApplicationStatus === "approved"
             ? { label: "Khu vực host", to: APP_ROUTES.ownerDashboard }
             : hostApplicationStatus === "pending"
                 ? { label: "Đang xét duyệt host", to: APP_ROUTES.hostStatus }
@@ -105,6 +113,10 @@ const Header = () => {
                     : { label: "Trở thành host", to: APP_ROUTES.hostLanding };
 
     const renderBecomeHostLink = (mobile = false) => {
+        if (isAdmin) {
+            return null;
+        }
+
         if (hostApplicationStatus === "approved") {
             return null;
         }

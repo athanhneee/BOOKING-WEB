@@ -123,6 +123,13 @@ const LichLuuTru = () => {
                     </div>
                 </section>
 
+                {/* Legend */}
+                <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                    <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-sm bg-emerald-200 border border-emerald-400"></span>Đang mở</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-sm bg-blue-200 border border-blue-400"></span>Đã có khách</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-sm bg-rose-100 border border-rose-300"></span>Đang đóng</span>
+                </div>
+
                 <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                     {loading ? (
                         <div className="py-12 text-center text-sm text-gray-500">Đang tải lịch...</div>
@@ -133,16 +140,28 @@ const LichLuuTru = () => {
                             {days.map((day) => {
                                 const selected = selectedSet.has(day.date);
                                 const closed = !day.isAvailable || day.isBlockedByHost;
+                                const booked = Boolean((day as { isBooked?: boolean }).isBooked);
+
+                                let stateClass = "border-gray-100 bg-white hover:border-cyan-200";
+                                if (selected) stateClass = "border-cyan-500 bg-cyan-50";
+                                else if (booked) stateClass = "border-blue-300 bg-blue-50 cursor-not-allowed";
+                                else if (closed) stateClass = "border-rose-100 bg-rose-50";
+
+                                let statusLabel = closed ? "Đang đóng" : "Đang mở";
+                                let statusColor = closed ? "text-rose-600" : "text-emerald-600";
+                                if (booked) { statusLabel = "Đã có khách"; statusColor = "text-blue-600"; }
 
                                 return (
                                     <button
                                         key={day.date}
                                         type="button"
-                                        onClick={() => toggleDate(day.date)}
-                                        className={`rounded-2xl border p-4 text-left transition ${selected ? "border-cyan-500 bg-cyan-50" : closed ? "border-rose-100 bg-rose-50" : "border-gray-100 bg-white hover:border-cyan-200"}`}
+                                        disabled={booked}
+                                        onClick={() => !booked && toggleDate(day.date)}
+                                        title={booked ? "Ngày này đã có khách đặt — không thể thay đổi" : undefined}
+                                        className={`rounded-2xl border p-4 text-left transition ${stateClass}`}
                                     >
                                         <p className="font-semibold text-gray-900">{day.date.slice(-2)}/{String(month).padStart(2, "0")}</p>
-                                        <p className={`mt-2 text-xs font-medium ${closed ? "text-rose-600" : "text-emerald-600"}`}>{closed ? "Đang đóng" : "Đang mở"}</p>
+                                        <p className={`mt-2 text-xs font-medium ${statusColor}`}>{statusLabel}</p>
                                         <p className="mt-2 text-sm text-gray-500">{formatCurrency(Number(day.priceOverride ?? day.price ?? 0))}</p>
                                         <p className="mt-1 text-xs text-gray-400">Tối thiểu {day.minNightsOverride ?? day.minNights ?? 1} đêm</p>
                                     </button>

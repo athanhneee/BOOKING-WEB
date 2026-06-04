@@ -2,7 +2,7 @@ import express from "express";
 import { body, param, query } from "express-validator";
 
 import { authenticate } from "../../middlewares/authenticate.middleware";
-import { requireRole } from "../../middlewares/require-role.middleware";
+import { requireHostOnly, requireRole } from "../../middlewares/require-role.middleware";
 import {
     analyzeAllListingImages,
     analyzeSingleListingImage,
@@ -28,8 +28,8 @@ const imageIdParamValidator = param("imageId")
     .toInt();
 
 router.use(authenticate, requireRole("host", "admin"));
-hostListingImageVisionRoutes.use(authenticate, requireRole("host", "admin"));
-hostImageVisionRoutes.use(authenticate, requireRole("host", "admin"));
+hostListingImageVisionRoutes.use(authenticate, requireHostOnly);
+hostImageVisionRoutes.use(authenticate, requireHostOnly);
 adminImageVisionRoutes.use(authenticate, requireRole("admin"));
 
 router.post(

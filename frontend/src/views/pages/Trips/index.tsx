@@ -190,6 +190,7 @@ const mapBookingToTrip = (booking: ApiBooking, now: Date): TripHistory => {
 
     return {
         id: String(booking.bookingId),
+        listingId: booking.listingId ?? null,
         propertyName: booking.listing?.title ?? `Chỗ nghỉ #${booking.listingId}`,
         location: location || "Chưa cập nhật",
         imageUrl: coverImageUrl,
@@ -202,7 +203,7 @@ const mapBookingToTrip = (booking: ApiBooking, now: Date): TripHistory => {
         bookingStatusCode: displayStatus.normalizedStatus,
         bookingStatusLabel: displayStatus.label,
         bookingStatusTone: displayStatus.tone,
-        canReview: status === "completed",
+        canReview: status === "completed" || displayStatus.normalizedStatus === "checked_out",
         canRebook: status === "completed" || status === "cancelled",
         guestCount: booking.guestCount ?? booking.guestsCount,
         address: address || location,

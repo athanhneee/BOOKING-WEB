@@ -15,6 +15,8 @@ export const APP_ROUTES = {
     hostStatus: "/tro-thanh-host/trang-thai",
     accountProfile: "/account/profile",
     accountTrips: "/account/trips",
+    accountWishlist: "/yeu-thich",
+    multiBooking: "/gio-cho-dat",
     messages: "/messages",
     ownerDashboard: "/chu-nha/cho-nghi",
     hostOverviewLegacy: "/chu-nha/tong-quan",
@@ -39,5 +41,6 @@ export const APP_ROUTES = {
     guestPaymentDetail: (bookingId: string) => `/thanh-toan/${bookingId}`,
     guestPaymentResult: "/thanh-toan/ket-qua",
     villaDetail: (villaId: string) => `/villa/${villaId}`,
+    multiBookingPage: "/gio-cho-dat",
     villaHostMessage: (villaId: string) => `/villa/${villaId}/nhan-tin-host`,
 } as const;

@@ -99,11 +99,16 @@ const buildUrl = (path: string, query?: RequestOptions["query"]) => {
 };
 
 const normalizeUserRole = (role?: string): AuthUser["role"] => {
-    const normalizedRole = String(role ?? "").toLowerCase();
+    const normalizedRole = String(role ?? "").trim().toLowerCase();
 
     if (normalizedRole === "admin") return "Admin";
     if (normalizedRole === "moderator") return "Moderator";
-    if (normalizedRole === "host") return "host";
+    if (normalizedRole === "host" || normalizedRole === "host verified" || normalizedRole === "host_verified") {
+        return "host";
+    }
+    if (normalizedRole === "host new" || normalizedRole === "host_new" || normalizedRole === "host-new") {
+        return "host new";
+    }
     return "Guest";
 };
 

@@ -20,7 +20,7 @@ import {
     updateHostListingRules,
 } from "./host-listings.controller";
 import { authenticate } from "../../middlewares/authenticate.middleware";
-import { requireRole } from "../../middlewares/require-role.middleware";
+import { requireHostOnly } from "../../middlewares/require-role.middleware";
 import { hostListingsMaxPageLimit } from "./host-listings.service";
 
 const router = express.Router();
@@ -41,7 +41,7 @@ const rejectDirectListingImageUpload: RequestHandler = (_req, _res, next) => {
     next(new ApiError(410, "Direct image upload is disabled. Use /api/uploads/presign and save the R2 URL."));
 };
 
-router.use(authenticate, requireRole("host", "admin"));
+router.use(authenticate, requireHostOnly);
 
 router.post(
     "/",

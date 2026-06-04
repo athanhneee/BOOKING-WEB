@@ -492,6 +492,14 @@ describe("Listings endpoint contracts", () => {
         assert.equal(response.status, 403);
     });
 
+    it("rejects admin access to host listing routes", async () => {
+        const response = await request(app)
+            .get("/api/host/listings/mine")
+            .set(adminAuth);
+
+        assert.equal(response.status, 403);
+    });
+
     it("allows missing district and city while normalizing comma decimal coordinates", async () => {
         const payload: Record<string, unknown> = {
             ...createListingPayload(),

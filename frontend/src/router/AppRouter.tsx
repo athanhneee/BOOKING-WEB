@@ -41,6 +41,8 @@ import TroThanhHostLanding from "../views/pages/TroThanhHost/index.jsx";
 import ProfilePage from "../views/pages/Trips";
 import HostRoute from "./HostRoute";
 import AiSearchPage from "../views/pages/AiSearch/AiSearchPage";
+import WishlistPage from "../views/pages/Wishlist/WishlistPage";
+import MultiBookingPage from "../views/pages/MultiBooking/MultiBookingPage";
 
 const AppRouter = () => {
     return (
@@ -58,6 +60,8 @@ const AppRouter = () => {
                 <Route element={<ProtectedRoute />}>
                     <Route path={APP_ROUTES.accountProfile.slice(1)} element={<ProfilePage />} />
                     <Route path={APP_ROUTES.accountTrips.slice(1)} element={<ProfilePage />} />
+                    <Route path={APP_ROUTES.accountWishlist.slice(1)} element={<WishlistPage />} />
+                    <Route path={APP_ROUTES.multiBooking.slice(1)} element={<MultiBookingPage />} />
                     <Route path={APP_ROUTES.messages.slice(1)} element={<MessagesPage />} />
                     <Route path={APP_ROUTES.hostRegister.slice(1)} element={<DangKyHost />} />
                     <Route path={APP_ROUTES.hostStatus.slice(1)} element={<TrangThaiHost />} />
@@ -89,7 +93,7 @@ const AppRouter = () => {
                 </Route>
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={["host", "Admin"]} />}>
+            <Route element={<HostRoute />}>
                 <Route path="/host" element={<HostLayout />}>
                     <Route index element={<Navigate to={APP_ROUTES.hostMessages} replace />} />
                     <Route path="tin-nhan" element={<TinNhan />} />

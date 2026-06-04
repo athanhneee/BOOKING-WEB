@@ -4,7 +4,7 @@ import { body, param, query } from "express-validator";
 import { authenticate } from "../../middlewares/authenticate.middleware";
 import { isValidIsoDate } from "../../common/validation";
 import { requireActiveUser } from "../../middlewares/require-active-user.middleware";
-import { requireRole } from "../../middlewares/require-role.middleware";
+import { requireHostOnly, requireRole } from "../../middlewares/require-role.middleware";
 import { getReportWriteRateLimiter } from "../../middlewares/rate-limit.middleware";
 import { reportStatusValues, reportTargetTypeValues } from "../../models/report";
 import {
@@ -119,7 +119,7 @@ adminReportsRouter.patch(
     rejectAdminReport,
 );
 
-hostReportsRouter.use(authenticate, requireActiveUser, requireRole("host", "admin"));
+hostReportsRouter.use(authenticate, requireActiveUser, requireHostOnly);
 hostReportsRouter.get("/revenue", analyticsQueryValidators(), getHostRevenueAnalytics);
 
 export default router;

@@ -1,4 +1,4 @@
-import { type Transaction } from "sequelize";
+import { Op, type Transaction } from "sequelize";
 
 import { ApiError } from "../../common/api-error";
 import {
@@ -1253,6 +1253,30 @@ export const getListingCalendar = async (listingId: number, actor: HostActor, qu
     const calendarRows = await getAvailabilityCalendarForListing(listing);
     const availabilityMap = new Map(calendarRows.map((item) => [item.date, item] as const));
 
+    // Find all active bookings that overlap this month so we can mark booked dates
+    const monthStart = `${year}-${String(month).padStart(2, "0")}-01`;
+    const monthEnd = new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10); // first day of NEXT month
+    const activeBookings = await Booking.findAll({
+        where: {
+            listingId: listing.listingId,
+            ...buildActiveBookingStatusWhere(),
+            checkInDate: { [Op.lt]: monthEnd },
+            checkOutDate: { [Op.gt]: monthStart },
+        },
+        attributes: ["checkInDate", "checkOutDate"],
+    });
+
+    const bookedDateSet = new Set<string>();
+    for (const booking of activeBookings) {
+        const cursor = new Date(`${booking.checkInDate}T00:00:00.000Z`);
+        const end = new Date(`${booking.checkOutDate}T00:00:00.000Z`);
+
+        while (cursor < end) {
+            bookedDateSet.add(cursor.toISOString().slice(0, 10));
+            cursor.setUTCDate(cursor.getUTCDate() + 1);
+        }
+    }
+
     const days = Array.from({ length: totalDays }, (_, index) => {
         const day = String(index + 1).padStart(2, "0");
         const monthValue = String(month).padStart(2, "0");
@@ -1263,6 +1287,8 @@ export const getListingCalendar = async (listingId: number, actor: HostActor, qu
             date,
             isAvailable: existing ? (existing.isBlockedByHost ? false : existing.isAvailable) : true,
             isBlockedByHost: existing?.isBlockedByHost ?? false,
+            /** True when an active guest booking covers this date — host cannot close it */
+            isBooked: bookedDateSet.has(date),
             priceOverride: existing?.priceOverride ?? null,
             minNightsOverride: existing?.minNightsOverride ?? null,
             notes: existing?.notes ?? null,

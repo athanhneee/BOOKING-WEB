@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FiCalendar, FiEdit2, FiEye, FiEyeOff, FiPlus, FiSend } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
@@ -55,7 +55,7 @@ const ChoNghi = () => {
     const [success, setSuccess] = useState("");
     const [dialogProperty, setDialogProperty] = useState<HostListingSummary | null>(null);
 
-    const loadProperties = async () => {
+    const loadProperties = useCallback(async () => {
         setLoading(true);
         setError("");
 
@@ -68,11 +68,11 @@ const ChoNghi = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filter]);
 
     useEffect(() => {
         void loadProperties();
-    }, [filter]);
+    }, [loadProperties]);
 
     const filteredProperties = useMemo(() => properties, [properties]);
 

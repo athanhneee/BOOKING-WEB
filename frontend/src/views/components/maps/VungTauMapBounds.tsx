@@ -1,22 +1,16 @@
 import { useEffect } from "react";
 import * as L from "leaflet";
-import type { LatLngBoundsExpression } from "leaflet";
 import { useMap } from "react-leaflet";
-import { VUNG_TAU_MAP_BOUNDS } from "../../../data/vungTauLocationGroups";
+import { VUNG_TAU_LEAFLET_BOUNDS, VUNG_TAU_MIN_MAP_ZOOM } from "./VungTauMapConstants";
 
-export const VUNG_TAU_LEAFLET_BOUNDS: LatLngBoundsExpression = [
-    [VUNG_TAU_MAP_BOUNDS.south, VUNG_TAU_MAP_BOUNDS.west],
-    [VUNG_TAU_MAP_BOUNDS.north, VUNG_TAU_MAP_BOUNDS.east],
-];
-
-export const VUNG_TAU_MIN_MAP_ZOOM = 12;
+export { VUNG_TAU_LEAFLET_BOUNDS, VUNG_TAU_MIN_MAP_ZOOM } from "./VungTauMapConstants";
 
 const createVungTauBounds = () => L.latLngBounds(VUNG_TAU_LEAFLET_BOUNDS);
 
 const getRestrictedMinZoom = (map: L.Map, bounds: L.LatLngBounds) =>
     Math.max(VUNG_TAU_MIN_MAP_ZOOM, map.getBoundsZoom(bounds, true));
 
-export const VungTauMapBoundsLimiter = () => {
+const VungTauMapBoundsLimiter = () => {
     const map = useMap();
 
     useEffect(() => {
@@ -49,3 +43,5 @@ export const VungTauMapBoundsLimiter = () => {
 
     return null;
 };
+
+export { VungTauMapBoundsLimiter };

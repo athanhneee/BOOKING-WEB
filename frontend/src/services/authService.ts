@@ -67,8 +67,15 @@ const persistAuthResponse = (data: AuthResponse) => {
 };
 
 export const getDefaultRouteForRole = (role: UserRole) => {
-    if (role === "Admin") return APP_ROUTES.adminOverview;
-    if (role === "host" || role === "host new") return APP_ROUTES.ownerDashboard;
+    const normalizedRole = String(role ?? "").trim().toLowerCase();
+
+    if (normalizedRole === "admin") return APP_ROUTES.adminOverview;
+    if (normalizedRole === "host" || normalizedRole === "host verified" || normalizedRole === "host_verified") {
+        return APP_ROUTES.ownerDashboard;
+    }
+    if (normalizedRole === "host new" || normalizedRole === "host_new" || normalizedRole === "host-new") {
+        return APP_ROUTES.hostStatus;
+    }
     return APP_ROUTES.accountProfile;
 };
 

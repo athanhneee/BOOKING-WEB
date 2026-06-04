@@ -10,7 +10,7 @@ import {
 } from "./payouts.controller";
 import { isValidIsoDate } from "../../common/validation";
 import { authenticate } from "../../middlewares/authenticate.middleware";
-import { requireRole } from "../../middlewares/require-role.middleware";
+import { requireHostOnly } from "../../middlewares/require-role.middleware";
 import { hostPayoutStatusValues } from "../../models/host-payout-batch";
 
 const router = express.Router();
@@ -36,7 +36,7 @@ const payoutListValidators = [
     query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("limit must be between 1 and 100").toInt(),
 ];
 
-router.use(authenticate, requireRole("host", "admin"));
+router.use(authenticate, requireHostOnly);
 
 router.get("/payout-accounts", listPayoutAccounts);
 

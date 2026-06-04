@@ -879,10 +879,7 @@ const resolveCancellationReason = (
     }
 
     return {
-        reasonCode:
-            currentStatus === "pending_payment"
-                ? cancellationReasons.customerCancelled
-                : cancellationReasons.customerCancelled,
+        reasonCode: cancellationReasons.customerCancelled,
         note: sanitizedReason,
     };
 };

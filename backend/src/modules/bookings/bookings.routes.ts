@@ -13,7 +13,7 @@ import {
     getMyGuestBookings,
 } from "./bookings.controller";
 import { authenticate } from "../../middlewares/authenticate.middleware";
-import { requireRole } from "../../middlewares/require-role.middleware";
+import { requireHostOnly, requireRole } from "../../middlewares/require-role.middleware";
 import { getBookingCreateRateLimiter } from "../../middlewares/rate-limit.middleware";
 import { validate } from "../../middlewares/validate";
 import {
@@ -37,7 +37,7 @@ router.post(
     cancelGuestBookingById,
 );
 
-hostBookingsRoutes.use(authenticate, requireRole("host", "admin"));
+hostBookingsRoutes.use(authenticate, requireHostOnly);
 
 hostBookingsRoutes.get("/", validate({ query: bookingsQuerySchema }), getHostBookingList);
 hostBookingsRoutes.get("/:bookingId", validate({ params: bookingIdParamSchema }), getHostBookingById);

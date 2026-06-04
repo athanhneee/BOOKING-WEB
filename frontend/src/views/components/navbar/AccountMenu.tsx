@@ -18,7 +18,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { APP_ROUTES } from "../../../config/routes";
 import type { AccountUserProfile } from "../../../models/entities/AccountProfile";
 import { logout } from "../../../services/authService";
-import { getCurrentUser, isHostUser } from "../../../store/authStore";
+import { getCurrentUser, isAdminUser, isHostUser } from "../../../store/authStore";
 import { cn } from "../../../utils";
 
 type MenuItem = {
@@ -48,11 +48,12 @@ const createMenuGroups = (
     onMessagesClick: () => void,
     onLogout: () => void,
     isAuthenticated: boolean,
+    isAdmin: boolean,
 ): MenuGroup[] => [
         {
             key: "personal",
             items: [
-                { key: "favorites", label: "Danh sách yêu thích", icon: LuHeart, to: APP_ROUTES.search },
+                { key: "favorites", label: "Danh sách yêu thích", icon: LuHeart, to: APP_ROUTES.accountWishlist },
                 { key: "trips", label: "Chuyến đi", icon: LuPlane, to: APP_ROUTES.accountTrips },
                 { key: "messages", label: "Tin nhắn", icon: LuMessageSquare, action: onMessagesClick },
                 { key: "profile", label: "Hồ sơ", icon: LuUserRound, to: APP_ROUTES.accountProfile },
@@ -65,13 +66,20 @@ const createMenuGroups = (
                 { key: "help", label: "Trung tâm trợ giúp", icon: LuCircleHelp },
             ],
         },
-        {
-            key: "host",
-            items: [
-                { key: "become-host", label: hostAction?.label ?? "Trở thành host", icon: LuHouse, to: hostAction?.to ?? APP_ROUTES.hostLanding },
-                { key: "host-support", label: "Tìm hỗ trợ host", icon: LuSearch, to: APP_ROUTES.ownerDashboard },
-            ],
-        },
+        isAdmin
+            ? {
+                key: "admin",
+                items: [
+                    { key: "admin-dashboard", label: "Khu vực admin", icon: LuHouse, to: APP_ROUTES.adminOverview },
+                ],
+            }
+            : {
+                key: "host",
+                items: [
+                    { key: "become-host", label: hostAction?.label ?? "Trở thành host", icon: LuHouse, to: hostAction?.to ?? APP_ROUTES.hostLanding },
+                    { key: "host-support", label: "Tìm hỗ trợ host", icon: LuSearch, to: APP_ROUTES.ownerDashboard },
+                ],
+            },
         {
             key: "auth",
             items: [
@@ -101,6 +109,8 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
     const [isMobileMounted, setIsMobileMounted] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const closeTimerRef = useRef<number | null>(null);
+    const currentUser = getCurrentUser();
+    const isAdmin = isAdminUser(currentUser);
 
     const handleLogout = () => {
         logout();
@@ -110,8 +120,6 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
     };
 
     const handleMessagesClick = () => {
-        const currentUser = getCurrentUser();
-
         if (!currentUser) {
             navigate(`${APP_ROUTES.login}?redirectTo=${encodeURIComponent(location.pathname + location.search)}`);
             return;
@@ -120,7 +128,7 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
         navigate(isHostUser(currentUser) ? APP_ROUTES.hostMessages : APP_ROUTES.messages);
     };
 
-    const menuGroups = createMenuGroups(hostAction, handleMessagesClick, handleLogout, isAuthenticated);
+    const menuGroups = createMenuGroups(hostAction, handleMessagesClick, handleLogout, isAuthenticated, isAdmin);
 
     useEffect(() => {
         if (!isDesktopOpen) {

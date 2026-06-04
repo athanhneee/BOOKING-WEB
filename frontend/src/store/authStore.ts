@@ -110,6 +110,4 @@ export const isAuthenticated = (user: AuthUser | null | undefined): user is Auth
 export const isAdminUser = (user: (Pick<AuthUser, "role"> & { roles?: string[] }) | null | undefined) =>
     getRoleValues(user).includes("admin");
 export const isHostUser = (user: (Pick<AuthUser, "role"> & { roles?: string[] }) | null | undefined) =>
-    getRoleValues(user).some((role) =>
-        ["host", "admin", "host new", "host_new", "host-new", "host verified", "host_verified"].includes(role),
-    );
+    getRoleValues(user).some((role) => ["host", "host verified", "host_verified"].includes(role));

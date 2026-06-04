@@ -519,7 +519,7 @@ const ListingLocationMap = ({
     const markerRef = useRef<LeafletMarker | null>(null);
     const boundedPosition = useMemo(
         () => clampCoordinatesToVungTauBounds(position),
-        [position.latitude, position.longitude],
+        [position],
     );
     const markerPosition = useMemo<LatLngExpression>(
         () => [boundedPosition.latitude, boundedPosition.longitude],

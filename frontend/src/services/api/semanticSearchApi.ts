@@ -87,7 +87,20 @@ export type AiListingSearchResponse = {
         candidateCount: number;
         forceVungTauOnly: boolean;
         filters: Record<string, unknown>;
-        parsedFilters?: Record<string, unknown>;
+        parsedFilters?: {
+            dateIntent?: {
+                label: string;
+                checkIn?: string;
+                checkOut?: string;
+            };
+            guests?: number;
+            minPrice?: number;
+            maxPrice?: number;
+            propertyType?: string;
+            proximity?: string[];
+            amenityCodes?: string[];
+            [key: string]: unknown;
+        };
     };
 };
 

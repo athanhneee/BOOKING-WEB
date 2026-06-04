@@ -1,12 +1,21 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { APP_ROUTES } from "../config/routes";
 import { getDefaultRouteForRole } from "../services/authService";
-import { getCurrentUser, type UserRole } from "../store/authStore";
+import { getCurrentUser, isAdminUser, type AuthUser, type UserRole } from "../store/authStore";
 
 type ProtectedRouteProps = {
     allowedRoles?: UserRole[];
     redirectTo?: string;
 };
+
+const hasAllowedRole = (user: AuthUser, allowedRoles: UserRole[]) =>
+    allowedRoles.some((role) => {
+        if (String(role).toLowerCase() === "admin") {
+            return isAdminUser(user);
+        }
+
+        return user.role === role;
+    });
 
 const ProtectedRoute = ({ allowedRoles, redirectTo = APP_ROUTES.login }: ProtectedRouteProps) => {
     const location = useLocation();
@@ -20,7 +29,7 @@ const ProtectedRoute = ({ allowedRoles, redirectTo = APP_ROUTES.login }: Protect
         return <Navigate to={`${redirectTo}?${nextSearchParams.toString()}`} replace />;
     }
 
-    if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
+    if (allowedRoles && !hasAllowedRole(currentUser, allowedRoles)) {
         return <Navigate to={getDefaultRouteForRole(currentUser.role)} replace />;
     }
 

@@ -10,6 +10,8 @@ type DatePickerPanelProps = {
     rangeEndDate?: string;
     activeField?: "checkIn" | "checkOut";
     selectedNightOffset?: number;
+    /** ISO dates (YYYY-MM-DD) that are booked/unavailable — cannot be selected */
+    bookedDates?: string[];
     onSelectDate: (nextDate: string) => void;
     onNightOffsetChange?: (nextOffset: number) => void;
     onClear?: () => void;
@@ -125,6 +127,9 @@ type CalendarMonthProps = {
     checkOut: Date | null;
     activeField: "checkIn" | "checkOut";
     hoveredDate: Date | null;
+    /** First booked date after checkIn (limits selectable checkout range) */
+    firstBookedAfterCheckIn: Date | null;
+    bookedDatesSet: Set<string>;
     onDateSelect: (date: Date) => void;
     onDateHover: (date: Date | null) => void;
     showPrev: boolean;
@@ -142,6 +147,8 @@ function CalendarMonth({
     checkOut,
     activeField,
     hoveredDate,
+    firstBookedAfterCheckIn,
+    bookedDatesSet,
     onDateSelect,
     onDateHover,
     showPrev,
@@ -167,12 +174,37 @@ function CalendarMonth({
 
     const getCellState = (date: Date | null) => {
         if (!date) return "empty";
+
+        const iso = toIsoDate(date);
+
+        // Past / before min date
         if (date < minSelectableDate) return "disabled";
+
+        // Selected range endpoints (take priority over booked)
         if (isSameDay(date, checkIn)) return "start";
         if (isSameDay(date, checkOut)) return "end";
+
+        // Booked / unavailable date
+        if (bookedDatesSet.has(iso)) return "booked";
+
+        // When picking checkout, dates after the first booked night are also disabled
+        if (
+            activeField === "checkOut" &&
+            checkIn &&
+            firstBookedAfterCheckIn &&
+            date > firstBookedAfterCheckIn
+        ) {
+            return "disabled";
+        }
+
+        // In-range highlight
         if (checkIn && endDate && date > checkIn && date < endDate) return "range";
+
         if (isSameDay(date, today)) return "today";
+
+        // Checkout mode: dates before or equal to checkIn are unselectable
         if (activeField === "checkOut" && checkIn && date <= checkIn) return "disabled";
+
         return "normal";
     };
 
@@ -229,6 +261,7 @@ function CalendarMonth({
                             const isRange = state === "range";
                             const isStart = state === "start";
                             const isEnd = state === "end";
+                            const isBooked = state === "booked";
                             const hasEnd = Boolean(endDate);
 
                             let cellBgClass = "";
@@ -247,14 +280,22 @@ function CalendarMonth({
 
                             if (state === "disabled") {
                                 buttonClassName += " cursor-not-allowed text-gray-300";
+                            } else if (isBooked) {
+                                // Booked: strikethrough, warm red-gray, can't click
+                                buttonClassName +=
+                                    " cursor-not-allowed text-rose-300 line-through decoration-rose-300/60";
                             } else if (state === "start" || state === "end") {
-                                buttonClassName += " selected cursor-pointer bg-cyan-500 font-semibold text-white shadow-sm hover:bg-cyan-500";
+                                buttonClassName +=
+                                    " selected cursor-pointer bg-cyan-500 font-semibold text-white shadow-sm hover:bg-cyan-500";
                             } else if (state === "today") {
-                                buttonClassName += " cursor-pointer font-semibold text-gray-900 ring-2 ring-cyan-400 hover:bg-cyan-50";
+                                buttonClassName +=
+                                    " cursor-pointer font-semibold text-gray-900 ring-2 ring-cyan-400 hover:bg-cyan-50";
                             } else if (state === "range") {
-                                buttonClassName += " cursor-pointer text-gray-800 hover:bg-cyan-100 hover:text-cyan-800";
+                                buttonClassName +=
+                                    " cursor-pointer text-gray-800 hover:bg-cyan-100 hover:text-cyan-800";
                             } else if (state === "normal") {
-                                buttonClassName += " cursor-pointer text-gray-800 hover:bg-cyan-50 hover:text-cyan-700";
+                                buttonClassName +=
+                                    " cursor-pointer text-gray-800 hover:bg-cyan-50 hover:text-cyan-700";
                             } else {
                                 buttonClassName += " invisible";
                             }
@@ -270,16 +311,17 @@ function CalendarMonth({
                                     {date ? (
                                         <button
                                             type="button"
-                                            disabled={state === "disabled"}
+                                            disabled={state === "disabled" || isBooked}
+                                            title={isBooked ? "Ngày đã được đặt" : undefined}
                                             onMouseDown={(event) =>
                                                 handleMouseSelect(event, () => {
-                                                    if (state !== "disabled") {
+                                                    if (state !== "disabled" && !isBooked) {
                                                         onDateSelect(date);
                                                     }
                                                 })
                                             }
                                             onMouseEnter={() => {
-                                                if (state !== "disabled") {
+                                                if (state !== "disabled" && !isBooked) {
                                                     onDateHover(date);
                                                 }
                                             }}
@@ -307,6 +349,7 @@ const DatePickerPanel = ({
     rangeEndDate = "",
     activeField = "checkIn",
     selectedNightOffset = 0,
+    bookedDates,
     onSelectDate,
     onNightOffsetChange,
     onClear,
@@ -330,6 +373,31 @@ const DatePickerPanel = ({
         () => parseIsoDate(rangeEndDate) ?? (activeField === "checkOut" ? activeDate : null),
         [activeDate, activeField, rangeEndDate],
     );
+
+    // Build a Set for O(1) lookup
+    const bookedDatesSet = useMemo(() => new Set(bookedDates ?? []), [bookedDates]);
+
+    // When picking checkout: find the first booked date strictly AFTER checkIn.
+    // Guests can check out on a booked day (the next guest arrives that day), so
+    // dates AFTER firstBookedAfterCheckIn are disabled.
+    const firstBookedAfterCheckIn = useMemo(() => {
+        if (!checkIn || activeField !== "checkOut") return null;
+
+        const checkInIso = toIsoDate(checkIn);
+        let earliest: Date | null = null;
+
+        for (const iso of bookedDatesSet) {
+            if (iso > checkInIso) {
+                const d = parseIsoDate(iso);
+                if (d && (!earliest || d < earliest)) {
+                    earliest = d;
+                }
+            }
+        }
+
+        return earliest;
+    }, [checkIn, activeField, bookedDatesSet]);
+
     const [calendarMode, setCalendarMode] = useState<CalendarMode>("day");
     const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
     const [flexDuration, setFlexDuration] = useState<FlexDurationOption>("Cuối tuần");
@@ -378,6 +446,18 @@ const DatePickerPanel = ({
         return null;
     }
 
+    const sharedMonthProps = {
+        today,
+        minSelectableDate,
+        checkIn,
+        checkOut,
+        activeField,
+        hoveredDate,
+        firstBookedAfterCheckIn,
+        bookedDatesSet,
+        onDateHover: setHoveredDate,
+    };
+
     return (
         <div className={containerClassName} style={style} onMouseDown={(event) => event.stopPropagation()}>
             <div className="mb-7 flex justify-center">
@@ -409,16 +489,10 @@ const DatePickerPanel = ({
             {calendarMode === "day" ? (
                 <div key={`${baseMonth.year}-${baseMonth.month}`} className="month-grid-enter grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
                     <CalendarMonth
+                        {...sharedMonthProps}
                         year={leftYear}
                         month={leftMonth}
-                        today={today}
-                        minSelectableDate={minSelectableDate}
-                        checkIn={checkIn}
-                        checkOut={checkOut}
-                        activeField={activeField}
-                        hoveredDate={hoveredDate}
                         onDateSelect={(date) => onSelectDate(toIsoDate(date))}
-                        onDateHover={setHoveredDate}
                         showPrev
                         showNext={false}
                         onPrev={() => {
@@ -428,16 +502,10 @@ const DatePickerPanel = ({
                         onNext={() => undefined}
                     />
                     <CalendarMonth
+                        {...sharedMonthProps}
                         year={rightYear}
                         month={rightMonth}
-                        today={today}
-                        minSelectableDate={minSelectableDate}
-                        checkIn={checkIn}
-                        checkOut={checkOut}
-                        activeField={activeField}
-                        hoveredDate={hoveredDate}
                         onDateSelect={(date) => onSelectDate(toIsoDate(date))}
-                        onDateHover={setHoveredDate}
                         showPrev={false}
                         showNext
                         onPrev={() => undefined}
@@ -525,9 +593,17 @@ const DatePickerPanel = ({
             )}
 
             <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-5">
-                <div>
-                    <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">Lựa chọn</p>
-                    <p className="text-sm font-semibold text-gray-900">{clearSummary}</p>
+                <div className="flex items-center gap-6">
+                    <div>
+                        <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">Lựa chọn</p>
+                        <p className="text-sm font-semibold text-gray-900">{clearSummary}</p>
+                    </div>
+                    {bookedDatesSet.size > 0 ? (
+                        <div className="flex items-center gap-1.5">
+                            <span className="inline-block h-3 w-3 rounded-sm bg-rose-100 ring-1 ring-rose-200" />
+                            <span className="text-xs text-gray-400">Đã được đặt</span>
+                        </div>
+                    ) : null}
                 </div>
 
                 {onClear ? (

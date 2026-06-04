@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
+import { APP_ROUTES } from "../../../../config/routes";
 import {
     LuCalendar,
     LuChevronDown,
@@ -138,8 +140,17 @@ const DetailItem = ({ icon, label, value }: DetailItemProps) => (
 );
 
 const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
+    const navigate = useNavigate();
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const statusMeta = getStatusMeta(trip);
+
+    const handleRebook = () => {
+        if (trip.listingId) {
+            navigate(APP_ROUTES.villaDetail(String(trip.listingId)));
+        } else {
+            navigate(APP_ROUTES.search);
+        }
+    };
     const guestCountLabel = trip.guestCount ? `${trip.guestCount} khách` : "Chưa cập nhật";
     const address = trip.address || trip.location || "Chưa cập nhật";
     const actions = [
@@ -209,7 +220,9 @@ const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
                                 onClick={
                                     action.key === "detail"
                                         ? () => setIsDetailOpen((currentValue) => !currentValue)
-                                        : undefined
+                                        : action.key === "rebook"
+                                            ? handleRebook
+                                            : undefined
                                 }
                                 aria-expanded={action.key === "detail" ? isDetailOpen : undefined}
                                 className={cn(

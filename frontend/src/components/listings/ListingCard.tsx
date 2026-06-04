@@ -1,10 +1,12 @@
-import { Bath, BedDouble, MapPin, Star, Users } from "lucide-react";
+import { Bath, BedDouble, Calendar, MapPin, Star, Users } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { APP_ROUTES } from "../../config/routes";
 import type { AiListingSearchItem } from "../../services/api/semanticSearchApi";
 
 type ListingCardProps = {
     listing: AiListingSearchItem;
+    checkIn?: string;
+    checkOut?: string;
 };
 
 const currencyFormatter = new Intl.NumberFormat("vi-VN", {
@@ -23,14 +25,30 @@ const propertyTypeLabel: Record<string, string> = {
 const buildAddress = (listing: AiListingSearchItem) =>
     [listing.addressLine, listing.ward, listing.district, listing.city].filter(Boolean).join(", ");
 
-const ListingCard = ({ listing }: ListingCardProps) => {
+const formatShortDate = (iso: string) => {
+    const d = new Date(`${iso}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return iso;
+    return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit" }).format(d);
+};
+
+const buildDetailUrl = (listingId: string, checkIn?: string, checkOut?: string) => {
+    const base = APP_ROUTES.villaDetail(listingId);
+    if (!checkIn) return base;
+    const params = new URLSearchParams();
+    params.set("checkIn", checkIn);
+    if (checkOut) params.set("checkOut", checkOut);
+    return `${base}?${params.toString()}`;
+};
+
+const ListingCard = ({ listing, checkIn, checkOut }: ListingCardProps) => {
     const location = useLocation();
     const returnTo = `${location.pathname}${location.search}`;
     const address = buildAddress(listing);
+    const detailUrl = buildDetailUrl(String(listing.listingId), checkIn, checkOut);
 
     return (
         <Link
-            to={APP_ROUTES.villaDetail(String(listing.listingId))}
+            to={detailUrl}
             state={{ returnTo }}
             className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
         >
@@ -50,6 +68,14 @@ const ListingCard = ({ listing }: ListingCardProps) => {
                 <span className="absolute right-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
                     {propertyTypeLabel[listing.propertyType] ?? listing.propertyType}
                 </span>
+
+                {checkIn ? (
+                    <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-cyan-600/90 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-sm">
+                        <Calendar size={12} />
+                        {formatShortDate(checkIn)}
+                        {checkOut ? ` – ${formatShortDate(checkOut)}` : ""}
+                    </span>
+                ) : null}
             </div>
 
             <div className="flex flex-1 flex-col p-4">

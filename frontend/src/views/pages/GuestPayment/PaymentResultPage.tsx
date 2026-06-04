@@ -6,7 +6,7 @@ import { APP_ROUTES } from "../../../config/routes";
 import { getPaymentDetail, type Payment } from "../../../services/paymentService";
 import { formatCurrency } from "../Host/sharedStyles";
 
-function getProviderLabel(payment: any, searchParams: URLSearchParams): string {
+function getProviderLabel(payment: Payment | null, searchParams: URLSearchParams): string {
     const method = String(
         payment?.method ?? searchParams.get("method") ?? searchParams.get("provider") ?? "",
     ).toLowerCase();

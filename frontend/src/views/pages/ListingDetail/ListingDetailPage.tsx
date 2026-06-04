@@ -1,4 +1,4 @@
-﻿import {
+import {
     useEffect,
     useMemo,
     useRef,
@@ -46,6 +46,7 @@ import type {
 import { createOrGetConversation } from "../../../services/api/conversationsApi";
 import { createBooking } from "../../../services/bookingService";
 import {
+    getListingAvailability,
     getListingById,
     getListingReviews,
     getListingRules,
@@ -495,6 +496,8 @@ const BookingSelectionField = ({
 type GuestControlsProps = {
     value: GuestSelection;
     compact?: boolean;
+    /** Override the adults maximum with the listing's maxGuests */
+    maxAdults?: number;
     onAdjust: (
         key: keyof GuestSelection,
         delta: number,
@@ -506,13 +509,17 @@ type GuestControlsProps = {
 const GuestControls = ({
     value,
     compact = false,
+    maxAdults,
     onAdjust,
 }: GuestControlsProps) => (
     <div className="space-y-3">
         {guestFieldConfigs.map((field) => {
+            const effectiveMax = field.key === "adults" && maxAdults !== undefined
+                ? maxAdults
+                : field.max;
             const currentValue = value[field.key];
             const disableMinus = currentValue <= field.min;
-            const disablePlus = currentValue >= field.max;
+            const disablePlus = currentValue >= effectiveMax;
 
             return (
                 <div
@@ -549,7 +556,7 @@ const GuestControls = ({
                         <button
                             type="button"
                             disabled={disablePlus}
-                            onClick={() => onAdjust(field.key, 1, field.min, field.max)}
+                            onClick={() => onAdjust(field.key, 1, field.min, effectiveMax)}
                             className={`inline-flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 shadow-sm transition-colors hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-35 ${compact ? "h-9 w-9" : "h-10 w-10"
                                 }`}
                             aria-label={`Tăng ${field.label}`}
@@ -891,6 +898,10 @@ type BookingCardProps = {
     activeDesktopField: BookingField;
     todayIso: string;
     nightOffset: number;
+    /** ISO dates that are already booked — shown as disabled in the calendar */
+    bookedDates?: string[];
+    /** Listing's max guest count — used to cap the adults selector */
+    maxGuests: number;
     activeDesktopAnchorRef: RefObject<HTMLElement | null>;
     desktopBookingRef: RefObject<HTMLDivElement | null>;
     desktopPopoverRef: RefObject<HTMLDivElement | null>;
@@ -925,6 +936,8 @@ const BookingCard = ({
     activeDesktopField,
     todayIso,
     nightOffset,
+    bookedDates,
+    maxGuests,
     activeDesktopAnchorRef,
     desktopBookingRef,
     desktopPopoverRef,
@@ -1066,6 +1079,7 @@ const BookingCard = ({
                             activeDesktopField === "checkout" ? "checkOut" : "checkIn"
                         }
                         selectedNightOffset={nightOffset}
+                        bookedDates={bookedDates}
                         onSelectDate={
                             activeDesktopField === "checkin"
                                 ? onSelectCheckIn
@@ -1091,12 +1105,13 @@ const BookingCard = ({
                             Bạn đi cùng ai?
                         </p>
                         <p className="mt-1 text-sm text-gray-500">
-                            Tối đa 16 khách, chưa tính em bé và thú cưng.
+                            Tối đa {maxGuests} khách, chưa tính em bé và thú cưng.
                         </p>
                         <div className="mt-5 rounded-[26px] bg-slate-50 p-2">
                             <GuestControls
                                 value={guestSelection}
                                 compact
+                                maxAdults={maxGuests}
                                 onAdjust={onAdjustGuest}
                             />
                         </div>
@@ -1114,6 +1129,10 @@ type MobileBookingSheetProps = {
     checkOut: string;
     todayIso: string;
     nightOffset: number;
+    /** ISO dates that are already booked — shown as disabled in the mobile calendar */
+    bookedDates?: string[];
+    /** Listing's max guest count — used to cap the adults selector */
+    maxGuests: number;
     guestSelection: GuestSelection;
     onClose: () => void;
     onDateFieldChange: (field: MobileDateField) => void;
@@ -1135,6 +1154,8 @@ const MobileBookingSheetPanel = ({
     checkOut,
     todayIso,
     nightOffset,
+    bookedDates,
+    maxGuests,
     guestSelection,
     onClose,
     onDateFieldChange,
@@ -1207,6 +1228,7 @@ const MobileBookingSheetPanel = ({
                                 mobileDateField === "checkout" ? "checkOut" : "checkIn"
                             }
                             selectedNightOffset={nightOffset}
+                            bookedDates={bookedDates}
                             onSelectDate={
                                 mobileDateField === "checkin"
                                     ? onSelectCheckIn
@@ -1219,7 +1241,7 @@ const MobileBookingSheetPanel = ({
                 ) : (
                     <div className="mt-5 rounded-[34px] border border-cyan-100 bg-white p-4 shadow-sm">
                         <div className="rounded-[26px] bg-slate-50 p-2">
-                            <GuestControls value={guestSelection} onAdjust={onAdjustGuest} />
+                            <GuestControls value={guestSelection} maxAdults={maxGuests} onAdjust={onAdjustGuest} />
                         </div>
                     </div>
                 )}
@@ -1380,6 +1402,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
     const [mobileDateField, setMobileDateField] =
         useState<MobileDateField>("checkin");
     const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+    const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
 
     const bookingQueue = useBookingQueue();
     const {
@@ -1417,6 +1440,38 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
     const [checkIn, setCheckIn] = useState(initialBookingState.checkIn);
     const [checkOut, setCheckOut] = useState(initialBookingState.checkOut);
     const [nightOffset, setNightOffset] = useState(0);
+
+    // Fetch booked dates for the next 6 months so calendar shows unavailable days
+    useEffect(() => {
+        if (!villaId) return;
+
+        const fetchUnavailableDates = async () => {
+            try {
+                const now = new Date();
+                const monthCount = 6;
+                const results = await Promise.all(
+                    Array.from({ length: monthCount }, (_, offset) => {
+                        const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+                        return getListingAvailability(villaId, {
+                            month: d.getMonth() + 1,
+                            year: d.getFullYear(),
+                        });
+                    }),
+                );
+
+                const booked = results
+                    .flatMap((r) => r.days)
+                    .filter((d) => !d.isAvailable)
+                    .map((d) => d.date);
+
+                setUnavailableDates(booked);
+            } catch {
+                // Non-critical — calendar degrades gracefully without booked dates
+            }
+        };
+
+        void fetchUnavailableDates();
+    }, [villaId]);
     const [guestSelection, setGuestSelection] = useState<GuestSelection>(
         initialBookingState.guests,
     );
@@ -1811,6 +1866,30 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
             return;
         }
 
+        // If there are items in the booking queue, go to multi-booking checkout
+        if (bookingQueue.items.length > 0) {
+            if (!checkIn || !checkOut) {
+                showActionFeedback("Vui lòng chọn ngày nhận phòng và trả phòng.");
+                return;
+            }
+
+            navigate(APP_ROUTES.multiBooking, {
+                state: {
+                    listingId: Number(destination.id),
+                    title: destination.name,
+                    imageUrl: destination.imageUrl,
+                    basePrice: destination.pricePerNight,
+                    location: destination.address,
+                    checkIn,
+                    checkOut,
+                    guests: guestCount,
+                    guestSummary,
+                },
+            });
+            return;
+        }
+
+        // Single booking flow (no queue)
         setIsBooking(true);
         setActionFeedback(null);
 
@@ -1833,6 +1912,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
             setIsBooking(false);
         }
     };
+
 
     const handleNightOffsetChange = (nextOffset: number) => {
         setNightOffset(nextOffset);
@@ -2066,13 +2146,18 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                                     <button
                                         type="button"
                                         onClick={handleToggleBookingQueue}
-                                        className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors ${isListingInQueue
+                                        className={`relative inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors ${isListingInQueue
                                             ? "border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100"
                                             : "border-[#e0d1c1] bg-white/90 text-zinc-900 hover:border-cyan-300 hover:text-cyan-700"
                                             }`}
                                     >
                                         <FiShoppingBag />
-                                        {isListingInQueue ? "Đã chờ đặt" : "Danh sách chờ đặt"}
+                                        {isListingInQueue ? "✓ Đã thêm vào giỏ" : "Thêm vào giỏ chờ"}
+                                        {bookingQueue.items.length > 0 && (
+                                            <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-cyan-600 px-1 text-xs font-bold text-white">
+                                                {bookingQueue.items.length}
+                                            </span>
+                                        )}
                                     </button>
                                 </div>
 
@@ -2111,6 +2196,8 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                                     activeDesktopField={activeDesktopField}
                                     todayIso={todayIso}
                                     nightOffset={nightOffset}
+                                    bookedDates={unavailableDates}
+                                    maxGuests={destination.maxGuests}
                                     activeDesktopAnchorRef={activeDesktopAnchorRef}
                                     desktopBookingRef={desktopBookingRef}
                                     desktopPopoverRef={desktopPopoverRef}
@@ -2211,6 +2298,8 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                                 activeDesktopField={activeDesktopField}
                                 todayIso={todayIso}
                                 nightOffset={nightOffset}
+                                bookedDates={unavailableDates}
+                                maxGuests={destination.maxGuests}
                                 activeDesktopAnchorRef={activeDesktopAnchorRef}
                                 desktopBookingRef={desktopBookingRef}
                                 desktopPopoverRef={desktopPopoverRef}
@@ -2245,6 +2334,8 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                 checkOut={checkOut}
                 todayIso={todayIso}
                 nightOffset={nightOffset}
+                bookedDates={unavailableDates}
+                maxGuests={destination.maxGuests}
                 guestSelection={guestSelection}
                 onClose={() => setMobileBookingSheet(null)}
                 onDateFieldChange={setMobileDateField}

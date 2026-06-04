@@ -42,7 +42,7 @@ const filters: Array<{ label: string; value: BookingFilter }> = [
 
 const getBookingAmount = (booking: ApiBooking) => Number(booking.totalAmount || booking.totalPrice || 0);
 const hostRejectedReason = "HOST_REJECTED";
-const shouldShowInHostBookings = (_booking: ApiBooking) => true;
+const shouldShowInHostBookings = () => true;
 
 const DatPhong = () => {
     const [filter, setFilter] = useState<BookingFilter>("all");

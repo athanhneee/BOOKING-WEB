@@ -109,3 +109,15 @@ export const removeBookingQueueItem = (listingId: string) => {
     writeBookingQueueItems(nextItems);
     return nextItems;
 };
+
+export const clearBookingQueue = () => {
+    writeBookingQueueItems([]);
+};
+
+export const updateBookingQueueItem = (listingId: string, updates: Partial<BookingQueueItem>) => {
+    const nextItems = readBookingQueueItems().map((item) =>
+        item.listingId === listingId ? { ...item, ...updates } : item,
+    );
+    writeBookingQueueItems(nextItems);
+    return nextItems;
+};

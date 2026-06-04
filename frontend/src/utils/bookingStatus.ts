@@ -483,7 +483,7 @@ const buildBookingStatusActions = (
     return {
         canConfirm: lifecycleStatus === "paid",
         canCheckIn:
-            ["paid", "confirmed"].includes(lifecycleStatus) &&
+            lifecycleStatus === "confirmed" &&
             isDateTodayInVietnam(booking.checkInDate, today),
         canCheckOut:
             lifecycleStatus === "checked_in" &&

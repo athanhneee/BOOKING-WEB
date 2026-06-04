@@ -2,6 +2,7 @@ export type TripHistoryStatus = "completed" | "pending_review" | "active" | "can
 
 export type TripHistory = {
     id: string;
+    listingId?: string | number | null;
     propertyName: string;
     location: string;
     imageUrl: string;

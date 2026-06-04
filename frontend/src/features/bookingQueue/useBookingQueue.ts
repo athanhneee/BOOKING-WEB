@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import {
     addBookingQueueItem,
+    clearBookingQueue,
     readBookingQueueItems,
     removeBookingQueueItem,
+    updateBookingQueueItem,
     type BookingQueueItem,
 } from "./bookingQueueStorage";
 
@@ -32,12 +34,24 @@ export const useBookingQueue = () => {
         setItems(nextItems);
     }, []);
 
+    const clearAll = useCallback(() => {
+        clearBookingQueue();
+        setItems([]);
+    }, []);
+
+    const updateItem = useCallback((listingId: string, updates: Partial<BookingQueueItem>) => {
+        const nextItems = updateBookingQueueItem(listingId, updates);
+        setItems(nextItems);
+    }, []);
+
     const hasItem = useCallback((listingId: string) => items.some((item) => item.listingId === listingId), [items]);
 
     return {
         items,
         addItem,
         removeItem,
+        clearAll,
+        updateItem,
         hasItem,
     };
 };

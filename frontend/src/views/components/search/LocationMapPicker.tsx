@@ -72,7 +72,7 @@ const LocationMapPicker = ({
     const markerRef = useRef<LeafletMarker | null>(null);
     const boundedValue = useMemo(
         () => clampLatLngToVungTauBounds(value),
-        [value.lat, value.lng],
+        [value],
     );
     const markerPosition = useMemo<LatLngExpression>(
         () => [boundedValue.lat, boundedValue.lng],
