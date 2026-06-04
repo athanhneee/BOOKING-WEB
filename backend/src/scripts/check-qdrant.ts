@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 /**
  * Manual Qdrant health-check and collection bootstrap script.
  *
