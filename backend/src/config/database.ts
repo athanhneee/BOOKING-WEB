@@ -7,6 +7,16 @@ import { getEnv } from "./env";
 const env = getEnv();
 const caPath = env.dbSslCa ? path.resolve(process.cwd(), env.dbSslCa) : undefined;
 
+// Allow override via env: MYSQL_SSL_REJECT_UNAUTHORIZED=false
+// Needed for providers with self-signed certs (PlanetScale, Aiven, Railway, etc.)
+const sslRejectUnauthorized = (() => {
+    const raw = process.env.MYSQL_SSL_REJECT_UNAUTHORIZED;
+    if (raw === "false") return false;
+    if (raw === "true") return true;
+    // Default: strict in production, relaxed in dev
+    return env.nodeEnv === "production";
+})();
+
 export const sequelize = new Sequelize(env.dbName, env.dbUser, env.dbPassword, {
     host: env.dbHost,
     port: env.dbPort,
@@ -18,7 +28,7 @@ export const sequelize = new Sequelize(env.dbName, env.dbUser, env.dbPassword, {
         ...(env.dbSsl
             ? {
                   ssl: {
-                      rejectUnauthorized: env.nodeEnv === "production",
+                      rejectUnauthorized: sslRejectUnauthorized,
                       ...(caPath && fs.existsSync(caPath) ? { ca: fs.readFileSync(caPath, "utf8") } : {}),
                   },
               }
