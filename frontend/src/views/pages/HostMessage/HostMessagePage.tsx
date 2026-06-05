@@ -412,32 +412,29 @@ const HostMessagePage = () => {
                             )}
                         </div>
 
-                        <form onSubmit={handleSubmitHostMessage} className="mt-5 space-y-4">
-                            <textarea
-                                value={messageDraft}
-                                onChange={(event) => setMessageDraft(event.target.value)}
-                                rows={4}
-                                maxLength={2000}
-                                placeholder="Nhập tin nhắn cho host..."
-                                className="w-full resize-none rounded-[28px] border border-[#e0d1c1] bg-white px-5 py-4 text-sm leading-6 text-zinc-900 shadow-sm outline-none transition placeholder:text-zinc-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-                            />
+                        <form onSubmit={handleSubmitHostMessage} className="mt-5 space-y-3">
+                            {messageNotice ? (
+                                <p className="rounded-2xl bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-600">
+                                    {messageNotice}
+                                </p>
+                            ) : null}
 
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                {messageNotice ? (
-                                    <p className="rounded-full bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-600">
-                                        {messageNotice}
-                                    </p>
-                                ) : (
-                                    <span />
-                                )}
-
+                            <div className="flex items-end gap-3 rounded-full border border-[#e0d1c1] bg-[#faf6f1] py-2 pl-6 pr-2 transition-all duration-200 focus-within:border-cyan-300 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(6,182,212,0.1)]">
+                                <textarea
+                                    value={messageDraft}
+                                    onChange={(event) => setMessageDraft(event.target.value)}
+                                    rows={1}
+                                    maxLength={2000}
+                                    placeholder="Nhập tin nhắn cho host..."
+                                    className="max-h-28 min-h-[48px] min-w-0 flex-1 resize-none border-0 bg-transparent py-3 text-sm leading-6 text-zinc-900 outline-none placeholder:text-zinc-400"
+                                />
                                 <button
                                     type="submit"
                                     disabled={isSending}
-                                    className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-cyan-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-cyan-300"
+                                    className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-md shadow-cyan-200/60 transition-all duration-200 hover:from-cyan-400 hover:to-cyan-500 hover:shadow-lg hover:shadow-cyan-200/80 active:scale-95 disabled:cursor-not-allowed disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 disabled:shadow-none"
+                                    aria-label="Gửi tin nhắn"
                                 >
-                                    <FiSend />
-                                    {isSending ? "Đang gửi..." : "Gửi tin nhắn"}
+                                    <FiSend size={18} className="-translate-x-px translate-y-px" />
                                 </button>
                             </div>
                         </form>

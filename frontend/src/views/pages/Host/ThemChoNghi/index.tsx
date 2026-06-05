@@ -1526,7 +1526,7 @@ const ThemChoNghi = () => {
                                                             const tagCode = event.target.value;
                                                             if (tagCode) handleAddImageTag(image, tagCode);
                                                         }}
-                                                        className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                                                        className="w-full rounded-xl border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
                                                     >
                                                         <option value="">Thêm tag thiếu</option>
                                                         {availableTags.map((taxonomy) => (

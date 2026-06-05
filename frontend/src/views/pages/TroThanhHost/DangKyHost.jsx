@@ -37,7 +37,7 @@ const getErrorMessage = (error, fallback) => {
 };
 
 const FilePicker = ({ id, label, file, required, onChange, onRemove }) => (
-    <div className="space-y-2 rounded-lg border border-gray-200 bg-white p-4">
+    <div className="space-y-2 rounded-xl border border-gray-200 bg-white p-4">
         <div className="flex items-center justify-between gap-3">
             <label htmlFor={id} className="text-sm font-semibold text-gray-800">
                 {label} {required ? <span className="text-rose-600">*</span> : null}
@@ -53,10 +53,10 @@ const FilePicker = ({ id, label, file, required, onChange, onRemove }) => (
             type="file"
             accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
             onChange={(event) => onChange(event.target.files?.[0] ?? null)}
-            className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-cyan-50 file:px-4 file:py-2 file:font-medium file:text-cyan-700 hover:file:bg-cyan-100"
+            className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-xl file:border-0 file:bg-cyan-50 file:px-4 file:py-2 file:font-medium file:text-cyan-700 hover:file:bg-cyan-100"
         />
         {file ? (
-            <div className="rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600">
+            <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-600">
                 <p className="font-medium text-gray-900">{file.name}</p>
                 <p>{formatFileSize(file.size)}</p>
             </div>
@@ -247,38 +247,38 @@ const DangKyHost = () => {
 
     return (
         <div className="bg-[#F7F8FA] px-4 py-12">
-            <div className="mx-auto max-w-3xl rounded-lg border border-gray-100 bg-white p-6 shadow-sm md:p-8">
+            <div className="mx-auto max-w-3xl rounded-xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
                 <div>
                     <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-700">Trở thành host</p>
                     <h1 className="mt-3 text-3xl font-bold text-gray-900">Đăng ký hồ sơ chủ nhà</h1>
                 </div>
 
                 {loadingStatus ? (
-                    <div className="mt-6 rounded-lg border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
+                    <div className="mt-6 rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
                         Đang tải trạng thái hồ sơ...
                     </div>
                 ) : null}
 
                 {error ? (
-                    <div className="mt-6 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                    <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
                         {error}
                     </div>
                 ) : null}
 
                 {success ? (
-                    <div className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+                    <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
                         {success}
                     </div>
                 ) : null}
 
                 {!loadingStatus && status === "pending" ? (
-                    <div className="mt-8 rounded-lg border border-amber-200 bg-amber-50 p-5 text-amber-800">
+                    <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-800">
                         <p className="font-semibold">{statusText.pending}</p>
                         <p className="mt-2 text-sm">Bạn không thể gửi thêm hồ sơ pending cùng lúc.</p>
                         <button
                             type="button"
                             onClick={() => navigate(APP_ROUTES.hostStatus)}
-                            className="mt-4 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                            className="mt-4 rounded-xl bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
                         >
                             Xem trạng thái
                         </button>
@@ -286,12 +286,12 @@ const DangKyHost = () => {
                 ) : null}
 
                 {!loadingStatus && status === "approved" ? (
-                    <div className="mt-8 rounded-lg border border-emerald-200 bg-emerald-50 p-5 text-emerald-800">
+                    <div className="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-800">
                         <p className="font-semibold">{statusText.approved}</p>
                         <button
                             type="button"
                             onClick={() => navigate(APP_ROUTES.ownerDashboard)}
-                            className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                            className="mt-4 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                         >
                             Quản lý host
                         </button>
@@ -299,7 +299,7 @@ const DangKyHost = () => {
                 ) : null}
 
                 {!loadingStatus && status === "rejected" ? (
-                    <div className="mt-8 rounded-lg border border-rose-200 bg-rose-50 p-5 text-rose-800">
+                    <div className="mt-8 rounded-xl border border-rose-200 bg-rose-50 p-5 text-rose-800">
                         <p className="font-semibold">{statusText.rejected}</p>
                         <p className="mt-2 text-sm">
                             Lý do: {currentApplication?.rejectReason ?? currentApplication?.rejectionReason ?? "Chưa có lý do."}
@@ -316,7 +316,7 @@ const DangKyHost = () => {
                                 <input
                                     value={form.contactName}
                                     onChange={(event) => setField("contactName", event.target.value)}
-                                    className="w-full rounded-lg border border-gray-200 px-3 py-2.5"
+                                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
                                 />
                             </label>
                             <label className="space-y-2">
@@ -325,7 +325,7 @@ const DangKyHost = () => {
                                     type="email"
                                     value={form.contactEmail}
                                     onChange={(event) => setField("contactEmail", event.target.value)}
-                                    className="w-full rounded-lg border border-gray-200 px-3 py-2.5"
+                                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
                                 />
                             </label>
                         </div>
@@ -337,7 +337,7 @@ const DangKyHost = () => {
                                     required
                                     value={form.phone}
                                     onChange={(event) => setField("phone", event.target.value)}
-                                    className="w-full rounded-lg border border-gray-200 px-3 py-2.5"
+                                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
                                     placeholder="0901234567"
                                 />
                             </label>
@@ -346,7 +346,7 @@ const DangKyHost = () => {
                                 <select
                                     value={form.profileType}
                                     onChange={(event) => setField("profileType", event.target.value)}
-                                    className="w-full rounded-lg border border-gray-200 px-3 py-2.5"
+                                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
                                 >
                                     <option value="individual">Cá nhân</option>
                                     <option value="business">Tổ chức / doanh nghiệp</option>
@@ -360,7 +360,7 @@ const DangKyHost = () => {
                                 required
                                 value={form.businessAddress}
                                 onChange={(event) => setField("businessAddress", event.target.value)}
-                                className="w-full rounded-lg border border-gray-200 px-3 py-2.5"
+                                className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
                             />
                         </label>
 
@@ -369,11 +369,11 @@ const DangKyHost = () => {
                             <textarea
                                 value={form.note}
                                 onChange={(event) => setField("note", event.target.value)}
-                                className="min-h-[120px] w-full rounded-lg border border-gray-200 px-3 py-2.5"
+                                className="min-h-[120px] w-full rounded-xl border border-gray-200 px-3 py-2.5"
                             />
                         </label>
 
-                        <section className="space-y-4 rounded-lg border border-cyan-100 bg-cyan-50/40 p-5">
+                        <section className="space-y-4 rounded-xl border border-cyan-100 bg-cyan-50/40 p-5">
                             <div>
                                 <h2 className="text-lg font-bold text-gray-900">Giấy tờ xác minh</h2>
                                 <p className="mt-1 text-sm text-gray-600">
@@ -386,7 +386,7 @@ const DangKyHost = () => {
                                 <select
                                     value={form.documentType}
                                     onChange={(event) => setField("documentType", event.target.value)}
-                                    className="w-full rounded-lg border border-gray-200 px-3 py-2.5"
+                                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
                                 >
                                     {documentOptions.map((option) => (
                                         <option key={option.value} value={option.value}>
@@ -415,14 +415,14 @@ const DangKyHost = () => {
                             <button
                                 type="button"
                                 onClick={() => navigate(APP_ROUTES.hostLanding)}
-                                className="rounded-lg border border-gray-200 px-4 py-2.5 text-gray-700"
+                                className="rounded-xl border border-gray-200 px-4 py-2.5 text-gray-700"
                             >
                                 Hủy
                             </button>
                             <button
                                 disabled={saving}
                                 type="submit"
-                                className="rounded-lg bg-cyan-500 px-5 py-2.5 font-medium text-white hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="rounded-xl bg-cyan-500 px-5 py-2.5 font-medium text-white hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {saving ? "Đang gửi hồ sơ..." : "Gửi hồ sơ"}
                             </button>

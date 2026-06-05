@@ -16,7 +16,7 @@ const BlogPostCard = ({ post }: BlogPostCardProps) => {
             className="group block h-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
         >
             <article className="flex h-full flex-col">
-                <img src={post.coverImage} alt={post.title} className="h-48 w-full object-cover" loading="lazy" />
+                <img src={post.coverImage} alt={post.title} className="h-48 w-full rounded-t-2xl object-cover" loading="lazy" />
                 <div className="flex flex-1 flex-col p-5">
                     <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                         <span className="rounded-full bg-cyan-50 px-2.5 py-1 font-semibold text-cyan-700">

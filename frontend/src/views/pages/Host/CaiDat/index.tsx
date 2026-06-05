@@ -399,7 +399,7 @@ const CaiDat = () => {
                                             type="button"
                                             aria-label="Mở danh sách ngân hàng"
                                             onClick={() => setBankDropdownOpen((current) => !current)}
-                                            className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-50"
+                                            className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-50"
                                         >
                                             <ChevronDown className="h-4 w-4" />
                                         </button>
@@ -418,7 +418,7 @@ const CaiDat = () => {
                                                     key={`${bank.code}-${bank.bin ?? ""}`}
                                                     type="button"
                                                     onClick={() => handleSelectBank(bank)}
-                                                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-cyan-50 ${bank.code === bankForm.bankCode ? "bg-cyan-300/15" : ""}`}
+                                                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-cyan-50 ${bank.code === bankForm.bankCode ? "bg-cyan-300/15" : ""}`}
                                                 >
                                                     {bank.logo ? <img src={bank.logo} alt="" className="h-7 w-7 shrink-0 rounded-full object-contain" /> : <span className="h-7 w-7 shrink-0 rounded-full bg-cyan-50" />}
                                                     <span className="min-w-0">
