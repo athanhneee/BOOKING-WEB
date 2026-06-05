@@ -77,7 +77,7 @@ const AdminLayout = () => {
                     <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur">
                         <div className="flex flex-wrap items-center gap-4 px-4 py-4 sm:px-6">
                             <button type="button" onClick={() => setSidebarOpen(true)} className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-600 transition-colors hover:bg-gray-50 lg:hidden" aria-label="Mở menu admin"><FiMenu size={18} /></button>
-                            <div className="min-w-[220px] flex-1"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">Admin Center</p><h1 className="mt-1 text-xl font-bold text-gray-900 sm:text-2xl">{activeMeta.title}</h1><p className="mt-1 text-sm text-gray-500">{activeMeta.subtitle}</p></div>
+                            <div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">Admin Center</p><h1 className="mt-1 text-lg font-bold text-gray-900 sm:text-xl md:text-2xl">{activeMeta.title}</h1><p className="mt-1 hidden text-sm text-gray-500 sm:block">{activeMeta.subtitle}</p></div>
                             <NotificationBell buttonClassName="border-gray-200 text-gray-600 shadow-none hover:bg-gray-50" />
                         </div>
                     </header>

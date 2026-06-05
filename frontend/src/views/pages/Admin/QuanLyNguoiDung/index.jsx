@@ -58,6 +58,7 @@ const QuanLyNguoiDung = () => {
                     <button type="button" onClick={fetchUsers} className={reloadButtonClass}><FiRefreshCw className="shrink-0" />Tải lại</button>
                 </section>
                 <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                    <div className="overflow-x-auto">
                     <table className={`${tableClassName} text-left text-sm`}>
                         <thead className="bg-gray-50 text-gray-500"><tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Email/Phone</th><th className="px-4 py-3">Role</th><th className="px-4 py-3">Trạng thái</th><th className="px-4 py-3">Hành động</th></tr></thead>
                         <tbody className="divide-y divide-gray-100 bg-white">
@@ -70,6 +71,7 @@ const QuanLyNguoiDung = () => {
                             })}
                         </tbody>
                     </table>
+                    </div>
                 </section>
             </div>
         </div>

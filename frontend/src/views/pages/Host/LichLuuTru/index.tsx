@@ -99,8 +99,8 @@ const LichLuuTru = () => {
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
                 <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                    <div className="grid gap-4 md:grid-cols-4">
-                        <label className="space-y-2 md:col-span-2">
+                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+                        <label className="space-y-2 sm:col-span-2">
                             <span className="text-sm font-medium text-gray-700">Chọn chỗ nghỉ</span>
                             <select value={listingId} onChange={(event) => setListingId(Number(event.target.value) || "")} className="w-full rounded-xl border border-gray-200 px-3 py-2.5">
                                 {listings.map((listing) => <option key={listing.listingId} value={listing.listingId}>{listing.title}</option>)}
@@ -136,7 +136,7 @@ const LichLuuTru = () => {
                     ) : days.length === 0 ? (
                         <div className="py-12 text-center text-sm text-gray-500">Chưa có dữ liệu lịch cho tháng này.</div>
                     ) : (
-                        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-7">
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 xl:grid-cols-7">
                             {days.map((day) => {
                                 const selected = selectedSet.has(day.date);
                                 const closed = !day.isAvailable || day.isBlockedByHost;
@@ -158,7 +158,7 @@ const LichLuuTru = () => {
                                         disabled={booked}
                                         onClick={() => !booked && toggleDate(day.date)}
                                         title={booked ? "Ngày này đã có khách đặt — không thể thay đổi" : undefined}
-                                        className={`rounded-2xl border p-4 text-left transition ${stateClass}`}
+                                        className={`rounded-2xl border p-3 text-left transition sm:p-4 ${stateClass}`}
                                     >
                                         <p className="font-semibold text-gray-900">{day.date.slice(-2)}/{String(month).padStart(2, "0")}</p>
                                         <p className={`mt-2 text-xs font-medium ${statusColor}`}>{statusLabel}</p>

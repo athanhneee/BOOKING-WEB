@@ -48,7 +48,7 @@ const ContactPage = () => {
                 <section className="mx-auto grid max-w-7xl gap-8 px-4 pb-12 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:px-8">
                     <div className="flex flex-col justify-center">
                         <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-700">Liên hệminh thanh villa </p>
-                        <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight text-slate-950 sm:text-5xl">
+                        <h1 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl md:text-5xl">
                             Cần tư vấn villa hoặc hỗ trợ đặt phòng?
                         </h1>
                         <p className="mt-5 text-base leading-8 text-slate-600 sm:text-lg">

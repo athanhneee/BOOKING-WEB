@@ -196,8 +196,9 @@ const HoSoHost = () => {
                 {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
                 {message ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{message}</div> : null}
 
-                <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(420px,0.85fr)]">
+                <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(420px,0.85fr)]">
                     <section className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+                        <div className="overflow-x-auto">
                         <table className={`${tableClassName} text-left text-sm`}>
                             <thead className="bg-gray-50 text-gray-500">
                                 <tr>
@@ -261,6 +262,7 @@ const HoSoHost = () => {
                                 ))}
                             </tbody>
                         </table>
+                        </div>
                     </section>
 
                     <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">

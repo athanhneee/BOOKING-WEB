@@ -51,8 +51,8 @@ const ThanhToan = () => {
 
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
-                <div className="grid gap-4 md:grid-cols-3">
-                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Tài khoản nhận tiền</p><p className="mt-2 text-3xl font-bold text-gray-900">{accounts.length}</p></article>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Tài khoản nhận tiền</p><p className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl">{accounts.length}</p></article>
                     <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Đã thanh toán</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(totalPaid)}</p></article>
                     <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Chờ xử lý</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(pending)}</p></article>
                 </div>
@@ -71,6 +71,7 @@ const ThanhToan = () => {
                 </section>
 
                 <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                    <div className="overflow-x-auto">
                     <table className={`${tableClassName} text-left text-sm`}>
                         <thead className="bg-gray-50 text-gray-500">
                             <tr>
@@ -105,6 +106,7 @@ const ThanhToan = () => {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 </section>
             </div>
         </div>

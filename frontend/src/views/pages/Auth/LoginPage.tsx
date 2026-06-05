@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { LuArrowRight, LuEye, LuEyeOff, LuLock, LuUserRound } from "react-icons/lu";
+import { useGoogleLogin } from "@react-oauth/google";
 import { APP_ROUTES } from "../../../config/routes";
 import {
     loginWithCredentials,
@@ -12,27 +13,11 @@ import {
 import AuthCard from "../../components/auth/AuthCard";
 import AuthInput from "../../components/auth/AuthInput";
 
-declare global {
-    interface Window {
-        google?: {
-            accounts: {
-                id: {
-                    initialize: (options: {
-                        client_id: string;
-                        callback: (response: { credential?: string }) => void;
-                    }) => void;
-                    prompt: () => void;
-                };
-            };
-        };
-    }
-}
-
 const primaryButtonClass =
-    "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-full bg-[#5d53f7] px-6 py-4 text-lg font-semibold text-white shadow-[0_18px_40px_-18px_rgba(93,83,247,0.8)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5d53f7]";
+    "inline-flex min-h-[52px] w-full items-center justify-center gap-3 rounded-full bg-[#5d53f7] px-6 py-3 text-base font-semibold text-white shadow-[0_18px_40px_-18px_rgba(93,83,247,0.8)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5d53f7] sm:min-h-15 sm:py-4 sm:text-lg";
 
 const secondaryButtonClass =
-    "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white px-6 py-4 text-lg font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50";
+    "inline-flex min-h-[52px] w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white px-6 py-3 text-base font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 sm:min-h-15 sm:py-4 sm:text-lg";
 
 const LoginPage = () => {
     const location = useLocation();
@@ -65,44 +50,37 @@ const LoginPage = () => {
         }
     };
 
-    const handleGoogleLogin = () => {
-        const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+    // useGoogleLogin mở popup chọn tài khoản Google.
+    // Với scope "openid", Google trả về id_token trong response (OpenID Connect implicit flow).
+    const googleLogin = useGoogleLogin({
+        flow: "implicit",
+        scope: "openid email profile",
+        onSuccess: async (tokenResponse) => {
+            setIsSubmitting(true);
+            setError("");
 
-        if (!googleClientId) {
-            setError("Đang xảy ra lỗi.");
-            return;
-        }
+            try {
+                // OpenID Connect implicit flow với scope "openid" kèm id_token
+                const idToken = (tokenResponse as { id_token?: string }).id_token;
 
-        if (!window.google?.accounts?.id) {
-            setError("Google Identity script chưa sẵn sàng.");
-            return;
-        }
-
-        setError("");
-
-        window.google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: async (response) => {
-                if (!response.credential) {
-                    setError("Đang xảy ra lỗi.");
-                    return;
+                if (!idToken) {
+                    throw new Error("Google không trả về thông tin xác thực. Vui lòng thử lại.");
                 }
 
-                setIsSubmitting(true);
-
-                try {
-                    const user = await loginWithGoogleIdToken(response.credential);
-                    redirectAfterLogin(user);
-                } catch (googleError) {
-                    setError(googleError instanceof Error ? googleError.message : "Không thể đăng nhập Google.");
-                } finally {
-                    setIsSubmitting(false);
-                }
-            },
-        });
-
-        window.google.accounts.id.prompt();
-    };
+                const user = await loginWithGoogleIdToken(idToken);
+                redirectAfterLogin(user);
+            } catch (googleError) {
+                setError(googleError instanceof Error ? googleError.message : "Không thể đăng nhập với Google.");
+            } finally {
+                setIsSubmitting(false);
+            }
+        },
+        onError: (error) => {
+            if (error.error !== "access_denied") {
+                setError("Đăng nhập Google thất bại. Vui lòng thử lại.");
+            }
+        },
+    });
 
     return (
         <AuthCard
@@ -180,7 +158,7 @@ const LoginPage = () => {
                 <span className="h-px flex-1 bg-slate-200" />
             </div>
 
-            <button type="button" disabled={isSubmitting} onClick={handleGoogleLogin} className={secondaryButtonClass}>
+            <button type="button" disabled={isSubmitting} onClick={() => googleLogin()} className={secondaryButtonClass}>
                 <FcGoogle className="text-[28px]" />
                 Đăng nhập với Google
             </button>

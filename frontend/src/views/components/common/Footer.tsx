@@ -2,10 +2,10 @@ import { FaFacebookF, FaTiktok, FaYoutube } from "react-icons/fa";
 import { FaThreads } from "react-icons/fa6";
 const Footer = () => {
     return (
-        <footer className="bg-black text-gray-400 pt-16 pb-8">
-            <div className="max-w-7xl mx-auto px-6">
+        <footer className="bg-black text-gray-400 pt-10 pb-8 md:pt-16">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
                 {/* Top */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
                     {/* Support */}
                     <div>
                         <h3 className="text-white text-lg font-semibold mb-4">Hỗ trợ</h3>
