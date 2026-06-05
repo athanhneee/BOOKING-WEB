@@ -476,22 +476,22 @@ const HostTinNhan = () => {
                                 {messageError && messages.length > 0 ? (
                                     <p className="mb-3 text-sm text-rose-600">{messageError}</p>
                                 ) : null}
-                                <div className="flex items-end gap-2 sm:gap-3">
+                                <div className="flex items-end gap-3 rounded-full border border-gray-200 bg-slate-50/70 py-1.5 pl-5 pr-1.5 transition-all duration-200 focus-within:border-cyan-300 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(6,182,212,0.1)]">
                                     <textarea
                                         value={messageDraft}
                                         onChange={(event) => setMessageDraft(event.target.value)}
-                                        rows={2}
+                                        rows={1}
                                         maxLength={2000}
                                         placeholder="Nhập phản hồi..."
-                                        className="max-h-36 min-h-12 min-w-0 flex-1 resize-none rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100"
+                                        className="max-h-24 min-h-[44px] min-w-0 flex-1 resize-none border-0 bg-transparent py-2.5 text-sm leading-relaxed outline-none placeholder:text-gray-400"
                                     />
                                     <button
                                         type="submit"
                                         disabled={isSending}
-                                        className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-500 text-white transition-colors hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-cyan-300"
+                                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-md shadow-cyan-200/60 transition-all duration-200 hover:from-cyan-400 hover:to-cyan-500 hover:shadow-lg hover:shadow-cyan-200/80 active:scale-95 disabled:cursor-not-allowed disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 disabled:shadow-none"
                                         aria-label="Gửi tin nhắn"
                                     >
-                                        <FiSend />
+                                        <FiSend size={17} className="-translate-x-px translate-y-px" />
                                     </button>
                                 </div>
                             </form>

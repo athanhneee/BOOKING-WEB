@@ -366,7 +366,7 @@ const KiemDuyetBaiDang = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => handleViewDetail(listing.listingId)}
-                                                    className="rounded-lg border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+                                                    className="rounded-xl border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
                                                 >
                                                     Xem chi tiết
                                                 </button>
@@ -374,7 +374,7 @@ const KiemDuyetBaiDang = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => handleApprove(listing.listingId)}
-                                                    className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                                                    className="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                                                 >
                                                     Duyệt
                                                 </button>
@@ -382,7 +382,7 @@ const KiemDuyetBaiDang = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => openRejectModal(listing)}
-                                                    className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                                                    className="rounded-xl bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
                                                 >
                                                     Từ chối
                                                 </button>
@@ -413,7 +413,7 @@ const KiemDuyetBaiDang = () => {
                             <button
                                 type="button"
                                 onClick={() => setDetailModalOpen(false)}
-                                className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50"
+                                className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
                             >
                                 Đóng
                             </button>
@@ -499,7 +499,7 @@ const KiemDuyetBaiDang = () => {
                                 {getListingRuleItems(selectedListingDetail.rules).map((rule) => (
                                     <div
                                         key={rule.label}
-                                        className="rounded-lg border border-gray-100 bg-white p-3 shadow-sm"
+                                        className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm"
                                     >
                                         <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
                                             {rule.label}
@@ -518,7 +518,7 @@ const KiemDuyetBaiDang = () => {
                             <button
                                 type="button"
                                 onClick={() => setDetailModalOpen(false)}
-                                className="rounded-lg border px-4 py-2 hover:bg-gray-50"
+                                className="rounded-xl border px-4 py-2 hover:bg-gray-50"
                             >
                                 Đóng
                             </button>
@@ -526,7 +526,7 @@ const KiemDuyetBaiDang = () => {
                             <button
                                 type="button"
                                 onClick={() => handleApprove(selectedListingDetail.listingId)}
-                                className="rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
+                                className="rounded-xl bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
                             >
                                 Duyệt căn này
                             </button>
@@ -555,7 +555,7 @@ const KiemDuyetBaiDang = () => {
                             <button
                                 type="button"
                                 onClick={() => setRejectModalOpen(false)}
-                                className="rounded-lg border px-4 py-2 hover:bg-gray-50"
+                                className="rounded-xl border px-4 py-2 hover:bg-gray-50"
                             >
                                 Hủy
                             </button>
@@ -563,7 +563,7 @@ const KiemDuyetBaiDang = () => {
                             <button
                                 type="button"
                                 onClick={handleReject}
-                                className="rounded-lg bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700"
+                                className="rounded-xl bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700"
                             >
                                 Xác nhận từ chối
                             </button>

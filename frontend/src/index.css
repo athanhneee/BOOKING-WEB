@@ -18,6 +18,16 @@
     --color-text-primary: #1a1a2e;
     --color-text-secondary: #6b7280;
     --color-border: #e5e7eb;
+
+    /* ── Design tokens: border-radius ── */
+    --radius-button: 1rem;
+    --radius-input: 1rem;
+    --radius-card: 1.5rem;
+    --radius-modal: 1.5rem;
+    --radius-dropdown: 1.5rem;
+    --radius-badge: 9999px;
+    --radius-panel: 1.5rem;
+    --radius-table: 1rem;
 }
 
 *,
@@ -94,26 +104,26 @@ canvas {
 }
 
 /* minhthanhvilla - Global radius system */
-input:not(.rounded-none):not(.rounded-full):not(.rounded-2xl),
-textarea:not(.rounded-none):not(.rounded-full):not(.rounded-2xl),
-select:not(.rounded-none):not(.rounded-full):not(.rounded-2xl) {
-    border-radius: 0.75rem !important;
+input:not(.rounded-none):not(.rounded-full):not(.rounded-2xl):not(.rounded-3xl),
+textarea:not(.rounded-none):not(.rounded-full):not(.rounded-2xl):not(.rounded-3xl),
+select:not(.rounded-none):not(.rounded-full):not(.rounded-2xl):not(.rounded-3xl) {
+    border-radius: var(--radius-input) !important;
 }
 
-button:not(.rounded-none):not(.rounded-full):not(.rounded-2xl) {
-    border-radius: 0.75rem !important;
+button:not(.rounded-none):not(.rounded-full):not(.rounded-2xl):not(.rounded-3xl) {
+    border-radius: var(--radius-button) !important;
 }
 
 .modal-panel {
-    border-radius: 1rem !important;
+    border-radius: var(--radius-modal) !important;
 }
 
 .card {
-    border-radius: 1rem !important;
+    border-radius: var(--radius-card) !important;
 }
 
 .dropdown-menu {
-    border-radius: 1rem !important;
+    border-radius: var(--radius-dropdown) !important;
 }
 
 /* Calendar panel: fade + slide in */

@@ -178,7 +178,7 @@ const HoSoHost = () => {
                         <select
                             value={status}
                             onChange={(event) => setStatus(event.target.value)}
-                            className="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm"
+                            className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm"
                         >
                             {statusOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -193,11 +193,11 @@ const HoSoHost = () => {
                     </div>
                 </div>
 
-                {error ? <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
-                {message ? <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{message}</div> : null}
+                {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+                {message ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{message}</div> : null}
 
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(420px,0.85fr)]">
-                    <section className="overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">
+                    <section className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
                         <table className={`${tableClassName} text-left text-sm`}>
                             <thead className="bg-gray-50 text-gray-500">
                                 <tr>
@@ -251,7 +251,7 @@ const HoSoHost = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => fetchDetail(application.applicationId)}
-                                                className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                                className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                                             >
                                                 <FiEye className="mr-1 inline" />
                                                 Xem chi tiết
@@ -263,7 +263,7 @@ const HoSoHost = () => {
                         </table>
                     </section>
 
-                    <section className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
+                    <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
                         {!selectedId ? (
                             <div className="py-12 text-center text-sm text-gray-500">
                                 Chọn một hồ sơ để xem giấy tờ bằng.
@@ -318,7 +318,7 @@ const HoSoHost = () => {
                                     {detail.rejectReason ? (
                                         <div className="md:col-span-2">
                                             <dt className="text-gray-500">Lý do từ chối</dt>
-                                            <dd className="rounded-lg bg-rose-50 p-3 font-medium text-rose-700">{detail.rejectReason}</dd>
+                                            <dd className="rounded-xl bg-rose-50 p-3 font-medium text-rose-700">{detail.rejectReason}</dd>
                                         </div>
                                     ) : null}
                                 </dl>
@@ -327,7 +327,7 @@ const HoSoHost = () => {
                                     <h3 className="text-base font-bold text-gray-900">Giấy tờ xác minh</h3>
                                     {detail.documents?.length ? (
                                         detail.documents.map((document) => (
-                                            <div key={document.id} className="rounded-lg border border-gray-100 p-4">
+                                            <div key={document.id} className="rounded-xl border border-gray-100 p-4">
                                                 <div className="mb-3 flex flex-wrap justify-between gap-2 text-sm">
                                                     <div>
                                                         <p className="font-semibold text-gray-900">
@@ -347,13 +347,13 @@ const HoSoHost = () => {
                                                         <iframe
                                                             title={document.originalFilename || `document-${document.id}`}
                                                             src={document.signedUrl}
-                                                            className="h-72 w-full rounded-lg border border-gray-200"
+                                                            className="h-72 w-full rounded-xl border border-gray-200"
                                                         />
                                                         <a
                                                             href={document.signedUrl}
                                                             target="_blank"
                                                             rel="noreferrer"
-                                                            className="inline-flex rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                                            className="inline-flex rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                                                         >
                                                             Mở PDF trong tab mới
                                                         </a>
@@ -362,13 +362,13 @@ const HoSoHost = () => {
                                                     <img
                                                         src={document.signedUrl}
                                                         alt={document.originalFilename || document.documentType}
-                                                        className="max-h-[420px] w-full rounded-lg border border-gray-200 object-contain"
+                                                        className="max-h-[420px] w-full rounded-xl border border-gray-200 object-contain"
                                                     />
                                                 )}
                                             </div>
                                         ))
                                     ) : (
-                                        <p className="rounded-lg bg-gray-50 p-4 text-sm text-gray-500">Chưa có giấy tờ.</p>
+                                        <p className="rounded-xl bg-gray-50 p-4 text-sm text-gray-500">Chưa có giấy tờ.</p>
                                     )}
                                 </div>
 
@@ -377,7 +377,7 @@ const HoSoHost = () => {
                                         value={rejectReason}
                                         onChange={(event) => setRejectReason(event.target.value)}
                                         placeholder="Nhập lý do từ chối nếu hồ sơ không hợp lệ"
-                                        className="min-h-[96px] w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm"
+                                        className="min-h-[96px] w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm"
                                     />
                                     <div className="flex flex-wrap gap-2">
                                         <button
@@ -393,7 +393,7 @@ const HoSoHost = () => {
                                             type="button"
                                             disabled={actionLoading || detail.status === "rejected"}
                                             onClick={runReject}
-                                            className="rounded-lg border border-rose-200 px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                            className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
                                         >
                                             <FiX className="mr-1 inline" />
                                             Từ chối

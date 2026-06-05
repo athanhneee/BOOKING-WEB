@@ -574,22 +574,22 @@ const MessagesPage = () => {
                                 {messageError && messages.length > 0 ? (
                                     <p className="mb-3 text-sm text-rose-600">{messageError}</p>
                                 ) : null}
-                                <div className="flex min-h-[76px] items-end gap-3 rounded-2xl border border-zinc-200 px-4 py-3 focus-within:border-zinc-300">
+                                <div className="flex items-end gap-3 rounded-full border border-zinc-200 bg-zinc-50/70 py-1.5 pl-5 pr-1.5 transition-all duration-200 focus-within:border-zinc-300 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]">
                                     <textarea
                                         value={messageDraft}
                                         onChange={(event) => setMessageDraft(event.target.value)}
-                                        rows={2}
+                                        rows={1}
                                         maxLength={2000}
                                         placeholder="Soạn tin nhắn..."
-                                        className="min-h-11 flex-1 resize-none border-0 bg-transparent py-2 text-base outline-none placeholder:text-zinc-500"
+                                        className="min-h-[44px] max-h-24 flex-1 resize-none border-0 bg-transparent py-2.5 text-base leading-relaxed outline-none placeholder:text-zinc-400"
                                     />
                                     <button
                                         type="submit"
                                         disabled={isSending}
-                                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-cyan-500 text-white shadow-sm shadow-cyan-200 transition hover:from-cyan-500 hover:to-cyan-500 disabled:cursor-not-allowed disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 disabled:shadow-none"
+                                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-md shadow-cyan-200/60 transition-all duration-200 hover:from-cyan-400 hover:to-cyan-500 hover:shadow-lg hover:shadow-cyan-200/80 active:scale-95 disabled:cursor-not-allowed disabled:from-slate-200 disabled:to-slate-300 disabled:text-slate-400 disabled:shadow-none"
                                         aria-label="Gửi tin nhắn"
                                     >
-                                        <FiSend size={19} />
+                                        <FiSend size={19} className="-translate-x-px translate-y-px" />
                                     </button>
                                 </div>
                             </form>

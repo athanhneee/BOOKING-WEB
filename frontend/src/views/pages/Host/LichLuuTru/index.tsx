@@ -125,9 +125,9 @@ const LichLuuTru = () => {
 
                 {/* Legend */}
                 <div className="flex flex-wrap gap-4 text-xs text-gray-500">
-                    <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-sm bg-emerald-200 border border-emerald-400"></span>Đang mở</span>
-                    <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-sm bg-blue-200 border border-blue-400"></span>Đã có khách</span>
-                    <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-sm bg-rose-100 border border-rose-300"></span>Đang đóng</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded bg-emerald-200 border border-emerald-400"></span>Đang mở</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded bg-blue-200 border border-blue-400"></span>Đã có khách</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded bg-rose-100 border border-rose-300"></span>Đang đóng</span>
                 </div>
 
                 <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
