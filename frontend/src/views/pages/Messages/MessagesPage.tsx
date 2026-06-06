@@ -404,7 +404,7 @@ const MessagesPage = () => {
     };
 
     return (
-        <section className="min-h-screen bg-white pt-20 text-zinc-950">
+        <section className="min-h-screen bg-white pt-16 text-zinc-950 sm:pt-20">
             <div className="mx-auto flex min-h-[calc(100vh-80px)] max-w-[1440px] border-x border-zinc-100">
                 <aside className="hidden w-[360px] shrink-0 border-r border-zinc-200 bg-white md:flex md:flex-col">
                     <div className="px-6 pb-5 pt-7">
@@ -505,12 +505,12 @@ const MessagesPage = () => {
                 </aside>
 
                 <main className="flex min-w-0 flex-1 flex-col">
-                    <div className="border-b border-zinc-200 bg-white px-4 py-4 md:hidden">
-                        <h1 className="text-2xl font-semibold tracking-tight">Tin nhắn</h1>
+                    <div className="border-b border-zinc-200 bg-white px-4 py-3 md:hidden">
+                        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Tin nhắn</h1>
                         <select
                             value={selectedConversationId ?? ""}
                             onChange={(event) => setSelectedConversationId(event.target.value ? Number(event.target.value) : null)}
-                            className="mt-3 w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm outline-none"
+                            className="mt-2 w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm outline-none sm:mt-3"
                         >
                             <option value="">Chọn hội thoại</option>
                             {conversations.map((conversation) => (
@@ -523,10 +523,10 @@ const MessagesPage = () => {
 
                     {selectedConversation ? (
                         <>
-                            <header className="flex min-h-[88px] items-center gap-4 border-b border-zinc-200 bg-white px-5 md:px-9">
+                            <header className="flex min-h-[72px] items-center gap-3 border-b border-zinc-200 bg-white px-4 sm:min-h-[88px] sm:gap-4 md:px-9">
                                 <ConversationAvatar conversation={selectedConversation} size="lg" />
                                 <div className="min-w-0">
-                                    <h2 className="truncate text-2xl font-semibold">
+                                    <h2 className="truncate text-lg font-semibold sm:text-2xl">
                                         {selectedConversation.otherParticipant?.fullName || "Người dùng"}
                                     </h2>
                                     <p className="mt-1 truncate text-sm text-zinc-500">
@@ -551,7 +551,7 @@ const MessagesPage = () => {
 
                                             return (
                                                 <div key={message.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-                                                    <div className={`max-w-[78%] ${isMine ? "text-right" : "text-left"}`}>
+                                                    <div className={`max-w-[85%] sm:max-w-[78%] ${isMine ? "text-right" : "text-left"}`}>
                                                         <div
                                                             className={`rounded-[22px] px-5 py-3 text-[15px] leading-6 ${isMine ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-950"
                                                                 }`}

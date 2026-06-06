@@ -49,6 +49,8 @@ body {
     min-height: 100%;
     margin: 0;
     overflow-x: hidden;
+    overflow-wrap: break-word;
+    word-break: break-word;
     background-color: var(--color-bg);
     color: var(--color-text-primary);
     font-family: var(--font-sans);
@@ -101,6 +103,19 @@ video,
 canvas {
     display: block;
     max-width: 100%;
+    height: auto;
+}
+
+/* Mobile-safe table scrolling */
+.table-mobile-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text overflow in flex items */
+.min-w-0-safe {
+    min-width: 0;
+    overflow-wrap: break-word;
 }
 
 /* minhthanhvilla - Global radius system */

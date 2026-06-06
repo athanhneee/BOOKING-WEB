@@ -55,7 +55,7 @@ const TroThanhHostLanding = () => {
         <div className="min-h-screen bg-[#F7F8FA] pt-24">
             <section className="bg-gradient-to-br from-cyan-500 to-cyan-500 px-6 py-20 text-center">
                 <div className="mx-auto max-w-4xl">
-                    <h1 className="text-4xl font-bold text-white">Trở thành host tại minhthanhvilla</h1>
+                    <h1 className="text-2xl font-bold text-white sm:text-4xl">Trở thành host tại minhthanhvilla</h1>
                     <p className="mx-auto mt-4 max-w-xl text-lg text-white/80">
                         Chia sẻ không gian của bạn, tạo thu nhập thụ động cùng hàng nghìn khách du lịch Vũng Tàu.
                     </p>
@@ -86,7 +86,7 @@ const TroThanhHostLanding = () => {
                     <div className="mx-auto mt-10 grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-3">
                         {benefitCards.map((card) => (
                             <article key={card.title} className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm">
-                                <div className="mb-4 text-4xl">{card.icon}</div>
+                                <div className="mb-4 text-3xl sm:text-4xl">{card.icon}</div>
                                 <h3 className="font-semibold text-gray-900">{card.title}</h3>
                                 <p className="mt-2 text-sm text-gray-500">{card.description}</p>
                             </article>

@@ -138,7 +138,7 @@ const DatPhong = () => {
 
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
-                <div className="grid gap-4 md:grid-cols-4">
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                     {summary.map((item) => (
                         <article key={item.label} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                             <div className="flex items-center justify-between gap-4">
@@ -154,13 +154,14 @@ const DatPhong = () => {
 
                 <div className="flex flex-wrap gap-2 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
                     {filters.map((item) => (
-                        <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={`rounded-xl px-4 py-2 text-sm font-medium ${filter === item.value ? "bg-cyan-50 text-cyan-700" : "text-gray-500 hover:bg-gray-50"}`}>
+                        <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={`rounded-xl px-3 py-2 text-xs font-medium sm:px-4 sm:text-sm ${filter === item.value ? "bg-cyan-50 text-cyan-700" : "text-gray-500 hover:bg-gray-50"}`}>
                             {item.label}
                         </button>
                     ))}
                 </div>
 
                 <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                    <div className="overflow-x-auto">
                     <table className={`${tableClassName} text-left text-sm`}>
                         <thead className="bg-gray-50 text-gray-500">
                             <tr>
@@ -232,6 +233,7 @@ const DatPhong = () => {
                             )}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>

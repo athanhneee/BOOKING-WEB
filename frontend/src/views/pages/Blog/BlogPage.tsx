@@ -67,7 +67,7 @@ const BlogPage = () => {
                             <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-700">
                                 Blog Minh Thanh Villa
                             </p>
-                            <h1 className="mt-4 max-w-4xl text-4xl font-bold leading-tight tracking-tight text-slate-950 sm:text-5xl">
+                            <h1 className="mt-4 max-w-4xl text-2xl font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl md:text-5xl">
                                 Cẩm nang chọn villa, ăn chơi và nghỉ dưỡng tại Vũng Tàu
                             </h1>
                             <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">
@@ -77,11 +77,11 @@ const BlogPage = () => {
 
                         <div className="grid grid-cols-2 gap-3 rounded-2xl border border-cyan-100 bg-white p-4 shadow-sm">
                             <div>
-                                <p className="text-3xl font-bold text-cyan-700">{visiblePostCount || "--"}</p>
+                                <p className="text-2xl font-bold text-cyan-700 sm:text-3xl">{visiblePostCount || "--"}</p>
                                 <p className="mt-1 text-sm text-slate-500">bài viết kinh nghiệm</p>
                             </div>
                             <div>
-                                <p className="text-3xl font-bold text-cyan-700">24/7</p>
+                                <p className="text-2xl font-bold text-cyan-700 sm:text-3xl">24/7</p>
                                 <p className="mt-1 text-sm text-slate-500">hỗ trợ khách</p>
                             </div>
                         </div>
@@ -177,7 +177,7 @@ const BlogPage = () => {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
                             <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-700">Bài viết mới</p>
-                            <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
+                            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
                                 Kinh nghiệm lưu trú nổi bật
                             </h2>
                         </div>

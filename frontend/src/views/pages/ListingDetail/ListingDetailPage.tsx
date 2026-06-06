@@ -117,7 +117,7 @@ const currencyFormatter = new Intl.NumberFormat("vi-VN", {
 });
 
 const cardClass =
-    "rounded-[34px] border border-[#e8ddd1] bg-white shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)]";
+    "rounded-2xl border border-[#e8ddd1] bg-white shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:rounded-[34px]";
 const bookingQueueLimitMessage =
     "Bạn chỉ có thể thêm tối đa 5 chỗ ở vào danh sách chờ đặt. Bạn có thể lưu chỗ ở này để xem sau.";
 
@@ -473,7 +473,7 @@ const BookingSelectionField = ({
         ref={buttonRef}
         type="button"
         onClick={onClick}
-        className={`flex w-full items-start gap-3 rounded-[28px] border px-4 py-4 text-left transition-all duration-200 ${isActive
+        className={`flex w-full items-start gap-3 rounded-2xl border px-4 py-4 text-left transition-all duration-200 sm:rounded-[28px] ${isActive
             ? "border-cyan-300 bg-cyan-50/80 shadow-[0_18px_35px_-28px_rgba(15,23,42,0.32)] ring-4 ring-cyan-100"
             : "border-slate-200 bg-white hover:border-cyan-200 hover:bg-slate-50/70"
             }`}
@@ -680,7 +680,7 @@ type PoliciesCardProps = {
 
 const PoliciesCard = ({ policies }: PoliciesCardProps) => (
     <div className={`${cardClass} p-5`}>
-        <h2 className="text-[2rem] font-semibold leading-none tracking-tight text-[#231a12]">
+        <h2 className="text-[1.5rem] font-semibold leading-none tracking-tight text-[#231a12] sm:text-[2rem]">
             Chính sách villa
         </h2>
         <div className="mt-5 space-y-3">
@@ -2100,7 +2100,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                     <div className="mt-6 grid gap-10 xl:grid-cols-[minmax(0,1fr)_340px]">
                         <main className="min-w-0">
                             <header className="space-y-3">
-                                <h1 className="text-[2.75rem] font-semibold leading-none tracking-tight text-[#231a12] sm:text-[3.35rem]">
+                                <h1 className="text-[1.85rem] font-semibold leading-none tracking-tight text-[#231a12] sm:text-[2.75rem] md:text-[3.35rem]">
                                     {destination.name}
                                 </h1>
 
@@ -2217,7 +2217,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                             </div>
 
                             <section className="mt-10">
-                                <h2 className="text-[2.2rem] font-semibold leading-none tracking-tight text-[#231a12]">
+                                <h2 className="text-[1.6rem] font-semibold leading-none tracking-tight text-[#231a12] sm:text-[2.2rem]">
                                     Tổng quan
                                 </h2>
                                 <p className="mt-4 max-w-4xl text-base leading-8 text-zinc-600 sm:text-[17px]">
@@ -2239,7 +2239,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                                     <div className={`p-5 sm:p-6 ${cardClass}`}>
                                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                             <div className="min-w-0">
-                                                <h2 className="text-[2.2rem] font-semibold leading-none tracking-tight text-[#231a12]">
+                                                <h2 className="text-[1.6rem] font-semibold leading-none tracking-tight text-[#231a12] sm:text-[2.2rem]">
                                                     Nhắn tin cho host
                                                 </h2>
                                                 <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-600">
@@ -2264,7 +2264,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                             ) : null}
 
                             <section className="mt-12">
-                                <h2 className="text-[2.2rem] font-semibold leading-none tracking-tight text-[#231a12]">
+                                <h2 className="text-[1.6rem] font-semibold leading-none tracking-tight text-[#231a12] sm:text-[2.2rem]">
                                     Tiện nghi
                                 </h2>
                                 <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

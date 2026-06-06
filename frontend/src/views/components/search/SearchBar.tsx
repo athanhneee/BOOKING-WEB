@@ -612,11 +612,11 @@ const SearchBarInner = ({
                         )}
                     >
                         {shouldShowIntro ? (
-                            <div className="mb-6 text-center md:mb-7">
-                                <p className="text-[2.2rem] font-semibold leading-[0.95] tracking-[-0.045em] text-cyan-500 md:text-[3.15rem]">
+                            <div className="mb-5 text-center md:mb-7">
+                                <p className="text-[1.65rem] font-semibold leading-[0.95] tracking-[-0.045em] text-cyan-500 sm:text-[2.2rem] md:text-[3.15rem]">
                                     {`Chào buổi ${timeOfDay}!`}
                                 </p>
-                                <p className="mx-auto mt-3 max-w-[44rem] text-sm leading-6 text-slate-600 md:text-[1.125rem] md:leading-7">
+                                <p className="mx-auto mt-2 max-w-[44rem] text-sm leading-6 text-slate-600 sm:mt-3 md:text-[1.125rem] md:leading-7">
                                     Trân trọng được chào đón bạn tại thành phố biển Vũng Tàu
                                 </p>
                             </div>

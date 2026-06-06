@@ -115,7 +115,7 @@ const ChoNghi = () => {
 
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
-                <div className="grid gap-4 md:grid-cols-4">
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                     {summary.map((item) => (
                         <article key={item.label} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                             <p className="text-sm text-gray-500">{item.label}</p>

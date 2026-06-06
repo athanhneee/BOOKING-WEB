@@ -48,6 +48,7 @@ const PhanQuyenHeThong = () => {
 
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
                 <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                    <div className="overflow-x-auto">
                     <table className={`${tableClassName} text-left text-sm`}>
                         <thead className="bg-gray-50 text-gray-500"><tr><th className="px-4 py-3">Người dùng</th><th className="px-4 py-3">Email</th><th className="px-4 py-3">Role hiện tại</th><th className="px-4 py-3">Role mới</th><th className="px-4 py-3">Hành động</th></tr></thead>
                         <tbody className="divide-y divide-gray-100 bg-white">
@@ -56,6 +57,7 @@ const PhanQuyenHeThong = () => {
                             {users.map((user) => { const userId = user.userId ?? user.id; const currentRole = user.role ?? user.roles?.[0] ?? "Guest"; const draftRole = draftRoles[userId] ?? currentRole; return <tr key={userId}><td className="px-4 py-4 font-medium text-gray-900">{user.fullName || user.name || user.username || `User #${userId}`}</td><td className="px-4 py-4 text-gray-600">{user.email}</td><td className="px-4 py-4"><span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">{currentRole}</span></td><td className="px-4 py-4"><select value={draftRole} onChange={(event) => setDraftRoles((current) => ({ ...current, [userId]: event.target.value }))} className="rounded-xl border border-gray-200 px-3 py-2.5">{roles.map((role) => <option key={role} value={role}>{role}</option>)}</select></td><td className="px-4 py-4"><div className="flex flex-wrap gap-2"><button type="button" disabled={savingId === userId || draftRole === currentRole} onClick={() => saveRole(user)} className={primaryButtonClass}>Lưu</button><button type="button" onClick={() => setDraftRoles((current) => ({ ...current, [userId]: currentRole }))} className={secondaryButtonClass}>Đặt lại</button></div></td></tr>; })}
                         </tbody>
                     </table>
+                    </div>
                 </section>
             </div>
         </div>

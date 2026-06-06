@@ -168,7 +168,7 @@ const AiSearchPage = () => {
                     </span>
 
                     <div className="mt-6">
-                        <h1 className="text-4xl font-bold tracking-tight text-slate-950 md:text-5xl">
+                        <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl md:text-5xl">
                             Tìm kiếm AI
                         </h1>
                     </div>
@@ -192,7 +192,7 @@ const AiSearchPage = () => {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="inline-flex h-16 items-center justify-center gap-2 rounded-full bg-cyan-500 px-8 text-base font-bold text-white shadow-[0_10px_24px_rgba(8,145,178,0.28)] transition hover:-translate-y-0.5 hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-70 md:min-w-[150px]"
+                            className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-cyan-500 px-6 text-base font-bold text-white shadow-[0_10px_24px_rgba(8,145,178,0.28)] transition hover:-translate-y-0.5 hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-70 sm:h-16 sm:px-8 md:min-w-[150px]"
                         >
                             <Sparkles size={20} />
                             {isLoading ? "Đang tìm..." : "Tìm AI"}

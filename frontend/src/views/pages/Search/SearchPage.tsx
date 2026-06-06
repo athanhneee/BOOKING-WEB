@@ -238,7 +238,7 @@ const SearchPage = () => {
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div className="space-y-3">
                         <div>
-                            <h1 className="text-3xl font-semibold tracking-tight text-gray-900">Tìm chỗ nghỉ</h1>
+                            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">Tìm chỗ nghỉ</h1>
                             <p className="mt-2 text-sm leading-6 text-gray-500 sm:text-base">
                                 Villa, Homestay, căn hộ tại Vũng Tàu
                             </p>

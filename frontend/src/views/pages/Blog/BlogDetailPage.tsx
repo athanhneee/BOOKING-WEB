@@ -156,7 +156,7 @@ const BlogDetailPage = () => {
                                 </span>
                             </div>
 
-                            <h1 className="mt-5 text-3xl font-bold leading-tight tracking-tight text-slate-950 sm:text-5xl">
+                            <h1 className="mt-5 text-2xl font-bold leading-tight tracking-tight text-slate-950 sm:text-3xl md:text-5xl">
                                 {post.title}
                             </h1>
                             <p className="mt-5 text-lg leading-8 text-slate-600">{post.excerpt}</p>
@@ -175,7 +175,7 @@ const BlogDetailPage = () => {
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                             <div>
                                 <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-700">Bài viết liên quan</p>
-                                <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
+                                <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
                                     Gợi ý đọc tiếp
                                 </h2>
                             </div>
