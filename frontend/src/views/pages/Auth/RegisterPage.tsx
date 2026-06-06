@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { LuArrowRight, LuEye, LuEyeOff, LuLock, LuMail, LuPhone, LuUserRound } from "react-icons/lu";
+import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { APP_ROUTES } from "../../../config/routes";
 import { loginWithGoogleIdToken, registerAccount, resolvePostAuthRoute } from "../../../services/authService";
 import AuthCard from "../../components/auth/AuthCard";
@@ -13,21 +14,7 @@ const primaryButtonClass =
 
 const secondaryButtonClass =
     "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white px-6 py-4 text-lg font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50";
-declare global {
-    interface Window {
-        google?: {
-            accounts: {
-                id: {
-                    initialize: (options: {
-                        client_id: string;
-                        callback: (response: { credential?: string }) => void;
-                    }) => void;
-                    prompt: () => void;
-                };
-            };
-        };
-    }
-}
+
 const getPasswordStrength = (password: string) => {
     let score = 0;
 
@@ -97,43 +84,23 @@ const RegisterPage = () => {
         }
     };
 
-    const handleGoogleLogin = () => {
-        const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
-
-        if (!googleClientId) {
-            setError("Đang xảy ra lỗi.");
+    const handleGoogleSuccess = async (response: CredentialResponse) => {
+        if (!response.credential) {
+            setError("Google không trả về thông tin xác thực. Vui lòng thử lại.");
             return;
         }
 
-        if (!window.google?.accounts?.id) {
-            setError("Đang xảy ra lỗi.");
-            return;
-        }
-
+        setIsSubmitting(true);
         setError("");
 
-        window.google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: async (response) => {
-                if (!response.credential) {
-                    setError("Đang xảy ra lỗi.");
-                    return;
-                }
-
-                setIsSubmitting(true);
-
-                try {
-                    const user = await loginWithGoogleIdToken(response.credential);
-                    navigate(resolvePostAuthRoute(user), { replace: true });
-                } catch (googleError) {
-                    setError(googleError instanceof Error ? googleError.message : "Không thể đăng nhập Google.");
-                } finally {
-                    setIsSubmitting(false);
-                }
-            },
-        });
-
-        window.google.accounts.id.prompt();
+        try {
+            const user = await loginWithGoogleIdToken(response.credential);
+            navigate(resolvePostAuthRoute(user), { replace: true });
+        } catch (googleError) {
+            setError(googleError instanceof Error ? googleError.message : "Không thể đăng nhập Google.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -246,10 +213,23 @@ const RegisterPage = () => {
                 <span className="h-px flex-1 bg-slate-200" />
             </div>
 
-            <button type="button" disabled={isSubmitting} onClick={handleGoogleLogin} className={secondaryButtonClass}>
-                <FcGoogle className="text-[28px]" />
-                Đăng nhập với Google
-            </button>
+            <div className="relative w-full">
+                {/* Custom styled button visible to user */}
+                <button type="button" disabled={isSubmitting} className={`${secondaryButtonClass} pointer-events-none`}>
+                    <FcGoogle className="text-[28px]" />
+                    Đăng nhập với Google
+                </button>
+
+                {/* Invisible GoogleLogin overlay that captures clicks and returns id_token */}
+                <div className="absolute inset-0 overflow-hidden rounded-full opacity-[0.01] [&>div]:h-full [&>div]:w-full [&_iframe]:h-full [&_iframe]:!w-full">
+                    <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={() => setError("Đăng nhập Google thất bại. Vui lòng thử lại.")}
+                        size="large"
+                        width="400"
+                    />
+                </div>
+            </div>
         </AuthCard>
     );
 };

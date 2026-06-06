@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { LuArrowRight, LuEye, LuEyeOff, LuLock, LuUserRound } from "react-icons/lu";
-import { useGoogleLogin } from "@react-oauth/google";
+import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { APP_ROUTES } from "../../../config/routes";
 import {
     loginWithCredentials,
@@ -50,37 +50,25 @@ const LoginPage = () => {
         }
     };
 
-    // useGoogleLogin mở popup chọn tài khoản Google.
-    // Với scope "openid", Google trả về id_token trong response (OpenID Connect implicit flow).
-    const googleLogin = useGoogleLogin({
-        flow: "implicit",
-        scope: "openid email profile",
-        onSuccess: async (tokenResponse) => {
-            setIsSubmitting(true);
-            setError("");
+    const handleGoogleSuccess = async (response: CredentialResponse) => {
+        setIsSubmitting(true);
+        setError("");
 
-            try {
-                // OpenID Connect implicit flow với scope "openid" kèm id_token
-                const idToken = (tokenResponse as { id_token?: string }).id_token;
+        try {
+            const idToken = response.credential;
 
-                if (!idToken) {
-                    throw new Error("Google không trả về thông tin xác thực. Vui lòng thử lại.");
-                }
-
-                const user = await loginWithGoogleIdToken(idToken);
-                redirectAfterLogin(user);
-            } catch (googleError) {
-                setError(googleError instanceof Error ? googleError.message : "Không thể đăng nhập với Google.");
-            } finally {
-                setIsSubmitting(false);
+            if (!idToken) {
+                throw new Error("Google không trả về thông tin xác thực. Vui lòng thử lại.");
             }
-        },
-        onError: (error) => {
-            if (error.error !== "access_denied") {
-                setError("Đăng nhập Google thất bại. Vui lòng thử lại.");
-            }
-        },
-    });
+
+            const user = await loginWithGoogleIdToken(idToken);
+            redirectAfterLogin(user);
+        } catch (googleError) {
+            setError(googleError instanceof Error ? googleError.message : "Không thể đăng nhập với Google.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <AuthCard
@@ -158,10 +146,23 @@ const LoginPage = () => {
                 <span className="h-px flex-1 bg-slate-200" />
             </div>
 
-            <button type="button" disabled={isSubmitting} onClick={() => googleLogin()} className={secondaryButtonClass}>
-                <FcGoogle className="text-[28px]" />
-                Đăng nhập với Google
-            </button>
+            <div className="relative w-full">
+                {/* Custom styled button visible to user */}
+                <button type="button" disabled={isSubmitting} className={`${secondaryButtonClass} pointer-events-none`}>
+                    <FcGoogle className="text-[28px]" />
+                    Đăng nhập với Google
+                </button>
+
+                {/* Invisible GoogleLogin overlay that captures clicks and returns id_token */}
+                <div className="absolute inset-0 overflow-hidden rounded-full opacity-[0.01] [&>div]:h-full [&>div]:w-full [&_iframe]:h-full [&_iframe]:!w-full">
+                    <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={() => setError("Đăng nhập Google thất bại. Vui lòng thử lại.")}
+                        size="large"
+                        width="400"
+                    />
+                </div>
+            </div>
         </AuthCard>
     );
 };
