@@ -16,10 +16,12 @@ import {
     resolveAmenityIds,
 } from "./semantic-search.repository";
 import {
+    SearchRejectionReason,
     SemanticSearchFilters,
     SemanticSearchItem,
     SemanticSearchRequest,
     SemanticSearchResponse,
+    isSupportedCity,
 } from "./semantic-search.types";
 import {
     getSemanticDefaultCity,
@@ -35,14 +37,148 @@ import {
 const maxQueryLength = 500;
 const maxLimit = 30;
 
+/**
+ * Minimum cosine-similarity score from Qdrant below which a result is
+ * discarded.  Prevents irrelevant listings from surfacing for vague or
+ * unrelated queries like "Hello" or "abc".
+ */
+const MIN_SEMANTIC_SCORE = 0.35;
+
 type SemanticSearchContext = {
     userId?: number | null;
 };
+
+const isDevMode = () => process.env.NODE_ENV !== "production";
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 
 const queryTokens = (query: string) =>
     uniqueStrings(normalizeVietnameseText(query).split(" ").filter((token) => token.length >= 2));
+
+// ─── Vietnam timezone helper ──────────────────────────────────────────────────
+
+const getVietnamDateString = (now = new Date()) =>
+    new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+// ─── Intent detection ─────────────────────────────────────────────────────────
+
+/**
+ * Determines whether a query has a valid villa-search intent.
+ *
+ * A query is considered valid if it contains at least ONE of:
+ *   – an accommodation keyword (villa, homestay, căn hộ, etc.)
+ *   – a recognized location (city alias or Vũng Tàu area)
+ *   – a recognized amenity keyword
+ *   – explicit UI-provided filters (dates, guests, price, amenities, etc.)
+ */
+const ACCOMMODATION_KEYWORDS = [
+    "villa", "biet thu", "homestay", "home stay", "can ho", "chung cu",
+    "phong", "resort", "nha nghi", "cho o", "khach san", "hotel",
+    "nha", "apartment", "studio", "nha rieng", "nguyen can",
+];
+
+const AMENITY_KEYWORDS = [
+    "ho boi", "be boi", "pool", "karaoke", "bida", "bi a", "bbq", "nuong",
+    "gan bien", "view bien", "san vuon", "thang may", "may giat",
+    "bep", "wifi", "dieu hoa", "may lanh", "bon tam", "jacuzzi",
+    "ban cong", "parking", "bai xe", "pet", "thu cung",
+    "gym", "sang trong", "gia re", "yen tinh",
+    "loa keo", "phong hat", "hat ho", "ban bida",
+    "tiec nuong", "san nuong", "elevator", "lift",
+];
+
+const LOCATION_KEYWORDS = [
+    "vung tau", "bai sau", "bai truoc", "long cung", "chi linh",
+    "thuy tien", "trung tam", "tran phu", "thuy van",
+
+];
+
+type IntentResult = {
+    valid: boolean;
+    reason?: SearchRejectionReason;
+    message?: string;
+};
+
+const detectSearchIntent = (
+    query: string,
+    input: SemanticSearchRequest,
+    parsedHasRelevantFilters: boolean,
+): IntentResult => {
+    // If UI explicitly provides filters (dates, guests, price, amenities, etc.)
+    // we treat the search as intentional even if the text query is vague.
+    if (parsedHasRelevantFilters) {
+        return { valid: true };
+    }
+
+    const normalized = normalizeVietnameseText(query);
+
+    // Query too short and no keywords → invalid
+    if (normalized.length < 2) {
+        return {
+            valid: false,
+            reason: "INVALID_SEARCH_INTENT",
+            message: "Vui lòng nhập nhu cầu tìm villa, khu vực, ngày ở hoặc tiện ích mong muốn.",
+        };
+    }
+
+    const hasAccommodation = ACCOMMODATION_KEYWORDS.some((kw) => normalized.includes(kw));
+    const hasAmenity = AMENITY_KEYWORDS.some((kw) => normalized.includes(kw));
+    const hasLocation = LOCATION_KEYWORDS.some((kw) => normalized.includes(kw));
+
+    // "cuoi tuan", "hom nay", "ngay mai" are date-related → valid intent
+    const hasDateKeyword =
+        normalized.includes("cuoi tuan") ||
+        normalized.includes("hom nay") ||
+        normalized.includes("ngay mai") ||
+        normalized.includes("tuan toi") ||
+        normalized.includes("tuan sau") ||
+        normalized.includes("thang sau") ||
+        /thang\s+\d/.test(normalized) ||
+        /\d{1,2}[\/-]\d{1,2}/.test(normalized) ||
+        /thu\s+[2-7]/.test(normalized) ||
+        normalized.includes("thu hai") ||
+        normalized.includes("thu ba") ||
+        normalized.includes("thu tu") ||
+        normalized.includes("thu nam") ||
+        normalized.includes("thu sau") ||
+        normalized.includes("thu bay") ||
+        normalized.includes("chu nhat");
+
+    // Guest-related keywords
+    const hasGuestKeyword =
+        /\d+\s*(?:nguoi|khach|guest|pax)/.test(normalized) ||
+        normalized.includes("nhom lon") ||
+        normalized.includes("nhom dong") ||
+        normalized.includes("doan dong") ||
+        normalized.includes("doan") ||
+        normalized.includes("ca nha") ||
+        normalized.includes("cap doi") ||
+        normalized.includes("gia dinh");
+
+    // Price-related keywords — "4tr", "dưới 4m", etc.
+    const hasPriceKeyword =
+        /\d+\s*(?:tr(?:ieu)?|m(?:il)?|cu|chai|k)\b/.test(normalized) ||
+        /(?:duoi|tren|tu|khoang|tam|toi da|budget)\s+\d/.test(normalized) ||
+        /\d{6,}/.test(normalized) ||  // bare VND like 4000000
+        /\d{1,3}(?:\.\d{3})+/.test(normalized);  // 4.000.000
+
+    // Room-related keywords — "4pn", "8 phòng ngủ", etc.
+    const hasRoomKeyword =
+        /\d+\s*(?:pn|phong\s*ngu|phong\s*tam|giuong|wc|toilet|bedroom|bathroom|bed)/.test(normalized) ||
+        normalized.includes("nhieu phong");
+
+    if (hasAccommodation || hasAmenity || hasLocation || hasDateKeyword || hasGuestKeyword || hasPriceKeyword || hasRoomKeyword) {
+        return { valid: true };
+    }
+
+    return {
+        valid: false,
+        reason: "INVALID_SEARCH_INTENT",
+        message: "Vui lòng nhập nhu cầu tìm villa, khu vực, ngày ở hoặc tiện ích mong muốn.",
+    };
+};
+
+// ─── Scoring ──────────────────────────────────────────────────────────────────
 
 const calculateKeywordScore = (item: SemanticSearchItem, filters: SemanticSearchFilters) => {
     const normalizedQuery = normalizeVietnameseText(filters.query);
@@ -175,7 +311,7 @@ const buildMatchedReasons = (
     }
 
     if (filters.amenityIds.length > 0) {
-        reasons.push("Khop tien nghi co trong database");
+        reasons.push("Khop tien nghi");
     }
 
     if (item.semanticScore > 0) {
@@ -192,6 +328,8 @@ const buildMatchedReasons = (
 
     return reasons;
 };
+
+// ─── Date validation ──────────────────────────────────────────────────────────
 
 const validateDateRange = (input: SemanticSearchRequest) => {
     if ((input.checkIn && !input.checkOut) || (!input.checkIn && input.checkOut)) {
@@ -210,6 +348,39 @@ const validateDateRange = (input: SemanticSearchRequest) => {
         throw new ApiError(422, "checkOut must be after checkIn");
     }
 };
+
+/**
+ * Checks whether explicitly-provided check-in/check-out dates are in the past.
+ * Returns a rejection reason or null if dates are OK (or not provided).
+ */
+const checkPastDates = (checkIn?: string, checkOut?: string): IntentResult | null => {
+    if (!checkIn || !checkOut) {
+        return null;
+    }
+
+    const todayVN = getVietnamDateString();
+
+    if (checkIn < todayVN) {
+        return {
+            valid: false,
+            reason: "PAST_DATE_NOT_ALLOWED",
+            message: "Không thể tìm phòng cho ngày trong quá khứ.",
+        };
+    }
+
+    return null;
+};
+
+/**
+ * Checks whether a date intent parsed from the query text is in the past.
+ * If so we discard the date intent rather than rejecting the whole search.
+ */
+const isParsedDateInPast = (checkIn?: string): boolean => {
+    if (!checkIn) return false;
+    return checkIn < getVietnamDateString();
+};
+
+// ─── Filter building ──────────────────────────────────────────────────────────
 
 const getExplicitLocationAreaKeys = (locationGroup?: string) => {
     if (!locationGroup) {
@@ -248,12 +419,30 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
 
     const synonymRows = await listSemanticSynonymRows();
     const parsed = parseSearchQuery(query, synonymRows);
-    const checkIn = input.checkIn ?? parsed.dateIntent?.checkIn;
-    const checkOut = input.checkOut ?? parsed.dateIntent?.checkOut;
+
+    // ── Date handling ─────────────────────────────────────────────────────────
+    // If user provided explicit dates via UI, use those.
+    // Otherwise try parsed dateIntent from query text — but only if not in past.
+    let checkIn = input.checkIn;
+    let checkOut = input.checkOut;
+
+    if (!checkIn && !checkOut && parsed.dateIntent?.checkIn && parsed.dateIntent?.checkOut) {
+        if (!isParsedDateInPast(parsed.dateIntent.checkIn)) {
+            checkIn = parsed.dateIntent.checkIn;
+            checkOut = parsed.dateIntent.checkOut;
+        }
+        // If parsed date is in the past, we silently discard it — the search
+        // proceeds without date filter rather than failing hard.
+    }
+
+    // ── City / location handling ──────────────────────────────────────────────
+    // Detect the user's intended city from the query text or explicit input.
+    // Even when forceVungTauOnly is true, we MUST respect the parsed city to
+    // return UNSUPPORTED_LOCATION instead of showing Vũng Tàu listings for
+    // queries like "villa Nha Trang".
     const forceVungTauOnly = shouldForceVungTauOnly();
-    const city = forceVungTauOnly
-        ? getSemanticDefaultCity()
-        : input.city ?? parsed.city ?? getSemanticDefaultCity();
+    const parsedCity = input.city ?? parsed.city;
+    const city = parsedCity ?? getSemanticDefaultCity();
 
     const semanticQuery = buildSemanticQuery(
         {
@@ -302,6 +491,10 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
         minPrice: input.minPrice ?? parsed.minPrice,
         maxPrice: input.maxPrice ?? parsed.maxPrice,
 
+        bedrooms: parsed.bedrooms,
+        beds: parsed.beds,
+        bathrooms: parsed.bathrooms,
+
         amenityIds,
         amenityCodes,
 
@@ -319,6 +512,8 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
         parsedFilters: parsed,
     };
 };
+
+// ─── Ranking & pagination ─────────────────────────────────────────────────────
 
 const rankItems = (items: SemanticSearchItem[], filters: SemanticSearchFilters) =>
     items
@@ -341,6 +536,11 @@ const paginate = (
     fallback: boolean,
     usedVectorSearch: boolean,
     candidateCount: number,
+    extra?: {
+        reason?: SearchRejectionReason;
+        message?: string;
+        availabilityNotice?: string;
+    },
 ): SemanticSearchResponse => {
     const totalItems = items.length;
     const start = (filters.page - 1) * filters.limit;
@@ -357,6 +557,9 @@ const paginate = (
             totalPages: Math.max(1, Math.ceil(totalItems / filters.limit)),
         },
         fallback,
+        reason: extra?.reason,
+        message: extra?.message,
+        availabilityNotice: extra?.availabilityNotice,
         searchMeta: {
             query: filters.query,
             semanticQuery: filters.semanticQuery,
@@ -369,6 +572,9 @@ const paginate = (
                 minPrice: filters.minPrice,
                 maxPrice: filters.maxPrice,
                 guests: filters.guests,
+                bedrooms: filters.bedrooms,
+                beds: filters.beds,
+                bathrooms: filters.bathrooms,
                 amenityIds: filters.amenityIds,
                 amenityCodes: filters.amenityCodes,
                 locationGroup: filters.locationGroup,
@@ -381,6 +587,17 @@ const paginate = (
         },
     };
 };
+
+// ─── Empty-result helpers ─────────────────────────────────────────────────────
+
+const buildEmptyResponse = (
+    filters: SemanticSearchFilters,
+    reason: SearchRejectionReason,
+    message: string,
+): SemanticSearchResponse =>
+    paginate([], filters, false, false, 0, { reason, message });
+
+// ─── Logging ──────────────────────────────────────────────────────────────────
 
 const logSearch = async (
     response: SemanticSearchResponse,
@@ -395,25 +612,155 @@ const logSearch = async (
     });
 };
 
+const debugLog = (label: string, data: Record<string, unknown>) => {
+    if (isDevMode()) {
+        logger.info(`[SemanticSearch] ${label}`, data);
+    }
+};
+
+// ─── Main search entry point ──────────────────────────────────────────────────
+
 export const semanticSearchListings = async (
     input: SemanticSearchRequest,
     context: SemanticSearchContext = {},
 ): Promise<SemanticSearchResponse> => {
     const filters = await buildFilters(input);
 
+    // ── Step 1: Check for past dates (explicit from UI) ───────────────────────
+    const pastDateCheck = checkPastDates(filters.checkIn, filters.checkOut);
+    if (pastDateCheck && !pastDateCheck.valid) {
+        const response = buildEmptyResponse(
+            filters,
+            pastDateCheck.reason!,
+            pastDateCheck.message!,
+        );
+        await logSearch(response, filters, context);
+        return response;
+    }
+
+    // ── Step 2: Intent detection — reject garbage queries ─────────────────────
+    const hasExplicitFilters =
+        Boolean(input.checkIn) ||
+        Boolean(input.checkOut) ||
+        Boolean(input.guests && input.guests > 1) ||
+        Boolean(input.minPrice) ||
+        Boolean(input.maxPrice) ||
+        Boolean(input.amenities && input.amenities.length > 0) ||
+        Boolean(input.locationGroup) ||
+        Boolean(input.propertyType) ||
+        Boolean(input.roomType) ||
+        Boolean(input.city) ||
+        Boolean(input.district);
+
+    const intent = detectSearchIntent(filters.query, input, hasExplicitFilters);
+
+    debugLog("Intent detection", {
+        query: filters.query,
+        valid: intent.valid,
+        reason: intent.reason,
+        hasExplicitFilters,
+    });
+
+    if (!intent.valid) {
+        const response = buildEmptyResponse(
+            filters,
+            intent.reason!,
+            intent.message!,
+        );
+        await logSearch(response, filters, context);
+        return response;
+    }
+
+    // ── Step 3: Location validation — reject unsupported cities ───────────────
+    // If the user searched for a specific city that is NOT Vũng Tàu (or its
+    // known aliases/areas), and forceVungTauOnly is on, return empty.
+    const cityKey = normalizeKey(filters.city);
+    const cityIsVungTau = isSupportedCity(normalizeVietnameseText(filters.city));
+
+    if (filters.forceVungTauOnly && !cityIsVungTau && filters.parsedFilters.city) {
+        debugLog("Unsupported location", {
+            query: filters.query,
+            detectedCity: filters.city,
+            cityKey,
+        });
+
+        const response = buildEmptyResponse(
+            filters,
+            "UNSUPPORTED_LOCATION",
+            `Hiện chưa có villa phù hợp tại ${filters.city}.`,
+        );
+        await logSearch(response, filters, context);
+        return response;
+    }
+
+    // ── Step 4: Availability notice (no dates) ────────────────────────────────
+    const availabilityNotice = (!filters.checkIn || !filters.checkOut)
+        ? "Chọn ngày để kiểm tra tình trạng còn trống."
+        : undefined;
+
+    // ── Step 5: Semantic vector search ────────────────────────────────────────
     try {
         const vector = await generateEmbedding(filters.semanticQuery);
         const vectorHits = await searchListingVectors(vector, filters, 250);
-        const listingIds = uniqueNumbers(vectorHits.map((hit) => hit.payload.listing_id));
+
+        debugLog("Qdrant results", {
+            query: filters.query,
+            totalHits: vectorHits.length,
+            topScore: vectorHits[0]?.score ?? 0,
+            bottomScore: vectorHits[vectorHits.length - 1]?.score ?? 0,
+        });
+
+        // ── Apply semantic score threshold ────────────────────────────────────
+        const qualifiedHits = vectorHits.filter((hit) => hit.score >= MIN_SEMANTIC_SCORE);
+
+        debugLog("After score threshold", {
+            before: vectorHits.length,
+            after: qualifiedHits.length,
+            threshold: MIN_SEMANTIC_SCORE,
+        });
+
+        if (qualifiedHits.length === 0) {
+            const response = paginate([], filters, false, true, vectorHits.length, {
+                reason: "LOW_RELEVANCE",
+                message: "Không tìm thấy chỗ nghỉ phù hợp với yêu cầu của bạn.",
+                availabilityNotice,
+            });
+            await logSearch(response, filters, context);
+            return response;
+        }
+
+        const listingIds = uniqueNumbers(qualifiedHits.map((hit) => hit.payload.listing_id));
         const semanticScoreMap = new Map(
-            vectorHits.map((hit) => [hit.payload.listing_id, clamp01(hit.score)]),
+            qualifiedHits.map((hit) => [hit.payload.listing_id, clamp01(hit.score)]),
         );
         const availableItems = await findAvailableListingItems(
             listingIds,
             filters,
             semanticScoreMap,
         );
-        const response = paginate(rankItems(availableItems, filters), filters, false, true, vectorHits.length);
+
+        debugLog("After DB filters", {
+            vectorCandidates: listingIds.length,
+            availableItems: availableItems.length,
+            checkIn: filters.checkIn,
+            checkOut: filters.checkOut,
+        });
+
+        const rankedItems = rankItems(availableItems, filters);
+        const response = paginate(
+            rankedItems,
+            filters,
+            false,
+            true,
+            qualifiedHits.length,
+            {
+                reason: rankedItems.length === 0 ? "NO_RESULTS" : undefined,
+                message: rankedItems.length === 0
+                    ? "Không tìm thấy chỗ nghỉ phù hợp với yêu cầu của bạn."
+                    : undefined,
+                availabilityNotice,
+            },
+        );
 
         await logSearch(response, filters, context);
         return response;
@@ -423,7 +770,21 @@ export const semanticSearchListings = async (
         });
 
         const fallbackItems = await keywordSearchFallback(filters);
-        const response = paginate(rankItems(fallbackItems, filters), filters, true, false, fallbackItems.length);
+        const rankedFallback = rankItems(fallbackItems, filters);
+        const response = paginate(
+            rankedFallback,
+            filters,
+            true,
+            false,
+            fallbackItems.length,
+            {
+                reason: rankedFallback.length === 0 ? "NO_RESULTS" : undefined,
+                message: rankedFallback.length === 0
+                    ? "Không tìm thấy chỗ nghỉ phù hợp với yêu cầu của bạn."
+                    : undefined,
+                availabilityNotice,
+            },
+        );
 
         await logSearch(response, filters, context);
         return response;

@@ -26,6 +26,7 @@ import { getColumnType, getExistingColumns } from "../../services/schema-introsp
 import { writeAuditLog } from "../../services/audit-log-service";
 import type { AuthenticatedUser } from "../auth/auth.service";
 import { ensureUserRole } from "../auth/auth.service";
+import { notifyHostApplicationSubmitted } from "../notifications/notification.service";
 
 const identityApplicationDocumentTypeValues = ["cccd", "cmnd", "passport", "driver_license"] as const;
 type ApplicationIdentityDocumentType = (typeof identityApplicationDocumentTypeValues)[number];
@@ -407,7 +408,7 @@ export const submitHostApplication = async (
     const uploadedObjectKeys: string[] = [];
 
     try {
-        return await sequelize.transaction(async (transaction) => {
+        const result = await sequelize.transaction(async (transaction) => {
             const latestApplication = await getLatestHostApplication(userId, transaction);
 
             if (latestApplication?.status === "pending") {
@@ -463,6 +464,13 @@ export const submitHostApplication = async (
 
             await updateUserHostApplicationStatus(userId, "pending", transaction);
 
+            // Notify admin users about the new host application
+            void notifyHostApplicationSubmitted(
+                Number(application.applicationId),
+                userId,
+                transaction,
+            );
+
             return {
                 id: Number(application.applicationId),
                 applicationId: Number(application.applicationId),
@@ -471,6 +479,8 @@ export const submitHostApplication = async (
                 documents: savedDocuments.map(serializeHostDocument),
             };
         });
+
+        return result;
     } catch (error) {
         await deletePrivateIdentityDocumentsQuietly(uploadedObjectKeys);
         throw error;

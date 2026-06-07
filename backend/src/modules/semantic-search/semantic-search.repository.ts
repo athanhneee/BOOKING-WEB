@@ -639,6 +639,18 @@ export const findAvailableListingItems = async (
         };
     }
 
+    if (filters.bedrooms) {
+        where.bedrooms = { [Op.gte]: filters.bedrooms };
+    }
+
+    if (filters.beds) {
+        where.beds = { [Op.gte]: filters.beds };
+    }
+
+    if (filters.bathrooms) {
+        where.bathrooms = { [Op.gte]: filters.bathrooms };
+    }
+
     if (filters.propertyType) {
         where.propertyType = filters.propertyType;
     }
@@ -785,6 +797,18 @@ export const keywordSearchFallback = async (
         };
     }
 
+    if (filters.bedrooms) {
+        where.bedrooms = { [Op.gte]: filters.bedrooms };
+    }
+
+    if (filters.beds) {
+        where.beds = { [Op.gte]: filters.beds };
+    }
+
+    if (filters.bathrooms) {
+        where.bathrooms = { [Op.gte]: filters.bathrooms };
+    }
+
     if (filters.propertyType) {
         where.propertyType = filters.propertyType;
     }
@@ -795,13 +819,18 @@ export const keywordSearchFallback = async (
 
     const listings = await Listing.findAll({
         where,
-        limit: 300,
+        limit: 100,
         order: [["listingId", "DESC"]],
     });
 
     const filteredListingIds = listings
         .filter((listing) => isListingAllowedForVungTauSearch(listing, filters.forceVungTauOnly))
         .filter((listing) => {
+            // Enforce district filter if specified
+            if (filters.districtKey && normalizeKey(listing.district) !== filters.districtKey) {
+                return false;
+            }
+
             if (filters.vungTauAreaKeys.length === 0) return true;
 
             const listingAreaKeys = inferVungTauAreaKeys(getListingLocationText(listing));
@@ -809,9 +838,11 @@ export const keywordSearchFallback = async (
         })
         .map((listing) => listing.listingId);
 
+    // Use score 0 — ranking will rely on keyword & location scores only.
+    // This prevents the fallback from inflating irrelevant listings.
     return findAvailableListingItems(
         uniqueNumbers(filteredListingIds),
         filters,
-        new Map(filteredListingIds.map((id) => [id, 0.35])),
+        new Map(filteredListingIds.map((id) => [id, 0])),
     );
 };

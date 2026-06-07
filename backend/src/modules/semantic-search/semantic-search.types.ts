@@ -43,8 +43,12 @@ export type ParsedQueryFilters = {
     district?: string;
     minPrice?: number;
     maxPrice?: number;
+    priceMode?: "per_night" | "total";
     guests?: number;
     capacity?: number;
+    bedrooms?: number;
+    beds?: number;
+    bathrooms?: number;
     propertyType?: PropertyType;
     proximity: string[];
     amenityCodes: string[];
@@ -76,6 +80,10 @@ export type SemanticSearchFilters = {
 
     minPrice?: number;
     maxPrice?: number;
+
+    bedrooms?: number;
+    beds?: number;
+    bathrooms?: number;
 
     amenityIds: number[];
     amenityCodes: string[];
@@ -175,6 +183,23 @@ export type SemanticSearchItem = {
     matchedReasons: string[];
 };
 
+export type SearchRejectionReason =
+    | "INVALID_SEARCH_INTENT"
+    | "UNSUPPORTED_LOCATION"
+    | "PAST_DATE_NOT_ALLOWED"
+    | "PAST_DATE_IN_QUERY"
+    | "LOW_RELEVANCE"
+    | "NO_RESULTS"
+    | "PRICE_NO_MATCH"
+    | "CAPACITY_NO_MATCH"
+    | "AMENITY_NO_MATCH"
+    | "AVAILABILITY_NO_MATCH";
+
+export const supportedCityKeys = ["vung_tau"] as const;
+
+export const isSupportedCity = (cityNormalized: string) =>
+    supportedCityKeys.some((key) => cityNormalized.includes(key));
+
 export type SemanticSearchResponse = {
     query: string;
     mode: "semantic" | "keyword_fallback";
@@ -186,6 +211,9 @@ export type SemanticSearchResponse = {
         totalPages: number;
     };
     fallback: boolean;
+    reason?: SearchRejectionReason;
+    message?: string;
+    availabilityNotice?: string;
     searchMeta: {
         query: string;
         semanticQuery: string;
@@ -198,6 +226,9 @@ export type SemanticSearchResponse = {
             minPrice?: number;
             maxPrice?: number;
             guests: number;
+            bedrooms?: number;
+            beds?: number;
+            bathrooms?: number;
             amenityIds: number[];
             amenityCodes: string[];
             locationGroup?: string;
@@ -207,6 +238,15 @@ export type SemanticSearchResponse = {
             roomType?: RoomType;
         };
         parsedFilters: ParsedQueryFilters;
+        filterCounts?: {
+            afterLocation: number;
+            afterCapacity: number;
+            afterBedrooms: number;
+            afterAmenities: number;
+            afterPrice: number;
+            afterAvailability: number;
+            final: number;
+        };
     };
 };
 

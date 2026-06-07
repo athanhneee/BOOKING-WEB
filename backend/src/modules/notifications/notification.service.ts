@@ -17,6 +17,7 @@ import type { AuthenticatedUser } from "../auth/auth.service";
 
 export const notificationEventTypes = [
     "USER_REGISTERED",
+    "HOST_APPLICATION_SUBMITTED",
     "LISTING_SUBMITTED",
     "LISTING_APPROVED",
     "LISTING_REJECTED",
@@ -441,6 +442,46 @@ export const notifyUserRegistered = async (userId: number, transaction?: Transac
                 },
             },
         ],
+    });
+};
+
+export const notifyHostApplicationSubmitted = async (
+    applicationId: number,
+    userId: number,
+    transaction?: Transaction,
+) => {
+    const user = await getActiveUser(userId, transaction);
+    const adminIds = await getAdminRecipientIds(transaction);
+
+    if (adminIds.length === 0) {
+        logger.warn("No admin recipients found for host application notification", {
+            applicationId,
+            userId,
+        });
+        return;
+    }
+
+    const userName = user?.fullName ?? `User #${userId}`;
+    const userEmail = user?.email ?? "";
+    const userPhone = user?.phone ?? "";
+
+    await notify({
+        eventType: "HOST_APPLICATION_SUBMITTED",
+        targetType: "host_application",
+        targetId: applicationId,
+        transaction,
+        recipients: adminIds.map((adminUserId) => ({
+            userId: adminUserId,
+            title: "Có hồ sơ host mới chờ duyệt",
+            body: `${userName} (${userEmail || userPhone}) đã gửi hồ sơ đăng ký trở thành host.`,
+            actionUrl: "/admin/ho-so-host",
+            payload: {
+                applicationId,
+                userId,
+                userName,
+                userEmail,
+            },
+        })),
     });
 };
 

@@ -7,22 +7,95 @@ import type { PropertyType } from "../../models/listing";
 import { ParsedQueryFilters, SemanticSearchRequest } from "./semantic-search.types";
 import { normalizeVietnameseText, uniqueStrings } from "./semantic-search.utils";
 
+/**
+ * Light normalization: strips diacritics and lowercases, but preserves
+ * dots, dashes, commas, slashes, and colons needed for price and date parsing.
+ */
+const normalizeLight = (text: string): string =>
+    text
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D")
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9.,\-/:<=>=]+/g, " ")
+        .replace(/\s+/g, " ");
+
+// ─── City aliases ─────────────────────────────────────────────────────────────
+
 const cityAliases: Record<string, string> = {
-    "ho chi minh": "TP Ho Chi Minh",
-    "tp ho chi minh": "TP Ho Chi Minh",
-    "sai gon": "TP Ho Chi Minh",
-    saigon: "TP Ho Chi Minh",
+    // ── Vũng Tàu (supported) ─────────────────────────────────────────────────
     "vung tau": "Vung Tau",
     vungtau: "Vung Tau",
     "tp vung tau": "Vung Tau",
     "thanh pho vung tau": "Vung Tau",
+    "ba ria vung tau": "Vung Tau",
+
+    // ── Other cities (unsupported – detection only) ──────────────────────────
+    "ho chi minh": "TP Ho Chi Minh",
+    "tp ho chi minh": "TP Ho Chi Minh",
+    "sai gon": "TP Ho Chi Minh",
+    saigon: "TP Ho Chi Minh",
+
+    "nha trang": "Nha Trang",
+    nhatrang: "Nha Trang",
+
+    "da lat": "Da Lat",
+    dalat: "Da Lat",
+
+    "phan thiet": "Phan Thiet",
+    phanthiet: "Phan Thiet",
+
+    "mui ne": "Mui Ne",
+    muine: "Mui Ne",
+
+    "da nang": "Da Nang",
+    danang: "Da Nang",
+
+    "phu quoc": "Phu Quoc",
+    phuquoc: "Phu Quoc",
+
+    "long hai": "Long Hai",
+    longhai: "Long Hai",
+
+    "ho tram": "Ho Tram",
+    hotram: "Ho Tram",
+
+    "quy nhon": "Quy Nhon",
+    quynhon: "Quy Nhon",
+
+    "ha noi": "Ha Noi",
+    hanoi: "Ha Noi",
+
+    "ha long": "Ha Long",
+    halong: "Ha Long",
+
+    "hue": "Hue",
+
+    "hoi an": "Hoi An",
+    hoian: "Hoi An",
+
+    "can tho": "Can Tho",
+    cantho: "Can Tho",
+
+    "ninh binh": "Ninh Binh",
+    ninhbinh: "Ninh Binh",
+
+    "sa pa": "Sa Pa",
+    sapa: "Sa Pa",
+
+    "con dao": "Con Dao",
+    condao: "Con Dao",
 };
+
+// ─── Amenity synonyms ─────────────────────────────────────────────────────────
 
 const amenitySynonyms: Record<string, string[]> = {
     wifi: ["wifi", "wi fi", "internet", "mang"],
     pool: ["ho boi", "be boi", "pool", "swimming pool", "co the boi"],
     parking: ["bai xe", "dau xe", "do xe", "parking", "cho dau xe", "nha xe"],
-    air_conditioning: ["dieu hoa", "may lanh", "air conditioning", "air conditioner", "ac", "lanh"],
+    air_conditioning: ["dieu hoa", "may lanh", "air conditioning", "air conditioner", "ac"],
     kitchen: ["bep", "nau an", "kitchen", "co bep", "bep day du"],
     washer: ["may giat", "giat ui", "washer", "giat do"],
     tv: ["tv", "tivi", "truyen hinh"],
@@ -34,9 +107,14 @@ const amenitySynonyms: Record<string, string[]> = {
     garden: ["san vuon", "vuon", "garden", "co san", "co vuon", "san rong", "khuon vien"],
     desk: ["ban lam viec", "cong tac", "workspace", "desk", "lam viec", "remote work"],
     gym: ["phong gym", "gym", "fitness", "tap the duc"],
-    bbq: ["bbq", "nuong", "bep nuong", "khu nuong", "lo nuong"],
+    bbq: ["bbq", "nuong", "bep nuong", "khu nuong", "lo nuong", "tiec nuong", "san nuong"],
     pet_friendly: ["cho thu cung", "thu cung", "mang cho", "cho meo", "thu nuoi", "pet"],
+    karaoke: ["karaoke", "phong hat", "hat ho", "loa keo", "loa karaoke"],
+    billiards: ["bida", "bi a", "billiards", "ban bida", "bida le"],
+    elevator: ["thang may", "elevator", "lift"],
 };
+
+// ─── Property type synonyms ───────────────────────────────────────────────────
 
 const propertyTypeSynonyms: Record<PropertyType, string[]> = {
     villa: ["villa", "biet thu", "biet thu nghi duong", "nha rieng lon"],
@@ -50,24 +128,471 @@ type SemanticSynonymInput = {
     synonyms: string[] | string;
 };
 
-const parsePriceToVnd = (amount: string, unit?: string) => {
-    const numeric = Number(amount.replace(/,/g, "."));
+// ═══════════════════════════════════════════════════════════════════════════════
+// PRICE PARSING
+// ═══════════════════════════════════════════════════════════════════════════════
 
-    if (!Number.isFinite(numeric)) {
-        return undefined;
+/**
+ * Million-scale unit keywords (after normalizeVietnameseText).
+ * "tr", "trieu", "m", "mil", "million", "cu", "chai"
+ */
+const MILLION_UNITS = new Set(["tr", "trieu", "m", "mil", "million", "cu", "chai"]);
+const THOUSAND_UNITS = new Set(["k", "nghin", "ngan"]);
+
+/**
+ * Detects whether a raw numeric string uses Vietnamese dot-for-thousands notation.
+ * E.g. "4.000.000" has ≥2 dots separating groups of 3 → treat as 4000000
+ * Vs. "3.5" has 1 dot → treat as 3.5 (decimal)
+ */
+const parseVietnameseNumber = (raw: string): number | undefined => {
+    if (!raw) return undefined;
+
+    // Strip whitespace
+    let cleaned = raw.trim();
+
+    // Vietnamese thousands separator: "4.000.000" → "4000000"
+    if (/^\d{1,3}(\.\d{3})+$/.test(cleaned)) {
+        cleaned = cleaned.replace(/\./g, "");
+        const num = Number(cleaned);
+        return Number.isFinite(num) ? num : undefined;
     }
 
-    const normalizedUnit = normalizeVietnameseText(unit ?? "");
+    // Allow comma as decimal separator: "3,5" → "3.5"
+    cleaned = cleaned.replace(/,/g, ".");
 
-    if (["trieu", "m", "million"].includes(normalizedUnit)) {
+    const num = Number(cleaned);
+    return Number.isFinite(num) ? num : undefined;
+};
+
+/**
+ * Converts a (number, unit?) pair to VND.
+ *
+ * Handles:
+ *   4tr → 4,000,000
+ *   3.5m → 3,500,000
+ *   500k → 500,000
+ *   4.000.000 → 4,000,000
+ *   4000000 → 4,000,000
+ */
+const amountToVnd = (numericRaw: string, unitRaw?: string): number | undefined => {
+    const numeric = parseVietnameseNumber(numericRaw);
+    if (numeric === undefined) return undefined;
+
+    const unit = normalizeVietnameseText(unitRaw ?? "").trim();
+
+    if (MILLION_UNITS.has(unit)) {
         return Math.round(numeric * 1_000_000);
     }
 
-    if (["k", "nghin", "ngan"].includes(normalizedUnit)) {
+    if (THOUSAND_UNITS.has(unit)) {
         return Math.round(numeric * 1_000);
     }
 
+    // No unit — if the number is small (< 100) assume millions for villa context
+    // E.g. "villa 4" → likely 4 million, but "villa 4000000" → 4 million as-is
+    if (!unit && numeric > 0) {
+        if (numeric >= 100_000) {
+            // Already in VND (e.g. 4000000, 500000)
+            return Math.round(numeric);
+        }
+        if (numeric <= 100) {
+            // Likely in millions (e.g. "villa 4" = 4M, "villa 3.5" = 3.5M)
+            return Math.round(numeric * 1_000_000);
+        }
+        // Between 100-100000 — ambiguous, return as-is
+        return Math.round(numeric);
+    }
+
     return Math.round(numeric);
+};
+
+/**
+ * Main regex for capturing a price amount + optional unit from normalized text.
+ *
+ * Captures: (number_part)(unit_part?)
+ *
+ * Number part: digits with optional decimal (comma or dot) — e.g. 4, 3.5, 3,5
+ * Also supports Vietnamese dot-thousands: 4.000.000
+ * Unit part: tr, trieu, m, mil, million, cu, chai, k, nghin, ngan
+ */
+const PRICE_AMOUNT_PATTERN =
+    /(\d{1,3}(?:\.\d{3})+|\d+(?:[,.]\d+)?)\s*(tr(?:ieu)?|m(?:il(?:lion)?)?|cu|chai|k|nghin|ngan)?/;
+
+/**
+ * Pattern for "Ntr5" → N.5 million (e.g. "3tr5" = 3,500,000)
+ */
+const PRICE_TR_HALF_PATTERN = /(\d+)\s*tr\s*(\d)/;
+
+/**
+ * Pattern for "N triệu rưỡi" → N.5 million
+ */
+const PRICE_TRIEU_RUOI_PATTERN = /(\d+(?:[,.]\d+)?)\s*(?:trieu|tr)\s+ruoi/;
+
+type PriceParseResult = {
+    minPrice?: number;
+    maxPrice?: number;
+    priceMode?: "per_night" | "total";
+};
+
+/**
+ * Parse a single price amount from a regex match.
+ * Handles special "Ntr5" and "N triệu rưỡi" patterns first.
+ */
+const extractSinglePrice = (text: string): number | undefined => {
+    // Check "3tr5" pattern first
+    const trHalfMatch = text.match(PRICE_TR_HALF_PATTERN);
+    if (trHalfMatch) {
+        const whole = Number(trHalfMatch[1]);
+        const frac = Number(trHalfMatch[2]);
+        if (Number.isFinite(whole) && Number.isFinite(frac)) {
+            return Math.round((whole + frac / 10) * 1_000_000);
+        }
+    }
+
+    // Check "N triệu rưỡi" pattern
+    const ruoiMatch = text.match(PRICE_TRIEU_RUOI_PATTERN);
+    if (ruoiMatch) {
+        const base = parseVietnameseNumber(ruoiMatch[1]);
+        if (base !== undefined) {
+            return Math.round((base + 0.5) * 1_000_000);
+        }
+    }
+
+    // Standard amount+unit pattern
+    const match = text.match(PRICE_AMOUNT_PATTERN);
+    if (match) {
+        return amountToVnd(match[1], match[2]);
+    }
+
+    return undefined;
+};
+
+/**
+ * Parse all price-related information from a normalized query string.
+ *
+ * Handles:
+ *   - "dưới 4tr" / "tối đa 4tr" / "không quá 4tr" / "<= 4tr"
+ *   - "trên 5tr" / "hơn 5tr" / "tối thiểu 5tr" / ">= 5tr"
+ *   - "từ 3tr đến 5tr" / "3-5tr" / "3tr đến 5tr"
+ *   - "tầm 4tr" / "khoảng 4tr" / "cỡ 4tr" / "quanh 4tr"
+ *   - "4tr đổ lại"
+ *   - bare "villa 4tr" → approximate ±15%
+ */
+const parsePrice = (normalized: string): PriceParseResult => {
+    const result: PriceParseResult = {};
+
+    // ── Price mode detection ──────────────────────────────────────────────────
+    if (
+        /(?:\/dem|mot dem|moi dem|\/ngay|mot ngay|moi ngay|tren dem|each night)/.test(normalized)
+    ) {
+        result.priceMode = "per_night";
+    } else if (
+        /(?:tong|ca chuyen|ca trip|total|tat ca)/.test(normalized)
+    ) {
+        result.priceMode = "total";
+    }
+
+    // ── Range: "từ 3tr đến 5tr" / "3tr đến 5tr" / "3 đến 5 triệu" ──────────
+    const rangeExplicit = normalized.match(
+        /(?:tu\s+)?(\d{1,3}(?:\.\d{3})+|\d+(?:[,.]\d+)?)\s*((?:tr(?:ieu)?|m(?:il(?:lion)?)?|cu|chai|k|nghin|ngan)\b)?\s*(?:den|toi|~|-)\s*(\d{1,3}(?:\.\d{3})+|\d+(?:[,.]\d+)?)(?!\d)\s*((?:tr(?:ieu)?|m(?:il(?:lion)?)?|cu|chai|k|nghin|ngan)\b)?(?!\s*(?:khach|nguoi|guest|pax))/,
+    );
+    if (rangeExplicit) {
+        const lowUnit = rangeExplicit[2] || rangeExplicit[4];
+        const highUnit = rangeExplicit[4] || rangeExplicit[2];
+        // Require at least one price unit
+        if (lowUnit || highUnit) {
+            const low = amountToVnd(rangeExplicit[1], lowUnit);
+            const high = amountToVnd(rangeExplicit[3], highUnit);
+            if (low !== undefined && high !== undefined && low < high) {
+                result.minPrice = low;
+                result.maxPrice = high;
+                return result;
+            }
+        }
+    }
+
+    // ── Dash range: "3-5tr" / "3tr-5tr" / "3m-5m" ───────────────────────────
+    const dashRange = normalized.match(
+        /(\d+(?:[,.]\d+)?)\s*((?:tr(?:ieu)?|m|cu|chai|k)\b)?\s*-\s*(\d+(?:[,.]\d+)?)(?!\d)\s*((?:tr(?:ieu)?|m|cu|chai|k)\b)?(?!\s*(?:khach|nguoi|guest|pax))/,
+    );
+    if (dashRange) {
+        const lowUnit = dashRange[2] || dashRange[4];
+        const highUnit = dashRange[4] || dashRange[2];
+        // Require at least one price unit to avoid matching "10-30 khách"
+        if (lowUnit || highUnit) {
+            const low = amountToVnd(dashRange[1], lowUnit);
+            const high = amountToVnd(dashRange[3], highUnit);
+            if (low !== undefined && high !== undefined && low < high) {
+                result.minPrice = low;
+                result.maxPrice = high;
+                return result;
+            }
+        }
+    }
+
+    // ── "N đổ lại" → maxPrice ────────────────────────────────────────────────
+    const doLaiMatch = normalized.match(
+        /(\d{1,3}(?:\.\d{3})+|\d+(?:[,.]\d+)?)\s*(tr(?:ieu)?|m|cu|chai|k)?\s*do lai/,
+    );
+    if (doLaiMatch) {
+        const price = amountToVnd(doLaiMatch[1], doLaiMatch[2]);
+        if (price) {
+            result.maxPrice = price;
+            return result;
+        }
+    }
+
+    // ── Under / max: "dưới 4tr" / "tối đa 4tr" / "không quá 4tr" / "<= 4tr" / "nhỏ hơn 4tr"
+    const underMatch = normalized.match(
+        /(?:duoi|nho hon|khong qua|toi da|max|<=?)\s+(\d{1,3}(?:\.\d{3})+|\d+(?:[,.]\d+)?)\s*(tr(?:ieu)?|m(?:il(?:lion)?)?|cu|chai|k|nghin|ngan)?/,
+    );
+    if (underMatch) {
+        const price = amountToVnd(underMatch[1], underMatch[2]);
+        if (price) {
+            result.maxPrice = price;
+            return result;
+        }
+    }
+
+    // ── Over / min: "trên 5tr" / "hơn 5tr" / "tối thiểu 5tr" / ">= 5tr"
+    const overMatch = normalized.match(
+        /(?:tren|hon|lon hon|toi thieu|min|>=?)\s+(\d{1,3}(?:\.\d{3})+|\d+(?:[,.]\d+)?)\s*(tr(?:ieu)?|m(?:il(?:lion)?)?|cu|chai|k|nghin|ngan)?/,
+    );
+    if (overMatch) {
+        const price = amountToVnd(overMatch[1], overMatch[2]);
+        if (price) {
+            result.minPrice = price;
+            return result;
+        }
+    }
+
+    // ── "từ Ntr" without "đến" → minPrice only ──────────────────────────────
+    const tuOnlyMatch = normalized.match(
+        /tu\s+(\d{1,3}(?:\.\d{3})+|\d+(?:[,.]\d+)?)\s*(tr(?:ieu)?|m|cu|chai|k)?(?!\s*(?:den|toi|~))/,
+    );
+    if (tuOnlyMatch) {
+        const price = amountToVnd(tuOnlyMatch[1], tuOnlyMatch[2]);
+        if (price) {
+            result.minPrice = price;
+            return result;
+        }
+    }
+
+    // ── Approximate: "tầm 4tr" / "khoảng 4tr" / "cỡ 4tr" / "quanh 4tr"
+    const approxMatch = normalized.match(
+        /(?:tam|khoang|co|quanh|xap xi)\s+(\d{1,3}(?:\.\d{3})+|\d+(?:[,.]\d+)?)\s*(tr(?:ieu)?|m(?:il(?:lion)?)?|cu|chai|k|nghin|ngan)?/,
+    );
+    if (approxMatch) {
+        const price = amountToVnd(approxMatch[1], approxMatch[2]);
+        if (price) {
+            result.minPrice = Math.round(price * 0.85);
+            result.maxPrice = Math.round(price * 1.15);
+            return result;
+        }
+    }
+
+    // ── Bare price: "villa 4tr" → approximate ±15% ──────────────────────────
+    // Only trigger when there's a clear price unit (tr, m, cu, etc.) to avoid
+    // matching random numbers like guest counts or room counts.
+    const bareMatch = normalized.match(
+        /(\d+(?:[,.]\d+)?)\s*(tr(?:ieu)?|m(?:il(?:lion)?)?|cu|chai)\b/,
+    );
+    if (bareMatch && !result.minPrice && !result.maxPrice) {
+        const price = amountToVnd(bareMatch[1], bareMatch[2]);
+        if (price) {
+            result.minPrice = Math.round(price * 0.85);
+            result.maxPrice = Math.round(price * 1.15);
+            return result;
+        }
+    }
+
+    // ── Check "Ntr5" pattern (e.g. "3tr5") as bare price ────────────────────
+    const trHalfBare = normalized.match(PRICE_TR_HALF_PATTERN);
+    if (trHalfBare && !result.minPrice && !result.maxPrice) {
+        const price = extractSinglePrice(normalized);
+        if (price) {
+            result.minPrice = Math.round(price * 0.85);
+            result.maxPrice = Math.round(price * 1.15);
+            return result;
+        }
+    }
+
+    // ── Check "N triệu rưỡi" pattern as bare price ─────────────────────────
+    const ruoiBare = normalized.match(PRICE_TRIEU_RUOI_PATTERN);
+    if (ruoiBare && !result.minPrice && !result.maxPrice) {
+        const price = extractSinglePrice(normalized);
+        if (price) {
+            result.minPrice = Math.round(price * 0.85);
+            result.maxPrice = Math.round(price * 1.15);
+            return result;
+        }
+    }
+
+    // ── Large bare number that looks like VND: "villa 4000000" ──────────────
+    const largeBareMatch = normalized.match(/(\d{6,})/);
+    if (largeBareMatch && !result.minPrice && !result.maxPrice) {
+        const price = amountToVnd(largeBareMatch[1]);
+        if (price && price >= 100_000) {
+            result.minPrice = Math.round(price * 0.85);
+            result.maxPrice = Math.round(price * 1.15);
+            return result;
+        }
+    }
+
+    // ── Vietnamese dot-thousands: "4.000.000" ───────────────────────────────
+    const vnDotMatch = normalized.match(/(\d{1,3}(?:\.\d{3})+)/);
+    if (vnDotMatch && !result.minPrice && !result.maxPrice) {
+        const price = amountToVnd(vnDotMatch[1]);
+        if (price && price >= 100_000) {
+            result.minPrice = Math.round(price * 0.85);
+            result.maxPrice = Math.round(price * 1.15);
+            return result;
+        }
+    }
+
+    return result;
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GUEST PARSING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+type GuestParseResult = {
+    guests?: number;
+    capacity?: number;
+};
+
+const parseGuests = (normalized: string): GuestParseResult => {
+    // ── Range: "10-30 khách" / "từ 10 đến 30 khách" → use max ───────────────
+    const rangeMatch = normalized.match(
+        /(?:tu\s+)?(\d+)\s*(?:-|den|toi)\s*(\d+)\s*(?:nguoi|khach|guest|pax)/,
+    );
+    if (rangeMatch) {
+        const max = Math.max(Number(rangeMatch[1]), Number(rangeMatch[2]));
+        return { guests: max, capacity: max };
+    }
+
+    // ── Explicit: "20 khách" / "cho 20 người" / "nhóm 20" / "đoàn 20" ──────
+    const explicitMatch = normalized.match(
+        /(?:cho\s+)?(\d+)\s*(?:nguoi|khach|guest|pax)/,
+    );
+    if (explicitMatch) {
+        const count = Number(explicitMatch[1]);
+        return { guests: count, capacity: count };
+    }
+
+    // ── "nhóm N" / "đoàn N" without suffix ──────────────────────────────────
+    const groupMatch = normalized.match(/(?:nhom|doan)\s+(\d+)/);
+    if (groupMatch) {
+        const count = Number(groupMatch[1]);
+        return { guests: count, capacity: count };
+    }
+
+    // ── "khoảng/tầm N khách" ────────────────────────────────────────────────
+    const approxMatch = normalized.match(
+        /(?:khoang|tam)\s+(\d+)\s*(?:nguoi|khach|guest|pax)/,
+    );
+    if (approxMatch) {
+        const count = Number(approxMatch[1]);
+        return { guests: count, capacity: count };
+    }
+
+    // ── Keyword-based hints ─────────────────────────────────────────────────
+    if (normalized.includes("cap doi") || normalized.includes("couple")) {
+        return { guests: 2, capacity: 2 };
+    }
+
+    if (normalized.includes("gia dinh nho")) {
+        return { guests: 5, capacity: 5 };
+    }
+
+    if (
+        normalized.includes("gia dinh") &&
+        !normalized.includes("gia dinh nho") &&
+        !normalized.includes("gia dinh co con")
+    ) {
+        return { guests: 6, capacity: 6 };
+    }
+
+    if (
+        normalized.includes("nhom dong") ||
+        normalized.includes("doan dong")
+    ) {
+        return { guests: 15, capacity: 15 };
+    }
+
+    if (
+        normalized.includes("nhom lon") ||
+        normalized.includes("doan") ||
+        normalized.includes("ca nha") ||
+        normalized.includes("nguyen can")
+    ) {
+        return { guests: 8, capacity: 8 };
+    }
+
+    return {};
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BEDROOM / BED / BATHROOM PARSING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+type RoomParseResult = {
+    bedrooms?: number;
+    beds?: number;
+    bathrooms?: number;
+};
+
+const parseRooms = (normalized: string): RoomParseResult => {
+    const result: RoomParseResult = {};
+
+    // ── Bedrooms: "4 phòng ngủ" / "4pn" / "4 PN" / "4 phòng" ───────────────
+    const bedroomMatch = normalized.match(
+        /(\d+)\s*(?:phong ngu|pn\b|bedroom|br\b)/,
+    );
+    if (bedroomMatch) {
+        result.bedrooms = Number(bedroomMatch[1]);
+    } else {
+        // "4 phòng" without "ngủ" — treat as bedrooms if no other context
+        const roomOnlyMatch = normalized.match(/(\d+)\s*phong(?!\s*(?:tam|ve sinh|hat|gym|an))/);
+        if (roomOnlyMatch) {
+            result.bedrooms = Number(roomOnlyMatch[1]);
+        }
+    }
+
+    // ── "nhiều phòng" hint ──────────────────────────────────────────────────
+    if (!result.bedrooms && normalized.includes("nhieu phong")) {
+        result.bedrooms = 4;
+    }
+
+    // ── Beds: "10 giường" / "10 bed" ────────────────────────────────────────
+    const bedMatch = normalized.match(/(\d+)\s*(?:giuong|bed)/);
+    if (bedMatch) {
+        result.beds = Number(bedMatch[1]);
+    }
+
+    // ── Bathrooms: "9 wc" / "9 toilet" / "9 phòng tắm" / "9 phòng vệ sinh"
+    const bathMatch = normalized.match(
+        /(\d+)\s*(?:wc|toilet|phong tam|phong ve sinh|bathroom)/,
+    );
+    if (bathMatch) {
+        result.bathrooms = Number(bathMatch[1]);
+    }
+
+    return result;
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATE PARSING — Vietnam timezone (UTC+7)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+/** Get "today" in Vietnam timezone as a UTC Date at midnight. */
+const getVnToday = (now = new Date()): Date => {
+    const vnMs = now.getTime() + VN_OFFSET_MS;
+    const vnIso = new Date(vnMs).toISOString().slice(0, 10);
+    return new Date(`${vnIso}T00:00:00.000Z`);
 };
 
 const formatDate = (date: Date) => date.toISOString().slice(0, 10);
@@ -78,48 +603,37 @@ const addDays = (date: Date, days: number) => {
     return next;
 };
 
-/**
- * Parse a specific date string like "15/6", "15-6", "15/6/2025", or "15 tháng 6".
- * Returns a Date in UTC or null if invalid.
- */
+/** Parse a specific date "D/M" or "D/M/Y" into a UTC Date. Uses VN today. */
 const parseSpecificDateParts = (
     dayStr: string,
     monthStr: string,
     yearStr: string | undefined,
-    now: Date,
+    today: Date,
 ): Date | null => {
     const day = parseInt(dayStr, 10);
     const month = parseInt(monthStr, 10) - 1; // 0-indexed
-    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
-    if (day < 1 || day > 31 || month < 0 || month > 11) {
-        return null;
-    }
+    if (day < 1 || day > 31 || month < 0 || month > 11) return null;
 
-    const year = yearStr ? parseInt(yearStr, 10) : now.getUTCFullYear();
+    const nowYear = today.getUTCFullYear();
+    const year = yearStr ? parseInt(yearStr, 10) : nowYear;
     let candidate = new Date(Date.UTC(year, month, day));
 
-    // Validate – if month overflows (e.g., 31/2), getUTCMonth() won't match
-    if (candidate.getUTCMonth() !== month) {
-        return null;
-    }
+    if (candidate.getUTCMonth() !== month) return null;
 
-    // If no year was specified and the date is in the past, try next year
+    // If no year specified and date is past, try next year
     if (!yearStr && candidate < today) {
         candidate = new Date(Date.UTC(year + 1, month, day));
-        if (candidate.getUTCMonth() !== month) {
-            return null;
-        }
+        if (candidate.getUTCMonth() !== month) return null;
     }
 
     return candidate;
 };
 
-const parseDateIntent = (normalized: string, now = new Date()): ParsedQueryFilters["dateIntent"] | undefined => {
-    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: string): ParsedQueryFilters["dateIntent"] | undefined => {
+    const today = getVnToday(now);
 
-    // ── Relative keywords ──────────────────────────────────────────────────────
-
+    // ── "hôm nay" ───────────────────────────────────────────────────────────
     if (normalized.includes("hom nay")) {
         return {
             label: "today",
@@ -128,6 +642,7 @@ const parseDateIntent = (normalized: string, now = new Date()): ParsedQueryFilte
         };
     }
 
+    // ── "ngày mai" ──────────────────────────────────────────────────────────
     if (normalized.includes("ngay mai")) {
         const checkIn = addDays(today, 1);
         return {
@@ -137,6 +652,32 @@ const parseDateIntent = (normalized: string, now = new Date()): ParsedQueryFilte
         };
     }
 
+    // ── Specific day of week: "thứ 6 này" / "thứ sáu này" / "thứ 7 này" ───
+    const dayOfWeekMap: Record<string, number> = {
+        "thu 2": 1, "thu hai": 1,
+        "thu 3": 2, "thu ba": 2,
+        "thu 4": 3, "thu tu": 3,
+        "thu 5": 4, "thu nam": 4,
+        "thu 6": 5, "thu sau": 5,
+        "thu 7": 6, "thu bay": 6,
+        "chu nhat": 0, "cn": 0,
+    };
+
+    for (const [keyword, targetDay] of Object.entries(dayOfWeekMap)) {
+        if (normalized.includes(keyword)) {
+            const currentDay = today.getUTCDay();
+            let daysUntil = (targetDay - currentDay + 7) % 7;
+            if (daysUntil === 0) daysUntil = 7; // Next occurrence if today
+            const checkIn = addDays(today, daysUntil);
+            return {
+                label: `day_of_week_${targetDay}`,
+                checkIn: formatDate(checkIn),
+                checkOut: formatDate(addDays(checkIn, 1)),
+            };
+        }
+    }
+
+    // ── "cuối tuần sau" / "cuối tuần tới" ───────────────────────────────────
     if (normalized.includes("cuoi tuan sau") || normalized.includes("cuoi tuan toi")) {
         const daysUntilNextSaturday = ((6 - today.getUTCDay() + 7) % 7) + 7;
         const checkIn = addDays(today, daysUntilNextSaturday);
@@ -147,6 +688,7 @@ const parseDateIntent = (normalized: string, now = new Date()): ParsedQueryFilte
         };
     }
 
+    // ── "cuối tuần này" / "cuối tuần" ───────────────────────────────────────
     if (normalized.includes("cuoi tuan")) {
         const daysUntilSaturday = (6 - today.getUTCDay() + 7) % 7 || 7;
         const checkIn = addDays(today, daysUntilSaturday);
@@ -157,8 +699,9 @@ const parseDateIntent = (normalized: string, now = new Date()): ParsedQueryFilte
         };
     }
 
+    // ── "tuần tới" / "tuần sau" ─────────────────────────────────────────────
     if (normalized.includes("tuan toi") || normalized.includes("tuan sau")) {
-        const dow = today.getUTCDay(); // 0=Sun
+        const dow = today.getUTCDay();
         const daysUntilNextMonday = dow === 0 ? 1 : 8 - dow;
         const checkIn = addDays(today, daysUntilNextMonday);
         return {
@@ -168,12 +711,67 @@ const parseDateIntent = (normalized: string, now = new Date()): ParsedQueryFilte
         };
     }
 
-    // ── Specific date: "ngày 15 tháng 6", "15 tháng 6 năm 2025" ──────────────
+    // ── Date range: "10/6 đến 12/6" / "10/6-12/6" / "10-12/6" ──────────────
+    const dateText = lightNorm ?? normalized;
+    const dateRangeFullMatch = dateText.match(
+        /(\d{1,2})\s*[/\-]\s*(\d{1,2})(?:\s*[/\-]\s*(\d{4}))?\s*(?:den|-)\s*(\d{1,2})\s*[/\-]\s*(\d{1,2})(?:\s*[/\-]\s*(\d{4}))?/,
+    );
+    if (dateRangeFullMatch) {
+        const checkInDate = parseSpecificDateParts(
+            dateRangeFullMatch[1], dateRangeFullMatch[2], dateRangeFullMatch[3], today,
+        );
+        const checkOutDate = parseSpecificDateParts(
+            dateRangeFullMatch[4], dateRangeFullMatch[5], dateRangeFullMatch[6] || dateRangeFullMatch[3], today,
+        );
+        if (checkInDate && checkOutDate && checkOutDate > checkInDate) {
+            return {
+                label: "date_range",
+                checkIn: formatDate(checkInDate),
+                checkOut: formatDate(checkOutDate),
+            };
+        }
+    }
+
+    // ── Short date range: "10-12/6" (same month) ────────────────────────────
+    const shortRangeMatch = dateText.match(
+        /(\d{1,2})\s*-\s*(\d{1,2})\s*\/\s*(\d{1,2})(?:\s*\/\s*(\d{4}))?/,
+    );
+    if (shortRangeMatch) {
+        const checkInDate = parseSpecificDateParts(
+            shortRangeMatch[1], shortRangeMatch[3], shortRangeMatch[4], today,
+        );
+        const checkOutDate = parseSpecificDateParts(
+            shortRangeMatch[2], shortRangeMatch[3], shortRangeMatch[4], today,
+        );
+        if (checkInDate && checkOutDate && checkOutDate > checkInDate) {
+            return {
+                label: "date_range",
+                checkIn: formatDate(checkInDate),
+                checkOut: formatDate(checkOutDate),
+            };
+        }
+    }
+
+    // ── "N ngày M đêm" → nights = M ────────────────────────────────────────
+    const nightsDaysMatch = normalized.match(/(\d+)\s*ngay\s+(\d+)\s*dem/);
+    if (nightsDaysMatch) {
+        const nights = Number(nightsDaysMatch[2]);
+        if (nights > 0) {
+            const checkIn = addDays(today, 1); // default to tomorrow
+            return {
+                label: `${nightsDaysMatch[1]}_days_${nights}_nights`,
+                checkIn: formatDate(checkIn),
+                checkOut: formatDate(addDays(checkIn, nights)),
+            };
+        }
+    }
+
+    // ── "ngày D tháng M" / "D tháng M năm Y" ───────────────────────────────
     const textDateMatch = normalized.match(
         /(?:ngay\s+)?(\d{1,2})\s+thang\s+(\d{1,2})(?:\s+(?:nam\s+)?(\d{4}))?/,
     );
     if (textDateMatch) {
-        const date = parseSpecificDateParts(textDateMatch[1], textDateMatch[2], textDateMatch[3], now);
+        const date = parseSpecificDateParts(textDateMatch[1], textDateMatch[2], textDateMatch[3], today);
         if (date) {
             return {
                 label: "specific_date",
@@ -183,13 +781,12 @@ const parseDateIntent = (normalized: string, now = new Date()): ParsedQueryFilte
         }
     }
 
-    // ── Specific date: "15/6", "ngày 15/6", "15-6", "15/6/2025" ─────────────
-    // Use word boundaries to avoid matching prices like "150k"
-    const slashDateMatch = normalized.match(
-        /(?:ngay\s+)?(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{4}))?\b/,
+    // ── Specific date: "15/6", "15-6", "15/6/2025" ─────────────────────────
+    const slashDateMatch = dateText.match(
+        /(?:ngay\s+)?(\d{1,2})[/\-](\d{1,2})(?:[/\-](\d{4}))?\b/,
     );
     if (slashDateMatch) {
-        const date = parseSpecificDateParts(slashDateMatch[1], slashDateMatch[2], slashDateMatch[3], now);
+        const date = parseSpecificDateParts(slashDateMatch[1], slashDateMatch[2], slashDateMatch[3], today);
         if (date) {
             return {
                 label: "specific_date",
@@ -199,13 +796,11 @@ const parseDateIntent = (normalized: string, now = new Date()): ParsedQueryFilte
         }
     }
 
-    // ── Month only: "tháng sau" ────────────────────────────────────────────────
-    if (normalized.includes("thang sau")) {
+    // ── "tháng sau" ─────────────────────────────────────────────────────────
+    if (normalized.includes("thang sau") && !normalized.match(/\d+\s*thang sau/)) {
         const nextMonthIndex = (today.getUTCMonth() + 1) % 12;
-        const nextMonthYear =
-            today.getUTCMonth() === 11 ? today.getUTCFullYear() + 1 : today.getUTCFullYear();
+        const nextMonthYear = today.getUTCMonth() === 11 ? today.getUTCFullYear() + 1 : today.getUTCFullYear();
         const firstOfNextMonth = new Date(Date.UTC(nextMonthYear, nextMonthIndex, 1));
-        // Find first Saturday
         const dayOfWeek = firstOfNextMonth.getUTCDay();
         const daysToSaturday = (6 - dayOfWeek + 7) % 7 || 7;
         const checkIn = addDays(firstOfNextMonth, daysToSaturday);
@@ -216,31 +811,58 @@ const parseDateIntent = (normalized: string, now = new Date()): ParsedQueryFilte
         };
     }
 
-    // ── Month only: "tháng 6", "tháng 7 năm 2025" ────────────────────────────
+    // ── Month with year: "7/2026" / "07/2026" / "tháng 7/2026" ─────────────
+    const monthYearSlash = dateText.match(/(?:thang\s+)?(\d{1,2})\s*\/\s*(\d{4})/);
+    if (monthYearSlash) {
+        const month = parseInt(monthYearSlash[1], 10) - 1;
+        const year = parseInt(monthYearSlash[2], 10);
+
+        if (month >= 0 && month <= 11) {
+            const firstOfMonth = new Date(Date.UTC(year, month, 1));
+            const lastOfMonth = new Date(Date.UTC(year, month + 1, 0));
+
+            // If the entire month is in the past → will be caught by past-date check
+            if (lastOfMonth < today) {
+                // Return as-is so the service layer can detect PAST_DATE
+                return {
+                    label: `month_${month + 1}_${year}`,
+                    checkIn: formatDate(firstOfMonth),
+                    checkOut: formatDate(addDays(firstOfMonth, 1)),
+                };
+            }
+
+            // Pick first Saturday of the month (or today if in current month)
+            const dayOfWeek = firstOfMonth.getUTCDay();
+            const daysToSaturday = (6 - dayOfWeek + 7) % 7 || 7;
+            let checkIn = addDays(firstOfMonth, daysToSaturday);
+            if (checkIn < today) checkIn = today;
+            return {
+                label: `month_${month + 1}_${year}`,
+                checkIn: formatDate(checkIn),
+                checkOut: formatDate(addDays(checkIn, 2)),
+            };
+        }
+    }
+
+    // ── Month only: "tháng 6", "tháng 7 năm 2025" ──────────────────────────
     const monthOnlyMatch = normalized.match(/thang\s+(\d{1,2})(?:\s+(?:nam\s+)?(\d{4}))?/);
     if (monthOnlyMatch) {
-        const month = parseInt(monthOnlyMatch[1], 10) - 1; // 0-indexed
+        const month = parseInt(monthOnlyMatch[1], 10) - 1;
         const yearInput = monthOnlyMatch[2] ? parseInt(monthOnlyMatch[2], 10) : null;
 
         if (month >= 0 && month <= 11) {
-            let year = yearInput ?? now.getUTCFullYear();
+            let year = yearInput ?? today.getUTCFullYear();
             let firstOfMonth = new Date(Date.UTC(year, month, 1));
 
-            // If month already passed and no year given, try next year
             if (!yearInput && firstOfMonth < today) {
                 year += 1;
                 firstOfMonth = new Date(Date.UTC(year, month, 1));
             }
 
-            // Find first Saturday of that month
             const dayOfWeek = firstOfMonth.getUTCDay();
             const daysToSaturday = (6 - dayOfWeek + 7) % 7 || 7;
             let checkIn = addDays(firstOfMonth, daysToSaturday);
-
-            // Ensure checkIn is not in the past
-            if (checkIn < today) {
-                checkIn = today;
-            }
+            if (checkIn < today) checkIn = today;
 
             return {
                 label: `month_${month + 1}`,
@@ -252,6 +874,10 @@ const parseDateIntent = (normalized: string, now = new Date()): ParsedQueryFilte
 
     return undefined;
 };
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SYNONYM NORMALIZATION
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const normalizeSynonymRows = (synonymRows: SemanticSynonymInput[]) => {
     const normalized: Record<string, string[]> = {};
@@ -273,6 +899,10 @@ const normalizeSynonymRows = (synonymRows: SemanticSynonymInput[]) => {
 
     return normalized;
 };
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN PARSER
+// ═══════════════════════════════════════════════════════════════════════════════
 
 export const parseSearchQuery = (
     query: string,
@@ -307,40 +937,25 @@ export const parseSearchQuery = (
         };
     }
 
-    // ── Price ──────────────────────────────────────────────────────────────────
-    const underPriceMatch = normalized.match(
-        /(?:duoi|nho hon|khong qua|toi da|max|<=?)\s*(\d+(?:[,\.]\d+)?)\s*(trieu|m|million|k|nghin|ngan)?/,
-    );
-    if (underPriceMatch) {
-        filters.maxPrice = parsePriceToVnd(underPriceMatch[1], underPriceMatch[2]);
-    }
-
-    const fromPriceMatch = normalized.match(
-        /(?:tu|tren|lon hon|min|>=?)\s*(\d+(?:[,\.]\d+)?)\s*(trieu|m|million|k|nghin|ngan)?/,
-    );
-    if (fromPriceMatch) {
-        filters.minPrice = parsePriceToVnd(fromPriceMatch[1], fromPriceMatch[2]);
-    }
+    // ── Price (use light normalization to preserve dots/dashes/commas) ─────────
+    const lightNorm = normalizeLight(query);
+    const priceResult = parsePrice(lightNorm);
+    if (priceResult.minPrice !== undefined) filters.minPrice = priceResult.minPrice;
+    if (priceResult.maxPrice !== undefined) filters.maxPrice = priceResult.maxPrice;
+    if (priceResult.priceMode) filters.priceMode = priceResult.priceMode;
 
     // ── Guests ────────────────────────────────────────────────────────────────
-    const guestMatch = normalized.match(/(\d+)\s*(?:nguoi|khach|guest)/);
-    if (guestMatch) {
-        filters.guests = Number(guestMatch[1]);
-        filters.capacity = filters.guests;
+    const guestResult = parseGuests(normalized);
+    if (guestResult.guests) {
+        filters.guests = guestResult.guests;
+        filters.capacity = guestResult.capacity;
     }
 
-    // Large-group hints without explicit count
-    if (
-        !filters.guests &&
-        (normalized.includes("nhom lon") ||
-            normalized.includes("doan") ||
-            normalized.includes("ca nha") ||
-            normalized.includes("nguyen can"))
-    ) {
-        filters.guests = 8;
-        filters.capacity = 8;
-        filters.proximity.push("large_group");
-    }
+    // ── Bedrooms / Beds / Bathrooms ───────────────────────────────────────────
+    const roomResult = parseRooms(normalized);
+    if (roomResult.bedrooms) filters.bedrooms = roomResult.bedrooms;
+    if (roomResult.beds) filters.beds = roomResult.beds;
+    if (roomResult.bathrooms) filters.bathrooms = roomResult.bathrooms;
 
     // ── Property type ─────────────────────────────────────────────────────────
     for (const [propertyType, synonyms] of Object.entries(propertyTypeSynonyms) as Array<[PropertyType, string[]]>) {
@@ -357,7 +972,12 @@ export const parseSearchQuery = (
     };
 
     for (const [code, synonyms] of Object.entries(mergedAmenitySynonyms)) {
-        if (synonyms.some((word) => normalized.includes(normalizeVietnameseText(word)))) {
+        if (synonyms.some((word) => {
+            const normalizedWord = normalizeVietnameseText(word);
+            // Use word-boundary matching to avoid false positives (e.g. "ac" inside "khach")
+            const pattern = new RegExp(`(?:^|\\s)${normalizedWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\s|$)`);
+            return pattern.test(normalized);
+        })) {
             filters.amenityCodes.push(code);
         }
     }
@@ -369,7 +989,9 @@ export const parseSearchQuery = (
         normalized.includes("di bo ra bien") ||
         normalized.includes("ven bien") ||
         normalized.includes("bo bien") ||
-        normalized.includes("gan bo bien")
+        normalized.includes("gan bo bien") ||
+        normalized.includes("cach bien") ||
+        normalized.includes("gan bai tam")
     ) {
         filters.proximity.push("near_beach");
     }
@@ -426,13 +1048,31 @@ export const parseSearchQuery = (
         filters.proximity.push("workation");
     }
 
-    // ── Date intent ───────────────────────────────────────────────────────────
-    filters.dateIntent = parseDateIntent(normalized, now);
+    // ── Large group proximity (from guest parsing) ────────────────────────────
+    if (
+        guestResult.guests && guestResult.guests >= 10 &&
+        !filters.proximity.includes("large_group")
+    ) {
+        filters.proximity.push("large_group");
+    }
+    if (
+        (normalized.includes("nhom dong") || normalized.includes("doan dong")) &&
+        !filters.proximity.includes("large_group")
+    ) {
+        filters.proximity.push("large_group");
+    }
+
+    // ── Date intent (use lightNorm for slash-based dates, normalized for keywords)
+    filters.dateIntent = parseDateIntent(normalized, now, lightNorm);
     filters.amenityCodes = uniqueStrings(filters.amenityCodes);
     filters.proximity = uniqueStrings(filters.proximity);
 
     return filters;
 };
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SEMANTIC QUERY BUILDER
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const buildLocationSemanticBoost = (groupName: LocationGroupName) =>
     `Uu tien khu vuc ${groupName} Vung Tau va cac dia chi lien quan trong cung location group.`;
@@ -490,6 +1130,23 @@ export const buildSemanticQuery = (input: SemanticSearchRequest, parsed: ParsedQ
 
     if (amenityCodes.includes("pet_friendly")) {
         parts.push("Cho phep mang theo thu cung.");
+    }
+
+    if (amenityCodes.includes("karaoke")) {
+        parts.push("Co karaoke hoac phong hat, trang bi am thanh.");
+    }
+
+    if (amenityCodes.includes("billiards")) {
+        parts.push("Co bida hoac ban bida.");
+    }
+
+    if (amenityCodes.includes("elevator")) {
+        parts.push("Co thang may, phu hop nguoi lon tuoi.");
+    }
+
+    // ── Room context ──────────────────────────────────────────────────────────
+    if (parsed.bedrooms && parsed.bedrooms >= 4) {
+        parts.push(`Can it nhat ${parsed.bedrooms} phong ngu.`);
     }
 
     // ── Style / vibe context ──────────────────────────────────────────────────
