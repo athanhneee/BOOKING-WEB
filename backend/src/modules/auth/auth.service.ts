@@ -684,7 +684,9 @@ export const issueAuthOtp = async (
         countRecentAuditLogsByIdentifierHash("auth.otp.issue", identifierHash, sentAfter),
     ]);
 
-    if (recentOtpCount + recentAuditCount >= getEnv().otpRateLimitMax) {
+    const effectiveRequestCount = Math.max(recentOtpCount, recentAuditCount);
+
+    if (effectiveRequestCount >= getEnv().otpRateLimitMax) {
         throw new ApiError(429, "Too many OTP requests. Please try again later.");
     }
 
