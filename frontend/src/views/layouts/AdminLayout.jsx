@@ -11,7 +11,7 @@ const adminNavItems = [
     { id: "tong-quan", label: "Tổng quan", to: APP_ROUTES.adminOverview, icon: FiGrid },
     { id: "nguoi-dung", label: "Người dùng", to: APP_ROUTES.adminUsers, icon: FiUsers },
     { id: "kiem-duyet", label: "Kiểm duyệt", to: APP_ROUTES.adminModeration, icon: FiClipboard },
-    { id: "ho-so-host", label: "Hồ sơ host", to: APP_ROUTES.adminHostApplications, icon: FiFileText },
+    { id: "ho-so-host", label: "Hồ sơ đăng ký host", to: APP_ROUTES.adminHostApplications, icon: FiFileText },
     { id: "phan-quyen", label: "Phân quyền", to: APP_ROUTES.adminRoles, icon: FiShield },
 ];
 

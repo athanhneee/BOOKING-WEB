@@ -7,6 +7,7 @@ import {
     searchAiListings,
     type AiListingSearchItem,
     type AiSearchMode,
+    type AiSearchRejectionReason,
 } from "../../../services/api/semanticSearchApi";
 
 const LAST_AI_SEARCH_QUERY_KEY = "lastAiSearchQuery";
@@ -78,6 +79,9 @@ const AiSearchPage = () => {
     const [error, setError] = useState("");
     const [hasSearched, setHasSearched] = useState(false);
     const [dateIntent, setDateIntent] = useState<DateIntent | null>(null);
+    const [searchMessage, setSearchMessage] = useState("");
+    const [searchReason, setSearchReason] = useState<AiSearchRejectionReason | null>(null);
+    const [availabilityNotice, setAvailabilityNotice] = useState("");
 
     const runSearch = useCallback(async (rawQuery: string) => {
         const nextQuery = rawQuery.trim();
@@ -88,13 +92,23 @@ const AiSearchPage = () => {
             setMode(null);
             setHasSearched(false);
             setDateIntent(null);
+            setSearchMessage("");
+            setSearchReason(null);
+            setAvailabilityNotice("");
             return;
         }
 
+        // Clear all previous state before starting new search
         setQuery(nextQuery);
         setLastSubmittedQuery(nextQuery);
         setIsLoading(true);
         setError("");
+        setItems([]);
+        setMode(null);
+        setDateIntent(null);
+        setSearchMessage("");
+        setSearchReason(null);
+        setAvailabilityNotice("");
         setHasSearched(true);
 
         try {
@@ -105,6 +119,17 @@ const AiSearchPage = () => {
 
             setItems(result.items);
             setMode(result.mode);
+
+            // Extract reason/message from API response
+            if (result.reason) {
+                setSearchReason(result.reason);
+            }
+            if (result.message) {
+                setSearchMessage(result.message);
+            }
+            if (result.availabilityNotice) {
+                setAvailabilityNotice(result.availabilityNotice);
+            }
 
             // Extract date intent from parsedFilters
             const parsedDateIntent = result.searchMeta?.parsedFilters?.dateIntent ?? null;
@@ -117,6 +142,9 @@ const AiSearchPage = () => {
             setItems([]);
             setMode(null);
             setDateIntent(null);
+            setSearchMessage("");
+            setSearchReason(null);
+            setAvailabilityNotice("");
             setError(searchError instanceof Error ? searchError.message : "Không thể tìm kiếm AI lúc này.");
         } finally {
             setIsLoading(false);
@@ -249,36 +277,112 @@ const AiSearchPage = () => {
                                 {error}
                             </div>
                         ) : hasSearched && items.length === 0 ? (
-                            <div className="rounded-[32px] border border-slate-200 bg-white p-10 text-center text-sm font-bold text-slate-500 shadow-sm">
-                                Không tìm thấy chỗ nghỉ phù hợp.
+                            <div className="rounded-[32px] border border-slate-200 bg-white p-10 text-center shadow-sm">
+                                {searchReason === "PAST_DATE_NOT_ALLOWED" ? (
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Calendar size={36} className="text-amber-400" />
+                                        <p className="text-sm font-bold text-amber-700">
+                                            {searchMessage || "Không thể tìm phòng cho ngày trong quá khứ."}
+                                        </p>
+                                    </div>
+                                ) : searchReason === "UNSUPPORTED_LOCATION" ? (
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Search size={36} className="text-slate-300" />
+                                        <p className="text-sm font-bold text-slate-600">
+                                            {searchMessage || "Hiện chưa có villa phù hợp tại khu vực này."}
+                                        </p>
+                                        <p className="text-xs text-slate-400">
+                                            Hệ thống hiện hỗ trợ khu vực Vũng Tàu.
+                                        </p>
+                                    </div>
+                                ) : searchReason === "INVALID_SEARCH_INTENT" ? (
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Sparkles size={36} className="text-slate-300" />
+                                        <p className="text-sm font-bold text-slate-600">
+                                            {searchMessage || "Vui lòng nhập nhu cầu tìm villa, khu vực, ngày ở hoặc tiện ích mong muốn."}
+                                        </p>
+                                    </div>
+                                ) : searchReason === "PRICE_NO_MATCH" ? (
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Search size={36} className="text-slate-300" />
+                                        <p className="text-sm font-bold text-slate-600">
+                                            {searchMessage || "Không tìm thấy villa phù hợp với ngân sách."}
+                                        </p>
+                                        <p className="text-xs text-slate-400">
+                                            Bạn có thể tăng ngân sách hoặc bỏ bớt tiện ích để có nhiều kết quả hơn.
+                                        </p>
+                                    </div>
+                                ) : searchReason === "CAPACITY_NO_MATCH" ? (
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Search size={36} className="text-slate-300" />
+                                        <p className="text-sm font-bold text-slate-600">
+                                            {searchMessage || "Không tìm thấy villa chứa đủ số khách yêu cầu."}
+                                        </p>
+                                    </div>
+                                ) : searchReason === "AMENITY_NO_MATCH" ? (
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Search size={36} className="text-slate-300" />
+                                        <p className="text-sm font-bold text-slate-600">
+                                            {searchMessage || "Không tìm thấy villa có đủ tiện ích yêu cầu."}
+                                        </p>
+                                        <p className="text-xs text-slate-400">
+                                            Thử bỏ bớt tiện ích để mở rộng kết quả tìm kiếm.
+                                        </p>
+                                    </div>
+                                ) : searchReason === "AVAILABILITY_NO_MATCH" ? (
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Calendar size={36} className="text-amber-400" />
+                                        <p className="text-sm font-bold text-amber-700">
+                                            {searchMessage || "Không tìm thấy villa còn trống cho ngày đã chọn."}
+                                        </p>
+                                        <p className="text-xs text-slate-400">
+                                            Thử đổi ngày hoặc mở rộng khu vực tìm kiếm.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Search size={36} className="text-slate-300" />
+                                        <p className="text-sm font-bold text-slate-500">
+                                            {searchMessage || "Không tìm thấy chỗ nghỉ phù hợp."}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         ) : items.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                                {items.map((listing) => (
-                                    <div
-                                        key={listing.listingId}
-                                        className="overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-sm"
-                                    >
-                                        <ListingCard
-                                            listing={listing}
-                                            checkIn={dateIntent?.checkIn}
-                                            checkOut={dateIntent?.checkOut}
-                                        />
-                                        {listing.matchedReasons?.length ? (
-                                            <div className="space-y-2 border-t border-slate-100 p-4">
-                                                {listing.matchedReasons.slice(0, 3).map((reason) => (
-                                                    <p
-                                                        key={reason}
-                                                        className="rounded-xl bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-800"
-                                                    >
-                                                        {reason}
-                                                    </p>
-                                                ))}
-                                            </div>
-                                        ) : null}
+                            <>
+                                {availabilityNotice ? (
+                                    <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-700">
+                                        <Calendar size={16} className="mr-2 inline-block" />
+                                        {availabilityNotice}
                                     </div>
-                                ))}
-                            </div>
+                                ) : null}
+                                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                                    {items.map((listing) => (
+                                        <div
+                                            key={listing.listingId}
+                                            className="overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-sm"
+                                        >
+                                            <ListingCard
+                                                listing={listing}
+                                                checkIn={dateIntent?.checkIn}
+                                                checkOut={dateIntent?.checkOut}
+                                            />
+                                            {listing.matchedReasons?.length ? (
+                                                <div className="space-y-2 border-t border-slate-100 p-4">
+                                                    {listing.matchedReasons.slice(0, 3).map((reason) => (
+                                                        <p
+                                                            key={reason}
+                                                            className="rounded-xl bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-800"
+                                                        >
+                                                            {reason}
+                                                        </p>
+                                                    ))}
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
                         ) : (
                             <div className="rounded-[32px] border border-dashed border-slate-300 bg-white p-10 text-center text-sm font-semibold text-slate-500 shadow-sm">
                                 Nhập nhu cầu của bạn để bắt đầu tìm kiếm AI.

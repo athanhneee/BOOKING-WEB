@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { APP_ROUTES } from "../../../../config/routes";
 import {
+    LuArrowRight,
     LuCalendar,
     LuChevronDown,
     LuChevronUp,
@@ -144,6 +145,8 @@ const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const statusMeta = getStatusMeta(trip);
 
+    const isPendingPayment = trip.bookingStatusCode === "pending_payment" || (trip.paymentStatus?.toLowerCase() === "pending" && trip.status === "active");
+
     const handleRebook = () => {
         if (trip.listingId) {
             navigate(APP_ROUTES.villaDetail(String(trip.listingId)));
@@ -151,20 +154,27 @@ const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
             navigate(APP_ROUTES.search);
         }
     };
+
+    const handleContinuePayment = () => {
+        navigate(APP_ROUTES.guestPaymentDetail(trip.id));
+    };
+
     const guestCountLabel = trip.guestCount ? `${trip.guestCount} khách` : "Chưa cập nhật";
     const address = trip.address || trip.location || "Chưa cập nhật";
     const actions = [
         { key: "detail", label: isDetailOpen ? "Ẩn chi tiết" : "Xem chi tiết", variant: "secondary" as const },
-        ...(trip.status === "pending_review"
-            ? [{ key: "review", label: "Viết đánh giá", variant: "primary" as const }]
-            : trip.status === "active"
-                ? []
-                : trip.canReview
-                    ? [
-                        { key: "review", label: "Viết đánh giá", variant: "primary" as const },
-                        { key: "rebook", label: "Đặt lại", variant: "secondary" as const },
-                    ]
-                    : [{ key: "rebook", label: "Đặt lại", variant: "secondary" as const }]),
+        ...(isPendingPayment
+            ? [{ key: "continue-payment", label: "Tiếp tục thanh toán", variant: "primary" as const }]
+            : trip.status === "pending_review"
+                ? [{ key: "review", label: "Viết đánh giá", variant: "primary" as const }]
+                : trip.status === "active"
+                    ? []
+                    : trip.canReview
+                        ? [
+                            { key: "review", label: "Viết đánh giá", variant: "primary" as const },
+                            { key: "rebook", label: "Đặt lại", variant: "secondary" as const },
+                        ]
+                        : [{ key: "rebook", label: "Đặt lại", variant: "secondary" as const }]),
     ];
 
     return (
@@ -222,7 +232,9 @@ const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
                                         ? () => setIsDetailOpen((currentValue) => !currentValue)
                                         : action.key === "rebook"
                                             ? handleRebook
-                                            : undefined
+                                            : action.key === "continue-payment"
+                                                ? handleContinuePayment
+                                                : undefined
                                 }
                                 aria-expanded={action.key === "detail" ? isDetailOpen : undefined}
                                 className={cn(
@@ -235,6 +247,8 @@ const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
                                 {action.label}
                                 {action.key === "detail" ? (
                                     isDetailOpen ? <LuChevronUp size={16} /> : <LuChevronDown size={16} />
+                                ) : action.key === "continue-payment" ? (
+                                    <LuArrowRight size={16} />
                                 ) : null}
                             </button>
                         ))}

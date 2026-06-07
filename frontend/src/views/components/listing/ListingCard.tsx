@@ -24,8 +24,15 @@ const ListingCard = ({ listing, onClick, className = "" }: ListingCardProps) => 
                         Chưa có ảnh
                     </div>
                 )}
-                <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-slate-950/75 px-2.5 py-1 text-xs font-semibold text-white">
-                    <FaStar className="text-amber-300" />
+                <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-slate-950/80 px-3 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur-sm">
+                    <span className="inline-flex items-center gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                            <FaStar
+                                key={i}
+                                className={`text-[9px] ${i < Math.round(listing.rating) ? "text-amber-300" : "text-white/25"}`}
+                            />
+                        ))}
+                    </span>
                     {listing.rating.toFixed(1)}
                 </span>
             </div>

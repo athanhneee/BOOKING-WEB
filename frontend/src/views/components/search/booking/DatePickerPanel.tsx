@@ -274,6 +274,9 @@ function CalendarMonth({
                             if (isEnd && checkIn) {
                                 cellBgClass = "range-cell-bg bg-gradient-to-l from-transparent to-cyan-50";
                             }
+                            if (isBooked) {
+                                cellBgClass = "bg-rose-50/60";
+                            }
 
                             let buttonClassName =
                                 "cal-date-btn relative z-10 flex h-10 w-10 items-center justify-center rounded-full text-sm transition-all duration-150";
@@ -281,9 +284,9 @@ function CalendarMonth({
                             if (state === "disabled") {
                                 buttonClassName += " cursor-not-allowed text-gray-300";
                             } else if (isBooked) {
-                                // Booked: strikethrough, warm red-gray, can't click
+                                // Booked: strikethrough, warm red tone, not clickable
                                 buttonClassName +=
-                                    " cursor-not-allowed text-rose-300 line-through decoration-rose-300/60";
+                                    " cursor-not-allowed text-rose-400/80 line-through decoration-rose-400 decoration-2";
                             } else if (state === "start" || state === "end") {
                                 buttonClassName +=
                                     " selected cursor-pointer bg-cyan-500 font-semibold text-white shadow-sm hover:bg-cyan-500";

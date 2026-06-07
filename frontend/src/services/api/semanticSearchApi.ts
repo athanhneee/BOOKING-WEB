@@ -69,6 +69,18 @@ export type AiListingSearchItem = {
     matchedReasons?: string[];
 };
 
+export type AiSearchRejectionReason =
+    | "INVALID_SEARCH_INTENT"
+    | "UNSUPPORTED_LOCATION"
+    | "PAST_DATE_NOT_ALLOWED"
+    | "PAST_DATE_IN_QUERY"
+    | "LOW_RELEVANCE"
+    | "NO_RESULTS"
+    | "PRICE_NO_MATCH"
+    | "CAPACITY_NO_MATCH"
+    | "AMENITY_NO_MATCH"
+    | "AVAILABILITY_NO_MATCH";
+
 export type AiListingSearchResponse = {
     query: string;
     mode: AiSearchMode;
@@ -80,6 +92,9 @@ export type AiListingSearchResponse = {
         totalPages: number;
     };
     fallback?: boolean;
+    reason?: AiSearchRejectionReason;
+    message?: string;
+    availabilityNotice?: string;
     searchMeta?: {
         query: string;
         semanticQuery: string;

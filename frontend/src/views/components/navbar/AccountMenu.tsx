@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { IconType } from "react-icons";
 import {
-    LuCircleHelp,
     LuHeart,
     LuHouse,
     LuLogIn,
@@ -10,7 +9,6 @@ import {
     LuMessageSquare,
     LuPlane,
     LuSearch,
-    LuSettings,
     LuUserRound,
     LuX,
 } from "react-icons/lu";
@@ -59,13 +57,7 @@ const createMenuGroups = (
                 { key: "profile", label: "Hồ sơ", icon: LuUserRound, to: APP_ROUTES.accountProfile },
             ],
         },
-        {
-            key: "account",
-            items: [
-                { key: "settings", label: "Cài đặt tài khoản", icon: LuSettings, to: APP_ROUTES.accountProfile },
-                { key: "help", label: "Trung tâm trợ giúp", icon: LuCircleHelp },
-            ],
-        },
+
         isAdmin
             ? {
                 key: "admin",
@@ -77,7 +69,7 @@ const createMenuGroups = (
                 key: "host",
                 items: [
                     { key: "become-host", label: hostAction?.label ?? "Trở thành host", icon: LuHouse, to: hostAction?.to ?? APP_ROUTES.hostLanding },
-                    { key: "host-support", label: "Tìm hỗ trợ host", icon: LuSearch, to: APP_ROUTES.ownerDashboard },
+                    { key: "host-support", label: "Tìm hỗ trợ host", icon: LuSearch, to: APP_ROUTES.hostSupport },
                 ],
             },
         {

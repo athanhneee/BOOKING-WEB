@@ -803,10 +803,25 @@ const ReviewsSection = ({ listing, reviews }: ReviewsSectionProps) => {
                 {reviewCount > 0 ? (
                     <div className="grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
                         <div className="border-b border-[#efe4d8] pb-6 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-6">
-                            <div className="flex items-center gap-1 text-cyan-600">
-                                {Array.from({ length: 5 }).map((_, index) => (
-                                    <FaStar key={index} />
-                                ))}
+                            <div className="flex items-center gap-1.5">
+                                {Array.from({ length: 5 }).map((_, index) => {
+                                    const fillPercent = Math.min(1, Math.max(0, averageReviewScore - index));
+                                    const isFull = fillPercent >= 0.75;
+                                    const isHalf = fillPercent >= 0.25 && fillPercent < 0.75;
+                                    return (
+                                        <span key={index} className="relative text-lg">
+                                            <FaStar className="text-[#ede2d5]" />
+                                            {(isFull || isHalf) && (
+                                                <span
+                                                    className="pointer-events-none absolute inset-0 overflow-hidden"
+                                                    style={{ width: isFull ? "100%" : "50%" }}
+                                                >
+                                                    <FaStar className="text-amber-400" />
+                                                </span>
+                                            )}
+                                        </span>
+                                    );
+                                })}
                             </div>
                             <p className="mt-4 text-[2.25rem] font-semibold tracking-tight text-[#231a12]">
                                 {averageReviewScore.toFixed(1)}
@@ -859,10 +874,19 @@ const ReviewsSection = ({ listing, reviews }: ReviewsSectionProps) => {
                                                 </p>
                                             </div>
                                         </div>
-                                        <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-sm font-semibold text-cyan-700">
-                                            <FaStar className="text-xs" />
-                                            {review.rating.toFixed(1)}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="inline-flex items-center gap-0.5">
+                                                {Array.from({ length: 5 }).map((_, i) => (
+                                                    <FaStar
+                                                        key={i}
+                                                        className={`text-[10px] ${i < Math.round(review.rating) ? "text-amber-400" : "text-slate-200"}`}
+                                                    />
+                                                ))}
+                                            </div>
+                                            <span className="text-sm font-semibold text-zinc-700">
+                                                {review.rating.toFixed(1)}
+                                            </span>
+                                        </div>
                                     </div>
                                     <p className="mt-3 text-sm leading-7 text-zinc-600">
                                         {review.content}

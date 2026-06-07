@@ -51,7 +51,7 @@ const TrangThaiHost = () => {
                 ) : null}
 
                 <div className="mt-8 flex flex-wrap gap-3">
-                    {status === "approved" ? <Link to={APP_ROUTES.ownerDashboard} className="rounded-xl bg-cyan-500 px-5 py-2.5 font-medium text-white">Vào trang chủ nhà</Link> : <Link to={APP_ROUTES.hostRegister} className="rounded-xl bg-cyan-500 px-5 py-2.5 font-medium text-white">Gửi/Cập nhật hồ sơ</Link>}
+                    {status === "approved" ? <Link to={APP_ROUTES.hostProperties} className="rounded-xl bg-cyan-500 px-5 py-2.5 font-medium text-white">Vào trang chủ nhà</Link> : <Link to={APP_ROUTES.hostRegister} className="rounded-xl bg-cyan-500 px-5 py-2.5 font-medium text-white">Gửi/Cập nhật hồ sơ</Link>}
                     <Link to={APP_ROUTES.home} className="rounded-xl border border-gray-200 px-5 py-2.5 text-gray-700">Về trang chủ</Link>
                 </div>
             </div>

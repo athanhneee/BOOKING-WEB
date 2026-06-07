@@ -16,6 +16,7 @@ import {
 } from "../../../services/socket/socketClient";
 import { getAccessToken, getCurrentUser } from "../../../store/authStore";
 import { cn } from "../../../utils";
+import { APP_ROUTES } from "../../../config/routes";
 
 type NotificationBellProps = {
     buttonClassName?: string;
@@ -35,6 +36,56 @@ const formatNotificationTime = (value: string) =>
         hour: "2-digit",
         minute: "2-digit",
     }).format(new Date(value));
+
+const resolveNotificationUrl = (notification: NotificationItem): string | null => {
+    // Use the backend-provided actionUrl if it exists and looks like a valid path
+    if (notification.actionUrl) {
+        return notification.actionUrl;
+    }
+
+    const targetId = notification.targetId;
+    const eventType = notification.eventType?.toLowerCase() ?? "";
+    const targetType = notification.targetType?.toLowerCase() ?? "";
+
+    // Booking-related notifications
+    if (targetType === "booking" || eventType.includes("booking")) {
+        if (eventType.includes("payment") || eventType.includes("pending_payment")) {
+            return targetId ? APP_ROUTES.guestPaymentDetail(targetId) : APP_ROUTES.accountTrips;
+        }
+        if (eventType.includes("host") || eventType.includes("owner")) {
+            return APP_ROUTES.hostBookings;
+        }
+        return APP_ROUTES.accountTrips;
+    }
+
+    // Review-related notifications
+    if (targetType === "review" || eventType.includes("review")) {
+        if (eventType.includes("host")) {
+            return APP_ROUTES.hostReviews;
+        }
+        return APP_ROUTES.accountTrips;
+    }
+
+    // Message-related notifications
+    if (targetType === "message" || targetType === "conversation" || eventType.includes("message")) {
+        return APP_ROUTES.messages;
+    }
+
+    // Listing-related notifications
+    if (targetType === "listing" || eventType.includes("listing")) {
+        if (targetId) {
+            return APP_ROUTES.villaDetail(targetId);
+        }
+        return APP_ROUTES.hostProperties;
+    }
+
+    // Host application notifications
+    if (eventType.includes("host_application") || eventType.includes("host_approved") || eventType.includes("host_rejected")) {
+        return APP_ROUTES.hostStatus;
+    }
+
+    return null;
+};
 
 const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
     const navigate = useNavigate();
@@ -168,6 +219,12 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
         if (notification.actionUrl) {
             setOpen(false);
             navigate(notification.actionUrl);
+        } else {
+            const resolvedUrl = resolveNotificationUrl(notification);
+            if (resolvedUrl) {
+                setOpen(false);
+                navigate(resolvedUrl);
+            }
         }
     };
 

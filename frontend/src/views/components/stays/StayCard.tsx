@@ -72,9 +72,18 @@ const StayCard = ({ stay }: StayCardProps) => {
                         </p>
                     </div>
 
-                    <div className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-sm font-semibold text-amber-700">
-                        <FaStar className="text-[12px]" />
-                        {stay.rating.toFixed(1)}
+                    <div className="flex flex-col items-end gap-1">
+                        <div className="inline-flex items-center gap-0.5 text-amber-400">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                                <FaStar
+                                    key={i}
+                                    className={`text-[11px] ${i < Math.round(stay.rating) ? "text-amber-400" : "text-slate-200"}`}
+                                />
+                            ))}
+                        </div>
+                        <span className="text-sm font-bold text-slate-700">
+                            {stay.rating.toFixed(1)}
+                        </span>
                     </div>
                 </div>
 

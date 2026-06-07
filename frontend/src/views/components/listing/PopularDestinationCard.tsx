@@ -28,8 +28,15 @@ const PopularDestinationCard = ({ destination, onClick }: PopularDestinationCard
                     </div>
                 )}
 
-                <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-gray-900/75 px-2.5 py-1 text-xs font-semibold text-white">
-                    <FaStar className="text-yellow-300" />
+                <div className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-gray-900/80 px-3 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur-sm">
+                    <div className="inline-flex items-center gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                            <FaStar
+                                key={i}
+                                className={`text-[9px] ${i < Math.round(destination.rating) ? "text-amber-300" : "text-white/25"}`}
+                            />
+                        ))}
+                    </div>
                     {destination.rating.toFixed(1)}
                 </div>
 
@@ -40,14 +47,14 @@ const PopularDestinationCard = ({ destination, onClick }: PopularDestinationCard
                 </div>
             </div>
 
-            <div className="mt-3 flex items-start justify-between gap-3">
-                <h3 className="min-w-0 text-base font-semibold text-zinc-900 sm:text-lg md:text-xl">{destination.name}</h3>
+            <div className="mt-3 flex items-center justify-between gap-3">
+                <h3 className="min-w-0 truncate text-base font-semibold text-zinc-900 sm:text-lg md:text-xl">{destination.name}</h3>
                 <p className="shrink-0 text-base font-bold text-zinc-900 sm:text-lg md:text-xl">{currencyFormatter.format(destination.pricePerNight)}</p>
             </div>
 
-            <p className="mt-1 flex items-center gap-2 truncate text-sm text-zinc-600">
-                <FaMapMarkerAlt className="text-zinc-400" />
-                {destination.address}
+            <p className="mt-1 flex items-center gap-2 text-sm text-zinc-600">
+                <FaMapMarkerAlt className="shrink-0 text-zinc-400" />
+                <span className="truncate">{destination.address}</span>
             </p>
         </>
     );
