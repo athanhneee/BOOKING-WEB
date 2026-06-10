@@ -174,9 +174,40 @@ const getListingRuleItems = (rules = {}) => {
     ];
 };
 
+// --- Skeleton rows for table ---
+const TableSkeletonRows = ({ cols = 5, rows = 4 }) =>
+    Array.from({ length: rows }).map((_, rowIndex) => (
+        <tr key={rowIndex} className="border-b border-slate-100 animate-pulse">
+            <td className="px-4 py-4">
+                <div className="flex items-center gap-3">
+                    <div className="h-20 w-32 shrink-0 rounded-xl bg-slate-200" />
+                    <div className="space-y-2">
+                        <div className="h-4 w-40 rounded bg-slate-200" />
+                        <div className="h-3 w-20 rounded bg-slate-200" />
+                    </div>
+                </div>
+            </td>
+            {Array.from({ length: cols - 2 }).map((_, colIndex) => (
+                <td key={colIndex} className="px-4 py-4">
+                    <div className="h-4 w-28 rounded bg-slate-200" />
+                </td>
+            ))}
+            <td className="px-4 py-4">
+                <div className="flex gap-2">
+                    <div className="h-9 w-24 rounded-xl bg-slate-200" />
+                    <div className="h-9 w-16 rounded-xl bg-slate-200" />
+                    <div className="h-9 w-20 rounded-xl bg-slate-200" />
+                </div>
+            </td>
+        </tr>
+    ));
+
 const KiemDuyetBaiDang = () => {
     const [listings, setListings] = useState([]);
-    const [loading, setLoading] = useState(true);
+    // Tách loading table vs loading từng action row
+    const [isLoadingTable, setIsLoadingTable] = useState(true);
+    const [processingListingId, setProcessingListingId] = useState(null); // ID đang approve/reject
+    const [isModalActionLoading, setIsModalActionLoading] = useState(false);
     const [error, setError] = useState("");
     const [selectedListingDetail, setSelectedListingDetail] = useState(null);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -187,7 +218,7 @@ const KiemDuyetBaiDang = () => {
     const [failedImageUrls, setFailedImageUrls] = useState(() => new Set());
 
     const fetchPendingListings = useCallback(async () => {
-        setLoading(true);
+        setIsLoadingTable(true);
         setError("");
 
         try {
@@ -200,7 +231,7 @@ const KiemDuyetBaiDang = () => {
         } catch (fetchError) {
             setError(getErrorMessage(fetchError, "Không thể tải bài chờ duyệt."));
         } finally {
-            setLoading(false);
+            setIsLoadingTable(false);
         }
     }, []);
 
@@ -210,7 +241,7 @@ const KiemDuyetBaiDang = () => {
 
     const handleViewDetail = async (listingId) => {
         try {
-            setLoading(true);
+            setIsModalActionLoading(true);
             setError("");
             const detail = await adminService.getAdminListingDetail(listingId);
             setSelectedListingDetail(detail);
@@ -223,7 +254,7 @@ const KiemDuyetBaiDang = () => {
         } catch (viewError) {
             setError(getErrorMessage(viewError, "Không tải được chi tiết căn."));
         } finally {
-            setLoading(false);
+            setIsModalActionLoading(false);
         }
     };
 
@@ -233,8 +264,12 @@ const KiemDuyetBaiDang = () => {
             return;
         }
 
+        // Chống double-click
+        if (processingListingId === listingId || isModalActionLoading) return;
+
         try {
-            setLoading(true);
+            setProcessingListingId(listingId);
+            setIsModalActionLoading(true);
             setError("");
             await adminService.approveListing(listingId);
             setDetailModalOpen(false);
@@ -243,7 +278,8 @@ const KiemDuyetBaiDang = () => {
         } catch (approveError) {
             setError(getErrorMessage(approveError, "Duyệt căn thất bại."));
         } finally {
-            setLoading(false);
+            setProcessingListingId(null);
+            setIsModalActionLoading(false);
         }
     };
 
@@ -262,8 +298,12 @@ const KiemDuyetBaiDang = () => {
             return;
         }
 
+        // Chống double-click
+        if (isModalActionLoading) return;
+
         try {
-            setLoading(true);
+            setProcessingListingId(rejectTarget.listingId);
+            setIsModalActionLoading(true);
             setError("");
             await adminService.rejectListing(rejectTarget.listingId, rejectReason.trim());
             setRejectModalOpen(false);
@@ -273,7 +313,8 @@ const KiemDuyetBaiDang = () => {
         } catch (rejectError) {
             setError(getErrorMessage(rejectError, "Từ chối căn thất bại."));
         } finally {
-            setLoading(false);
+            setProcessingListingId(null);
+            setIsModalActionLoading(false);
         }
     };
 
@@ -295,9 +336,14 @@ const KiemDuyetBaiDang = () => {
                             Duyệt hoặc từ chối các chỗ nghỉ host đã gửi lên.
                         </p>
                     </div>
-                    <button type="button" onClick={fetchPendingListings} className={reloadButtonClass}>
-                        <FiRefreshCw className="shrink-0" />
-                        Tải lại
+                    <button
+                        type="button"
+                        onClick={fetchPendingListings}
+                        disabled={isLoadingTable}
+                        className={`${reloadButtonClass} disabled:opacity-60`}
+                    >
+                        <FiRefreshCw className={`shrink-0 ${isLoadingTable ? "animate-spin" : ""}`} />
+                        {isLoadingTable ? "Đang tải..." : "Tải lại"}
                     </button>
                 </div>
 
@@ -316,15 +362,11 @@ const KiemDuyetBaiDang = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 bg-white">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={5} className="px-4 py-10 text-center text-gray-500">
-                                        Đang tải...
-                                    </td>
-                                </tr>
+                            {isLoadingTable ? (
+                                <TableSkeletonRows cols={5} rows={4} />
                             ) : null}
 
-                            {!loading && listings.length === 0 ? (
+                            {!isLoadingTable && listings.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-4 py-10 text-center text-gray-500">
                                         Không có listing chờ duyệt.
@@ -335,9 +377,13 @@ const KiemDuyetBaiDang = () => {
                             {listings.map((listing) => {
                                 const coverImageUrl = getListingCoverImageUrl(listing);
                                 const shouldShowCoverImage = coverImageUrl && !failedImageUrls.has(coverImageUrl);
+                                const isThisRowProcessing = processingListingId === listing.listingId;
 
                                 return (
-                                    <tr key={listing.listingId}>
+                                    <tr
+                                        key={listing.listingId}
+                                        className={isThisRowProcessing ? "opacity-60" : ""}
+                                    >
                                         <td className="px-4 py-4">
                                             <div className="flex items-center gap-3">
                                                 {shouldShowCoverImage ? (
@@ -367,23 +413,33 @@ const KiemDuyetBaiDang = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => handleViewDetail(listing.listingId)}
-                                                    className="rounded-xl border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+                                                    disabled={isThisRowProcessing || isModalActionLoading}
+                                                    className="rounded-xl border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
                                                 >
-                                                    Xem chi tiết
+                                                    {isModalActionLoading && !isThisRowProcessing ? "..." : "Xem chi tiết"}
                                                 </button>
 
                                                 <button
                                                     type="button"
                                                     onClick={() => handleApprove(listing.listingId)}
-                                                    className="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                                                    disabled={isThisRowProcessing || isLoadingTable}
+                                                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                                                 >
-                                                    Duyệt
+                                                    {isThisRowProcessing ? (
+                                                        <>
+                                                            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                                            Đang duyệt...
+                                                        </>
+                                                    ) : (
+                                                        "Duyệt"
+                                                    )}
                                                 </button>
 
                                                 <button
                                                     type="button"
                                                     onClick={() => openRejectModal(listing)}
-                                                    className="rounded-xl bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                                                    disabled={isThisRowProcessing || isLoadingTable}
+                                                    className="rounded-xl bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
                                                 >
                                                     Từ chối
                                                 </button>
@@ -528,9 +584,17 @@ const KiemDuyetBaiDang = () => {
                             <button
                                 type="button"
                                 onClick={() => handleApprove(selectedListingDetail.listingId)}
-                                className="rounded-xl bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
+                                disabled={isModalActionLoading}
+                                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                             >
-                                Duyệt căn này
+                                {isModalActionLoading ? (
+                                    <>
+                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                        Đang xử lý...
+                                    </>
+                                ) : (
+                                    "Duyệt căn này"
+                                )}
                             </button>
                         </div>
                     </div>
@@ -548,8 +612,9 @@ const KiemDuyetBaiDang = () => {
                         <textarea
                             value={rejectReason}
                             onChange={(event) => setRejectReason(event.target.value)}
+                            disabled={isModalActionLoading}
                             rows={5}
-                            className="mt-4 w-full rounded-xl border border-gray-300 p-3 outline-none focus:border-red-500"
+                            className="mt-4 w-full rounded-xl border border-gray-300 p-3 outline-none focus:border-red-500 disabled:opacity-60"
                             placeholder="Ví dụ: Ảnh chưa rõ, thiếu thông tin địa chỉ, giá chưa hợp lệ..."
                         />
 
@@ -557,7 +622,8 @@ const KiemDuyetBaiDang = () => {
                             <button
                                 type="button"
                                 onClick={() => setRejectModalOpen(false)}
-                                className="rounded-xl border px-4 py-2 hover:bg-gray-50"
+                                disabled={isModalActionLoading}
+                                className="rounded-xl border px-4 py-2 hover:bg-gray-50 disabled:opacity-60"
                             >
                                 Hủy
                             </button>
@@ -565,9 +631,17 @@ const KiemDuyetBaiDang = () => {
                             <button
                                 type="button"
                                 onClick={handleReject}
-                                className="rounded-xl bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700"
+                                disabled={isModalActionLoading}
+                                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
                             >
-                                Xác nhận từ chối
+                                {isModalActionLoading ? (
+                                    <>
+                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                        Đang xử lý...
+                                    </>
+                                ) : (
+                                    "Xác nhận từ chối"
+                                )}
                             </button>
                         </div>
                     </div>
