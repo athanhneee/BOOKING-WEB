@@ -217,7 +217,12 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
                 return;
             }
 
-            openMobileSheet();
+            if (!isAuthenticated) {
+                navigate(APP_ROUTES.login);
+                return;
+            }
+
+            navigate(APP_ROUTES.accountProfile);
             return;
         }
 
