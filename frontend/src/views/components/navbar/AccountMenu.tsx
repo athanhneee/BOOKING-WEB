@@ -196,15 +196,7 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
         }
     }, [isMobileMounted, isMobileOpen]);
 
-    const openMobileSheet = () => {
-        if (closeTimerRef.current !== null) {
-            window.clearTimeout(closeTimerRef.current);
-            closeTimerRef.current = null;
-        }
 
-        setIsMobileMounted(true);
-        window.requestAnimationFrame(() => setIsMobileOpen(true));
-    };
 
     const closeMobileSheet = () => {
         setIsMobileOpen(false);

@@ -419,11 +419,8 @@ const buildAmenityItems = (
 
 const buildReviewMetrics = (listing: PopularDestination): ReviewMetric[] => [
     { label: "Vị trí", score: clampScore(listing.rating) },
-    { label: "Sạch sẽ", score: clampScore(Math.max(4.5, listing.rating - 0.1)) },
-    {
-        label: "Tiện nghi",
-        score: clampScore(Math.max(4.5, listing.rating - 0.05)),
-    },
+    { label: "Sạch sẽ", score: clampScore(listing.rating) },
+    { label: "Tiện nghi", score: clampScore(listing.rating) },
 ];
 
 const getReturnTarget = (locationState: ListingDetailLocationState | null) => {
@@ -1220,60 +1217,60 @@ const MobileBookingSheetPanel = ({
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-                {sheet === "dates" ? (
-                    <div className="mt-5 rounded-[34px] border border-cyan-100 bg-white p-4 shadow-sm">
-                        <div className="mb-4 grid grid-cols-2 gap-2">
-                            {(["checkin", "checkout"] as const).map((field) => (
-                                <button
-                                    key={field}
-                                    type="button"
-                                    onClick={() => onDateFieldChange(field)}
-                                    className={`rounded-[24px] border px-3 py-3 text-left transition-colors ${mobileDateField === field
-                                        ? "border-cyan-600 bg-cyan-600 text-white"
-                                        : "border-cyan-100 bg-white text-zinc-800 hover:border-cyan-300"
-                                        }`}
-                                >
-                                    <p
-                                        className={`text-xs ${mobileDateField === field ? "text-white/75" : "text-zinc-500"}`}
+                    {sheet === "dates" ? (
+                        <div className="mt-5 rounded-[34px] border border-cyan-100 bg-white p-4 shadow-sm">
+                            <div className="mb-4 grid grid-cols-2 gap-2">
+                                {(["checkin", "checkout"] as const).map((field) => (
+                                    <button
+                                        key={field}
+                                        type="button"
+                                        onClick={() => onDateFieldChange(field)}
+                                        className={`rounded-[24px] border px-3 py-3 text-left transition-colors ${mobileDateField === field
+                                            ? "border-cyan-600 bg-cyan-600 text-white"
+                                            : "border-cyan-100 bg-white text-zinc-800 hover:border-cyan-300"
+                                            }`}
                                     >
-                                        {field === "checkin" ? "Nhận phòng" : "Trả phòng"}
-                                    </p>
-                                    <p className="mt-1 text-sm font-semibold">
-                                        {formatFieldDate(field === "checkin" ? checkIn : checkOut)}
-                                    </p>
-                                </button>
-                            ))}
+                                        <p
+                                            className={`text-xs ${mobileDateField === field ? "text-white/75" : "text-zinc-500"}`}
+                                        >
+                                            {field === "checkin" ? "Nhận phòng" : "Trả phòng"}
+                                        </p>
+                                        <p className="mt-1 text-sm font-semibold">
+                                            {formatFieldDate(field === "checkin" ? checkIn : checkOut)}
+                                        </p>
+                                    </button>
+                                ))}
+                            </div>
+                            <DatePickerPanel
+                                key={`mobile-${mobileDateField}-${checkIn}-${checkOut}`}
+                                isOpen
+                                selectedDate={mobileDateField === "checkin" ? checkIn : checkOut}
+                                minDate={
+                                    mobileDateField === "checkin" ? todayIso : checkIn || todayIso
+                                }
+                                rangeStartDate={checkIn}
+                                rangeEndDate={checkOut}
+                                activeField={
+                                    mobileDateField === "checkout" ? "checkOut" : "checkIn"
+                                }
+                                selectedNightOffset={nightOffset}
+                                bookedDates={bookedDates}
+                                onSelectDate={
+                                    mobileDateField === "checkin"
+                                        ? onSelectCheckIn
+                                        : onSelectCheckOut
+                                }
+                                onNightOffsetChange={onNightOffsetChange}
+                                variant="inline"
+                            />
                         </div>
-                        <DatePickerPanel
-                            key={`mobile-${mobileDateField}-${checkIn}-${checkOut}`}
-                            isOpen
-                            selectedDate={mobileDateField === "checkin" ? checkIn : checkOut}
-                            minDate={
-                                mobileDateField === "checkin" ? todayIso : checkIn || todayIso
-                            }
-                            rangeStartDate={checkIn}
-                            rangeEndDate={checkOut}
-                            activeField={
-                                mobileDateField === "checkout" ? "checkOut" : "checkIn"
-                            }
-                            selectedNightOffset={nightOffset}
-                            bookedDates={bookedDates}
-                            onSelectDate={
-                                mobileDateField === "checkin"
-                                    ? onSelectCheckIn
-                                    : onSelectCheckOut
-                            }
-                            onNightOffsetChange={onNightOffsetChange}
-                            variant="inline"
-                        />
-                    </div>
-                ) : (
-                    <div className="mt-5 rounded-[34px] border border-cyan-100 bg-white p-4 shadow-sm">
-                        <div className="rounded-[26px] bg-slate-50 p-2">
-                            <GuestControls value={guestSelection} maxAdults={maxGuests} onAdjust={onAdjustGuest} />
+                    ) : (
+                        <div className="mt-5 rounded-[34px] border border-cyan-100 bg-white p-4 shadow-sm">
+                            <div className="rounded-[26px] bg-slate-50 p-2">
+                                <GuestControls value={guestSelection} maxAdults={maxGuests} onAdjust={onAdjustGuest} />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
                 </div>
 
                 <div className="shrink-0 border-t border-zinc-200 bg-[#f4f0eb] px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
