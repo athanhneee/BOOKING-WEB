@@ -34,12 +34,24 @@ export const sequelize = new Sequelize(env.dbName, env.dbUser, env.dbPassword, {
               }
             : {}),
     },
+    pool: {
+        max: 10,          // Tối đa 10 connections
+        min: 2,           // Giữ sẵn 2 connections luôn mở → tránh tạo mới khi có request
+        acquire: 30000,   // Timeout khi lấy connection: 30s
+        idle: 60000,      // Đóng connection idle sau 60s (thay vì mặc định 10s)
+    },
     define: {
         charset: "utf8mb4",
         collate: "utf8mb4_unicode_ci",
         engine: "InnoDB",
     },
-    logging: false,
+    benchmark: true,
+    logging: (sql, timing) => {
+        const ms = typeof timing === "number" ? timing : 0;
+        if (ms > 500) {
+            console.warn(`[SLOW QUERY] ${ms}ms: ${sql}`);
+        }
+    },
 });
 
 export default sequelize;
