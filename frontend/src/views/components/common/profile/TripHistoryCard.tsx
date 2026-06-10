@@ -18,6 +18,7 @@ import { bookingStatusToneClassNames, cn } from "../../../../utils";
 
 type TripHistoryCardProps = {
     trip: TripHistory;
+    onReview?: () => void;
 };
 
 type DetailItemProps = {
@@ -140,7 +141,7 @@ const DetailItem = ({ icon, label, value }: DetailItemProps) => (
     </div>
 );
 
-const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
+const TripHistoryCard = ({ trip, onReview }: TripHistoryCardProps) => {
     const navigate = useNavigate();
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const statusMeta = getStatusMeta(trip);
@@ -234,7 +235,9 @@ const TripHistoryCard = ({ trip }: TripHistoryCardProps) => {
                                             ? handleRebook
                                             : action.key === "continue-payment"
                                                 ? handleContinuePayment
-                                                : undefined
+                                                : action.key === "review"
+                                                    ? onReview
+                                                    : undefined
                                 }
                                 aria-expanded={action.key === "detail" ? isDetailOpen : undefined}
                                 className={cn(

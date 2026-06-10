@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { LuCompass, LuPlane } from "react-icons/lu";
 import { APP_ROUTES } from "../../../../config/routes";
 import type { TripHistory } from "../../../../models/entities/TripHistory";
 import TripHistoryCard from "./TripHistoryCard";
+import ReviewModal from "./ReviewModal";
 
 type TripHistoryListProps = {
     trips: TripHistory[];
 };
 
 const TripHistoryList = ({ trips }: TripHistoryListProps) => {
+    const [reviewingTrip, setReviewingTrip] = useState<TripHistory | null>(null);
+
     if (trips.length === 0) {
         return (
             <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
@@ -33,8 +37,25 @@ const TripHistoryList = ({ trips }: TripHistoryListProps) => {
     return (
         <div className="space-y-4">
             {trips.map((trip) => (
-                <TripHistoryCard key={trip.id} trip={trip} />
+                <TripHistoryCard 
+                    key={trip.id} 
+                    trip={trip} 
+                    onReview={() => setReviewingTrip(trip)} 
+                />
             ))}
+
+            {reviewingTrip && (
+                <ReviewModal
+                    isOpen={Boolean(reviewingTrip)}
+                    trip={reviewingTrip}
+                    onClose={() => setReviewingTrip(null)}
+                    onSuccess={() => {
+                        setReviewingTrip(null);
+                        // Optionally reload data here or show success toast
+                        window.location.reload();
+                    }}
+                />
+            )}
         </div>
     );
 };
