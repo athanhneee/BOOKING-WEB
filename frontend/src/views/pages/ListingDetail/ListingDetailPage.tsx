@@ -1201,22 +1201,25 @@ const MobileBookingSheetPanel = ({
                 onClick={onClose}
                 role="presentation"
             />
-            <div className="absolute inset-x-0 bottom-0 top-0 overflow-y-auto rounded-t-[38px] bg-[#f4f0eb] px-4 pb-8 pt-4 shadow-2xl">
-                <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-zinc-300" />
-                <div className="flex items-center justify-between gap-4">
-                    <h2 className="text-2xl font-bold text-zinc-950">
-                        {sheet === "dates" ? "Chọn ngày lưu trú" : "Chọn số lượng khách"}
-                    </h2>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-cyan-100 bg-white text-zinc-700 transition-colors hover:border-cyan-300 hover:text-cyan-700"
-                        aria-label="Đóng"
-                    >
-                        <FaTimes />
-                    </button>
+            <div className="absolute inset-x-0 bottom-0 top-0 flex flex-col rounded-t-[38px] bg-[#f4f0eb] shadow-2xl">
+                <div className="shrink-0 px-4 pt-4">
+                    <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-zinc-300" />
+                    <div className="flex items-center justify-between gap-4">
+                        <h2 className="text-2xl font-bold text-zinc-950">
+                            {sheet === "dates" ? "Chọn ngày lưu trú" : "Chọn số lượng khách"}
+                        </h2>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-cyan-100 bg-white text-zinc-700 transition-colors hover:border-cyan-300 hover:text-cyan-700"
+                            aria-label="Đóng"
+                        >
+                            <FaTimes />
+                        </button>
+                    </div>
                 </div>
 
+                <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
                 {sheet === "dates" ? (
                     <div className="mt-5 rounded-[34px] border border-cyan-100 bg-white p-4 shadow-sm">
                         <div className="mb-4 grid grid-cols-2 gap-2">
@@ -1271,14 +1274,17 @@ const MobileBookingSheetPanel = ({
                         </div>
                     </div>
                 )}
+                </div>
 
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="mt-5 inline-flex min-h-14 w-full items-center justify-center rounded-[26px] bg-cyan-600 px-6 text-base font-semibold text-white shadow-sm transition-colors hover:bg-cyan-700"
-                >
-                    Áp dụng
-                </button>
+                <div className="shrink-0 px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="inline-flex min-h-14 w-full items-center justify-center rounded-[26px] bg-cyan-600 px-6 text-base font-semibold text-white shadow-sm transition-colors hover:bg-cyan-700"
+                    >
+                        Áp dụng
+                    </button>
+                </div>
             </div>
         </div>
     );
