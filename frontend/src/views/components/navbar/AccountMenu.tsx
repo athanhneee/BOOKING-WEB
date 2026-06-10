@@ -318,46 +318,50 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
 
                     <div
                         className={cn(
-                            "absolute inset-x-0 bottom-0 rounded-t-2xl bg-white px-4 pb-8 pt-4 shadow-md transition-all duration-200",
+                            "absolute inset-x-0 bottom-0 flex max-h-[80vh] flex-col rounded-t-2xl bg-white shadow-md transition-all duration-200",
                             isMobileOpen ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0",
                         )}
                     >
-                        <div className="mx-auto mb-4 h-1.5 w-14 rounded-full bg-slate-200" />
+                        <div className="shrink-0 px-4 pt-4">
+                            <div className="mx-auto mb-4 h-1.5 w-14 rounded-full bg-slate-200" />
 
-                        <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-cyan-300/10 px-4 py-4">
-                            <div className="flex items-center gap-3">
-                                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-700 text-sm font-semibold text-white">
-                                    {user.avatarUrl ? (
-                                        <img
-                                            src={user.avatarUrl}
-                                            alt={user.displayName}
-                                            className="h-12 w-12 rounded-full object-cover"
-                                        />
-                                    ) : (
-                                        getInitials(user.displayName)
-                                    )}
-                                </span>
-                                <div>
-                                    <p className="text-base font-semibold text-slate-900">{user.displayName}</p>
-                                    <p className="text-sm text-slate-500">{user.location}</p>
+                            <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-cyan-300/10 px-4 py-4">
+                                <div className="flex items-center gap-3">
+                                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-700 text-sm font-semibold text-white">
+                                        {user.avatarUrl ? (
+                                            <img
+                                                src={user.avatarUrl}
+                                                alt={user.displayName}
+                                                className="h-12 w-12 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            getInitials(user.displayName)
+                                        )}
+                                    </span>
+                                    <div>
+                                        <p className="text-base font-semibold text-slate-900">{user.displayName}</p>
+                                        <p className="text-sm text-slate-500">{user.location}</p>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <button
-                                type="button"
-                                onClick={closeMobileSheet}
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white bg-white text-slate-600"
-                                aria-label="Đóng"
-                            >
-                                <LuX size={18} />
-                            </button>
+                                <button
+                                    type="button"
+                                    onClick={closeMobileSheet}
+                                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white bg-white text-slate-600"
+                                    aria-label="Đóng"
+                                >
+                                    <LuX size={18} />
+                                </button>
+                            </div>
                         </div>
 
-                        {menuGroups.map((group, index) => (
-                            <div key={group.key} className={index === 0 ? undefined : "mt-2 border-t border-gray-100 pt-2"}>
-                                {group.items.map((item) => renderMenuItem(item, closeMobileSheet))}
-                            </div>
-                        ))}
+                        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
+                            {menuGroups.map((group, index) => (
+                                <div key={group.key} className={index === 0 ? undefined : "mt-2 border-t border-gray-100 pt-2"}>
+                                    {group.items.map((item) => renderMenuItem(item, closeMobileSheet))}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             ) : null}
