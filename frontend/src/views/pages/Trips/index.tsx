@@ -17,6 +17,8 @@ import ProfileInfoList from "../../components/common/profile/ProfileInfoList";
 import ProfileSidebar, { type AccountTab } from "../../components/common/profile/ProfileSidebar";
 import ProfileSummaryCard from "../../components/common/profile/ProfileSummaryCard";
 import TripHistoryList from "../../components/common/profile/TripHistoryList";
+import TripCardSkeleton from "../../components/ui/skeletons/TripCardSkeleton";
+
 
 type EditModalState =
     | {
@@ -204,6 +206,7 @@ const mapBookingToTrip = (booking: ApiBooking, now: Date): TripHistory => {
         bookingStatusLabel: displayStatus.label,
         bookingStatusTone: displayStatus.tone,
         canReview: status === "completed" || displayStatus.normalizedStatus === "checked_out",
+        hasReview: booking.hasReview,
         canRebook: status === "completed" || status === "cancelled",
         guestCount: booking.guestCount ?? booking.guestsCount,
         address: address || location,
@@ -414,24 +417,52 @@ const ProfilePage = () => {
                                     <AboutMeCard bio={profile.bio} onEdit={() => setEditModal({ mode: "single", field: "bio" })} />
                                 </div>
                             </div>
+                        ) : loading ? (
+                            <div className="grid gap-7 xl:grid-cols-[380px_minmax(0,1fr)]">
+                                {/* Profile summary skeleton */}
+                                <div className="animate-pulse space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                                    <div className="flex flex-col items-center gap-4">
+                                        <div className="h-24 w-24 rounded-full bg-slate-200" />
+                                        <div className="h-5 w-36 rounded bg-slate-200" />
+                                        <div className="h-4 w-24 rounded bg-slate-200" />
+                                    </div>
+                                    <div className="space-y-2 pt-4">
+                                        <div className="h-4 w-full rounded bg-slate-200" />
+                                        <div className="h-4 w-5/6 rounded bg-slate-200" />
+                                        <div className="h-4 w-4/6 rounded bg-slate-200" />
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="animate-pulse rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
+                                        <div className="h-5 w-32 rounded bg-slate-200" />
+                                        {[1, 2, 3, 4].map((i) => (
+                                            <div key={i} className="flex justify-between border-b border-slate-100 py-3">
+                                                <div className="h-4 w-24 rounded bg-slate-200" />
+                                                <div className="h-4 w-32 rounded bg-slate-200" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
                         ) : (
                             <section className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
-                                <p className="text-sm font-medium text-slate-500">
-                                    {loading ? "Đang tải hồ sơ..." : "Chưa có dữ liệu hồ sơ."}
-                                </p>
+                                <p className="text-sm font-medium text-slate-500">Chưa có dữ liệu hồ sơ.</p>
                             </section>
                         )
                     ) : (
                         <section>
                             {loading ? (
-                                <div className="rounded-2xl border border-slate-200 bg-white px-6 py-14 text-center text-sm font-medium text-slate-500 shadow-sm">
-                                    Đang tải chuyến đi...
+                                <div className="space-y-4">
+                                    {Array.from({ length: 3 }).map((_, i) => (
+                                        <TripCardSkeleton key={i} />
+                                    ))}
                                 </div>
                             ) : (
                                 <TripHistoryList trips={trips} />
                             )}
                         </section>
                     )}
+
                 </main>
             </div>
 
