@@ -27,12 +27,16 @@ import { getListingImagesForListing } from "../../common/listing-relations";
 import { getCoverImage, serializeListingImage } from "../../common/listing-mappers";
 import { sanitizeNullableSingleLineText } from "../../common/sanitization";
 import sequelize from "../../config/database";
+import { logger } from "../../config/logger";
+import AuditLog from "../../models/audit-log";
 import AvailabilityCalendar from "../../models/availability-calendar";
 import Booking, { BookingDocument, BookingStatus } from "../../models/booking";
+import BookingDateLock from "../../models/booking-date-lock";
 import BookingStatusHistory from "../../models/booking-status-history";
 import HostPayoutBatch from "../../models/host-payout-batch";
 import HostPayoutBookingItem from "../../models/host-payout-booking-item";
 import Listing, { CancellationPolicy, ListingDocument } from "../../models/listing";
+import NotificationLog from "../../models/notification-log";
 import Payment from "../../models/payment";
 import Refund from "../../models/refund";
 import type { AuthenticatedUser } from "../auth/auth.service";
@@ -59,6 +63,10 @@ export type CreateBookingInput = {
     checkOutDate: string;
     guestCount: number;
     couponCode?: string;
+};
+
+export type CreateBulkBookingInput = {
+    items: CreateBookingInput[];
 };
 
 export type ListBookingsQuery = {
@@ -91,6 +99,14 @@ export type ApiBookingStatus =
     | "rejected";
 
 type CancellationActor = "guest" | "host";
+type PreparedBookingCreate = {
+    index: number;
+    input: CreateBookingInput;
+    listing: ListingDocument;
+    reservedDates: string[];
+    calendarByDate: Awaited<ReturnType<typeof getCalendarMapForDates>>;
+    pricing: Awaited<ReturnType<typeof calculateBookingPricing>>;
+};
 
 const maxPageLimit = 100;
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
@@ -185,6 +201,75 @@ const assertBookingDateRange = (input: Pick<CreateBookingInput, "checkInDate" | 
                 msg: "checkInDate cannot be in the past",
             },
         ]);
+    }
+};
+
+const isDateRangeOverlapping = (
+    left: Pick<CreateBookingInput, "checkInDate" | "checkOutDate">,
+    right: Pick<CreateBookingInput, "checkInDate" | "checkOutDate">,
+) => left.checkInDate < right.checkOutDate && left.checkOutDate > right.checkInDate;
+
+const assertNoOverlappingBulkItems = (items: CreateBookingInput[]) => {
+    for (let index = 0; index < items.length; index += 1) {
+        for (let previousIndex = 0; previousIndex < index; previousIndex += 1) {
+            const currentItem = items[index];
+            const previousItem = items[previousIndex];
+
+            if (
+                currentItem.listingId === previousItem.listingId &&
+                isDateRangeOverlapping(currentItem, previousItem)
+            ) {
+                throw new ApiError(409, "Bulk booking validation failed", [
+                    {
+                        path: `items[${index}]`,
+                        msg: `Booking item #${index + 1} overlaps item #${previousIndex + 1}`,
+                    },
+                ]);
+            }
+        }
+    }
+};
+
+const toBulkItemPath = (index: number, path?: string) => {
+    if (!path) {
+        return `items[${index}]`;
+    }
+
+    return `items[${index}].${path}`;
+};
+
+const throwBulkItemError = (index: number, error: unknown): never => {
+    if (error instanceof ApiError) {
+        throw new ApiError(
+            error.statusCode,
+            "Bulk booking validation failed",
+            error.errors?.length
+                ? error.errors.map((detail) => ({
+                    path: toBulkItemPath(index, detail.path),
+                    msg: detail.msg,
+                }))
+                : [
+                    {
+                        path: `items[${index}]`,
+                        msg: error.message,
+                    },
+                ],
+        );
+    }
+
+    throw new ApiError(500, "Bulk booking failed", [
+        {
+            path: `items[${index}]`,
+            msg: error instanceof Error ? error.message : "Unable to create booking",
+        },
+    ]);
+};
+
+const withBulkItemError = async <T>(index: number, action: () => Promise<T>) => {
+    try {
+        return await action();
+    } catch (error) {
+        return throwBulkItemError(index, error);
     }
 };
 
@@ -1011,123 +1096,273 @@ const cancelBooking = async (
     return serializeBooking(booking, true);
 };
 
+const prepareBookingCreate = async (
+    user: AuthenticatedUser,
+    input: CreateBookingInput,
+    index: number,
+    transaction: Transaction,
+): Promise<PreparedBookingCreate> => {
+    assertBookingDateRange(input);
+
+    const listing = await getPublicListingForBooking(input.listingId, transaction);
+
+    if (String(listing.hostId) === user.id) {
+        throw new ApiError(403, "Hosts cannot book their own listing");
+    }
+
+    if (input.guestCount > listing.maxGuests) {
+        throw new ApiError(422, "Validation error", [
+            {
+                path: "guestCount",
+                msg: "guestCount exceeds listing maxGuests",
+            },
+        ]);
+    }
+
+    const reservedDates = listReservedDates(input.checkInDate, input.checkOutDate);
+    const calendarByDate = await getCalendarMapForDates(listing, reservedDates, transaction);
+    const checkInMinNights = calendarByDate.get(input.checkInDate)?.minNightsOverride ?? null;
+    const nights = getNightCount(input.checkInDate, input.checkOutDate);
+
+    assertNightRules(listing, checkInMinNights, nights);
+    assertCalendarAvailability(reservedDates, calendarByDate);
+    await expireStaleOverlappingPendingPaymentBookings(
+        listing.listingId,
+        input.checkInDate,
+        input.checkOutDate,
+        transaction,
+    );
+    await assertNoActiveOverlappingBooking(listing.listingId, input.checkInDate, input.checkOutDate, transaction);
+
+    const pricing = await calculateBookingPricing({
+        userId: Number(user.id),
+        listing,
+        dates: reservedDates,
+        calendarByDate,
+        guestCount: input.guestCount,
+        couponCode: input.couponCode,
+        transaction,
+    });
+
+    return {
+        index,
+        input,
+        listing,
+        reservedDates,
+        calendarByDate,
+        pricing,
+    };
+};
+
+const createPreparedBooking = async (
+    user: AuthenticatedUser,
+    prepared: PreparedBookingCreate,
+    transaction: Transaction,
+    onCreated?: (booking: BookingDocument) => void,
+) => {
+    const { input, listing, pricing } = prepared;
+    const env = getEnv();
+    const lockedUntil = new Date(Date.now() + env.paymentHoldMinutes * 60 * 1000);
+    const status: BookingStatus = "pending_payment";
+    const createdBooking = await Booking.create(
+        {
+            bookingId: await getNextBookingSequence(transaction),
+            listingId: listing.listingId,
+            guestUserId: Number(user.id),
+            hostUserId: Number(listing.hostId),
+            checkInDate: input.checkInDate,
+            checkOutDate: input.checkOutDate,
+            guestCount: input.guestCount,
+            nights: pricing.totalNights,
+            totalNights: pricing.totalNights,
+            status,
+            version: 0,
+            lockedUntil,
+            currency: listing.currency,
+            couponId: pricing.couponId,
+            subtotalAmount: pricing.subtotalAmount,
+            cleaningFeeAmount: pricing.cleaningFeeAmount,
+            serviceFeeAmount: pricing.serviceFeeAmount,
+            discountAmount: pricing.discountAmount,
+            totalAmount: pricing.totalAmount,
+            priceBreakdown: pricing.priceBreakdown as unknown as Record<string, unknown>,
+            bookingNote: null,
+            cancellationReason: null,
+            cancelledByUserId: null,
+            cancelledAt: null,
+            checkedInAt: null,
+            checkedOutAt: null,
+            paidAt: null,
+        },
+        { transaction },
+    );
+
+    onCreated?.(createdBooking);
+
+    await createBookingDateLocks({
+        bookingId: createdBooking.bookingId,
+        listingId: createdBooking.listingId,
+        checkInDate: toDateAtUtcMidnight(createdBooking.checkInDate),
+        checkOutDate: toDateAtUtcMidnight(createdBooking.checkOutDate),
+        transaction,
+    });
+
+    await writeBookingStatusHistory(
+        createdBooking,
+        null,
+        toApiBookingStatus(createdBooking),
+        Number(user.id),
+        null,
+        {
+            pricingSnapshot: pricing,
+            instantBookEnabled: listing.instantBookEnabled,
+        },
+        transaction,
+    );
+    await writeAuditLog({
+        actorId: Number(user.id),
+        action: "booking.create",
+        targetType: "booking",
+        targetId: createdBooking.bookingId,
+        metadata: {
+            listingId: listing.listingId,
+            status: toApiBookingStatus(createdBooking),
+            totalAmount: pricing.totalAmount,
+        },
+        transaction,
+    });
+    await notifyBookingCreated(createdBooking.bookingId, transaction);
+
+    return createdBooking;
+};
+
+const compensateBulkBookingCreation = async (createdBookings: BookingDocument[]) => {
+    const bookingIds = [...new Set(createdBookings.map((booking) => Number(booking.bookingId)).filter(Number.isFinite))];
+
+    if (bookingIds.length === 0) {
+        return;
+    }
+
+    const bookingIdWhere = { bookingId: { [Op.in]: bookingIds } };
+
+    try {
+        await BookingDateLock.destroy({ where: bookingIdWhere });
+    } catch (error) {
+        logger.warn("Bulk booking compensation could not delete date locks", {
+            bookingIds,
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+
+    try {
+        await BookingStatusHistory.destroy({ where: bookingIdWhere });
+    } catch (error) {
+        logger.warn("Bulk booking compensation could not delete status history", {
+            bookingIds,
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+
+    try {
+        await AuditLog.destroy({
+            where: {
+                targetType: "booking",
+                targetId: { [Op.in]: bookingIds },
+            },
+        });
+    } catch (error) {
+        logger.warn("Bulk booking compensation could not delete audit logs", {
+            bookingIds,
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+
+    try {
+        await NotificationLog.destroy({
+            where: {
+                targetType: "booking",
+                targetId: { [Op.in]: bookingIds.map(String) },
+            },
+        });
+    } catch (error) {
+        logger.warn("Bulk booking compensation could not delete notification logs", {
+            bookingIds,
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+
+    try {
+        await Booking.destroy({ where: bookingIdWhere });
+    } catch (error) {
+        logger.warn("Bulk booking compensation could not delete bookings", {
+            bookingIds,
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+};
+
 export const createBooking = async (user: AuthenticatedUser, input: CreateBookingInput) => {
     assertBookingDateRange(input);
 
     const booking = await sequelize.transaction(async (transaction) => {
-        const listing = await getPublicListingForBooking(input.listingId, transaction);
+        const prepared = await prepareBookingCreate(user, input, 0, transaction);
 
-        if (String(listing.hostId) === user.id) {
-            throw new ApiError(403, "Hosts cannot book their own listing");
-        }
-
-        if (input.guestCount > listing.maxGuests) {
-            throw new ApiError(422, "Validation error", [
-                {
-                    path: "guestCount",
-                    msg: "guestCount exceeds listing maxGuests",
-                },
-            ]);
-        }
-
-        const reservedDates = listReservedDates(input.checkInDate, input.checkOutDate);
-        const calendarByDate = await getCalendarMapForDates(listing, reservedDates, transaction);
-        const checkInMinNights = calendarByDate.get(input.checkInDate)?.minNightsOverride ?? null;
-        const nights = getNightCount(input.checkInDate, input.checkOutDate);
-
-        assertNightRules(listing, checkInMinNights, nights);
-        assertCalendarAvailability(reservedDates, calendarByDate);
-        await expireStaleOverlappingPendingPaymentBookings(
-            listing.listingId,
-            input.checkInDate,
-            input.checkOutDate,
-            transaction,
-        );
-        await assertNoActiveOverlappingBooking(listing.listingId, input.checkInDate, input.checkOutDate, transaction);
-
-        const pricing = await calculateBookingPricing({
-            userId: Number(user.id),
-            listing,
-            dates: reservedDates,
-            calendarByDate,
-            guestCount: input.guestCount,
-            couponCode: input.couponCode,
-            transaction,
-        });
-        const env = getEnv();
-        const lockedUntil = new Date(Date.now() + env.paymentHoldMinutes * 60 * 1000);
-        const status: BookingStatus = "pending_payment";
-        const createdBooking = await Booking.create(
-            {
-                bookingId: await getNextBookingSequence(transaction),
-                listingId: listing.listingId,
-                guestUserId: Number(user.id),
-                hostUserId: Number(listing.hostId),
-                checkInDate: input.checkInDate,
-                checkOutDate: input.checkOutDate,
-                guestCount: input.guestCount,
-                nights: pricing.totalNights,
-                totalNights: pricing.totalNights,
-                status,
-                version: 0,
-                lockedUntil,
-                currency: listing.currency,
-                couponId: pricing.couponId,
-                subtotalAmount: pricing.subtotalAmount,
-                cleaningFeeAmount: pricing.cleaningFeeAmount,
-                serviceFeeAmount: pricing.serviceFeeAmount,
-                discountAmount: pricing.discountAmount,
-                totalAmount: pricing.totalAmount,
-                priceBreakdown: pricing.priceBreakdown as unknown as Record<string, unknown>,
-                bookingNote: null,
-                cancellationReason: null,
-                cancelledByUserId: null,
-                cancelledAt: null,
-                checkedInAt: null,
-                checkedOutAt: null,
-                paidAt: null,
-            },
-            { transaction },
-        );
-
-        await createBookingDateLocks({
-            bookingId: createdBooking.bookingId,
-            listingId: createdBooking.listingId,
-            checkInDate: toDateAtUtcMidnight(createdBooking.checkInDate),
-            checkOutDate: toDateAtUtcMidnight(createdBooking.checkOutDate),
-            transaction,
-        });
-
-        await writeBookingStatusHistory(
-            createdBooking,
-            null,
-            toApiBookingStatus(createdBooking),
-            Number(user.id),
-            null,
-            {
-                pricingSnapshot: pricing,
-                instantBookEnabled: listing.instantBookEnabled,
-            },
-            transaction,
-        );
-        await writeAuditLog({
-            actorId: Number(user.id),
-            action: "booking.create",
-            targetType: "booking",
-            targetId: createdBooking.bookingId,
-            metadata: {
-                listingId: listing.listingId,
-                status: toApiBookingStatus(createdBooking),
-                totalAmount: pricing.totalAmount,
-            },
-            transaction,
-        });
-        await notifyBookingCreated(createdBooking.bookingId, transaction);
-
-        return createdBooking;
+        return createPreparedBooking(user, prepared, transaction);
     });
 
     return serializeBooking(booking, true);
+};
+
+export const createBulkBookings = async (user: AuthenticatedUser, input: CreateBulkBookingInput) => {
+    input.items.forEach((item, index) => {
+        try {
+            assertBookingDateRange(item);
+        } catch (error) {
+            throwBulkItemError(index, error);
+        }
+    });
+    assertNoOverlappingBulkItems(input.items);
+
+    const createdForCompensation: BookingDocument[] = [];
+    let committedBookings: BookingDocument[];
+
+    try {
+        committedBookings = await sequelize.transaction(async (transaction) => {
+            const preparedBookings: PreparedBookingCreate[] = [];
+
+            for (const [index, item] of input.items.entries()) {
+                preparedBookings.push(
+                    await withBulkItemError(index, () => prepareBookingCreate(user, item, index, transaction)),
+                );
+            }
+
+            const createdBookings: BookingDocument[] = [];
+
+            for (const prepared of preparedBookings) {
+                const createdBooking = await withBulkItemError(prepared.index, () =>
+                    createPreparedBooking(user, prepared, transaction, (booking) => {
+                        if (!createdForCompensation.some((created) => created.bookingId === booking.bookingId)) {
+                            createdForCompensation.push(booking);
+                        }
+                    }),
+                );
+
+                createdBookings.push(createdBooking);
+            }
+
+            return createdBookings;
+        });
+    } catch (error) {
+        await compensateBulkBookingCreation(createdForCompensation);
+        throw error;
+    }
+
+    // Serialize OUTSIDE the compensation try/catch.
+    // At this point the transaction has committed — bookings are valid.
+    // If serialization fails we must NOT delete committed bookings.
+    return {
+        items: await Promise.all(committedBookings.map((booking) => serializeBooking(booking, true))),
+    };
 };
 
 export const getMyBookings = async (user: AuthenticatedUser, query: ListBookingsQuery) => {

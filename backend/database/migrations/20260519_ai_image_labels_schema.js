@@ -225,6 +225,44 @@ const ensureImageAnalysisTables = async (connection, jsonColumnType) => {
         "INDEX `idx_image_tags_listing_tag` ON `image_tags` (`listing_id`, `tag`)",
     );
 
+    await ensureColumn(
+        connection,
+        "image_analysis_results",
+        "created_at",
+        "`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
+    );
+    await ensureColumn(
+        connection,
+        "image_analysis_results",
+        "updated_at",
+        "`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `created_at`",
+    );
+    await modifyColumnIfExists(
+        connection,
+        "image_analysis_results",
+        "created_at",
+        "`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
+    );
+    await modifyColumnIfExists(
+        connection,
+        "image_analysis_results",
+        "updated_at",
+        "`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+    );
+
+    await ensureColumn(
+        connection,
+        "image_tags",
+        "created_at",
+        "`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
+    );
+    await modifyColumnIfExists(
+        connection,
+        "image_tags",
+        "created_at",
+        "`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
+    );
+
     for (const [code, labelVi, group, aliases] of imageTagTaxonomies) {
         await connection.execute(
             `
@@ -268,6 +306,10 @@ const main = async () => {
 
         await ensureColumn(connection, "listing_images", "ai_error_message", "`ai_error_message` TEXT NULL AFTER `ai_analysis_status`");
         await ensureColumn(connection, "listing_images", "ai_analyzed_at", "`ai_analyzed_at` DATETIME NULL AFTER `ai_error_message`");
+        await ensureColumn(connection, "listing_images", "created_at", "`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP");
+        await ensureColumn(connection, "listing_images", "updated_at", "`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `created_at`");
+        await modifyColumnIfExists(connection, "listing_images", "created_at", "`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP");
+        await modifyColumnIfExists(connection, "listing_images", "updated_at", "`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 
         await ensureColumn(connection, "listings", "ai_image_tags", `\`ai_image_tags\` ${jsonColumnType} NULL`);
         await ensureColumn(connection, "listings", "ai_image_summary", "`ai_image_summary` TEXT NULL");

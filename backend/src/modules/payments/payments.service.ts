@@ -69,6 +69,11 @@ type PaymentCallbackContext = {
     ipAddress?: string | null;
     userAgent?: string | null;
 };
+type NotificationSideEffect = {
+    label: string;
+    metadata?: Record<string, unknown>;
+    fn: () => Promise<void>;
+};
 
 const payableBookingStatuses: BookingStatus[] = ["pending_payment"];
 const reusablePaymentStatuses: PaymentStatus[] = ["pending", "paid"];
@@ -78,6 +83,55 @@ const finalTransactionStatuses = new Set<PaymentTransactionStatus>(["succeeded",
 const isAdmin = (user: AuthenticatedUser) => user.roles.includes("admin");
 const isHost = (user: AuthenticatedUser) => user.roles.includes("host");
 const toNumber = (value: unknown) => Number(value ?? 0);
+
+const serializeNotificationError = (error: unknown) => {
+    if (error instanceof Error) {
+        return {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+        };
+    }
+
+    return {
+        message: String(error),
+    };
+};
+
+const safeNotify = async (
+    label: string,
+    fn: () => Promise<void>,
+    metadata: Record<string, unknown> = {},
+) => {
+    try {
+        await fn();
+    } catch (error) {
+        logger.warn("Payment notification side-effect failed", {
+            label,
+            ...metadata,
+            error: serializeNotificationError(error),
+        });
+    }
+};
+
+const enqueueNotification = (
+    notifications: NotificationSideEffect[],
+    label: string,
+    fn: () => Promise<void>,
+    metadata: Record<string, unknown> = {},
+) => {
+    notifications.push({
+        label,
+        metadata,
+        fn,
+    });
+};
+
+const runNotificationSideEffects = async (notifications: NotificationSideEffect[]) => {
+    for (const notification of notifications) {
+        await safeNotify(notification.label, notification.fn, notification.metadata);
+    }
+};
 
 function getBookingPaymentExpiresAt(booking: BookingDocument): Date {
     const env = getEnv();
@@ -429,6 +483,7 @@ const expireBookingAfterFailedPayment = async (
     booking: BookingDocument,
     transaction: Transaction,
     reason: string,
+    notifications: NotificationSideEffect[] = [],
 ) => {
     if (booking.status !== "pending_payment") {
         return false;
@@ -464,7 +519,12 @@ const expireBookingAfterFailedPayment = async (
         },
     });
 
-    await notifyPaymentExpired(booking.bookingId, transaction);
+    enqueueNotification(
+        notifications,
+        "notifyPaymentExpired",
+        () => notifyPaymentExpired(booking.bookingId),
+        { bookingId: booking.bookingId },
+    );
 
     return true;
 };
@@ -536,8 +596,9 @@ const markLateSuccessfulPaymentForManualReview = async (params: {
     previousPaymentStatus: PaymentStatus;
     transaction: Transaction;
     provider: PaymentMethod;
+    notifications: NotificationSideEffect[];
 }): Promise<boolean> => {
-    const { booking, payment, paidAt, previousPaymentStatus, transaction, provider } = params;
+    const { booking, payment, paidAt, previousPaymentStatus, transaction, provider, notifications } = params;
     let bookingStatusChanged = false;
 
     payment.status = "paid";
@@ -589,11 +650,27 @@ const markLateSuccessfulPaymentForManualReview = async (params: {
     const refundResult = await createLatePaymentRefundIfMissing(booking, payment, transaction);
 
     if (bookingStatusChanged) {
-        await notifyPaymentExpired(booking.bookingId, transaction);
+        enqueueNotification(
+            notifications,
+            "notifyPaymentExpired",
+            () => notifyPaymentExpired(booking.bookingId),
+            { bookingId: booking.bookingId },
+        );
     }
 
     if (refundResult.created && refundResult.refund) {
-        await notifyRefundCreated(refundResult.refund.refundId, transaction);
+        const refundId = refundResult.refund.refundId;
+
+        enqueueNotification(
+            notifications,
+            "notifyRefundCreated",
+            () => notifyRefundCreated(refundId),
+            {
+                bookingId: booking.bookingId,
+                paymentId: payment.paymentId,
+                refundId,
+            },
+        );
     }
 
     await writeAuditLog({
@@ -781,7 +858,8 @@ export const createPayment = async (
 ) => {
     const clientIp = getClientIp(ipAddress);
 
-    return sequelize.transaction(async (transaction) => {
+    const result = await sequelize.transaction(async (transaction) => {
+        const notifications: NotificationSideEffect[] = [];
         const booking = await Booking.findOne({
             where: {
                 bookingId: input.bookingId,
@@ -824,7 +902,10 @@ export const createPayment = async (
 
         const paidPayment = existingPayments.find((payment) => payment.status === "paid");
         if (paidPayment) {
-            return serializePayment(paidPayment);
+            return {
+                payment: serializePayment(paidPayment),
+                notifications,
+            };
         }
 
         if (booking.status === "paid") {
@@ -895,9 +976,17 @@ export const createPayment = async (
                 },
             );
 
-            await notifyPaymentPending(pendingPayment.paymentId, transaction);
+            enqueueNotification(
+                notifications,
+                "notifyPaymentPending",
+                () => notifyPaymentPending(pendingPayment.paymentId),
+                { paymentId: pendingPayment.paymentId, bookingId: pendingPayment.bookingId },
+            );
 
-            return serializePayment(pendingPayment, paymentUrl);
+            return {
+                payment: serializePayment(pendingPayment, paymentUrl),
+                notifications,
+            };
         }
 
         for (const payment of existingPayments) {
@@ -970,10 +1059,22 @@ export const createPayment = async (
             { transaction },
         );
 
-        await notifyPaymentPending(payment.paymentId, transaction);
+        enqueueNotification(
+            notifications,
+            "notifyPaymentPending",
+            () => notifyPaymentPending(payment.paymentId),
+            { paymentId: payment.paymentId, bookingId: payment.bookingId },
+        );
 
-        return serializePayment(payment, paymentUrl);
+        return {
+            payment: serializePayment(payment, paymentUrl),
+            notifications,
+        };
     });
+
+    await runNotificationSideEffects(result.notifications);
+
+    return result.payment;
 };
 
 export const getPaymentDetail = async (user: AuthenticatedUser, paymentId: number) => {
@@ -1042,6 +1143,7 @@ const updatePaymentFromVnpayPayload = async (payload: VnpayPayload) => {
     }
 
     const result = await sequelize.transaction(async (transaction) => {
+        const notifications: NotificationSideEffect[] = [];
         const payment = await Payment.findOne({
             where: {
                 providerTxnRef: payload.vnp_TxnRef,
@@ -1097,6 +1199,7 @@ const updatePaymentFromVnpayPayload = async (payload: VnpayPayload) => {
                 shouldSendConfirmationEmail: false,
                 paymentId: payment.paymentId,
                 bookingId: payment.bookingId,
+                notifications,
             };
         }
 
@@ -1112,6 +1215,7 @@ const updatePaymentFromVnpayPayload = async (payload: VnpayPayload) => {
                 shouldSendConfirmationEmail: false,
                 paymentId: payment.paymentId,
                 bookingId: payment.bookingId,
+                notifications,
             };
         }
 
@@ -1134,6 +1238,7 @@ const updatePaymentFromVnpayPayload = async (payload: VnpayPayload) => {
                     previousPaymentStatus,
                     transaction,
                     provider: "vnpay",
+                    notifications,
                 });
             } else {
                 if (payment.status !== "paid") {
@@ -1184,6 +1289,7 @@ const updatePaymentFromVnpayPayload = async (payload: VnpayPayload) => {
                     booking,
                     transaction,
                     cancellationReasons.paymentExpired,
+                    notifications,
                 );
             }
         }
@@ -1203,7 +1309,12 @@ const updatePaymentFromVnpayPayload = async (payload: VnpayPayload) => {
         });
 
         if (shouldSendConfirmationEmail) {
-            await notifyPaymentSuccess(payment.paymentId, transaction);
+            enqueueNotification(
+                notifications,
+                "notifyPaymentSuccess",
+                () => notifyPaymentSuccess(payment.paymentId),
+                { paymentId: payment.paymentId, bookingId: payment.bookingId },
+            );
         }
 
         return {
@@ -1211,8 +1322,11 @@ const updatePaymentFromVnpayPayload = async (payload: VnpayPayload) => {
             shouldSendConfirmationEmail,
             paymentId: payment.paymentId,
             bookingId: payment.bookingId,
+            notifications,
         };
     });
+
+    await runNotificationSideEffects(result.notifications);
 
     return result.payment;
 };
@@ -1398,6 +1512,7 @@ const updatePaymentFromMomoPayload = async (payload: MomoPayload) => {
     }
 
     const result = await sequelize.transaction(async (transaction) => {
+        const notifications: NotificationSideEffect[] = [];
         const payment = await Payment.findOne({
             where: {
                 providerTxnRef: payload.orderId,
@@ -1453,6 +1568,7 @@ const updatePaymentFromMomoPayload = async (payload: MomoPayload) => {
                 shouldSendConfirmationEmail: false,
                 paymentId: payment.paymentId,
                 bookingId: payment.bookingId,
+                notifications,
             };
         }
 
@@ -1468,6 +1584,7 @@ const updatePaymentFromMomoPayload = async (payload: MomoPayload) => {
                 shouldSendConfirmationEmail: false,
                 paymentId: payment.paymentId,
                 bookingId: payment.bookingId,
+                notifications,
             };
         }
 
@@ -1493,6 +1610,7 @@ const updatePaymentFromMomoPayload = async (payload: MomoPayload) => {
                     previousPaymentStatus,
                     transaction,
                     provider: "momo",
+                    notifications,
                 });
             } else {
                 if (payment.status !== "paid") {
@@ -1546,6 +1664,7 @@ const updatePaymentFromMomoPayload = async (payload: MomoPayload) => {
                     booking,
                     transaction,
                     cancellationReasons.paymentExpired,
+                    notifications,
                 );
             }
         }
@@ -1566,7 +1685,12 @@ const updatePaymentFromMomoPayload = async (payload: MomoPayload) => {
         });
 
         if (shouldSendConfirmationEmail) {
-            await notifyPaymentSuccess(payment.paymentId, transaction);
+            enqueueNotification(
+                notifications,
+                "notifyPaymentSuccess",
+                () => notifyPaymentSuccess(payment.paymentId),
+                { paymentId: payment.paymentId, bookingId: payment.bookingId },
+            );
         }
 
         return {
@@ -1574,8 +1698,11 @@ const updatePaymentFromMomoPayload = async (payload: MomoPayload) => {
             shouldSendConfirmationEmail,
             paymentId: payment.paymentId,
             bookingId: payment.bookingId,
+            notifications,
         };
     });
+
+    await runNotificationSideEffects(result.notifications);
 
     return result.payment;
 };

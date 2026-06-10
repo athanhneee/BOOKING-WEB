@@ -65,6 +65,10 @@ export const createBookingBodySchema = z.object({
     couponCode: value.couponCode,
 }));
 
+export const createBulkBookingBodySchema = z.object({
+    items: z.array(createBookingBodySchema).min(1).max(10),
+});
+
 export const cancelBookingBodySchema = z.object({
     reason: z.string().trim().max(2000).optional(),
 });

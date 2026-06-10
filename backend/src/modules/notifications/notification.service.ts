@@ -131,6 +131,37 @@ const serializeNotification = (notification: NotificationLog) => ({
     updatedAt: notification.updatedAt,
 });
 
+const serializeLookupError = (error: unknown) => {
+    if (error instanceof Error) {
+        return {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+        };
+    }
+
+    return {
+        message: String(error),
+    };
+};
+
+const safeNotificationLookup = async <T>(
+    label: string,
+    metadata: Record<string, unknown>,
+    lookup: () => Promise<T | null | undefined>,
+): Promise<T | null> => {
+    try {
+        return (await lookup()) ?? null;
+    } catch (error) {
+        logger.warn("Notification context lookup failed", {
+            label,
+            ...metadata,
+            error: serializeLookupError(error),
+        });
+        return null;
+    }
+};
+
 const emitCreatedNotification = (userId: number, notification: NotificationLog) => {
     emitNotificationNew(userId, {
         id: Number(notification.notificationLogId),
@@ -285,58 +316,88 @@ export const notify = async (input: NotifyInput) => {
     }
 };
 
-const getActiveUser = async (userId: number, transaction?: Transaction) =>
-    User.findByPk(userId, {
-        transaction,
-    }) as Promise<UserDocument | null>;
+const getActiveUser = async (userId: number, transaction?: Transaction) => {
+    if (!Number.isFinite(userId) || userId < 1) {
+        return null;
+    }
+
+    return safeNotificationLookup<UserDocument>("user", { userId }, () =>
+        User.findByPk(userId, {
+            transaction,
+        }) as Promise<UserDocument | null>,
+    );
+};
 
 const getAdminRecipientIds = async (transaction?: Transaction) => {
-    const rows = await sequelize.query<{ userId: number }>(
-        `
-        SELECT DISTINCT u.user_id AS userId
-        FROM users u
-        INNER JOIN user_role ur ON ur.user_id = u.user_id
-        INNER JOIN roles r ON r.role_id = ur.role_id
-        WHERE r.code IN ('admin', 'moderator')
-          AND u.status = 'active'
-        `,
-        {
-            type: QueryTypes.SELECT,
-            transaction,
-        },
-    );
+    let rows: Array<{ userId: number }> = [];
+
+    try {
+        rows = await sequelize.query<{ userId: number }>(
+            `
+            SELECT DISTINCT u.user_id AS userId
+            FROM users u
+            INNER JOIN user_role ur ON ur.user_id = u.user_id
+            INNER JOIN roles r ON r.role_id = ur.role_id
+            WHERE r.code IN ('admin', 'moderator')
+              AND u.status = 'active'
+            `,
+            {
+                type: QueryTypes.SELECT,
+                transaction,
+            },
+        );
+    } catch (error) {
+        logger.warn("Notification admin recipient lookup failed", {
+            error: serializeLookupError(error),
+        });
+        return [];
+    }
 
     return rows.map((row) => Number(row.userId)).filter((userId) => Number.isFinite(userId));
 };
 
+const getListingForNotification = async (listingId: number, transaction?: Transaction) => {
+    if (!Number.isFinite(listingId) || listingId < 1) {
+        return null;
+    }
+
+    return safeNotificationLookup<ListingDocument>("listing", { listingId }, () =>
+        Listing.findOne({
+            where: {
+                listingId,
+            },
+            transaction,
+        }) as Promise<ListingDocument | null>,
+    );
+};
+
 const getBookingContext = async (bookingId: number, transaction?: Transaction) => {
-    const booking = await Booking.findOne({
-        where: {
-            bookingId,
-        },
-        transaction,
-    });
+    const booking = await safeNotificationLookup<BookingDocument>("booking", { bookingId }, () =>
+        Booking.findOne({
+            where: {
+                bookingId,
+            },
+            transaction,
+        }) as Promise<BookingDocument | null>,
+    );
 
     if (!booking) {
         return null;
     }
 
     const [listing, guest, host, payment] = await Promise.all([
-        Listing.findOne({
-            where: {
-                listingId: booking.listingId,
-            },
-            transaction,
-        }),
+        getListingForNotification(Number(booking.listingId), transaction),
         getActiveUser(Number(booking.guestUserId), transaction),
         getActiveUser(Number(booking.hostUserId), transaction),
-        Payment.findOne({
-            where: {
-                bookingId: booking.bookingId,
-            },
-            order: [["createdAt", "DESC"]],
-            transaction,
-        }),
+        safeNotificationLookup<PaymentDocument>("payment", { bookingId: booking.bookingId }, () =>
+            Payment.findOne({
+                where: {
+                    bookingId: booking.bookingId,
+                },
+                order: [["createdAt", "DESC"]],
+                transaction,
+            }) as Promise<PaymentDocument | null>,
+        ),
     ]);
 
     return {
@@ -486,12 +547,7 @@ export const notifyHostApplicationSubmitted = async (
 };
 
 export const notifyListingSubmitted = async (listingId: number, transaction?: Transaction) => {
-    const listing = await Listing.findOne({
-        where: {
-            listingId,
-        },
-        transaction,
-    });
+    const listing = await getListingForNotification(listingId, transaction);
 
     if (!listing) {
         return;
@@ -530,12 +586,7 @@ export const notifyListingSubmitted = async (listingId: number, transaction?: Tr
 };
 
 export const notifyListingApproved = async (listingId: number, transaction?: Transaction) => {
-    const listing = await Listing.findOne({
-        where: {
-            listingId,
-        },
-        transaction,
-    });
+    const listing = await getListingForNotification(listingId, transaction);
 
     if (!listing) {
         return;
@@ -580,12 +631,7 @@ export const notifyListingApproved = async (listingId: number, transaction?: Tra
 };
 
 export const notifyListingRejected = async (listingId: number, transaction?: Transaction) => {
-    const listing = await Listing.findOne({
-        where: {
-            listingId,
-        },
-        transaction,
-    });
+    const listing = await getListingForNotification(listingId, transaction);
 
     if (!listing) {
         return;
@@ -644,12 +690,14 @@ export const notifyBookingCreated = async (bookingId: number, transaction?: Tran
 };
 
 export const notifyPaymentPending = async (paymentId: number, transaction?: Transaction) => {
-    const payment = await Payment.findOne({
-        where: {
-            paymentId,
-        },
-        transaction,
-    });
+    const payment = await safeNotificationLookup<PaymentDocument>("payment", { paymentId }, () =>
+        Payment.findOne({
+            where: {
+                paymentId,
+            },
+            transaction,
+        }) as Promise<PaymentDocument | null>,
+    );
 
     if (!payment) {
         return;
@@ -679,12 +727,14 @@ export const notifyPaymentPending = async (paymentId: number, transaction?: Tran
 };
 
 export const notifyPaymentSuccess = async (paymentId: number, transaction?: Transaction) => {
-    const payment = await Payment.findOne({
-        where: {
-            paymentId,
-        },
-        transaction,
-    });
+    const payment = await safeNotificationLookup<PaymentDocument>("payment", { paymentId }, () =>
+        Payment.findOne({
+            where: {
+                paymentId,
+            },
+            transaction,
+        }) as Promise<PaymentDocument | null>,
+    );
 
     if (!payment || payment.status !== "paid") {
         return;
@@ -840,9 +890,11 @@ export const notifyBookingCancelled = async (bookingId: number, transaction?: Tr
 };
 
 export const notifyRefundCreated = async (refundId: number, transaction?: Transaction) => {
-    const refund = await Refund.findByPk(refundId, {
-        transaction,
-    });
+    const refund = await safeNotificationLookup("refund", { refundId }, () =>
+        Refund.findByPk(refundId, {
+            transaction,
+        }),
+    );
 
     if (!refund) {
         return;
@@ -966,12 +1018,7 @@ export const notifyReviewCreated = async (reviewId: number, transaction?: Transa
         return;
     }
 
-    const listing = await Listing.findOne({
-        where: {
-            listingId: review.listingId,
-        },
-        transaction,
-    });
+    const listing = await getListingForNotification(Number(review.listingId), transaction);
 
     if (!listing) {
         return;

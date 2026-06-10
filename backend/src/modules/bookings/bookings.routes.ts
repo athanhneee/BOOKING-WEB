@@ -6,6 +6,7 @@ import {
     checkInHostBookingById,
     checkOutHostBookingById,
     confirmHostBookingById,
+    createGuestBulkBookings,
     createGuestBooking,
     getGuestBookingById,
     getHostBookingById,
@@ -20,6 +21,7 @@ import {
     bookingIdParamSchema,
     bookingsQuerySchema,
     cancelBookingBodySchema,
+    createBulkBookingBodySchema,
     createBookingBodySchema,
 } from "./bookings.validator";
 
@@ -28,6 +30,7 @@ export const hostBookingsRoutes = express.Router();
 
 router.use(authenticate, requireRole("guest", "host", "admin"));
 
+router.post("/bulk", getBookingCreateRateLimiter(), validate({ body: createBulkBookingBodySchema }), createGuestBulkBookings);
 router.post("/", getBookingCreateRateLimiter(), validate({ body: createBookingBodySchema }), createGuestBooking);
 router.get("/mine", validate({ query: bookingsQuerySchema }), getMyGuestBookings);
 router.get("/:bookingId", validate({ params: bookingIdParamSchema }), getGuestBookingById);

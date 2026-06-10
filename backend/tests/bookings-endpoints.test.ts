@@ -214,6 +214,7 @@ const patchTransaction = () => {
 
 const patchSerialization = (listing = buildListing()) => {
     patch(Payment, "findOne", async () => null);
+    patch(Refund, "findOne", async () => null);
     patch(ListingImage, "findAll", async () => []);
     patch(AuditLog, "create", async () => ({}));
     patch(BookingStatusHistory, "create", async () => ({}));
@@ -267,6 +268,149 @@ describe("Bookings service transaction-safe business rules", () => {
         assert.equal(result.totalPrice, 2300000);
         assert.equal(result.totalNights, 2);
         assert.equal(result.priceBreakdown.subtotalAmount, 2000000);
+    });
+
+    it("bulk creates two valid bookings", async () => {
+        patchCreateBookingHappyPath();
+        let nextBookingId = 9000;
+        const createdBookingIds: number[] = [];
+
+        patch(sequelize, "query", async (_sql: string, options: QueryOptions = {}) => {
+            if (options.type) {
+                nextBookingId += 1;
+                return [{ value: nextBookingId }];
+            }
+
+            return [];
+        });
+        patch(Booking, "create", async (payload: Record<string, unknown>) => {
+            createdBookingIds.push(Number(payload.bookingId));
+            return buildBooking(payload);
+        });
+
+        const result = await bookingsService.createBulkBookings(guestUser, {
+            items: [
+                {
+                    listingId: 801,
+                    checkInDate: "2026-06-20",
+                    checkOutDate: "2026-06-22",
+                    guestCount: 2,
+                },
+                {
+                    listingId: 801,
+                    checkInDate: "2026-06-24",
+                    checkOutDate: "2026-06-26",
+                    guestCount: 2,
+                },
+            ],
+        });
+
+        assert.equal(result.items.length, 2);
+        assert.deepEqual(createdBookingIds, [9001, 9002]);
+        assert.equal(result.items[0].status, "pending_payment");
+        assert.equal(result.items[1].status, "pending_payment");
+    });
+
+    it("rejects the whole bulk booking when a later item overlaps an active booking", async () => {
+        patchCreateBookingHappyPath();
+        let createCount = 0;
+
+        patchExistingBookings([
+            buildBooking({
+                bookingId: 9002,
+                status: "confirmed",
+                checkInDate: "2026-07-01",
+                checkOutDate: "2026-07-03",
+            }),
+        ]);
+        patch(Booking, "create", async (payload: Record<string, unknown>) => {
+            createCount += 1;
+            return buildBooking(payload);
+        });
+
+        await assertRejectsApiError(
+            () =>
+                bookingsService.createBulkBookings(guestUser, {
+                    items: [
+                        {
+                            listingId: 801,
+                            checkInDate: "2026-06-20",
+                            checkOutDate: "2026-06-22",
+                            guestCount: 2,
+                        },
+                        {
+                            listingId: 801,
+                            checkInDate: "2026-07-02",
+                            checkOutDate: "2026-07-04",
+                            guestCount: 2,
+                        },
+                    ],
+                }),
+            409,
+        );
+        assert.equal(createCount, 0);
+    });
+
+    it("compensates the first bulk booking when a later create fails", async () => {
+        patchCreateBookingHappyPath();
+        let nextBookingId = 9000;
+        let createCount = 0;
+        const activePendingBookings = new Set<number>();
+        const destroyedBookingIds: number[] = [];
+
+        patch(sequelize, "query", async (_sql: string, options: QueryOptions = {}) => {
+            if (options.type) {
+                nextBookingId += 1;
+                return [{ value: nextBookingId }];
+            }
+
+            return [];
+        });
+        patch(Booking, "create", async (payload: Record<string, unknown>) => {
+            createCount += 1;
+
+            if (createCount === 2) {
+                throw new Error("Simulated booking insert failure");
+            }
+
+            activePendingBookings.add(Number(payload.bookingId));
+            return buildBooking(payload);
+        });
+        patch(BookingDateLock, "destroy", async () => 2);
+        patch(BookingStatusHistory, "destroy", async () => 1);
+        patch(Booking, "destroy", async (options: { where?: { bookingId?: Record<PropertyKey, number[]> } } = {}) => {
+            const ids = getOpValue<number[]>(options.where?.bookingId, Op.in) ?? [];
+
+            ids.forEach((bookingId) => {
+                activePendingBookings.delete(bookingId);
+                destroyedBookingIds.push(bookingId);
+            });
+            return ids.length;
+        });
+
+        await assertRejectsApiError(
+            () =>
+                bookingsService.createBulkBookings(guestUser, {
+                    items: [
+                        {
+                            listingId: 801,
+                            checkInDate: "2026-06-20",
+                            checkOutDate: "2026-06-22",
+                            guestCount: 2,
+                        },
+                        {
+                            listingId: 801,
+                            checkInDate: "2026-06-24",
+                            checkOutDate: "2026-06-26",
+                            guestCount: 2,
+                        },
+                    ],
+                }),
+            500,
+        );
+        assert.equal(createCount, 2);
+        assert.deepEqual(destroyedBookingIds, [9001]);
+        assert.equal(activePendingBookings.size, 0);
     });
 
     it("prices weekday nights from listing base price", async () => {
@@ -545,15 +689,15 @@ describe("Bookings service transaction-safe business rules", () => {
             buildBooking({
                 bookingId: 9002,
                 status: "confirmed",
-                checkInDate: "2026-06-01",
-                checkOutDate: "2026-06-03",
+                checkInDate: "2026-07-01",
+                checkOutDate: "2026-07-03",
             }),
         ]);
 
         const result = await bookingsService.createBooking(guestUser, {
             listingId: 801,
-            checkInDate: "2026-06-03",
-            checkOutDate: "2026-06-05",
+            checkInDate: "2026-07-03",
+            checkOutDate: "2026-07-05",
             guestCount: 2,
         });
 
@@ -566,8 +710,8 @@ describe("Bookings service transaction-safe business rules", () => {
             buildBooking({
                 bookingId: 9002,
                 status: "confirmed",
-                checkInDate: "2026-06-01",
-                checkOutDate: "2026-06-03",
+                checkInDate: "2026-07-01",
+                checkOutDate: "2026-07-03",
             }),
         ]);
 
@@ -575,8 +719,8 @@ describe("Bookings service transaction-safe business rules", () => {
             () =>
                 bookingsService.createBooking(guestUser, {
                     listingId: 801,
-                    checkInDate: "2026-06-02",
-                    checkOutDate: "2026-06-04",
+                    checkInDate: "2026-07-02",
+                    checkOutDate: "2026-07-04",
                     guestCount: 2,
                 }),
             409,
@@ -587,7 +731,7 @@ describe("Bookings service transaction-safe business rules", () => {
         patchCreateBookingHappyPath(buildListing({
             availabilityCalendar: [
                 {
-                    date: "2026-06-02",
+                    date: "2026-07-02",
                     isAvailable: false,
                     isBlockedByHost: true,
                     priceOverride: null,
@@ -601,8 +745,8 @@ describe("Bookings service transaction-safe business rules", () => {
             () =>
                 bookingsService.createBooking(guestUser, {
                     listingId: 801,
-                    checkInDate: "2026-06-01",
-                    checkOutDate: "2026-06-03",
+                    checkInDate: "2026-07-01",
+                    checkOutDate: "2026-07-03",
                     guestCount: 2,
                 }),
             409,
@@ -638,14 +782,14 @@ describe("Bookings service transaction-safe business rules", () => {
         const results = await Promise.allSettled([
             bookingsService.createBooking(guestUser, {
                 listingId: 801,
-                checkInDate: "2026-06-01",
-                checkOutDate: "2026-06-03",
+                checkInDate: "2026-07-01",
+                checkOutDate: "2026-07-03",
                 guestCount: 2,
             }),
             bookingsService.createBooking(guestUser, {
                 listingId: 801,
-                checkInDate: "2026-06-01",
-                checkOutDate: "2026-06-03",
+                checkInDate: "2026-07-01",
+                checkOutDate: "2026-07-03",
                 guestCount: 2,
             }),
         ]);
@@ -707,8 +851,8 @@ describe("Bookings service transaction-safe business rules", () => {
         const staleBooking = buildBooking({
             bookingId: 9002,
             status: "pending_payment",
-            checkInDate: "2026-06-01",
-            checkOutDate: "2026-06-03",
+            checkInDate: "2026-07-01",
+            checkOutDate: "2026-07-03",
             lockedUntil: new Date(Date.now() - 60 * 1000),
             cancellationReason: null,
         });
@@ -723,8 +867,8 @@ describe("Bookings service transaction-safe business rules", () => {
 
         const result = await bookingsService.createBooking(guestUser, {
             listingId: 801,
-            checkInDate: "2026-06-01",
-            checkOutDate: "2026-06-03",
+            checkInDate: "2026-07-01",
+            checkOutDate: "2026-07-03",
             guestCount: 2,
         });
 

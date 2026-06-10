@@ -2,6 +2,7 @@ import { Op } from "sequelize";
 
 import { ApiError } from "../../common/api-error";
 import { buildActiveBookingStatusWhere, buildBookingDateOverlapWhere } from "../../common/booking-availability";
+import { getTodayInVietnamDateString } from "../../common/date-time";
 import {
     getAvailabilityCalendarForListing,
     getAvailabilityCalendarMap,
@@ -13,6 +14,7 @@ import {
 } from "../../common/listing-relations";
 import { getCoverImage, getDefaultDailyPrice, serializeListingImage } from "../../common/listing-mappers";
 import { sanitizeSingleLineText, sanitizeText } from "../../common/sanitization";
+import { isValidIsoDate } from "../../common/validation";
 import {
     detectLocationGroupsFromQuery,
     getDistanceMeters,
@@ -126,6 +128,8 @@ const normalizeComparableText = (value: string) =>
     value
         .normalize("NFD")
         .replace(/\p{Diacritic}/gu, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D")
         .toLowerCase()
         .trim()
         .replace(/[^a-z0-9]+/g, " ")
@@ -135,6 +139,8 @@ const normalizeAmenityToken = (value: string) =>
     value
         .normalize("NFD")
         .replace(/\p{Diacritic}/gu, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D")
         .toLowerCase()
         .trim()
         .replace(/[^a-z0-9]+/g, "");
@@ -311,6 +317,50 @@ const resolveMapSearchInput = (query: PublicListingsQuery) => {
         lng: query.lng,
         radius,
     };
+};
+
+const validatePublicListingDateRange = (query: PublicListingsQuery) => {
+    if ((query.checkIn && !query.checkOut) || (!query.checkIn && query.checkOut)) {
+        throw new ApiError(422, "Validation error", [
+            {
+                path: !query.checkIn ? "checkIn" : "checkOut",
+                msg: "checkIn and checkOut must be provided together",
+            },
+        ]);
+    }
+
+    if (!query.checkIn || !query.checkOut) {
+        return;
+    }
+
+    if (!isValidIsoDate(query.checkIn) || !isValidIsoDate(query.checkOut)) {
+        throw new ApiError(422, "Validation error", [
+            ...(!isValidIsoDate(query.checkIn)
+                ? [{ path: "checkIn", msg: "checkIn must use YYYY-MM-DD format" }]
+                : []),
+            ...(!isValidIsoDate(query.checkOut)
+                ? [{ path: "checkOut", msg: "checkOut must use YYYY-MM-DD format" }]
+                : []),
+        ]);
+    }
+
+    if (query.checkIn < getTodayInVietnamDateString()) {
+        throw new ApiError(422, "Không thể tìm phòng cho ngày trong quá khứ.", [
+            {
+                path: "checkIn",
+                msg: "checkIn must not be in the past",
+            },
+        ]);
+    }
+
+    if (query.checkOut <= query.checkIn) {
+        throw new ApiError(422, "Validation error", [
+            {
+                path: "checkOut",
+                msg: "checkOut must be after checkIn",
+            },
+        ]);
+    }
 };
 
 const getPublicListingOrThrow = async (listingId: number) => {
@@ -602,30 +652,13 @@ const getBookedDatesForMonth = async (listingId: number, month: number, year: nu
 
 export const getPublicListings = async (query: PublicListingsQuery) => {
     const { page, limit } = parsePagination(query.page, query.limit);
+    validatePublicListingDateRange(query);
     const mapSearch = resolveMapSearchInput(query);
     const distanceByListingId = new Map<number, number>();
     const effectiveCity = query.city ?? defaultBusinessCity;
     const priceMin = query.priceMin ?? query.minPrice;
     const priceMax = query.priceMax ?? query.maxPrice;
     const shouldUseAmenityLookup = Boolean(query.q?.trim() || query.amenities?.trim());
-
-    if ((query.checkIn && !query.checkOut) || (!query.checkIn && query.checkOut)) {
-        throw new ApiError(422, "Validation error", [
-            {
-                path: !query.checkIn ? "checkIn" : "checkOut",
-                msg: "checkIn and checkOut must be provided together",
-            },
-        ]);
-    }
-
-    if (query.checkIn && query.checkOut) {
-        const checkInDate = new Date(`${query.checkIn}T00:00:00.000Z`);
-        const checkOutDate = new Date(`${query.checkOut}T00:00:00.000Z`);
-
-        if (checkOutDate <= checkInDate) {
-            throw new ApiError(400, "checkOut must be after checkIn");
-        }
-    }
 
     if (priceMin !== undefined && priceMax !== undefined && priceMin > priceMax) {
         throw new ApiError(422, "Validation error", [
@@ -893,6 +926,7 @@ export const getPublicListingAvailability = async (listingId: number, query: Pub
     const month = query.month ?? now.getUTCMonth() + 1;
     const year = query.year ?? now.getUTCFullYear();
     const totalDays = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const todayVN = getTodayInVietnamDateString(now);
     const [calendarRows, bookedDates] = await Promise.all([
         getAvailabilityCalendarForListing(listing),
         getBookedDatesForMonth(listing.listingId, month, year),
@@ -902,10 +936,13 @@ export const getPublicListingAvailability = async (listingId: number, query: Pub
     const days = Array.from({ length: totalDays }, (_, index) => {
         const date = `${year}-${String(month).padStart(2, "0")}-${String(index + 1).padStart(2, "0")}`;
         const existing = availabilityMap.get(date);
+        const isPast = date < todayVN;
+        const calendarAvailable = existing ? !existing.isBlockedByHost && existing.isAvailable : true;
 
         return {
             date,
-            isAvailable: bookedDates.has(date) ? false : existing ? !existing.isBlockedByHost && existing.isAvailable : true,
+            isAvailable: isPast ? false : bookedDates.has(date) ? false : calendarAvailable,
+            isPast,
             price: existing?.priceOverride ?? getDefaultDailyPrice(listing, date),
             minNights: existing?.minNightsOverride ?? listing.minNights,
         };

@@ -73,6 +73,10 @@ const productionEnv = {
     MOMO_ENDPOINT: "https://payment.example.com/create",
     MOMO_REDIRECT_URL: "https://api.example.com/api/payments/momo/return",
     MOMO_IPN_URL: "https://api.example.com/api/payments/webhooks/momo",
+    AUTH_DEBUG_OTP: undefined,
+    ALLOW_REFRESH_TOKEN_IN_BODY: undefined,
+    ALLOW_REFRESH_TOKEN_IN_HEADER: undefined,
+    ALLOW_PRODUCTION_AUTO_SCHEMA_SYNC: undefined,
 };
 
 describe("Security middleware", () => {
@@ -197,9 +201,22 @@ describe("Security middleware", () => {
                 });
 
                 await new Promise<void>((resolve, reject) => {
-                    corsOptions.origin("https://admin.example.com", (error: Error | null) => {
+                    corsOptions.origin("https://admin.example.com", (error: Error | null, allowed?: boolean) => {
+                        try {
+                            assert.equal(error, null);
+                            assert.equal(allowed, true);
+                            resolve();
+                        } catch (assertionError) {
+                            reject(assertionError);
+                        }
+                    });
+                });
+
+                await new Promise<void>((resolve, reject) => {
+                    corsOptions.origin("https://unknown.example.com", (error: Error | null) => {
                         try {
                             assert.ok(error);
+                            assert.equal(error?.message, "CORS origin is not allowed");
                             resolve();
                         } catch (assertionError) {
                             reject(assertionError);
@@ -232,7 +249,7 @@ describe("Security middleware", () => {
         );
     });
 
-    it("prefers CLIENT_URL over legacy CORS origins whenever credentials are enabled", async () => {
+    it("merges CLIENT_URL and legacy CORS origins whenever credentials are enabled", async () => {
         await withEnv(
             {
                 ...productionEnv,
@@ -257,9 +274,10 @@ describe("Security middleware", () => {
                 });
 
                 await new Promise<void>((resolve, reject) => {
-                    corsOptions.origin("https://legacy.example.com", (error: Error | null) => {
+                    corsOptions.origin("https://legacy.example.com", (error: Error | null, allowed?: boolean) => {
                         try {
-                            assert.ok(error);
+                            assert.equal(error, null);
+                            assert.equal(allowed, true);
                             resolve();
                         } catch (assertionError) {
                             reject(assertionError);

@@ -14,7 +14,9 @@ import {
     checkInHostBooking,
     checkOutHostBooking,
     confirmHostBooking,
+    createBulkBookings,
     createBooking,
+    CreateBulkBookingInput,
     CreateBookingInput,
     getGuestBookingDetail,
     getHostBookingDetail,
@@ -30,6 +32,17 @@ export const createGuestBooking: RequestHandler = asyncHandler(async (req, res) 
     return sendSuccess(res, {
         statusCode: 201,
         message: "Booking created",
+        data: result,
+    });
+});
+
+export const createGuestBulkBookings: RequestHandler = asyncHandler(async (req, res) => {
+    const payload = getValidatedBody<CreateBulkBookingInput>(req);
+    const result = await createBulkBookings(req.user!, payload);
+
+    return sendSuccess(res, {
+        statusCode: 201,
+        message: "Bookings created",
         data: result,
     });
 });

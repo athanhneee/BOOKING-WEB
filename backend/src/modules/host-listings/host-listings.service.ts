@@ -1,6 +1,7 @@
 import { Op, type Transaction } from "sequelize";
 
 import { ApiError } from "../../common/api-error";
+import { getTodayInVietnamDateString } from "../../common/date-time";
 import {
     alwaysBlockingBookingStatuses,
     buildActiveBookingStatusWhere,
@@ -1250,6 +1251,7 @@ export const getListingCalendar = async (listingId: number, actor: HostActor, qu
     const month = query.month ?? now.getUTCMonth() + 1;
     const year = query.year ?? now.getUTCFullYear();
     const totalDays = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const todayVN = getTodayInVietnamDateString(now);
     const calendarRows = await getAvailabilityCalendarForListing(listing);
     const availabilityMap = new Map(calendarRows.map((item) => [item.date, item] as const));
 
@@ -1282,13 +1284,21 @@ export const getListingCalendar = async (listingId: number, actor: HostActor, qu
         const monthValue = String(month).padStart(2, "0");
         const date = `${year}-${monthValue}-${day}`;
         const existing = availabilityMap.get(date);
+        const isPast = date < todayVN;
+        const isBooked = bookedDateSet.has(date);
 
         return {
             date,
             isAvailable: existing ? (existing.isBlockedByHost ? false : existing.isAvailable) : true,
             isBlockedByHost: existing?.isBlockedByHost ?? false,
             /** True when an active guest booking covers this date — host cannot close it */
-            isBooked: bookedDateSet.has(date),
+            isBooked,
+            /** True when the date is before today in Vietnam timezone */
+            isPast,
+            /** True when the host is allowed to modify this date */
+            canEdit: !isPast && !isBooked,
+            price: existing?.priceOverride ?? getDefaultDailyPrice(listing, date),
+            minNights: existing?.minNightsOverride ?? listing.minNights,
             priceOverride: existing?.priceOverride ?? null,
             minNightsOverride: existing?.minNightsOverride ?? null,
             notes: existing?.notes ?? null,
@@ -1299,6 +1309,8 @@ export const getListingCalendar = async (listingId: number, actor: HostActor, qu
 
     return {
         listingId: listing.listingId,
+        month,
+        year,
         days,
     };
 };
@@ -1335,6 +1347,19 @@ export const bulkUpdateListingCalendar = async (
     }
 
     const uniqueDates = Array.from(new Set(input.dates)).sort();
+
+    // Reject any request containing past dates (Vietnam timezone UTC+7)
+    const todayVN = getTodayInVietnamDateString();
+    const pastDates = uniqueDates.filter((date) => date < todayVN);
+
+    if (pastDates.length > 0) {
+        throw new ApiError(422, "Cannot update past calendar dates", [
+            {
+                path: "dates",
+                msg: `Cannot update past dates: ${pastDates.join(", ")}`,
+            },
+        ]);
+    }
 
     return sequelize.transaction(async (transaction) => {
         const listing = await getListingForHost(listingId, actor, transaction);

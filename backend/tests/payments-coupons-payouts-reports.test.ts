@@ -359,6 +359,7 @@ describe("Payments, coupons, payouts, and revenue reports", () => {
             notificationCreated += 1;
             return { notificationLogId: notificationCreated };
         });
+        patch(sequelize, "query", async () => [{ userId: 1 }]);
         patch(AuditLog, "create", async () => ({}));
 
         const payload = buildVnpayCallback();

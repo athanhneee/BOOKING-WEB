@@ -474,7 +474,7 @@ export const getEnv = (): AppEnv => {
         refreshCookieSecure,
         allowRefreshTokenInBody,
         allowRefreshTokenInHeader,
-        authDebugOtp: parseBoolean("AUTH_DEBUG_OTP", process.env.AUTH_DEBUG_OTP, false),
+        authDebugOtp: nodeEnv === "production" ? false : parseBoolean("AUTH_DEBUG_OTP", process.env.AUTH_DEBUG_OTP, false),
         otpTtlMinutes,
         otpRateLimitWindowMinutes,
         otpRateLimitMax,

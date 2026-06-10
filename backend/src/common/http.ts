@@ -11,6 +11,7 @@ export type ApiErrorPayload = {
     message: string;
     code: string;
     details?: unknown;
+    errors?: Array<{ path?: string; msg?: string }>;
 };
 
 type SuccessOptions<T> = {
@@ -138,6 +139,7 @@ export const sendError = (
         message: message ?? defaultErrorMessage,
         code: code ?? codeByStatus[statusCode] ?? "INTERNAL_ERROR",
         details,
+        errors: Array.isArray(details) ? details : undefined,
     };
 
     return res.status(statusCode).json(payload);

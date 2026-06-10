@@ -76,6 +76,7 @@ export const listMyWishlist = async (user: AuthenticatedUser) => {
                   listingId: {
                       [Op.in]: listingIds,
                   },
+                  status: "active",
                   deletedAt: {
                       [Op.is]: null,
                   },
@@ -83,11 +84,16 @@ export const listMyWishlist = async (user: AuthenticatedUser) => {
           })
         : [];
     const listingById = new Map(listings.map((listing) => [Number(listing.listingId), listing]));
+    const validListingIds = new Set(listings.map((listing) => Number(listing.listingId)));
+    const invalidListingIds = listingIds.filter((id) => !validListingIds.has(id));
+
+    const validWishlists = wishlists.filter((wishlist) => validListingIds.has(Number(wishlist.listingId)));
 
     return {
-        listingIds,
+        listingIds: Array.from(validListingIds),
+        invalidListingIds,
         items: await Promise.all(
-            wishlists.map((wishlist) => serializeWishlistItem(wishlist, listingById.get(Number(wishlist.listingId)))),
+            validWishlists.map((wishlist) => serializeWishlistItem(wishlist, listingById.get(Number(wishlist.listingId)))),
         ),
     };
 };

@@ -105,8 +105,18 @@ ImageAnalysisResultModel.init(
             allowNull: true,
             field: "analyzed_at",
         },
-        createdAt: DataTypes.DATE,
-        updatedAt: DataTypes.DATE,
+        createdAt: {
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: DataTypes.NOW,
+            field: "created_at",
+        },
+        updatedAt: {
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: DataTypes.NOW,
+            field: "updated_at",
+        },
     },
     {
         sequelize,

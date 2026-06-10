@@ -61,6 +61,8 @@ export type ParsedQueryFilters = {
         label: string;
         checkIn?: string;
         checkOut?: string;
+        reason?: SearchRejectionReason;
+        message?: string;
     };
 };
 
@@ -99,6 +101,7 @@ export type SemanticSearchFilters = {
 
     forceVungTauOnly: boolean;
     vungTauAreaKeys: string[];
+    locationAreaFilterMode: "hard" | "soft";
     parsedFilters: ParsedQueryFilters;
 };
 
@@ -198,7 +201,10 @@ export type SearchRejectionReason =
 export const supportedCityKeys = ["vung_tau"] as const;
 
 export const isSupportedCity = (cityNormalized: string) =>
-    supportedCityKeys.some((key) => cityNormalized.includes(key));
+    supportedCityKeys.some((key) => {
+        const compactKey = cityNormalized.replace(/\s+/g, "_");
+        return compactKey.includes(key) || cityNormalized.includes(key.replace(/_/g, " "));
+    });
 
 export type SemanticSearchResponse = {
     query: string;
@@ -233,10 +239,11 @@ export type SemanticSearchResponse = {
             amenityCodes: string[];
             locationGroup?: string;
             vungTauAreaKeys: string[];
-            proximity: string[];
-            propertyType?: PropertyType;
-            roomType?: RoomType;
-        };
+                proximity: string[];
+                propertyType?: PropertyType;
+                roomType?: RoomType;
+                locationAreaFilterMode?: "hard" | "soft";
+            };
         parsedFilters: ParsedQueryFilters;
         filterCounts?: {
             afterLocation: number;

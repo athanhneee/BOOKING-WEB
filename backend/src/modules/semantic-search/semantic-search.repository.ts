@@ -688,6 +688,7 @@ export const findAvailableListingItems = async (
             const listingAreaKeys = inferVungTauAreaKeys(locationText);
 
             if (
+                filters.locationAreaFilterMode === "hard" &&
                 filters.vungTauAreaKeys.length > 0 &&
                 !filters.vungTauAreaKeys.some((areaKey) => listingAreaKeys.includes(areaKey))
             ) {
@@ -831,7 +832,7 @@ export const keywordSearchFallback = async (
                 return false;
             }
 
-            if (filters.vungTauAreaKeys.length === 0) return true;
+            if (filters.locationAreaFilterMode !== "hard" || filters.vungTauAreaKeys.length === 0) return true;
 
             const listingAreaKeys = inferVungTauAreaKeys(getListingLocationText(listing));
             return filters.vungTauAreaKeys.some((areaKey) => listingAreaKeys.includes(areaKey));

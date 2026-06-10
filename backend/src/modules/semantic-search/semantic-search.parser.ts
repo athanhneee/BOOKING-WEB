@@ -17,6 +17,8 @@ const normalizeLight = (text: string): string =>
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/đ/g, "d")
         .replace(/Đ/g, "D")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D")
         .toLowerCase()
         .trim()
         .replace(/[^a-z0-9.,\-/:<=>=]+/g, " ")
@@ -31,6 +33,11 @@ const cityAliases: Record<string, string> = {
     "tp vung tau": "Vung Tau",
     "thanh pho vung tau": "Vung Tau",
     "ba ria vung tau": "Vung Tau",
+    "br vt": "Vung Tau",
+    brvt: "Vung Tau",
+    vtau: "Vung Tau",
+    "v tau": "Vung Tau",
+    vt: "Vung Tau",
 
     // ── Other cities (unsupported – detection only) ──────────────────────────
     "ho chi minh": "TP Ho Chi Minh",
@@ -93,7 +100,7 @@ const cityAliases: Record<string, string> = {
 
 const amenitySynonyms: Record<string, string[]> = {
     wifi: ["wifi", "wi fi", "internet", "mang"],
-    pool: ["ho boi", "be boi", "pool", "swimming pool", "co the boi"],
+    pool: ["ho boi", "be boi", "pool", "swimming pool", "co ho boi"],
     parking: ["bai xe", "dau xe", "do xe", "parking", "cho dau xe", "nha xe"],
     air_conditioning: ["dieu hoa", "may lanh", "air conditioning", "air conditioner", "ac"],
     kitchen: ["bep", "nau an", "kitchen", "co bep", "bep day du"],
@@ -117,7 +124,7 @@ const amenitySynonyms: Record<string, string[]> = {
 // ─── Property type synonyms ───────────────────────────────────────────────────
 
 const propertyTypeSynonyms: Record<PropertyType, string[]> = {
-    villa: ["villa", "biet thu", "biet thu nghi duong", "nha rieng lon"],
+    villa: ["villa", "biet thu", "biet thu nghi duong", "nha rieng lon", "nguyen can"],
     apartment: ["can ho", "apartment", "chung cu", "studio"],
     hotel: ["khach san", "hotel"],
     homestay: ["homestay", "home stay", "nha nghi homestay", "nha nghi"],
@@ -603,7 +610,18 @@ const addDays = (date: Date, days: number) => {
     return next;
 };
 
-/** Parse a specific date "D/M" or "D/M/Y" into a UTC Date. Uses VN today. */
+const pastDateMessage = "Không thể tìm phòng cho ngày trong quá khứ.";
+
+const createPastDateIntent = (
+    label: string,
+    reason: "PAST_DATE_NOT_ALLOWED" | "PAST_DATE_IN_QUERY" = "PAST_DATE_IN_QUERY",
+): ParsedQueryFilters["dateIntent"] => ({
+    label,
+    reason,
+    message: pastDateMessage,
+});
+
+/** Parse a specific date "D/M" or "D/M/Y" into a UTC Date. Uses the current VN year when year is omitted. */
 const parseSpecificDateParts = (
     dayStr: string,
     monthStr: string,
@@ -621,13 +639,65 @@ const parseSpecificDateParts = (
 
     if (candidate.getUTCMonth() !== month) return null;
 
-    // If no year specified and date is past, try next year
-    if (!yearStr && candidate < today) {
-        candidate = new Date(Date.UTC(year + 1, month, day));
-        if (candidate.getUTCMonth() !== month) return null;
+    return candidate;
+};
+
+const buildSingleDateIntent = (
+    label: string,
+    date: Date,
+    today: Date,
+    reason: "PAST_DATE_NOT_ALLOWED" | "PAST_DATE_IN_QUERY" = "PAST_DATE_IN_QUERY",
+): ParsedQueryFilters["dateIntent"] => {
+    if (date < today) {
+        return createPastDateIntent(label, reason);
     }
 
-    return candidate;
+    return {
+        label,
+        checkIn: formatDate(date),
+        checkOut: formatDate(addDays(date, 1)),
+    };
+};
+
+const buildDateRangeIntent = (
+    startDay: string,
+    startMonth: string,
+    startYear: string | undefined,
+    endDay: string,
+    endMonth: string,
+    endYear: string | undefined,
+    today: Date,
+): ParsedQueryFilters["dateIntent"] | null => {
+    const checkInDate = parseSpecificDateParts(startDay, startMonth, startYear, today);
+
+    if (!checkInDate) {
+        return null;
+    }
+
+    if (checkInDate < today) {
+        return createPastDateIntent("date_range", "PAST_DATE_IN_QUERY");
+    }
+
+    const defaultEndYear = endYear ?? startYear ?? String(checkInDate.getUTCFullYear());
+    let checkOutDate = parseSpecificDateParts(endDay, endMonth, defaultEndYear, today);
+
+    if (checkOutDate && !endYear && checkOutDate <= checkInDate) {
+        checkOutDate = new Date(Date.UTC(
+            checkOutDate.getUTCFullYear() + 1,
+            checkOutDate.getUTCMonth(),
+            checkOutDate.getUTCDate(),
+        ));
+    }
+
+    if (!checkOutDate || checkOutDate <= checkInDate) {
+        return null;
+    }
+
+    return {
+        label: "date_range",
+        checkIn: formatDate(checkInDate),
+        checkOut: formatDate(checkOutDate),
+    };
 };
 
 const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: string): ParsedQueryFilters["dateIntent"] | undefined => {
@@ -717,18 +787,17 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
         /(\d{1,2})\s*[/\-]\s*(\d{1,2})(?:\s*[/\-]\s*(\d{4}))?\s*(?:den|-)\s*(\d{1,2})\s*[/\-]\s*(\d{1,2})(?:\s*[/\-]\s*(\d{4}))?/,
     );
     if (dateRangeFullMatch) {
-        const checkInDate = parseSpecificDateParts(
-            dateRangeFullMatch[1], dateRangeFullMatch[2], dateRangeFullMatch[3], today,
+        const intent = buildDateRangeIntent(
+            dateRangeFullMatch[1],
+            dateRangeFullMatch[2],
+            dateRangeFullMatch[3],
+            dateRangeFullMatch[4],
+            dateRangeFullMatch[5],
+            dateRangeFullMatch[6],
+            today,
         );
-        const checkOutDate = parseSpecificDateParts(
-            dateRangeFullMatch[4], dateRangeFullMatch[5], dateRangeFullMatch[6] || dateRangeFullMatch[3], today,
-        );
-        if (checkInDate && checkOutDate && checkOutDate > checkInDate) {
-            return {
-                label: "date_range",
-                checkIn: formatDate(checkInDate),
-                checkOut: formatDate(checkOutDate),
-            };
+        if (intent) {
+            return intent;
         }
     }
 
@@ -737,18 +806,17 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
         /(\d{1,2})\s*-\s*(\d{1,2})\s*\/\s*(\d{1,2})(?:\s*\/\s*(\d{4}))?/,
     );
     if (shortRangeMatch) {
-        const checkInDate = parseSpecificDateParts(
-            shortRangeMatch[1], shortRangeMatch[3], shortRangeMatch[4], today,
+        const intent = buildDateRangeIntent(
+            shortRangeMatch[1],
+            shortRangeMatch[3],
+            shortRangeMatch[4],
+            shortRangeMatch[2],
+            shortRangeMatch[3],
+            shortRangeMatch[4],
+            today,
         );
-        const checkOutDate = parseSpecificDateParts(
-            shortRangeMatch[2], shortRangeMatch[3], shortRangeMatch[4], today,
-        );
-        if (checkInDate && checkOutDate && checkOutDate > checkInDate) {
-            return {
-                label: "date_range",
-                checkIn: formatDate(checkInDate),
-                checkOut: formatDate(checkOutDate),
-            };
+        if (intent) {
+            return intent;
         }
     }
 
@@ -773,11 +841,7 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
     if (textDateMatch) {
         const date = parseSpecificDateParts(textDateMatch[1], textDateMatch[2], textDateMatch[3], today);
         if (date) {
-            return {
-                label: "specific_date",
-                checkIn: formatDate(date),
-                checkOut: formatDate(addDays(date, 1)),
-            };
+            return buildSingleDateIntent("specific_date", date, today);
         }
     }
 
@@ -788,11 +852,7 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
     if (slashDateMatch) {
         const date = parseSpecificDateParts(slashDateMatch[1], slashDateMatch[2], slashDateMatch[3], today);
         if (date) {
-            return {
-                label: "specific_date",
-                checkIn: formatDate(date),
-                checkOut: formatDate(addDays(date, 1)),
-            };
+            return buildSingleDateIntent("specific_date", date, today);
         }
     }
 
@@ -823,12 +883,7 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
 
             // If the entire month is in the past → will be caught by past-date check
             if (lastOfMonth < today) {
-                // Return as-is so the service layer can detect PAST_DATE
-                return {
-                    label: `month_${month + 1}_${year}`,
-                    checkIn: formatDate(firstOfMonth),
-                    checkOut: formatDate(addDays(firstOfMonth, 1)),
-                };
+                return createPastDateIntent(`month_${month + 1}_${year}`, "PAST_DATE_NOT_ALLOWED");
             }
 
             // Pick first Saturday of the month (or today if in current month)
@@ -851,12 +906,15 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
         const yearInput = monthOnlyMatch[2] ? parseInt(monthOnlyMatch[2], 10) : null;
 
         if (month >= 0 && month <= 11) {
-            let year = yearInput ?? today.getUTCFullYear();
-            let firstOfMonth = new Date(Date.UTC(year, month, 1));
+            const year = yearInput ?? today.getUTCFullYear();
+            const firstOfMonth = new Date(Date.UTC(year, month, 1));
+            const lastOfMonth = new Date(Date.UTC(year, month + 1, 0));
 
-            if (!yearInput && firstOfMonth < today) {
-                year += 1;
-                firstOfMonth = new Date(Date.UTC(year, month, 1));
+            if (lastOfMonth < today) {
+                return createPastDateIntent(
+                    yearInput ? `month_${month + 1}_${year}` : `month_${month + 1}`,
+                    "PAST_DATE_NOT_ALLOWED",
+                );
             }
 
             const dayOfWeek = firstOfMonth.getUTCDay();

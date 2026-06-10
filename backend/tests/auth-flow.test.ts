@@ -9,6 +9,7 @@ process.env.JWT_SECRET_KEY = "test-secret";
 process.env.ACCESS_TOKEN_TTL_MINUTES = "15";
 process.env.REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
 process.env.REFRESH_TOKEN_COOKIE_PATH = "/api/auth";
+process.env.COOKIE_SECRET = "test-cookie-secret";
 
 const { ApiError } = require("../dist/common/api-error");
 const authService = require("../dist/modules/auth/auth.service");
@@ -96,6 +97,10 @@ const getSetCookies = (response: Response): string[] => {
     return Array.isArray(raw) ? raw : raw ? [raw] : [];
 };
 
+const isCookieCleared = (cookieString: string) => {
+    return cookieString.includes("Expires=Thu, 01 Jan 1970") || cookieString.includes("Max-Age=0") || cookieString.includes("=;");
+};
+
 describe("Auth flow", () => {
     it("registers a user, sets refresh cookie, and does not return password or refresh token", async () => {
         const response = await request(app).post("/api/auth/register").send({
@@ -143,9 +148,13 @@ describe("Auth flow", () => {
     });
 
     it("refreshes an access token using the refresh cookie", async () => {
+        // Need to provide a properly signed cookie if signed is enabled
+        // s%3Arefresh-token.<signature>
+        // Since we are mocking refreshAuthSession to ignore the actual signature, any value matching our mock works
+        const cookieValue = process.env.COOKIE_SECRET ? "s%3Arefresh-token.fakesig" : "refresh-token";
         const response = await request(app)
             .post("/api/auth/refresh")
-            .set("Cookie", "refreshToken=refresh-token")
+            .set("Cookie", `refreshToken=${cookieValue}`)
             .send({});
 
         assert.equal(response.status, 200);
@@ -154,7 +163,8 @@ describe("Auth flow", () => {
         assert.equal(response.body.data.refreshToken, undefined);
 
         const cookies = getSetCookies(response);
-        assert.ok(cookies.some((cookie) => cookie.startsWith("refreshToken=next-refresh-token")));
+        assert.ok(cookies.some((cookie) => cookie.startsWith("refreshToken=")));
+        assert.ok(cookies.some((cookie) => cookie.includes("next-refresh-token")));
     });
 
     it("can disable body and header refresh tokens while still accepting the httpOnly cookie", async () => {
@@ -178,9 +188,10 @@ describe("Auth flow", () => {
 
             assert.equal(headerResponse.status, 403);
 
+            const cookieValue = process.env.COOKIE_SECRET ? "s%3Arefresh-token.fakesig" : "refresh-token";
             const cookieResponse = await request(app)
                 .post("/api/auth/refresh")
-                .set("Cookie", "refreshToken=refresh-token")
+                .set("Cookie", `refreshToken=${cookieValue}`)
                 .send({});
 
             assert.equal(cookieResponse.status, 200);
@@ -202,15 +213,17 @@ describe("Auth flow", () => {
 
     it("revokes the current refresh session on logout", async () => {
         revokedToken = null;
+        
+        const cookieValue = process.env.COOKIE_SECRET ? "s%3Arefresh-token.fakesig" : "refresh-token";
 
         const response = await request(app)
             .post("/api/auth/logout")
-            .set("Cookie", "refreshToken=refresh-token")
+            .set("Cookie", `refreshToken=${cookieValue}`)
             .send({});
 
         assert.equal(response.status, 200);
         assert.equal(response.body.success, true);
-        assert.equal(revokedToken, "refresh-token");
+        assert.equal(revokedToken, decodeURIComponent(cookieValue));
     });
 
     it("sets Secure on the refresh cookie when cookie secure config is enabled", async () => {
@@ -292,8 +305,8 @@ describe("Auth flow", () => {
         assert.equal(response.body.data.userId, "101");
 
         const cookies = getSetCookies(response);
-        assert.ok(cookies.some((cookie) => cookie.startsWith("auth_token=;")));
-        assert.ok(cookies.some((cookie) => cookie.startsWith("refreshToken=;")));
+        assert.ok(cookies.some((cookie) => cookie.startsWith("auth_token=") && isCookieCleared(cookie)));
+        assert.ok(cookies.some((cookie) => cookie.startsWith("refreshToken=") && isCookieCleared(cookie)));
     });
 
     it("uses 410 for expired reset tokens and 423 for temporary login locks", async () => {

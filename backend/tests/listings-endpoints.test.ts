@@ -792,8 +792,8 @@ describe("Listings service availability rules", () => {
             };
 
             await originalGetPublicListings({
-                checkIn: "2026-04-20",
-                checkOut: "2026-04-22",
+                checkIn: "2026-07-20",
+                checkOut: "2026-07-22",
             });
 
             assert.equal(capturedBookingQueries.length, 1);
@@ -812,6 +812,21 @@ describe("Listings service availability rules", () => {
             AvailabilityCalendar.findAll = originals.availabilityCalendarFindAll;
             Booking.findAll = originals.bookingFindAll;
         }
+    });
+
+    it("rejects public listing searches with a past check-in date", async () => {
+        await assert.rejects(
+            () =>
+                originalGetPublicListings({
+                    checkIn: "2026-06-06",
+                    checkOut: "2026-06-08",
+                }),
+            (error: { statusCode?: number; errors?: Array<{ path?: string; msg?: string }> }) => {
+                assert.equal(error.statusCode, 422);
+                assert.ok(error.errors?.some((item) => item.path === "checkIn"));
+                return true;
+            },
+        );
     });
 });
 

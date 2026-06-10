@@ -289,7 +289,7 @@ const buildQdrantFilter = (filters: SemanticSearchFilters) => {
         must.push({ key: "city_key", match: { value: filters.cityKey } });
     }
 
-    if (filters.vungTauAreaKeys.length > 0) {
+    if (filters.locationAreaFilterMode === "hard" && filters.vungTauAreaKeys.length > 0) {
         must.push({ key: "vung_tau_area_keys", match: { any: filters.vungTauAreaKeys } });
     }
 

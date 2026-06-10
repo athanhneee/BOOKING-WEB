@@ -18,10 +18,11 @@ const listingIdParamValidator = param("listingId")
     .withMessage("listingId must be a positive integer")
     .toInt();
 
-router.use(authenticate, requireRole("admin"));
+const requireModerator = [authenticate, requireRole("admin", "moderator")];
 
 router.get(
     "/pending",
+    requireModerator,
     [
         query("page").optional().isInt({ min: 1 }).withMessage("page must be at least 1").toInt(),
         query("limit")
@@ -33,12 +34,13 @@ router.get(
     listPendingListings,
 );
 
-router.get("/:listingId", [listingIdParamValidator], getAdminListingDetailHandler);
+router.get("/:listingId", requireModerator, [listingIdParamValidator], getAdminListingDetailHandler);
 
-router.patch("/:listingId/approve", [listingIdParamValidator], approveListing);
+router.patch("/:listingId/approve", requireModerator, [listingIdParamValidator], approveListing);
 
 router.patch(
     "/:listingId/reject",
+    requireModerator,
     [
         listingIdParamValidator,
         body("reason")

@@ -1,6 +1,7 @@
 import { Op, type WhereOptions } from "sequelize";
 
 import type { BookingDocument, BookingStatus } from "../models/booking";
+import { getTodayInVietnamDateString } from "./date-time";
 
 export const alwaysBlockingBookingStatuses = [
     "paid",
@@ -9,9 +10,6 @@ export const alwaysBlockingBookingStatuses = [
 ] as const satisfies readonly BookingStatus[];
 export const pendingPaymentBlockingStatus = "pending_payment" as const satisfies BookingStatus;
 export const checkedOutBlockingStatus = "checked_out" as const satisfies BookingStatus;
-
-const getVietnamDateString = (now: Date) =>
-    new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 export const buildBookingDateOverlapWhere = (
     checkInDate: string,
@@ -26,7 +24,7 @@ export const buildBookingDateOverlapWhere = (
 });
 
 export const buildActiveBookingStatusWhere = (now = new Date()): WhereOptions<BookingDocument> => {
-    const stayCompletionCutoffDate = getVietnamDateString(now);
+    const stayCompletionCutoffDate = getTodayInVietnamDateString(now);
 
     return {
         [Op.or]: [

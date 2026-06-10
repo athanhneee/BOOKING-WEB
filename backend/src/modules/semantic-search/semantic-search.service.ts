@@ -55,6 +55,23 @@ const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 const queryTokens = (query: string) =>
     uniqueStrings(normalizeVietnameseText(query).split(" ").filter((token) => token.length >= 2));
 
+const centralTourismAreaKeys = ["trung_tam", "bai_sau", "thuy_van", "bai_truoc", "tran_phu"];
+const nearBeachAreaKeys = ["bai_sau", "thuy_van", "long_cung", "tran_phu", "bai_truoc"];
+
+const expandPreferredAreaKeys = (areaKeys: string[], proximity: string[]) => {
+    const expanded = [...areaKeys];
+
+    if (areaKeys.includes("trung_tam")) {
+        expanded.push(...centralTourismAreaKeys);
+    }
+
+    if (proximity.includes("near_beach") || proximity.includes("sea_view")) {
+        expanded.push(...nearBeachAreaKeys);
+    }
+
+    return uniqueStrings(expanded);
+};
+
 // ─── Vietnam timezone helper ──────────────────────────────────────────────────
 
 const getVietnamDateString = (now = new Date()) =>
@@ -81,15 +98,16 @@ const AMENITY_KEYWORDS = [
     "ho boi", "be boi", "pool", "karaoke", "bida", "bi a", "bbq", "nuong",
     "gan bien", "view bien", "san vuon", "thang may", "may giat",
     "bep", "wifi", "dieu hoa", "may lanh", "bon tam", "jacuzzi",
-    "ban cong", "parking", "bai xe", "pet", "thu cung",
+    "ban cong", "parking", "bai xe", "dau xe", "pet", "thu cung",
     "gym", "sang trong", "gia re", "yen tinh",
     "loa keo", "phong hat", "hat ho", "ban bida",
-    "tiec nuong", "san nuong", "elevator", "lift",
+    "tiec nuong", "san nuong", "elevator", "lift", "san rong",
 ];
 
 const LOCATION_KEYWORDS = [
     "vung tau", "bai sau", "bai truoc", "long cung", "chi linh",
-    "thuy tien", "trung tam", "tran phu", "thuy van",
+    "thuy tien", "trung tam", "gan trung tam", "tran phu", "thuy van",
+    "vt", "vtau", "br vt", "brvt",
 
 ];
 
@@ -121,9 +139,9 @@ const detectSearchIntent = (
         };
     }
 
-    const hasAccommodation = ACCOMMODATION_KEYWORDS.some((kw) => normalized.includes(kw));
-    const hasAmenity = AMENITY_KEYWORDS.some((kw) => normalized.includes(kw));
-    const hasLocation = LOCATION_KEYWORDS.some((kw) => normalized.includes(kw));
+    const hasAccommodation = ACCOMMODATION_KEYWORDS.some((kw) => new RegExp(`\\b${kw}\\b`, "i").test(normalized));
+    const hasAmenity = AMENITY_KEYWORDS.some((kw) => new RegExp(`\\b${kw}\\b`, "i").test(normalized));
+    const hasLocation = LOCATION_KEYWORDS.some((kw) => new RegExp(`\\b${kw}\\b`, "i").test(normalized));
 
     // "cuoi tuan", "hom nay", "ngay mai" are date-related → valid intent
     const hasDateKeyword =
@@ -257,11 +275,11 @@ const buildScoreBreakdown = (item: SemanticSearchItem, filters: SemanticSearchFi
 const calculateFinalScore = (item: SemanticSearchItem, filters: SemanticSearchFilters) => {
     const scoreBreakdown = buildScoreBreakdown(item, filters);
     const finalScore =
-        scoreBreakdown.semanticScore * 0.5 +
-        scoreBreakdown.keywordScore * 0.2 +
-        scoreBreakdown.locationScore * 0.15 +
+        scoreBreakdown.semanticScore * 0.35 +
+        scoreBreakdown.keywordScore * 0.25 +
+        scoreBreakdown.locationScore * 0.2 +
         scoreBreakdown.availabilityScore * 0.1 +
-        scoreBreakdown.popularityScore * 0.05;
+        scoreBreakdown.popularityScore * 0.1;
 
     return {
         scoreBreakdown,
@@ -427,7 +445,7 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
     let checkOut = input.checkOut;
 
     if (!checkIn && !checkOut && parsed.dateIntent?.checkIn && parsed.dateIntent?.checkOut) {
-        if (!isParsedDateInPast(parsed.dateIntent.checkIn)) {
+        if (!parsed.dateIntent.reason && !isParsedDateInPast(parsed.dateIntent.checkIn)) {
             checkIn = parsed.dateIntent.checkIn;
             checkOut = parsed.dateIntent.checkOut;
         }
@@ -468,11 +486,13 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
     const limit = Math.min(maxLimit, Math.max(1, Math.floor(input.limit ?? 12)));
     const explicitLocationAreaKeys = getExplicitLocationAreaKeys(input.locationGroup);
     const inferredAreaKeys = inferVungTauAreaKeys(`${query} ${semanticQuery}`);
-    const vungTauAreaKeys = uniqueStrings([
+    const preferredAreaKeys = uniqueStrings([
         ...explicitLocationAreaKeys,
         ...(parsed.locationIntent?.areaKeys ?? []),
         ...inferredAreaKeys,
     ]);
+    const vungTauAreaKeys = expandPreferredAreaKeys(preferredAreaKeys, parsed.proximity);
+    const locationAreaFilterMode = explicitLocationAreaKeys.length > 0 ? "hard" : "soft";
 
     return {
         query,
@@ -509,6 +529,7 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
 
         forceVungTauOnly,
         vungTauAreaKeys,
+        locationAreaFilterMode,
         parsedFilters: parsed,
     };
 };
@@ -582,6 +603,7 @@ const paginate = (
                 proximity: filters.parsedFilters.proximity,
                 propertyType: filters.propertyType,
                 roomType: filters.roomType,
+                locationAreaFilterMode: filters.locationAreaFilterMode,
             },
             parsedFilters: filters.parsedFilters,
         },
@@ -618,6 +640,36 @@ const debugLog = (label: string, data: Record<string, unknown>) => {
     }
 };
 
+const runKeywordFallbackSearch = async (
+    filters: SemanticSearchFilters,
+    context: SemanticSearchContext,
+    options: {
+        usedVectorSearch: boolean;
+        candidateCount: number;
+        availabilityNotice?: string;
+    },
+) => {
+    const fallbackItems = await keywordSearchFallback(filters);
+    const rankedFallback = rankItems(fallbackItems, filters);
+    const response = paginate(
+        rankedFallback,
+        filters,
+        true,
+        options.usedVectorSearch,
+        options.candidateCount || fallbackItems.length,
+        {
+            reason: rankedFallback.length === 0 ? "NO_RESULTS" : undefined,
+            message: rankedFallback.length === 0
+                ? "Không tìm thấy chỗ nghỉ phù hợp với yêu cầu của bạn."
+                : undefined,
+            availabilityNotice: options.availabilityNotice,
+        },
+    );
+
+    await logSearch(response, filters, context);
+    return response;
+};
+
 // ─── Main search entry point ──────────────────────────────────────────────────
 
 export const semanticSearchListings = async (
@@ -625,6 +677,17 @@ export const semanticSearchListings = async (
     context: SemanticSearchContext = {},
 ): Promise<SemanticSearchResponse> => {
     const filters = await buildFilters(input);
+    const parsedDateIntent = filters.parsedFilters.dateIntent;
+
+    if (parsedDateIntent?.reason) {
+        const response = buildEmptyResponse(
+            filters,
+            parsedDateIntent.reason,
+            parsedDateIntent.message ?? "Không thể tìm phòng cho ngày trong quá khứ.",
+        );
+        await logSearch(response, filters, context);
+        return response;
+    }
 
     // ── Step 1: Check for past dates (explicit from UI) ───────────────────────
     const pastDateCheck = checkPastDates(filters.checkIn, filters.checkOut);
@@ -720,6 +783,12 @@ export const semanticSearchListings = async (
         });
 
         if (qualifiedHits.length === 0) {
+            return runKeywordFallbackSearch(filters, context, {
+                usedVectorSearch: true,
+                candidateCount: vectorHits.length,
+                availabilityNotice,
+            });
+
             const response = paginate([], filters, false, true, vectorHits.length, {
                 reason: "LOW_RELEVANCE",
                 message: "Không tìm thấy chỗ nghỉ phù hợp với yêu cầu của bạn.",
@@ -746,6 +815,14 @@ export const semanticSearchListings = async (
             checkOut: filters.checkOut,
         });
 
+        if (availableItems.length === 0) {
+            return runKeywordFallbackSearch(filters, context, {
+                usedVectorSearch: true,
+                candidateCount: qualifiedHits.length,
+                availabilityNotice,
+            });
+        }
+
         const rankedItems = rankItems(availableItems, filters);
         const response = paginate(
             rankedItems,
@@ -767,6 +844,12 @@ export const semanticSearchListings = async (
     } catch (error) {
         logger.warn("Semantic vector search failed. Falling back to keyword search", {
             errorMessage: error instanceof Error ? error.message : String(error),
+        });
+
+        return runKeywordFallbackSearch(filters, context, {
+            usedVectorSearch: false,
+            candidateCount: 0,
+            availabilityNotice,
         });
 
         const fallbackItems = await keywordSearchFallback(filters);

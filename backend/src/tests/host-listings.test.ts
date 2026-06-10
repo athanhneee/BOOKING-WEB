@@ -922,3 +922,159 @@ describe("PATCH /api/host/listings/:listingId/calendar/bulk", () => {
         assert.equal(response.status, 403);
     });
 });
+
+describe("PATCH /api/host/listings/:listingId/calendar/bulk — past-date rejection", () => {
+    it("rejects requests containing past dates", async () => {
+        const host = await createUser({ roles: ["host"] });
+        const listing = await createListing(host.id);
+
+        const response = await request(app)
+            .patch(`/api/host/listings/${listing.listingId}/calendar/bulk`)
+            .set("Authorization", buildAuthHeader(host))
+            .send({
+                dates: ["2020-01-01"],
+                isAvailable: true,
+            });
+
+        assert.equal(response.status, 422);
+        assert.ok(response.body.message.includes("past"));
+    });
+
+    it("rejects entire request when mixing past and future dates", async () => {
+        const host = await createUser({ roles: ["host"] });
+        const listing = await createListing(host.id);
+
+        const futureDate = "2028-06-15";
+        const pastDate = "2020-01-01";
+
+        const response = await request(app)
+            .patch(`/api/host/listings/${listing.listingId}/calendar/bulk`)
+            .set("Authorization", buildAuthHeader(host))
+            .send({
+                dates: [pastDate, futureDate],
+                isAvailable: false,
+            });
+
+        assert.equal(response.status, 422);
+
+        // Verify the future date was NOT updated either (entire request rejected)
+        const calendarResponse = await request(app)
+            .get(`/api/host/listings/${listing.listingId}/calendar?month=6&year=2028`)
+            .set("Authorization", buildAuthHeader(host));
+
+        const futureDay = calendarResponse.body.data.days.find((d: { date: string }) => d.date === futureDate);
+        assert.equal(futureDay.isAvailable, true);
+    });
+
+    it("allows updating today's date when no active booking exists", async () => {
+        const host = await createUser({ roles: ["host"] });
+        const listing = await createListing(host.id);
+
+        const now = new Date();
+        const todayVN = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+        const response = await request(app)
+            .patch(`/api/host/listings/${listing.listingId}/calendar/bulk`)
+            .set("Authorization", buildAuthHeader(host))
+            .send({
+                dates: [todayVN],
+                isAvailable: false,
+                isBlockedByHost: true,
+            });
+
+        assert.equal(response.status, 200);
+    });
+
+    it("allows updating a future date", async () => {
+        const host = await createUser({ roles: ["host"] });
+        const listing = await createListing(host.id);
+
+        const response = await request(app)
+            .patch(`/api/host/listings/${listing.listingId}/calendar/bulk`)
+            .set("Authorization", buildAuthHeader(host))
+            .send({
+                dates: ["2028-12-25"],
+                isAvailable: false,
+                isBlockedByHost: true,
+            });
+
+        assert.equal(response.status, 200);
+        assert.deepEqual(response.body.data.updatedDates, ["2028-12-25"]);
+    });
+});
+
+describe("GET /api/host/listings/:listingId/calendar — isPast and canEdit", () => {
+    it("returns isPast=true and canEdit=false for past dates", async () => {
+        const host = await createUser({ roles: ["host"] });
+        const listing = await createListing(host.id);
+
+        const response = await request(app)
+            .get(`/api/host/listings/${listing.listingId}/calendar?month=1&year=2020`)
+            .set("Authorization", buildAuthHeader(host));
+
+        assert.equal(response.status, 200);
+
+        for (const day of response.body.data.days) {
+            assert.equal(day.isPast, true, `${day.date} should be past`);
+            assert.equal(day.canEdit, false, `${day.date} should not be editable`);
+        }
+    });
+
+    it("returns price and minNights for each day", async () => {
+        const host = await createUser({ roles: ["host"] });
+        const listing = await createListing(host.id, { basePrice: 1500000, minNights: 2 });
+
+        const response = await request(app)
+            .get(`/api/host/listings/${listing.listingId}/calendar?month=6&year=2028`)
+            .set("Authorization", buildAuthHeader(host));
+
+        assert.equal(response.status, 200);
+
+        const day = response.body.data.days[0];
+        assert.ok(day.price > 0, "price should be > 0");
+        assert.ok(day.minNights >= 1, "minNights should be >= 1");
+        assert.ok(day.defaultPrice > 0, "defaultPrice should be > 0");
+        assert.ok(day.defaultMinNights >= 1, "defaultMinNights should be >= 1");
+    });
+
+    it("returns month and year in the response", async () => {
+        const host = await createUser({ roles: ["host"] });
+        const listing = await createListing(host.id);
+
+        const response = await request(app)
+            .get(`/api/host/listings/${listing.listingId}/calendar?month=6&year=2028`)
+            .set("Authorization", buildAuthHeader(host));
+
+        assert.equal(response.status, 200);
+        assert.equal(response.body.data.month, 6);
+        assert.equal(response.body.data.year, 2028);
+    });
+
+    it("marks booked future dates as canEdit=false", async () => {
+        const host = await createUser({ roles: ["host"] });
+        const listing = await createListing(host.id);
+        await createBooking({
+            listingId: listing.listingId,
+            hostUserId: Number(host.id),
+            checkInDate: "2028-06-15",
+            checkOutDate: "2028-06-17",
+            status: "confirmed",
+        });
+
+        const response = await request(app)
+            .get(`/api/host/listings/${listing.listingId}/calendar?month=6&year=2028`)
+            .set("Authorization", buildAuthHeader(host));
+
+        assert.equal(response.status, 200);
+
+        const bookedDay = response.body.data.days.find((d: { date: string }) => d.date === "2028-06-15");
+        assert.equal(bookedDay.isBooked, true);
+        assert.equal(bookedDay.isPast, false);
+        assert.equal(bookedDay.canEdit, false);
+
+        const normalDay = response.body.data.days.find((d: { date: string }) => d.date === "2028-06-20");
+        assert.equal(normalDay.isBooked, false);
+        assert.equal(normalDay.isPast, false);
+        assert.equal(normalDay.canEdit, true);
+    });
+});
