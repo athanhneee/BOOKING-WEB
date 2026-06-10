@@ -1276,13 +1276,22 @@ const MobileBookingSheetPanel = ({
                 )}
                 </div>
 
-                <div className="shrink-0 px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+                <div className="shrink-0 border-t border-zinc-200 bg-[#f4f0eb] px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+                    {sheet === "dates" && (checkIn || checkOut) ? (
+                        <p className="mb-2 text-center text-sm text-zinc-600">
+                            {checkIn && checkOut
+                                ? `${formatFieldDate(checkIn)} → ${formatFieldDate(checkOut)}`
+                                : checkIn
+                                    ? `Nhận phòng: ${formatFieldDate(checkIn)}`
+                                    : `Trả phòng: ${formatFieldDate(checkOut)}`}
+                        </p>
+                    ) : null}
                     <button
                         type="button"
                         onClick={onClose}
-                        className="inline-flex min-h-14 w-full items-center justify-center rounded-[26px] bg-cyan-600 px-6 text-base font-semibold text-white shadow-sm transition-colors hover:bg-cyan-700"
+                        className="inline-flex min-h-14 w-full items-center justify-center rounded-[26px] bg-cyan-600 px-6 text-base font-semibold text-white shadow-lg transition-colors hover:bg-cyan-700"
                     >
-                        Áp dụng
+                        {sheet === "dates" && checkIn && checkOut ? "Xác nhận ngày" : "Áp dụng"}
                     </button>
                 </div>
             </div>
