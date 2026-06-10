@@ -96,10 +96,10 @@ const Header = () => {
 
     const mobileOpen = mobileMenuPath === location.pathname;
     const isVisible = show || mobileOpen;
-    const accountMenuUser = useMemo(
-        () => (currentUser ? getAccountProfileForUser(currentUser) : createGuestMenuProfile()),
-        [currentUser, profileRevision],
-    );
+    const accountMenuUser = useMemo(() => {
+        void profileRevision; // Consume dependency to ensure re-evaluation
+        return currentUser ? getAccountProfileForUser(currentUser) : createGuestMenuProfile();
+    }, [currentUser, profileRevision]);
 
     const hostAction =
         isAdmin

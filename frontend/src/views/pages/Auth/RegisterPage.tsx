@@ -5,6 +5,7 @@ import { FcGoogle } from "react-icons/fc";
 import { LuArrowRight, LuEye, LuEyeOff, LuLock, LuMail, LuPhone, LuUserRound } from "react-icons/lu";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { APP_ROUTES } from "../../../config/routes";
+import { isGoogleOAuthAvailable } from "../../../config/googleOAuth";
 import { loginWithGoogleIdToken, registerAccount, resolvePostAuthRoute } from "../../../services/authService";
 import AuthCard from "../../components/auth/AuthCard";
 import AuthInput from "../../components/auth/AuthInput";
@@ -14,6 +15,8 @@ const primaryButtonClass =
 
 const secondaryButtonClass =
     "inline-flex min-h-15 w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-white px-6 py-4 text-lg font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50";
+
+const googleAvailable = isGoogleOAuthAvailable();
 
 const getPasswordStrength = (password: string) => {
     let score = 0;
@@ -213,23 +216,35 @@ const RegisterPage = () => {
                 <span className="h-px flex-1 bg-slate-200" />
             </div>
 
-            <div className="relative w-full">
-                {/* Custom styled button visible to user */}
-                <button type="button" disabled={isSubmitting} className={`${secondaryButtonClass} pointer-events-none`}>
-                    <FcGoogle className="text-[28px]" />
-                    Đăng nhập với Google
-                </button>
+            {googleAvailable ? (
+                <div className="relative w-full">
+                    {/* Custom styled button visible to user */}
+                    <button type="button" disabled={isSubmitting} className={`${secondaryButtonClass} pointer-events-none`}>
+                        <FcGoogle className="text-[28px]" />
+                        Đăng nhập với Google
+                    </button>
 
-                {/* Invisible GoogleLogin overlay that captures clicks and returns id_token */}
-                <div className="absolute inset-0 overflow-hidden rounded-full opacity-[0.01] [&>div]:h-full [&>div]:w-full [&_iframe]:h-full [&_iframe]:!w-full">
-                    <GoogleLogin
-                        onSuccess={handleGoogleSuccess}
-                        onError={() => setError("Đăng nhập Google thất bại. Vui lòng thử lại.")}
-                        size="large"
-                        width="400"
-                    />
+                    {/* Invisible GoogleLogin overlay that captures clicks and returns id_token */}
+                    <div className="absolute inset-0 overflow-hidden rounded-full opacity-[0.01] [&>div]:h-full [&>div]:w-full [&_iframe]:h-full [&_iframe]:!w-full">
+                        <GoogleLogin
+                            onSuccess={handleGoogleSuccess}
+                            onError={() => setError("Đăng nhập Google thất bại. Vui lòng thử lại.")}
+                            size="large"
+                            width="400"
+                        />
+                    </div>
                 </div>
-            </div>
+            ) : (
+                <div className="w-full">
+                    <button type="button" disabled className={`${secondaryButtonClass} cursor-not-allowed opacity-60`}>
+                        <FcGoogle className="text-[28px]" />
+                        Đăng nhập với Google
+                    </button>
+                    <p className="mt-2 text-center text-xs text-slate-400">
+                        Đăng nhập Google hiện chưa được cấu hình.
+                    </p>
+                </div>
+            )}
         </AuthCard>
     );
 };

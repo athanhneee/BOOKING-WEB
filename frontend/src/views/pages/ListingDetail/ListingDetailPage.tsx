@@ -59,6 +59,7 @@ import {
     buildGuestSummary,
     defaultGuestSelection,
     guestFieldConfigs,
+    getTodayVN,
     parseBookingSearchParams,
     toIsoDate,
     type BookingSearchState,
@@ -182,7 +183,8 @@ const formatDateInput = (date: Date) => {
 };
 
 const createDateOffset = (offsetDays: number) => {
-    const date = new Date();
+    const todayVN = getTodayVN();
+    const date = new Date(`${todayVN}T00:00:00`);
     date.setDate(date.getDate() + offsetDays);
     return formatDateInput(date);
 };
@@ -1500,7 +1502,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
         initialBookingState.guests,
     );
 
-    const todayIso = useMemo(() => toIsoDate(new Date()), []);
+    const todayIso = useMemo(() => getTodayVN(), []);
     const galleryItems = useMemo(
         () => buildGalleryItems(rawListing, destination),
         [destination, rawListing],

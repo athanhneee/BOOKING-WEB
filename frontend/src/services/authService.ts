@@ -2,6 +2,9 @@ import { APP_ROUTES } from "../config/routes";
 import { apiClient, normalizeAuthUser } from "./api/apiClient";
 import { disconnectSocket } from "./socket/socketClient";
 import { clearCurrentUser, setAuthSession, type AuthUser, type UserRole } from "../store/authStore";
+import { SAVED_LISTINGS_STORAGE_KEY } from "../features/wishlist/useSavedListings";
+import { BOOKING_QUEUE_STORAGE_KEY } from "../features/bookingQueue/bookingQueueStorage";
+import { SEARCH_HISTORY_STORAGE_KEY } from "../features/searchHistory/searchHistoryStorage";
 
 type LoginInput = {
     identifier: string;
@@ -30,6 +33,8 @@ type ResetPasswordInput = {
     otp: string;
     newPassword: string;
 };
+
+const LAST_AI_SEARCH_QUERY_KEY = "lastAiSearchQuery";
 
 const authRouteSet = new Set<string>([APP_ROUTES.login, APP_ROUTES.register, APP_ROUTES.forgotPassword]);
 
@@ -162,10 +167,26 @@ export const resetPasswordWithOtp = ({ identifier, otp, newPassword }: ResetPass
         },
     );
 
+const clearUserScopedState = () => {
+    if (typeof window === "undefined") return;
+
+    const keysToRemove = [
+        SAVED_LISTINGS_STORAGE_KEY,
+        BOOKING_QUEUE_STORAGE_KEY,
+        SEARCH_HISTORY_STORAGE_KEY,
+        LAST_AI_SEARCH_QUERY_KEY,
+    ];
+
+    for (const key of keysToRemove) {
+        window.sessionStorage.removeItem(key);
+    }
+};
+
 export const logout = async () => {
     try {
         await apiClient.post("/api/auth/logout");
     } finally {
+        clearUserScopedState();
         disconnectSocket();
         clearCurrentUser();
     }

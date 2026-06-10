@@ -65,19 +65,42 @@ const LichLuuTru = () => {
 
     const selectedSet = useMemo(() => new Set(selectedDates), [selectedDates]);
 
+    /** Map date → day for quick lookup in event handlers */
+    const dayMap = useMemo(() => new Map(days.map((d) => [d.date, d])), [days]);
+
     const toggleDate = (date: string) => {
+        const day = dayMap.get(date);
+        if (day?.isPast || day?.isBooked || day?.canEdit === false) return;
+
         setSelectedDates((current) => (current.includes(date) ? current.filter((item) => item !== date) : [...current, date]));
     };
 
+    /** Count of selected dates that are actually editable */
+    const editableSelectedCount = useMemo(
+        () => selectedDates.filter((date) => { const d = dayMap.get(date); return d && !d.isPast && !d.isBooked && d.canEdit !== false; }).length,
+        [selectedDates, dayMap],
+    );
+
     const updateSelected = async (isAvailable: boolean) => {
         if (!listingId || selectedDates.length === 0) return;
+
+        // Filter to only editable dates
+        const editableDates = selectedDates.filter((date) => {
+            const d = dayMap.get(date);
+            return d && !d.isPast && !d.isBooked && d.canEdit !== false;
+        });
+
+        if (editableDates.length === 0) {
+            setError("Không thể cập nhật ngày đã qua.");
+            return;
+        }
 
         setSaving(true);
         setError("");
 
         try {
             await bulkUpdateHostListingCalendar(listingId, {
-                dates: selectedDates,
+                dates: editableDates,
                 isAvailable,
                 isBlockedByHost: !isAvailable,
             });
@@ -117,8 +140,8 @@ const LichLuuTru = () => {
                     </div>
 
                     <div className="mt-5 flex flex-wrap gap-3">
-                        <button type="button" disabled={saving || selectedDates.length === 0} onClick={() => updateSelected(true)} className={primaryButtonClass}>Mở {selectedDates.length} ngày</button>
-                        <button type="button" disabled={saving || selectedDates.length === 0} onClick={() => updateSelected(false)} className={secondaryButtonClass}>Đóng {selectedDates.length} ngày</button>
+                        <button type="button" disabled={saving || editableSelectedCount === 0} onClick={() => updateSelected(true)} className={primaryButtonClass}>Mở {editableSelectedCount} ngày</button>
+                        <button type="button" disabled={saving || editableSelectedCount === 0} onClick={() => updateSelected(false)} className={secondaryButtonClass}>Đóng {editableSelectedCount} ngày</button>
                         <button type="button" onClick={() => setSelectedDates([])} className={secondaryButtonClass}>Bỏ chọn</button>
                     </div>
                 </section>
@@ -128,6 +151,7 @@ const LichLuuTru = () => {
                     <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded bg-emerald-200 border border-emerald-400"></span>Đang mở</span>
                     <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded bg-blue-200 border border-blue-400"></span>Đã có khách</span>
                     <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded bg-rose-100 border border-rose-300"></span>Đang đóng</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded bg-gray-200 border border-gray-300"></span>Đã qua</span>
                 </div>
 
                 <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -140,30 +164,34 @@ const LichLuuTru = () => {
                             {days.map((day) => {
                                 const selected = selectedSet.has(day.date);
                                 const closed = !day.isAvailable || day.isBlockedByHost;
-                                const booked = Boolean((day as { isBooked?: boolean }).isBooked);
+                                const booked = Boolean(day.isBooked);
+                                const past = Boolean(day.isPast);
+                                const disabled = past || booked;
 
                                 let stateClass = "border-gray-100 bg-white hover:border-cyan-200";
                                 if (selected) stateClass = "border-cyan-500 bg-cyan-50";
+                                else if (past) stateClass = "border-gray-200 bg-gray-100 cursor-not-allowed opacity-60";
                                 else if (booked) stateClass = "border-blue-300 bg-blue-50 cursor-not-allowed";
                                 else if (closed) stateClass = "border-rose-100 bg-rose-50";
 
                                 let statusLabel = closed ? "Đang đóng" : "Đang mở";
                                 let statusColor = closed ? "text-rose-600" : "text-emerald-600";
                                 if (booked) { statusLabel = "Đã có khách"; statusColor = "text-blue-600"; }
+                                if (past && !booked) { statusLabel = "Đã qua"; statusColor = "text-gray-400"; }
 
                                 return (
                                     <button
                                         key={day.date}
                                         type="button"
-                                        disabled={booked}
-                                        onClick={() => !booked && toggleDate(day.date)}
-                                        title={booked ? "Ngày này đã có khách đặt — không thể thay đổi" : undefined}
+                                        disabled={disabled}
+                                        onClick={() => !disabled && toggleDate(day.date)}
+                                        title={past ? "Ngày đã qua — không thể chỉnh lịch" : booked ? "Ngày này đã có khách đặt — không thể thay đổi" : undefined}
                                         className={`rounded-2xl border p-3 text-left transition sm:p-4 ${stateClass}`}
                                     >
                                         <p className="font-semibold text-gray-900">{day.date.slice(-2)}/{String(month).padStart(2, "0")}</p>
                                         <p className={`mt-2 text-xs font-medium ${statusColor}`}>{statusLabel}</p>
-                                        <p className="mt-2 text-sm text-gray-500">{formatCurrency(Number(day.priceOverride ?? day.price ?? 0))}</p>
-                                        <p className="mt-1 text-xs text-gray-400">Tối thiểu {day.minNightsOverride ?? day.minNights ?? 1} đêm</p>
+                                        <p className="mt-2 text-sm text-gray-500">{formatCurrency(Number(day.price ?? day.defaultPrice ?? 0))}</p>
+                                        <p className="mt-1 text-xs text-gray-400">Tối thiểu {day.minNights ?? day.defaultMinNights ?? 1} đêm</p>
                                     </button>
                                 );
                             })}

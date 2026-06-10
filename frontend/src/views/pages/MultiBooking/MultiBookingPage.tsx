@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     FiArrowLeft,
@@ -15,7 +15,7 @@ import { LuShoppingCart } from "react-icons/lu";
 
 import { APP_ROUTES } from "../../../config/routes";
 import { clearBookingQueue, readBookingQueueItems, removeBookingQueueItem, type BookingQueueItem } from "../../../features/bookingQueue/bookingQueueStorage";
-import { createBooking } from "../../../services/bookingService";
+import { createBulkBookings } from "../../../services/bookingService";
 import { createPayment } from "../../../services/paymentService";
 import { getCurrentUser } from "../../../store/authStore";
 import type { ApiBooking } from "../../../models/entities/Booking";
@@ -34,6 +34,39 @@ const calcNights = (checkIn: string, checkOut: string) => {
     if (!checkIn || !checkOut) return 0;
     const diff = new Date(checkOut).getTime() - new Date(checkIn).getTime();
     return Math.max(1, Math.round(diff / 86_400_000));
+};
+
+type ItemError = {
+    itemIndex: number | null;
+    title: string;
+    message: string;
+};
+
+const getBulkItemIndexFromPath = (path?: string) => {
+    const match = path?.match(/items(?:\[(\d+)])?(?:\.(\d+))?/);
+    const rawIndex = match?.[1] ?? match?.[2];
+    const index = rawIndex === undefined ? NaN : Number(rawIndex);
+
+    return Number.isInteger(index) && index >= 0 ? index : null;
+};
+
+const getBulkItemErrors = (err: unknown, items: BookingQueueItem[]): ItemError[] => {
+    const apiErrors = (err as { errors?: Array<{ path?: string; msg?: string }> })?.errors;
+
+    if (!Array.isArray(apiErrors) || apiErrors.length === 0) {
+        return [];
+    }
+
+    return apiErrors.map((detail) => {
+        const itemIndex = getBulkItemIndexFromPath(detail.path);
+        const item = itemIndex === null ? null : items[itemIndex];
+
+        return {
+            itemIndex,
+            title: item?.title ?? "Một đặt phòng",
+            message: detail.msg ?? "Không thể tạo đặt phòng",
+        };
+    });
 };
 
 // ─── The "current" booking passed via navigation state ────────────────────────
@@ -206,6 +239,7 @@ const MultiBookingPage = () => {
     const [payingBookingId, setPayingBookingId] = useState<number | null>(null);
     const [paidBookingIds, setPaidBookingIds] = useState<Set<number>>(new Set());
     const [error, setError] = useState<string | null>(null);
+    const [itemErrors, setItemErrors] = useState<ItemError[]>([]);
 
     // Redirect if not logged in
     useEffect(() => {
@@ -253,46 +287,57 @@ const MultiBookingPage = () => {
     const handleConfirm = async () => {
         if (!currentBookingState) return;
         setError(null);
+        setItemErrors([]);
         setPhase("creating");
 
         const itemsToBook = allItems;
-        const results: Array<{ booking: ApiBooking; item: BookingQueueItem | CurrentBookingState }> = [];
 
-        for (const item of itemsToBook) {
-            const isCurrentBooking = item.listingId === String(currentBookingState.listingId);
-            const couponCode = isCurrentBooking ? currentBookingState.couponCode : undefined;
+        const missingItems = itemsToBook
+            .map((item, index) => ({ item, index }))
+            .filter(({ item }) => !item.checkIn || !item.checkOut || !item.guests);
 
-            if (!item.checkIn || !item.checkOut || !item.guests) {
-                setError(`Thiếu thông tin ngày hoặc số khách cho "${item.title}". Vui lòng quay lại và chọn lại.`);
-                setPhase("review");
-                return;
-            }
-
-            try {
-                const booking = await createBooking({
-                    listingId: Number(item.listingId),
-                    checkIn: item.checkIn,
-                    checkOut: item.checkOut,
-                    guests: item.guests,
-                    couponCode,
-                });
-                results.push({ booking, item });
-            } catch (err: unknown) {
-                const msg = (err as { message?: string })?.message ?? "Đặt phòng thất bại";
-                setError(`Không thể đặt phòng "${item.title}": ${msg}`);
-                setPhase("review");
-                return;
-            }
+        if (missingItems.length > 0) {
+            setError("Một số đặt phòng thiếu ngày hoặc số khách.");
+            setItemErrors(missingItems.map(({ item, index }) => ({
+                itemIndex: index,
+                title: item.title,
+                message: "Vui lòng quay lại và chọn đủ ngày, số khách.",
+            })));
+            setPhase("review");
+            return;
         }
 
-        // All bookings created — clear queue
-        clearBookingQueue();
-        setCreatedBookings(results);
-        setPhase("payment");
+        try {
+            const response = await createBulkBookings({
+                items: itemsToBook.map((item) => {
+                    const isCurrentBooking = item.listingId === String(currentBookingState.listingId);
+                    const couponCode = isCurrentBooking ? currentBookingState.couponCode : undefined;
 
-        // Auto-pay the first one
-        if (results[0]) {
-            void handlePay(results[0].booking.bookingId);
+                    return {
+                        listingId: Number(item.listingId),
+                        checkIn: item.checkIn!,
+                        checkOut: item.checkOut!,
+                        guests: item.guests!,
+                        couponCode,
+                    };
+                }),
+            });
+            const results = response.items.map((booking, index) => ({
+                booking,
+                item: itemsToBook[index],
+            }));
+
+            clearBookingQueue();
+            setQueueItems([]);
+            setCreatedBookings(results);
+            setPhase("payment");
+        } catch (err: unknown) {
+            const bulkErrors = getBulkItemErrors(err, itemsToBook);
+            const msg = (err as { message?: string })?.message ?? "Đặt phòng thất bại";
+
+            setError(bulkErrors.length > 0 ? "Không thể tạo nhóm đặt phòng." : msg);
+            setItemErrors(bulkErrors);
+            setPhase("review");
         }
     };
 
@@ -349,7 +394,19 @@ const MultiBookingPage = () => {
                 {error && (
                     <div className="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                         <FiX size={16} className="mt-0.5 shrink-0" />
-                        {error}
+                        <div className="min-w-0">
+                            <div>{error}</div>
+                            {itemErrors.length > 0 && (
+                                <ul className="mt-2 space-y-1">
+                                    {itemErrors.map((itemError, index) => (
+                                        <li key={`${itemError.itemIndex ?? "all"}-${index}`}>
+                                            <span className="font-semibold">{itemError.title}:</span>{" "}
+                                            {itemError.message}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
                     </div>
                 )}
 

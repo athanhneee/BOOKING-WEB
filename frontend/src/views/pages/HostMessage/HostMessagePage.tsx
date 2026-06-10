@@ -25,6 +25,7 @@ import { getAccessToken, getCurrentUser } from "../../../store/authStore";
 import {
     buildGuestSummary,
     defaultGuestSelection,
+    getTodayVN,
     parseBookingSearchParams,
     toIsoDate,
 } from "../../components/search/searchState";
@@ -54,7 +55,8 @@ const formatDateInput = (date: Date) => {
 };
 
 const createDateOffset = (offsetDays: number) => {
-    const date = new Date();
+    const todayVN = getTodayVN();
+    const date = new Date(`${todayVN}T00:00:00`);
     date.setDate(date.getDate() + offsetDays);
     return formatDateInput(date);
 };

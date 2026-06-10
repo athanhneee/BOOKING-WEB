@@ -181,6 +181,8 @@ const parseEnvelope = async <T>(response: Response) => {
     return (envelope ? envelope.data : payload) as T;
 };
 
+let refreshPromise: Promise<string> | null = null;
+
 const refreshAccessToken = async () => {
     const response = await fetch(buildUrl("/api/auth/refresh"), {
         method: "POST",
@@ -194,11 +196,21 @@ const refreshAccessToken = async () => {
     const user = normalizeAuthUser(data?.user);
 
     if (!token || !user) {
-        throw new ApiError("Phien dang nhap da het han.", 401, "UNAUTHORIZED");
+        throw new ApiError("Phiên đăng nhập đã hết hạn.", 401, "UNAUTHORIZED");
     }
 
     setAuthSession(user, token);
     return token;
+};
+
+const refreshAccessTokenOnce = () => {
+    if (!refreshPromise) {
+        refreshPromise = refreshAccessToken().finally(() => {
+            refreshPromise = null;
+        });
+    }
+
+    return refreshPromise;
 };
 
 const request = async <T>(method: string, path: string, options: RequestOptions = {}, retried = false): Promise<T> => {
@@ -230,13 +242,14 @@ const request = async <T>(method: string, path: string, options: RequestOptions 
 
     if (response.status === 401 && !options.skipAuthRefresh && !retried) {
         try {
-            await refreshAccessToken();
+            await refreshAccessTokenOnce();
             return request<T>(method, path, options, true);
         } catch {
             clearCurrentUser();
             if (typeof window !== "undefined" && !window.location.pathname.includes("/dang-nhap")) {
                 window.location.assign(`/dang-nhap?redirectTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
             }
+            throw new ApiError("Phiên đăng nhập đã hết hạn.", 401, "SESSION_EXPIRED");
         }
     }
 

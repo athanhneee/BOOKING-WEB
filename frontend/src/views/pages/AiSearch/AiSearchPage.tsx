@@ -6,7 +6,6 @@ import { APP_ROUTES } from "../../../config/routes";
 import {
     searchAiListings,
     type AiListingSearchItem,
-    type AiSearchMode,
     type AiSearchRejectionReason,
 } from "../../../services/api/semanticSearchApi";
 
@@ -64,17 +63,23 @@ const AiSearchPage = () => {
 
     const locationState = location.state as AiSearchLocationState | null;
 
+    const locationQuery = locationState?.initialQuery?.trim();
+    const sessionQuery = getSessionQuery().trim();
+    
     const initialQuery = useMemo(
-        () => (locationState?.initialQuery || getSessionQuery()).trim(),
-        [locationState?.initialQuery],
+        () => locationQuery || sessionQuery,
+        [locationQuery, sessionQuery],
+    );
+
+    const shouldAutoRun = useMemo(
+        () => Boolean(locationQuery),
+        [locationQuery],
     );
 
     const didAutoSearchRef = useRef(false);
 
     const [query, setQuery] = useState(initialQuery);
-    const [lastSubmittedQuery, setLastSubmittedQuery] = useState("");
     const [items, setItems] = useState<AiListingSearchItem[]>([]);
-    const [mode, setMode] = useState<AiSearchMode | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [hasSearched, setHasSearched] = useState(false);
@@ -89,7 +94,6 @@ const AiSearchPage = () => {
         if (!nextQuery) {
             setError("Nhập nội dung bạn muốn tìm bằng AI.");
             setItems([]);
-            setMode(null);
             setHasSearched(false);
             setDateIntent(null);
             setSearchMessage("");
@@ -100,11 +104,9 @@ const AiSearchPage = () => {
 
         // Clear all previous state before starting new search
         setQuery(nextQuery);
-        setLastSubmittedQuery(nextQuery);
         setIsLoading(true);
         setError("");
         setItems([]);
-        setMode(null);
         setDateIntent(null);
         setSearchMessage("");
         setSearchReason(null);
@@ -118,7 +120,6 @@ const AiSearchPage = () => {
             });
 
             setItems(result.items);
-            setMode(result.mode);
 
             // Extract reason/message from API response
             if (result.reason) {
@@ -140,7 +141,6 @@ const AiSearchPage = () => {
             }
         } catch (searchError) {
             setItems([]);
-            setMode(null);
             setDateIntent(null);
             setSearchMessage("");
             setSearchReason(null);
@@ -157,8 +157,10 @@ const AiSearchPage = () => {
         }
 
         didAutoSearchRef.current = true;
-        void runSearch(initialQuery);
-    }, [initialQuery, runSearch]);
+        if (shouldAutoRun) {
+            void runSearch(initialQuery);
+        }
+    }, [initialQuery, shouldAutoRun, runSearch]);
 
     useEffect(() => {
         const handleAiSearchSubmit = (event: Event) => {
@@ -278,11 +280,11 @@ const AiSearchPage = () => {
                             </div>
                         ) : hasSearched && items.length === 0 ? (
                             <div className="rounded-[32px] border border-slate-200 bg-white p-10 text-center shadow-sm">
-                                {searchReason === "PAST_DATE_NOT_ALLOWED" ? (
+                                {searchReason === "PAST_DATE_NOT_ALLOWED" || searchReason === "PAST_DATE_IN_QUERY" ? (
                                     <div className="flex flex-col items-center gap-3">
                                         <Calendar size={36} className="text-amber-400" />
                                         <p className="text-sm font-bold text-amber-700">
-                                            {searchMessage || "Không thể tìm phòng cho ngày trong quá khứ."}
+                                            Không thể tìm villa cho ngày trong quá khứ. Vui lòng chọn ngày hôm nay hoặc ngày tương lai.
                                         </p>
                                     </div>
                                 ) : searchReason === "UNSUPPORTED_LOCATION" ? (
@@ -384,8 +386,18 @@ const AiSearchPage = () => {
                                 </div>
                             </>
                         ) : (
-                            <div className="rounded-[32px] border border-dashed border-slate-300 bg-white p-10 text-center text-sm font-semibold text-slate-500 shadow-sm">
-                                Nhập nhu cầu của bạn để bắt đầu tìm kiếm AI.
+                            <div className="rounded-[32px] border border-dashed border-slate-300 bg-white p-10 text-center text-sm font-semibold text-slate-500 shadow-sm flex flex-col items-center gap-4">
+                                <span>Nhập nhu cầu của bạn để bắt đầu tìm kiếm AI.</span>
+                                {query && !hasSearched && !shouldAutoRun && (
+                                    <button 
+                                        type="button" 
+                                        onClick={() => runSearch(query)} 
+                                        className="text-cyan-600 hover:text-cyan-700 font-bold hover:underline flex items-center gap-2 transition"
+                                    >
+                                        <Sparkles size={16} />
+                                        Chạy lại truy vấn: "{query}"
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>

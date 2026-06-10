@@ -12,6 +12,7 @@ export type WishlistItem = {
 
 export type WishlistResponse = {
     listingIds: number[];
+    invalidListingIds: number[];
     items: WishlistItem[];
 };
 

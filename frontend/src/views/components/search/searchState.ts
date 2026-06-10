@@ -86,6 +86,18 @@ export const toIsoDate = (date: Date) => {
     return `${year}-${month}-${day}`;
 };
 
+/** Returns today as YYYY-MM-DD in Vietnam timezone (UTC+7), matching the backend. */
+const VIETNAM_UTC_OFFSET_MS = 7 * 60 * 60 * 1000;
+export const getTodayVN = () =>
+    new Date(Date.now() + VIETNAM_UTC_OFFSET_MS).toISOString().slice(0, 10);
+
+const getCurrentYearVN = () =>
+    new Date(Date.now() + VIETNAM_UTC_OFFSET_MS).toISOString().slice(0, 4);
+
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const isValidIsoDate = (value: string) =>
+    ISO_DATE_REGEX.test(value) && !Number.isNaN(new Date(`${value}T00:00:00`).getTime());
+
 export const addDaysToIso = (isoDate: string, days: number) => {
     if (!isoDate) {
         return "";
@@ -134,9 +146,13 @@ export const formatSearchDate = (isoDate: string, fallback = "Thêm ngày") => {
         return fallback;
     }
 
+    const dateYear = String(parsed.getFullYear());
+    const showYear = dateYear !== getCurrentYearVN();
+
     return new Intl.DateTimeFormat("vi-VN", {
         day: "2-digit",
         month: "2-digit",
+        ...(showYear ? { year: "numeric" } : {}),
     }).format(parsed);
 };
 
@@ -171,8 +187,24 @@ export const sanitizeBookingSearchState = (state: BookingSearchState): BookingSe
     const infants = Math.max(0, state.guests.infants || 0);
     const pets = Math.max(0, state.guests.pets || 0);
 
-    let nextCheckIn = state.checkIn;
-    let nextCheckOut = state.checkOut;
+    let nextCheckIn = state.checkIn?.trim() ?? "";
+    let nextCheckOut = state.checkOut?.trim() ?? "";
+
+    // Strip invalid ISO dates early
+    if (nextCheckIn && !isValidIsoDate(nextCheckIn)) nextCheckIn = "";
+    if (nextCheckOut && !isValidIsoDate(nextCheckOut)) nextCheckOut = "";
+
+    // Reject past dates using Vietnam timezone
+    const todayVN = getTodayVN();
+
+    if (nextCheckIn && nextCheckIn < todayVN) {
+        nextCheckIn = "";
+        nextCheckOut = "";
+    }
+
+    if (nextCheckOut && nextCheckOut < todayVN) {
+        nextCheckOut = "";
+    }
 
     if (nextCheckOut && !nextCheckIn) {
         nextCheckIn = nextCheckOut;
@@ -182,7 +214,7 @@ export const sanitizeBookingSearchState = (state: BookingSearchState): BookingSe
         nextCheckOut = addDaysToIso(nextCheckIn, 1);
     }
 
-    if (nextCheckIn && nextCheckOut && nextCheckOut < nextCheckIn) {
+    if (nextCheckIn && nextCheckOut && nextCheckOut <= nextCheckIn) {
         nextCheckOut = addDaysToIso(nextCheckIn, 1);
     }
 

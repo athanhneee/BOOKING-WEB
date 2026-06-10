@@ -2,7 +2,8 @@ import { FiClipboard, FiFileText, FiGrid, FiLogOut, FiMenu, FiShield, FiUsers, F
 import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import logo from "../../assets/img/logo_mau.svg";
 import { APP_ROUTES } from "../../config/routes";
-import { clearCurrentUser, getCurrentUser, isAdminUser } from "../../store/authStore";
+import { getCurrentUser, isAdminUser } from "../../store/authStore";
+import { logout as authLogout } from "../../services/authService";
 import { cn } from "../../utils";
 import { useState } from "react";
 import NotificationBell from "../components/notifications/NotificationBell";
@@ -36,8 +37,9 @@ const AdminLayout = () => {
     const activeMeta = pageMeta.find((item) => item.path === location.pathname) ?? pageMeta[0];
 
     const handleLogout = () => {
-        clearCurrentUser();
-        navigate(APP_ROUTES.login, { replace: true });
+        void authLogout().finally(() => {
+            navigate(APP_ROUTES.login, { replace: true });
+        });
     };
 
     return (

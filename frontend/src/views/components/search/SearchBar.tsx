@@ -13,7 +13,10 @@ import {
     isLatLngInVungTauBounds,
     type LocationGroupName,
 } from "../../../data/vungTauLocationGroups";
-import { addSearchHistoryItem } from "../../../features/searchHistory/searchHistoryStorage";
+import {
+    addSearchHistoryItem,
+    removeMapSearchHistoryItems,
+} from "../../../features/searchHistory/searchHistoryStorage";
 import useScrollVisibility from "../../../hooks/useScrollVisibility";
 import { cn } from "../../../utils";
 import LocationMapPicker, { type MapSearchPosition } from "./LocationMapPicker";
@@ -28,10 +31,10 @@ import {
     formatSearchDate,
     formatSearchDateRange,
     guestFieldConfigs,
+    getTodayVN,
     normalizeSearchText,
     parseBookingSearchParams,
     sanitizeBookingSearchState,
-    toIsoDate,
     type BookingSearchState,
 } from "./searchState";
 
@@ -83,6 +86,29 @@ const createSearchSyncKey = (pathname: string, search: string, variant: SearchBa
 
 const isSearchRoutePath = (pathname: string) =>
     pathname === APP_ROUTES.search || pathname === APP_ROUTES.searchLegacy;
+
+const locationSearchParamKeys = [
+    "q",
+    "location",
+    "locationGroup",
+    "lat",
+    "lng",
+    "radius",
+    "mapLat",
+    "mapLng",
+    "mapRadius",
+];
+
+const clearLocationSearchParams = (search: string) => {
+    const params = new URLSearchParams(search);
+
+    for (const key of locationSearchParamKeys) {
+        params.delete(key);
+    }
+
+    params.delete("page");
+    return params;
+};
 
 const createLocationSuggestions = (): SearchSuggestion[] => {
     const accents = [
@@ -206,7 +232,7 @@ const SearchBarInner = ({
     const navigate = useNavigate();
     const location = useLocation();
     const isScrollVisible = useScrollVisibility({ threshold: 12, topOffset: 64, hideStartRatio: 0.5 });
-    const todayIso = useMemo(() => toIsoDate(new Date()), []);
+    const todayIso = useMemo(() => getTodayVN(), []);
     const locationSuggestions = useMemo(() => createLocationSuggestions(), []);
     const [openField, setOpenField] = useState<OpenField>(null);
     const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
@@ -404,6 +430,19 @@ const SearchBarInner = ({
         setDraftState(createDefaultBookingSearchState());
         setOpenField(null);
         setMobileDateField("checkIn");
+        setMobileSheetOpen(false);
+        setMapPickerOpen(false);
+        removeMapSearchHistoryItems();
+
+        if (isSearchRoutePath(location.pathname)) {
+            navigate(
+                {
+                    pathname: APP_ROUTES.search,
+                    search: "",
+                },
+                { replace: true },
+            );
+        }
     };
 
     const clearDates = () => {
@@ -477,7 +516,22 @@ const SearchBarInner = ({
             mapRadius: "",
         }));
 
-    const clearLocation = () => setLocationText("");
+    const clearLocation = () => {
+        setLocationText("");
+        removeMapSearchHistoryItems();
+
+        if (isSearchRoutePath(location.pathname)) {
+            const nextParams = clearLocationSearchParams(location.search);
+
+            navigate(
+                {
+                    pathname: location.pathname,
+                    search: nextParams.toString() ? `?${nextParams}` : "",
+                },
+                { replace: true },
+            );
+        }
+    };
 
     const submitSearchState = (state: BookingSearchState) => {
         const nextState = sanitizeBookingSearchState(state);

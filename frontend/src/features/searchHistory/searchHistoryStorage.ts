@@ -106,3 +106,9 @@ export const addSearchHistoryItem = (state: BookingSearchState) => {
     writeSearchHistoryItems(nextItems);
     return nextItems;
 };
+
+export const removeMapSearchHistoryItems = () => {
+    const nextItems = readSearchHistoryItems().filter((item) => !item.state.mapLat && !item.state.mapLng);
+    writeSearchHistoryItems(nextItems);
+    return nextItems;
+};

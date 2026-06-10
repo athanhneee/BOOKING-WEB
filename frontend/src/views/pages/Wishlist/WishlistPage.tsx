@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiHeart, FiMapPin, FiStar, FiUsers, FiHome, FiArrowLeft } from "react-icons/fi";
+import { FiMapPin, FiUsers, FiHome, FiArrowLeft, FiAlertCircle } from "react-icons/fi";
 import { LuHeart, LuHeartOff, LuSparkles } from "react-icons/lu";
 
 import { APP_ROUTES } from "../../../config/routes";
@@ -159,6 +159,7 @@ const WishlistPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [removingIds, setRemovingIds] = useState<Set<number>>(new Set());
     const [error, setError] = useState<string | null>(null);
+    const [notice, setNotice] = useState<string | null>(null);
 
     useEffect(() => {
         if (!currentUser) {
@@ -172,6 +173,9 @@ const WishlistPage = () => {
             try {
                 const result = await getWishlist();
                 setItems(result.items.filter((item) => item.listing !== null));
+                if (result.invalidListingIds?.length > 0) {
+                    setNotice("Một số nơi lưu trú đã lưu hiện không còn khả dụng và đã được loại khỏi danh sách.");
+                }
             } catch {
                 setError("Không thể tải danh sách yêu thích. Vui lòng thử lại.");
             } finally {
@@ -234,6 +238,13 @@ const WishlistPage = () => {
                 {error && (
                     <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                         {error}
+                    </div>
+                )}
+                
+                {notice && (
+                    <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 flex items-center gap-2">
+                        <FiAlertCircle className="shrink-0" size={16} />
+                        {notice}
                     </div>
                 )}
 

@@ -81,7 +81,8 @@ export const useSavedListings = () => {
 
                 const result = await getWishlist();
                 const backendIds = result.listingIds.map(String);
-                const mergedIds = normalizeListingIds([...backendIds, ...localIds]);
+                const invalidIds = new Set(result.invalidListingIds.map(String));
+                const mergedIds = normalizeListingIds([...backendIds, ...localIds]).filter((id) => !invalidIds.has(id));
 
                 if (!cancelled) {
                     persistSavedIds(mergedIds);

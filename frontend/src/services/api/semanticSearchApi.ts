@@ -107,6 +107,8 @@ export type AiListingSearchResponse = {
                 label: string;
                 checkIn?: string;
                 checkOut?: string;
+                reason?: AiSearchRejectionReason;
+                message?: string;
             };
             guests?: number;
             minPrice?: number;

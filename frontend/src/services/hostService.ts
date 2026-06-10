@@ -94,9 +94,14 @@ export type HostCalendarDay = {
     date: string;
     isAvailable: boolean;
     isBlockedByHost: boolean;
+    isBooked?: boolean;
+    isPast?: boolean;
+    canEdit?: boolean;
     price: number;
+    defaultPrice?: number;
     priceOverride?: number | null;
     minNights: number;
+    defaultMinNights?: number;
     minNightsOverride?: number | null;
     notes?: string | null;
 };

@@ -97,8 +97,10 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
     const [unreadCount, setUnreadCount] = useState(0);
     const [loadError, setLoadError] = useState<string | null>(null);
 
+    const currentUserId = currentUser?.id;
+
     useEffect(() => {
-        if (!currentUser) {
+        if (!currentUserId) {
             setItems([]);
             setUnreadCount(0);
             return;
@@ -135,10 +137,10 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
         return () => {
             cancelled = true;
         };
-    }, [currentUser?.id]);
+    }, [currentUserId]);
 
     useEffect(() => {
-        if (!currentUser) {
+        if (!currentUserId) {
             return;
         }
 
@@ -160,7 +162,7 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
         return () => {
             offNewNotification(handleNewNotification);
         };
-    }, [currentUser?.id]);
+    }, [currentUserId]);
 
     useEffect(() => {
         if (!open) {

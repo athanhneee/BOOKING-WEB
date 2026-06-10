@@ -11,6 +11,23 @@ export const createBooking = (payload: {
     couponCode?: string;
 }) => apiClient.post<ApiBooking>("/api/bookings", payload);
 
+export type BulkCreateBookingPayload = {
+    items: Array<{
+        listingId: number;
+        checkIn: string;
+        checkOut: string;
+        guests: number;
+        couponCode?: string;
+    }>;
+};
+
+export type BulkCreateBookingResponse = {
+    items: ApiBooking[];
+};
+
+export const createBulkBookings = (payload: BulkCreateBookingPayload) =>
+    apiClient.post<BulkCreateBookingResponse>("/api/bookings/bulk", payload);
+
 export const getMyBookings = (query: { status?: BookingStatusFilter | "all"; page?: number; limit?: number } = {}) =>
     apiClient.get<PaginatedBookings>("/api/bookings/mine", {
         query: {
