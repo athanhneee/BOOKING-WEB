@@ -8,6 +8,7 @@ import {
     type AiListingSearchItem,
     type AiSearchRejectionReason,
 } from "../../../services/api/semanticSearchApi";
+import StayGridSkeleton from "../../components/ui/skeletons/StayGridSkeleton";
 
 const LAST_AI_SEARCH_QUERY_KEY = "lastAiSearchQuery";
 const AI_SEARCH_LIMIT = 12;
@@ -281,9 +282,24 @@ const AiSearchPage = () => {
 
                     <div className="mt-7">
                         {isLoading ? (
-                            <div className="rounded-[32px] border border-slate-200 bg-white p-10 text-center text-sm font-bold text-slate-500 shadow-sm">
-                                Đang tìm chỗ nghỉ phù hợp...
-                            </div>
+                            <>
+                                <div className="mb-6 flex items-center justify-center gap-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-5 py-4">
+                                    <Sparkles size={18} className="animate-pulse text-cyan-500" />
+                                    <span className="text-sm font-semibold text-cyan-700">
+                                        AI đang phân tích yêu cầu của bạn...
+                                    </span>
+                                    <div className="flex gap-1">
+                                        {[0, 1, 2].map((i) => (
+                                            <div
+                                                key={i}
+                                                className="h-1.5 w-1.5 rounded-full bg-cyan-400"
+                                                style={{ animation: `pulse 1.4s ease-in-out ${i * 0.2}s infinite` }}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                                <StayGridSkeleton count={6} />
+                            </>
                         ) : error ? (
                             <div className="rounded-[32px] border border-rose-200 bg-rose-50 p-10 text-center text-sm font-bold text-rose-700 shadow-sm">
                                 {error}

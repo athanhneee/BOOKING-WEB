@@ -20,6 +20,7 @@ import {
     getStayPriceBounds,
 } from "../../components/stays/filter/stayFilterUtils";
 import type { StayFilterState } from "../../components/stays/filter/types";
+import StayGridSkeleton from "../../components/ui/skeletons/StayGridSkeleton";
 
 const ITEMS_PER_PAGE = 18;
 const MOBILE_HEADER_OFFSET = 56;
@@ -276,16 +277,25 @@ const SearchPage = () => {
 
                 <div className="mt-6">
                     {isLoading ? (
-                        <div className="rounded-2xl bg-white p-8 text-center text-sm font-semibold text-gray-500 shadow-sm">
-                            Đang tải danh sách chỗ nghỉ...
-                        </div>
+                        <StayGridSkeleton count={6} />
                     ) : error ? (
-                        <div className="rounded-2xl border border-rose-100 bg-rose-50 p-8 text-center text-sm font-semibold text-rose-600">
-                            {error}
+                        <div className="rounded-2xl border border-rose-100 bg-rose-50 p-8 text-center shadow-sm">
+                            <p className="text-sm font-semibold text-rose-600">{error}</p>
+                            <button
+                                type="button"
+                                onClick={() => void (() => {
+                                    const nextParams = new URLSearchParams(searchParams);
+                                    setSearchParams(nextParams);
+                                })()}
+                                className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+                            >
+                                Thử lại
+                            </button>
                         </div>
                     ) : currentItems.length === 0 ? (
-                        <div className="rounded-[32px] border border-slate-200 bg-white px-6 py-12 text-center text-sm  text-gray-600 shadow-sm">
-                            Không tìm thấy chỗ nghỉ phù hợp.
+                        <div className="rounded-[32px] border border-slate-200 bg-white px-6 py-12 text-center text-sm text-gray-600 shadow-sm">
+                            <p className="font-semibold text-slate-700">Chưa tìm thấy villa phù hợp.</p>
+                            <p className="mt-1 text-slate-500">Thử điều chỉnh bộ lọc hoặc thay đổi khu vực tìm kiếm.</p>
                         </div>
                     ) : (
                         <StayGrid stays={currentItems} />
