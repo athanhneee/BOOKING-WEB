@@ -256,6 +256,55 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
         setLoadError(null);
     };
 
+    const renderNotificationList = () => (
+        <>
+            {loading ? (
+                <div className="flex items-center justify-center px-4 py-8 text-slate-500">
+                    <Loader2 size={18} className="animate-spin" />
+                </div>
+            ) : null}
+
+            {!loading && loadError ? (
+                <p className="mx-4 my-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
+                    {loadError}
+                </p>
+            ) : null}
+
+            {!loading && !loadError && items.length === 0 ? (
+                <p className="px-4 py-8 text-center text-sm text-slate-500">Chưa có thông báo.</p>
+            ) : null}
+
+            {items.map((item) => (
+                <button
+                    key={item.notificationLogId}
+                    type="button"
+                    onClick={() => void markItemRead(item)}
+                    className="flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-cyan-50/60"
+                >
+                    <span
+                        className={cn(
+                            "mt-1 h-2.5 w-2.5 shrink-0 rounded-full",
+                            item.isRead ? "bg-slate-200" : "bg-cyan-500",
+                        )}
+                    />
+                    <span className="min-w-0 flex-1">
+                        <span className="block break-words text-sm font-semibold text-slate-900">
+                            {item.title ?? "Thông báo mới"}
+                        </span>
+                        {item.body ? (
+                            <span className="mt-1 block break-words text-sm leading-5 text-slate-600">
+                                {item.body}
+                            </span>
+                        ) : null}
+                        <span className="mt-2 block text-xs text-slate-400">
+                            {formatNotificationTime(item.createdAt)}
+                        </span>
+                    </span>
+                </button>
+            ))}
+        </>
+    );
+
     return (
         <div ref={rootRef} className="relative">
             <button
@@ -278,70 +327,61 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
             </button>
 
             {open ? (
-                <div className="absolute right-0 top-[calc(100%+12px)] z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
-                    <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
-                        <div>
-                            <p className="text-sm font-semibold text-slate-900">Thông báo</p>
-                            <p className="text-xs text-slate-500">{unreadCount} chưa đọc</p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => void markAllRead()}
-                            disabled={unreadCount === 0}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-cyan-700 disabled:opacity-40"
-                            aria-label="Đánh dấu tất cả đã đọc"
-                        >
-                            <CheckCheck size={17} />
-                        </button>
-                    </div>
-
-                    <div className="max-h-[420px] overflow-y-auto py-1">
-                        {loading ? (
-                            <div className="flex items-center justify-center px-4 py-8 text-slate-500">
-                                <Loader2 size={18} className="animate-spin" />
+                <>
+                    {/* Mobile: full-screen overlay */}
+                    <div className="fixed inset-0 z-[85] md:hidden">
+                        <div
+                            className="absolute inset-0 bg-black/40"
+                            onClick={() => setOpen(false)}
+                            role="presentation"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 flex max-h-[85vh] flex-col rounded-t-2xl bg-white shadow-xl">
+                            <div className="shrink-0 px-4 pt-3">
+                                <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200" />
+                                <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                                    <div>
+                                        <p className="text-base font-semibold text-slate-900">Thông báo</p>
+                                        <p className="text-xs text-slate-500">{unreadCount} chưa đọc</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => void markAllRead()}
+                                        disabled={unreadCount === 0}
+                                        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-cyan-700 disabled:opacity-40"
+                                        aria-label="Đánh dấu tất cả đã đọc"
+                                    >
+                                        <CheckCheck size={17} />
+                                    </button>
+                                </div>
                             </div>
-                        ) : null}
-
-                        {!loading && loadError ? (
-                            <p className="mx-4 my-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
-                                {loadError}
-                            </p>
-                        ) : null}
-
-                        {!loading && !loadError && items.length === 0 ? (
-                            <p className="px-4 py-8 text-center text-sm text-slate-500">Chưa có thông báo.</p>
-                        ) : null}
-
-                        {items.map((item) => (
-                            <button
-                                key={item.notificationLogId}
-                                type="button"
-                                onClick={() => void markItemRead(item)}
-                                className="flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-cyan-50/60"
-                            >
-                                <span
-                                    className={cn(
-                                        "mt-1 h-2.5 w-2.5 shrink-0 rounded-full",
-                                        item.isRead ? "bg-slate-200" : "bg-cyan-500",
-                                    )}
-                                />
-                                <span className="min-w-0 flex-1">
-                                    <span className="block break-words text-sm font-semibold text-slate-900">
-                                        {item.title ?? "Thông báo mới"}
-                                    </span>
-                                    {item.body ? (
-                                        <span className="mt-1 block break-words text-sm leading-5 text-slate-600">
-                                            {item.body}
-                                        </span>
-                                    ) : null}
-                                    <span className="mt-2 block text-xs text-slate-400">
-                                        {formatNotificationTime(item.createdAt)}
-                                    </span>
-                                </span>
-                            </button>
-                        ))}
+                            <div className="min-h-0 flex-1 overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))]">
+                                {renderNotificationList()}
+                            </div>
+                        </div>
                     </div>
-                </div>
+
+                    {/* Desktop: absolute popover */}
+                    <div className="absolute right-0 top-[calc(100%+12px)] z-50 hidden w-[22rem] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl md:block">
+                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+                            <div>
+                                <p className="text-sm font-semibold text-slate-900">Thông báo</p>
+                                <p className="text-xs text-slate-500">{unreadCount} chưa đọc</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => void markAllRead()}
+                                disabled={unreadCount === 0}
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-cyan-700 disabled:opacity-40"
+                                aria-label="Đánh dấu tất cả đã đọc"
+                            >
+                                <CheckCheck size={17} />
+                            </button>
+                        </div>
+                        <div className="max-h-[420px] overflow-y-auto py-1">
+                            {renderNotificationList()}
+                        </div>
+                    </div>
+                </>
             ) : null}
         </div>
     );
