@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import * as L from "leaflet";
 import type { LatLngExpression, LeafletMouseEvent, Marker as LeafletMarker } from "leaflet";
 import { MapPin, X } from "lucide-react";
@@ -13,9 +13,16 @@ import {
     VUNG_TAU_MIN_MAP_ZOOM,
     VungTauMapBoundsLimiter,
 } from "../maps/VungTauMapBounds";
+import {
+    LEAFLET_MAP_THEMES,
+    LEAFLET_MAP_THEME_STORAGE_KEY,
+    type LeafletMapTheme,
+} from "./maps/leafletMapThemes";
+import Toast from "../common/Toast";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import { cn } from "../../../utils";
 
 delete (L.Icon.Default.prototype as L.Icon.Default & { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -48,17 +55,61 @@ const MapViewUpdater = ({ position }: { position: MapSearchPosition }) => {
     return null;
 };
 
-const MapClickHandler = ({ onChange }: { onChange: (position: MapSearchPosition) => void }) => {
+const MapClickHandler = ({
+    onChange,
+    onOutOfBounds,
+}: {
+    onChange: (position: MapSearchPosition) => void;
+    onOutOfBounds: () => void;
+}) => {
     useMapEvents({
         click: (event: LeafletMouseEvent) => {
-            onChange(clampLatLngToVungTauBounds({
-                lat: event.latlng.lat,
-                lng: event.latlng.lng,
-            }));
+            const position = { lat: event.latlng.lat, lng: event.latlng.lng };
+            if (!isLatLngInVungTauBounds(position)) {
+                onOutOfBounds();
+                return;
+            }
+            onChange(position);
         },
     });
 
     return null;
+};
+
+const ThemeSelector = ({
+    currentTheme,
+    onSelectTheme,
+}: {
+    currentTheme: LeafletMapTheme;
+    onSelectTheme: (theme: LeafletMapTheme) => void;
+}) => {
+    return (
+        <div className="absolute bottom-6 right-4 z-[400] flex flex-col gap-1 rounded-2xl border border-white/40 bg-white/70 p-1.5 shadow-lg backdrop-blur-md sm:bottom-4 sm:flex-row">
+            {(Object.entries(LEAFLET_MAP_THEMES) as [LeafletMapTheme, typeof LEAFLET_MAP_THEMES[LeafletMapTheme]][]).map(
+                ([key, theme]) => {
+                    const isActive = currentTheme === key;
+                    return (
+                        <button
+                            key={key}
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectTheme(key);
+                            }}
+                            className={cn(
+                                "rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200 sm:text-sm",
+                                isActive
+                                    ? "bg-white text-cyan-700 shadow-sm"
+                                    : "text-slate-600 hover:bg-white/50 hover:text-slate-800"
+                            )}
+                        >
+                            {theme.label}
+                        </button>
+                    );
+                }
+            )}
+        </div>
+    );
 };
 
 const LocationMapPicker = ({
@@ -70,6 +121,15 @@ const LocationMapPicker = ({
     onConfirm,
 }: LocationMapPickerProps) => {
     const markerRef = useRef<LeafletMarker | null>(null);
+    const [mapTheme, setMapTheme] = useState<LeafletMapTheme>(() => {
+        const stored = localStorage.getItem(LEAFLET_MAP_THEME_STORAGE_KEY);
+        if (stored && stored in LEAFLET_MAP_THEMES) {
+            return stored as LeafletMapTheme;
+        }
+        return "light";
+    });
+    const [toastMessage, setToastMessage] = useState("");
+
     const boundedValue = useMemo(
         () => clampLatLngToVungTauBounds(value),
         [value],
@@ -78,6 +138,16 @@ const LocationMapPicker = ({
         () => [boundedValue.lat, boundedValue.lng],
         [boundedValue.lat, boundedValue.lng],
     );
+
+    const handleThemeChange = (theme: LeafletMapTheme) => {
+        setMapTheme(theme);
+        localStorage.setItem(LEAFLET_MAP_THEME_STORAGE_KEY, theme);
+    };
+
+    const handleOutOfBounds = () => {
+        setToastMessage("Minh Thành Villa hiện chỉ hỗ trợ tìm kiếm trong khu vực Vũng Tàu.");
+    };
+
     const eventHandlers = useMemo(
         () => ({
             dragend: () => {
@@ -88,13 +158,19 @@ const LocationMapPicker = ({
                 }
 
                 const nextPosition = marker.getLatLng();
-                onChange(clampLatLngToVungTauBounds({
-                    lat: nextPosition.lat,
-                    lng: nextPosition.lng,
-                }));
+                const posObj = { lat: nextPosition.lat, lng: nextPosition.lng };
+                
+                if (!isLatLngInVungTauBounds(posObj)) {
+                    handleOutOfBounds();
+                    // Reset marker to previous bounded position
+                    marker.setLatLng(markerPosition);
+                    return;
+                }
+
+                onChange(clampLatLngToVungTauBounds(posObj));
             },
         }),
-        [onChange],
+        [onChange, markerPosition],
     );
 
     useEffect(() => {
@@ -155,7 +231,18 @@ const LocationMapPicker = ({
                     </button>
                 </div>
 
-                <div className="min-h-0 flex-1 bg-slate-100">
+                <div className="relative min-h-0 flex-1 bg-slate-100">
+                    {toastMessage && (
+                        <div className="absolute left-1/2 top-4 z-[1000] -translate-x-1/2">
+                            <Toast 
+                                message={toastMessage} 
+                                type="info" 
+                                onClose={() => setToastMessage("")} 
+                                duration={4000} 
+                            />
+                        </div>
+                    )}
+                    
                     <MapContainer
                         center={markerPosition}
                         zoom={13}
@@ -166,13 +253,13 @@ const LocationMapPicker = ({
                         className="h-full w-full"
                     >
                         <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                            bounds={VUNG_TAU_LEAFLET_BOUNDS}
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            key={mapTheme}
+                            url={LEAFLET_MAP_THEMES[mapTheme].url}
+                            attribution={LEAFLET_MAP_THEMES[mapTheme].attribution}
                         />
                         <VungTauMapBoundsLimiter />
                         <MapViewUpdater position={boundedValue} />
-                        <MapClickHandler onChange={onChange} />
+                        <MapClickHandler onChange={onChange} onOutOfBounds={handleOutOfBounds} />
                         <Marker
                             draggable
                             eventHandlers={eventHandlers}
@@ -180,6 +267,8 @@ const LocationMapPicker = ({
                             ref={markerRef}
                         />
                     </MapContainer>
+
+                    <ThemeSelector currentTheme={mapTheme} onSelectTheme={handleThemeChange} />
                 </div>
 
                 <div className="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -209,3 +298,4 @@ const LocationMapPicker = ({
 };
 
 export default LocationMapPicker;
+
