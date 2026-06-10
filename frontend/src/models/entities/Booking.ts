@@ -103,6 +103,7 @@ export type ApiBooking = {
     nights: number;
     totalNights?: number;
     status: BookingStatus;
+    hasReview?: boolean;
     persistedStatus?: BookingStatus;
     internalStatus?: string;
     displayStatus?: {

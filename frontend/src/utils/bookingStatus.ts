@@ -450,10 +450,7 @@ const resolveActionOptions = (options?: BookingActionOptions) => {
     };
 };
 
-const isDateTodayInVietnam = (dateValue: string | null | undefined, today: Date) => {
-    const dateString = getDateOnlyString(dateValue);
-    return Boolean(dateString && dateString === getVietnamTodayDateString(today));
-};
+
 
 const isDateReachedInVietnam = (dateValue: string | null | undefined, today: Date) => {
     const dateString = getDateOnlyString(dateValue);

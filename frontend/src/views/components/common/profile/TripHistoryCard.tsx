@@ -170,12 +170,14 @@ const TripHistoryCard = ({ trip, onReview }: TripHistoryCardProps) => {
                 ? [{ key: "review", label: "Viết đánh giá", variant: "primary" as const }]
                 : trip.status === "active"
                     ? []
-                    : trip.canReview
-                        ? [
-                            { key: "review", label: "Viết đánh giá", variant: "primary" as const },
-                            { key: "rebook", label: "Đặt lại", variant: "secondary" as const },
-                        ]
-                        : [{ key: "rebook", label: "Đặt lại", variant: "secondary" as const }]),
+                    : trip.hasReview
+                        ? [{ key: "reviewed", label: "Đã đánh giá", variant: "secondary" as const }]
+                        : trip.canReview
+                            ? [
+                                { key: "review", label: "Viết đánh giá", variant: "primary" as const },
+                                { key: "rebook", label: "Đặt lại", variant: "secondary" as const },
+                            ]
+                            : [{ key: "rebook", label: "Đặt lại", variant: "secondary" as const }]),
     ];
 
     return (
@@ -245,7 +247,9 @@ const TripHistoryCard = ({ trip, onReview }: TripHistoryCardProps) => {
                                     action.variant === "primary"
                                         ? "bg-cyan-500 text-white hover:bg-cyan-500"
                                         : "border border-cyan-300/50 bg-white text-cyan-800 hover:bg-cyan-300/10",
+                                    action.key === "reviewed" && "opacity-50 cursor-not-allowed hover:bg-white"
                                 )}
+                                disabled={action.key === "reviewed"}
                             >
                                 {action.label}
                                 {action.key === "detail" ? (

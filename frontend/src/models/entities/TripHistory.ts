@@ -16,6 +16,7 @@ export type TripHistory = {
     bookingStatusLabel?: string;
     bookingStatusTone?: "warning" | "danger" | "success" | "info" | "muted";
     canReview: boolean;
+    hasReview?: boolean;
     canRebook: boolean;
     guestCount?: number;
     address?: string;

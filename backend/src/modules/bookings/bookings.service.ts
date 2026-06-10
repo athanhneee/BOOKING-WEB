@@ -39,6 +39,7 @@ import Listing, { CancellationPolicy, ListingDocument } from "../../models/listi
 import NotificationLog from "../../models/notification-log";
 import Payment from "../../models/payment";
 import Refund from "../../models/refund";
+import Review from "../../models/review";
 import type { AuthenticatedUser } from "../auth/auth.service";
 import { writeAuditLog } from "../../services/audit-log-service";
 import {
@@ -662,13 +663,18 @@ const autoAdvanceBookingStatus = async (booking: BookingDocument): Promise<void>
 const serializeBooking = async (booking: BookingDocument, includeImages = false) => {
     await autoAdvanceBookingStatus(booking);
 
-    const [latestPayment, latestRefund, payoutStatus, listing] = await Promise.all([
+    const [latestPayment, latestRefund, payoutStatus, listing, review] = await Promise.all([
         getLatestPaymentForBooking(booking.bookingId),
         getLatestRefundForBooking(booking.bookingId),
         getLatestPayoutStatusForBooking(booking.bookingId),
         Listing.findOne({
             where: {
                 listingId: booking.listingId,
+            },
+        }),
+        Review.findOne({
+            where: {
+                bookingId: booking.bookingId,
             },
         }),
     ]);
@@ -743,6 +749,7 @@ const serializeBooking = async (booking: BookingDocument, includeImages = false)
         persistedStatus: toApiBookingStatus(booking),
         internalStatus: booking.status,
         displayStatus,
+        hasReview: !!review,
         paymentStatus: latestPayment?.status ?? null,
         refundStatus: latestRefund?.status ?? null,
         payoutStatus,
