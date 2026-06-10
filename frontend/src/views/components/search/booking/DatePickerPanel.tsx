@@ -439,7 +439,7 @@ const DatePickerPanel = ({
     const containerClassName = cn(
         "calendar-panel w-full bg-white",
         isInline
-            ? "rounded-[28px] border border-gray-200 p-5 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.24)]"
+            ? "rounded-[24px] border border-gray-200 p-4 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.24)]"
             : "rounded-3xl border border-gray-200 p-7",
         !isInline && !isOpen && "pointer-events-none opacity-0",
         className,
@@ -463,7 +463,7 @@ const DatePickerPanel = ({
 
     return (
         <div className={containerClassName} style={style} onMouseDown={(event) => event.stopPropagation()}>
-            <div className="mb-7 flex justify-center">
+            <div className={cn("mb-7 flex justify-center", isInline && "mb-4")}>
                 <div className="flex gap-1 rounded-full bg-gray-100 p-1">
                     {[
                         { key: "day", label: "Ngày" },
@@ -477,7 +477,8 @@ const DatePickerPanel = ({
                                 handleMouseSelect(event, () => setCalendarMode(tab.key as CalendarMode))
                             }
                             className={cn(
-                                "rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-200 ease-out",
+                                "rounded-full text-sm font-medium transition-all duration-200 ease-out",
+                                isInline ? "px-4 py-2" : "px-6 py-2.5",
                                 calendarMode === tab.key
                                     ? "bg-white font-semibold text-gray-900 shadow-sm"
                                     : "text-gray-500 hover:bg-white/60 hover:text-gray-700",
@@ -490,6 +491,26 @@ const DatePickerPanel = ({
             </div>
 
             {calendarMode === "day" ? (
+                isInline ? (
+                    <div key={`${baseMonth.year}-${baseMonth.month}`} className="month-grid-enter">
+                        <CalendarMonth
+                            {...sharedMonthProps}
+                            year={leftYear}
+                            month={leftMonth}
+                            onDateSelect={(date) => onSelectDate(toIsoDate(date))}
+                            showPrev
+                            showNext
+                            onPrev={() => {
+                                const previousMonth = new Date(baseMonth.year, baseMonth.month - 1, 1);
+                                setBaseMonth({ year: previousMonth.getFullYear(), month: previousMonth.getMonth() });
+                            }}
+                            onNext={() => {
+                                const nextMonth = new Date(baseMonth.year, baseMonth.month + 1, 1);
+                                setBaseMonth({ year: nextMonth.getFullYear(), month: nextMonth.getMonth() });
+                            }}
+                        />
+                    </div>
+                ) : (
                 <div key={`${baseMonth.year}-${baseMonth.month}`} className="month-grid-enter grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
                     <CalendarMonth
                         {...sharedMonthProps}
@@ -518,6 +539,7 @@ const DatePickerPanel = ({
                         }}
                     />
                 </div>
+                )
             ) : calendarMode === "month" ? (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {flexibleMonths.map((monthStart) => {
@@ -595,7 +617,7 @@ const DatePickerPanel = ({
                 </div>
             )}
 
-            <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-5">
+            <div className={cn("flex items-center justify-between border-t border-gray-100", isInline ? "mt-4 pt-3" : "mt-6 pt-5")}>
                 <div className="flex items-center gap-6">
                     <div>
                         <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">Lựa chọn</p>

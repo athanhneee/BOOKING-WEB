@@ -1117,15 +1117,18 @@ const SearchBarInner = ({
                         role="presentation"
                     />
 
-                    <div className="absolute inset-x-0 bottom-0 max-h-[92vh] overflow-y-auto rounded-t-[32px] bg-[#f7f6f3] px-4 pb-24 pt-4 shadow-2xl">
-                        <button
-                            type="button"
-                            onClick={() => setMobileSheetOpen(false)}
-                            aria-label="Đóng bộ tìm kiếm"
-                            className="mx-auto mb-4 block h-1.5 w-12 rounded-full bg-gray-300"
-                        />
+                    <div className="absolute inset-x-0 bottom-0 flex max-h-[92vh] flex-col rounded-t-[32px] bg-[#f7f6f3] shadow-2xl">
+                        <div className="shrink-0 px-4 pt-4">
+                            <button
+                                type="button"
+                                onClick={() => setMobileSheetOpen(false)}
+                                aria-label="Đóng bộ tìm kiếm"
+                                className="mx-auto mb-3 block h-1.5 w-12 rounded-full bg-gray-300"
+                            />
+                        </div>
 
-                        <div className="space-y-4">
+                        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+                          <div className="space-y-4">
                             <section className="rounded-[28px] border border-white/80 bg-white p-4 shadow-sm">
                                 <p className="text-sm font-semibold text-gray-900">Địa điểm</p>
                                 <input
@@ -1262,9 +1265,10 @@ const SearchBarInner = ({
                                     })}
                                 </div>
                             </section>
+                          </div>
                         </div>
 
-                        <div className="sticky bottom-0 mt-6 border-t border-gray-200 bg-[#f7f6f3] pb-2 pt-4">
+                        <div className="shrink-0 border-t border-gray-200 bg-[#f7f6f3] px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-4">
                             <div className="flex items-center gap-3">
                                 <button
                                     type="button"
