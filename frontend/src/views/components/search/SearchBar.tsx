@@ -99,6 +99,19 @@ const locationSearchParamKeys = [
     "mapRadius",
 ];
 
+const dateSearchParamKeys = ["checkIn", "checkOut", "datePreset"];
+
+const clearDateSearchParams = (search: string) => {
+    const params = new URLSearchParams(search);
+
+    for (const key of dateSearchParamKeys) {
+        params.delete(key);
+    }
+
+    params.delete("page");
+    return params;
+};
+
 const clearLocationSearchParams = (search: string) => {
     const params = new URLSearchParams(search);
 
@@ -386,6 +399,16 @@ const SearchBarInner = ({
         draftState.guests.infants !== defaultGuestSelection.infants ||
         draftState.guests.pets !== defaultGuestSelection.pets;
 
+    const isDirty = Boolean(
+        draftState.location ||
+        draftState.checkIn ||
+        draftState.checkOut ||
+        draftState.locationGroup ||
+        draftState.mapLat ||
+        draftState.mapLng ||
+        hasCustomGuests
+    );
+
     const heroShellClass = isHeroIntro
         ? "rounded-[28px] border border-slate-200/80 bg-white px-2 py-2 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.24)] md:rounded-full"
         : "rounded-full border border-gray-100 bg-white px-2 py-2 shadow-2xl";
@@ -453,6 +476,18 @@ const SearchBarInner = ({
         }));
         setOpenField("checkIn");
         setMobileDateField("checkIn");
+
+        if (isSearchRoutePath(location.pathname)) {
+            const nextParams = clearDateSearchParams(location.search);
+
+            navigate(
+                {
+                    pathname: location.pathname,
+                    search: nextParams.toString() ? `?${nextParams}` : "",
+                },
+                { replace: true },
+            );
+        }
     };
 
     const handleDateChange = (field: "checkIn" | "checkOut", nextDate: string) => {
@@ -829,15 +864,30 @@ const SearchBarInner = ({
                                                 buttonRef={guestsButtonRef}
                                             />
 
-                                            <button
-                                                type="button"
-                                                onMouseDown={(event) => event.stopPropagation()}
-                                                onClick={handleSearch}
-                                                className={searchButtonClass}
-                                                aria-label="Tìm kiếm"
-                                            >
-                                                <FiSearch size={20} />
-                                            </button>
+                                            <div className="flex items-center gap-2 pr-2">
+                                                {isDirty && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(event) => {
+                                                            event.stopPropagation();
+                                                            resetSearch();
+                                                        }}
+                                                        title="Xóa tất cả bộ lọc"
+                                                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 focus:outline-none"
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onMouseDown={(event) => event.stopPropagation()}
+                                                    onClick={handleSearch}
+                                                    className={searchButtonClass}
+                                                    aria-label="Tìm kiếm"
+                                                >
+                                                    <FiSearch size={20} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 

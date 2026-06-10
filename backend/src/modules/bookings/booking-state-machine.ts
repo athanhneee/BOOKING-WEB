@@ -12,6 +12,7 @@ export type BookingTransitionCondition =
     | "payment_succeeded_before_expiration"
     | "successful_payment_exists"
     | "check_in_date_is_today"
+    | "check_in_date_reached"
     | "check_out_date_reached"
     | "stay_checked_out"
     | "cancellation_allowed_before_stay"
@@ -110,11 +111,25 @@ export const allowedBookingTransitions = [
         sideEffects: ["mark_checked_in_at", "write_booking_status_history", "write_audit_log"],
     },
     {
+        from: ["confirmed"],
+        to: "checked_in",
+        actors: ["system"],
+        condition: "check_in_date_reached",
+        sideEffects: ["mark_checked_in_at", "write_booking_status_history"],
+    },
+    {
         from: ["checked_in"],
         to: "checked_out",
         actors: ["host", "admin"],
         condition: "check_out_date_reached",
         sideEffects: ["mark_checked_out_at", "write_booking_status_history", "write_audit_log"],
+    },
+    {
+        from: ["checked_in"],
+        to: "checked_out",
+        actors: ["system"],
+        condition: "check_out_date_reached",
+        sideEffects: ["mark_checked_out_at", "write_booking_status_history"],
     },
     {
         from: ["checked_out"],
@@ -206,6 +221,8 @@ const conditionChecks: Record<BookingTransitionCondition, (context: BookingTrans
     successful_payment_exists: (context) => Boolean(context.hasSuccessfulPayment),
     check_in_date_is_today: (context) =>
         Boolean(context.checkInDate && context.checkInDate === getVietnamTodayDateString(context.now)),
+    check_in_date_reached: (context) =>
+        Boolean(context.checkInDate && getVietnamTodayDateString(context.now) >= context.checkInDate),
     check_out_date_reached: (context) =>
         Boolean(context.checkOutDate && getVietnamTodayDateString(context.now) >= context.checkOutDate),
     stay_checked_out: () => true,

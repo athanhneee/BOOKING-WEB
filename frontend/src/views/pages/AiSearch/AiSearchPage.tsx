@@ -72,11 +72,11 @@ const AiSearchPage = () => {
     );
 
     const shouldAutoRun = useMemo(
-        () => Boolean(locationQuery),
-        [locationQuery],
+        () => Boolean(initialQuery),
+        [initialQuery],
     );
 
-    const didAutoSearchRef = useRef(false);
+    const hasAutoRunRef = useRef(false);
 
     const [query, setQuery] = useState(initialQuery);
     const [items, setItems] = useState<AiListingSearchItem[]>([]);
@@ -119,8 +119,6 @@ const AiSearchPage = () => {
                 limit: AI_SEARCH_LIMIT,
             });
 
-            setItems(result.items);
-
             // Extract reason/message from API response
             if (result.reason) {
                 setSearchReason(result.reason);
@@ -130,6 +128,18 @@ const AiSearchPage = () => {
             }
             if (result.availabilityNotice) {
                 setAvailabilityNotice(result.availabilityNotice);
+            }
+
+            const isHardRejection = 
+                result.reason === "INVALID_SEARCH_INTENT" ||
+                result.reason === "UNSUPPORTED_LOCATION" ||
+                result.reason === "PAST_DATE_NOT_ALLOWED" ||
+                result.reason === "PAST_DATE_IN_QUERY";
+
+            if (isHardRejection) {
+                setItems([]);
+            } else {
+                setItems(result.items);
             }
 
             // Extract date intent from parsedFilters
@@ -152,11 +162,11 @@ const AiSearchPage = () => {
     }, []);
 
     useEffect(() => {
-        if (!initialQuery || didAutoSearchRef.current) {
+        if (!initialQuery || hasAutoRunRef.current) {
             return;
         }
 
-        didAutoSearchRef.current = true;
+        hasAutoRunRef.current = true;
         if (shouldAutoRun) {
             void runSearch(initialQuery);
         }
@@ -388,16 +398,6 @@ const AiSearchPage = () => {
                         ) : (
                             <div className="rounded-[32px] border border-dashed border-slate-300 bg-white p-10 text-center text-sm font-semibold text-slate-500 shadow-sm flex flex-col items-center gap-4">
                                 <span>Nhập nhu cầu của bạn để bắt đầu tìm kiếm AI.</span>
-                                {query && !hasSearched && !shouldAutoRun && (
-                                    <button 
-                                        type="button" 
-                                        onClick={() => runSearch(query)} 
-                                        className="text-cyan-600 hover:text-cyan-700 font-bold hover:underline flex items-center gap-2 transition"
-                                    >
-                                        <Sparkles size={16} />
-                                        Chạy lại truy vấn: "{query}"
-                                    </button>
-                                )}
                             </div>
                         )}
                     </div>

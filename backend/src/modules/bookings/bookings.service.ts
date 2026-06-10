@@ -564,7 +564,104 @@ const buildBookingPriceBreakdownForResponse = (booking: BookingDocument): Bookin
     };
 };
 
+const autoAdvanceBookingStatus = async (booking: BookingDocument): Promise<void> => {
+    const today = getTodayInVietnam();
+
+    // confirmed → checked_in (today >= checkInDate)
+    if (booking.status === "confirmed" && today >= booking.checkInDate) {
+        try {
+            await sequelize.transaction(async (transaction) => {
+                const fresh = await getBookingOrThrow(booking.bookingId, transaction, true);
+                if (fresh.status !== "confirmed") return;
+
+                await transitionBookingStatus({
+                    booking: fresh,
+                    toStatus: "checked_in",
+                    actor: "system",
+                    changedByUserId: null,
+                    reason: "auto_advance_check_in",
+                    transaction,
+                    context: { checkInDate: fresh.checkInDate },
+                    mutate: (b) => {
+                        b.checkedInAt = b.checkedInAt ?? new Date();
+                    },
+                });
+
+                booking.status = fresh.status;
+                booking.checkedInAt = fresh.checkedInAt;
+                booking.version = fresh.version;
+            });
+        } catch (error) {
+            logger.warn("Auto-advance confirmed->checked_in failed", {
+                bookingId: booking.bookingId,
+                error: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+
+    // checked_in → checked_out (today >= checkOutDate)
+    if (booking.status === "checked_in" && today >= booking.checkOutDate) {
+        try {
+            await sequelize.transaction(async (transaction) => {
+                const fresh = await getBookingOrThrow(booking.bookingId, transaction, true);
+                if (fresh.status !== "checked_in") return;
+
+                await transitionBookingStatus({
+                    booking: fresh,
+                    toStatus: "checked_out",
+                    actor: "system",
+                    changedByUserId: null,
+                    reason: "auto_advance_check_out",
+                    transaction,
+                    context: { checkOutDate: fresh.checkOutDate },
+                    mutate: (b) => {
+                        b.checkedOutAt = b.checkedOutAt ?? new Date();
+                    },
+                });
+
+                booking.status = fresh.status;
+                booking.checkedOutAt = fresh.checkedOutAt;
+                booking.version = fresh.version;
+            });
+        } catch (error) {
+            logger.warn("Auto-advance checked_in->checked_out failed", {
+                bookingId: booking.bookingId,
+                error: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+
+    // checked_out → completed
+    if (booking.status === "checked_out") {
+        try {
+            await sequelize.transaction(async (transaction) => {
+                const fresh = await getBookingOrThrow(booking.bookingId, transaction, true);
+                if (fresh.status !== "checked_out") return;
+
+                await transitionBookingStatus({
+                    booking: fresh,
+                    toStatus: "completed",
+                    actor: "system",
+                    changedByUserId: null,
+                    reason: "auto_advance_completed",
+                    transaction,
+                });
+
+                booking.status = fresh.status;
+                booking.version = fresh.version;
+            });
+        } catch (error) {
+            logger.warn("Auto-advance checked_out->completed failed", {
+                bookingId: booking.bookingId,
+                error: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+};
+
 const serializeBooking = async (booking: BookingDocument, includeImages = false) => {
+    await autoAdvanceBookingStatus(booking);
+
     const [latestPayment, latestRefund, payoutStatus, listing] = await Promise.all([
         getLatestPaymentForBooking(booking.bookingId),
         getLatestRefundForBooking(booking.bookingId),
@@ -1483,8 +1580,8 @@ export const checkInHostBooking = async (user: AuthenticatedUser, bookingId: num
             throw new ApiError(409, "Booking cannot be checked in in its current status");
         }
 
-        if (getTodayInVietnam() !== existingBooking.checkInDate) {
-            throw new ApiError(400, "Booking can only be checked in on the check-in date");
+        if (getTodayInVietnam() < existingBooking.checkInDate) {
+            throw new ApiError(400, "Booking can only be checked in on or after the check-in date");
         }
 
         const oldStatus = existingBooking.status;

@@ -788,14 +788,6 @@ export const semanticSearchListings = async (
                 candidateCount: vectorHits.length,
                 availabilityNotice,
             });
-
-            const response = paginate([], filters, false, true, vectorHits.length, {
-                reason: "LOW_RELEVANCE",
-                message: "Không tìm thấy chỗ nghỉ phù hợp với yêu cầu của bạn.",
-                availabilityNotice,
-            });
-            await logSearch(response, filters, context);
-            return response;
         }
 
         const listingIds = uniqueNumbers(qualifiedHits.map((hit) => hit.payload.listing_id));
@@ -851,25 +843,5 @@ export const semanticSearchListings = async (
             candidateCount: 0,
             availabilityNotice,
         });
-
-        const fallbackItems = await keywordSearchFallback(filters);
-        const rankedFallback = rankItems(fallbackItems, filters);
-        const response = paginate(
-            rankedFallback,
-            filters,
-            true,
-            false,
-            fallbackItems.length,
-            {
-                reason: rankedFallback.length === 0 ? "NO_RESULTS" : undefined,
-                message: rankedFallback.length === 0
-                    ? "Không tìm thấy chỗ nghỉ phù hợp với yêu cầu của bạn."
-                    : undefined,
-                availabilityNotice,
-            },
-        );
-
-        await logSearch(response, filters, context);
-        return response;
     }
 };

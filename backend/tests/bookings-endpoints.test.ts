@@ -18,10 +18,12 @@ const Coupon = require("../dist/models/coupon").default;
 const CouponRedemption = require("../dist/models/coupon-redemption").default;
 const Listing = require("../dist/models/listing").default;
 const ListingImage = require("../dist/models/listing-image").default;
+const NotificationLog = require("../dist/models/notification-log").default;
 const Payment = require("../dist/models/payment").default;
 const Refund = require("../dist/models/refund").default;
 const bookingExpirationService = require("../dist/services/booking-expiration.service");
 const bookingsService = require("../dist/modules/bookings/bookings.service");
+const notificationService = require("../dist/modules/notifications/notification.service");
 const { assertBookingStatusTransition } = require("../dist/modules/bookings/booking-state-machine");
 
 type QueryOptions = {
@@ -212,12 +214,23 @@ const patchTransaction = () => {
     });
 };
 
+const patchNotification = () => {
+    patch(notificationService, "notifyBookingCreated", async () => { });
+    patch(notificationService, "notifyPaymentPending", async () => { });
+    patch(notificationService, "notifyPaymentSuccess", async () => { });
+    patch(notificationService, "notifyPaymentExpired", async () => { });
+    patch(notificationService, "notifyBookingConfirmed", async () => { });
+    patch(notificationService, "notifyBookingCancelled", async () => { });
+};
+
 const patchSerialization = (listing = buildListing()) => {
+    patchNotification();
     patch(Payment, "findOne", async () => null);
     patch(Refund, "findOne", async () => null);
     patch(ListingImage, "findAll", async () => []);
     patch(AuditLog, "create", async () => ({}));
     patch(BookingStatusHistory, "create", async () => ({}));
+    patch(NotificationLog, "create", async () => ({}));
     patch(Listing, "findOne", async (options: QueryOptions = {}) => {
         if (options.where?.listingId === listing.listingId) {
             return listing;
@@ -236,7 +249,7 @@ const patchCreateBookingHappyPath = (listing = buildListing()) => {
     patch(Booking, "create", async (payload: Record<string, unknown>) => buildBooking(payload));
     patch(BookingDateLock, "bulkCreate", async () => []);
     patch(Coupon, "findOne", async () => null);
-    patch(Coupon, "increment", async () => {});
+    patch(Coupon, "increment", async () => { });
     patch(CouponRedemption, "count", async () => 0);
     patch(CouponRedemption, "create", async () => ({}));
 };
@@ -1022,6 +1035,7 @@ describe("Bookings service transaction-safe business rules", () => {
 
     it("expires pending payment bookings with payment_expired status and releases date locks", async () => {
         patchTransaction();
+        patchNotification();
         const booking = buildBooking({
             status: "pending_payment",
             lockedUntil: new Date(Date.now() - 60 * 1000),
@@ -1060,4 +1074,4 @@ describe("Bookings service transaction-safe business rules", () => {
     });
 });
 
-export {};
+export { };

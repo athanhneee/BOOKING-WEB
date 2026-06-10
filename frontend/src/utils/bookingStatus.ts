@@ -484,7 +484,7 @@ const buildBookingStatusActions = (
         canConfirm: lifecycleStatus === "paid",
         canCheckIn:
             lifecycleStatus === "confirmed" &&
-            isDateTodayInVietnam(booking.checkInDate, today),
+            isDateReachedInVietnam(booking.checkInDate, today),
         canCheckOut:
             lifecycleStatus === "checked_in" &&
             isDateReachedInVietnam(booking.checkOutDate, today),
