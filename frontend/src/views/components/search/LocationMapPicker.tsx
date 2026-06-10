@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, type KeyboardEvent } from "react";
 import * as L from "leaflet";
 import type { LatLngExpression, LeafletMouseEvent, Marker as LeafletMarker } from "leaflet";
 import { MapPin, X } from "lucide-react";
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, Circle, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import "./LocationMapPicker.css";
 import {
     clampLatLngToVungTauBounds,
     isLatLngInVungTauBounds,
@@ -15,20 +16,16 @@ import {
 } from "../maps/VungTauMapBounds";
 import {
     LEAFLET_MAP_THEMES,
-    LEAFLET_MAP_THEME_STORAGE_KEY,
     type LeafletMapTheme,
 } from "./maps/leafletMapThemes";
 import Toast from "../common/Toast";
-import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
-import { cn } from "../../../utils";
 
-delete (L.Icon.Default.prototype as L.Icon.Default & { _getIconUrl?: unknown })._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: markerIcon2x,
-    iconUrl: markerIcon,
-    shadowUrl: markerShadow,
+// Custom Marker Icon
+const customMarkerIcon = L.divIcon({
+    className: "custom-map-marker",
+    html: `<div class="marker-pin"><div class="marker-inner"></div></div><div class="marker-pulse"></div>`,
+    iconSize: [48, 48],
+    iconAnchor: [24, 34],
 });
 
 export type MapSearchPosition = {
@@ -76,41 +73,7 @@ const MapClickHandler = ({
     return null;
 };
 
-const ThemeSelector = ({
-    currentTheme,
-    onSelectTheme,
-}: {
-    currentTheme: LeafletMapTheme;
-    onSelectTheme: (theme: LeafletMapTheme) => void;
-}) => {
-    return (
-        <div className="absolute bottom-6 right-4 z-[400] flex flex-col gap-1 rounded-2xl border border-white/40 bg-white/70 p-1.5 shadow-lg backdrop-blur-md sm:bottom-4 sm:flex-row">
-            {(Object.entries(LEAFLET_MAP_THEMES) as [LeafletMapTheme, typeof LEAFLET_MAP_THEMES[LeafletMapTheme]][]).map(
-                ([key, theme]) => {
-                    const isActive = currentTheme === key;
-                    return (
-                        <button
-                            key={key}
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onSelectTheme(key);
-                            }}
-                            className={cn(
-                                "rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200 sm:text-sm",
-                                isActive
-                                    ? "bg-white text-cyan-700 shadow-sm"
-                                    : "text-slate-600 hover:bg-white/50 hover:text-slate-800"
-                            )}
-                        >
-                            {theme.label}
-                        </button>
-                    );
-                }
-            )}
-        </div>
-    );
-};
+
 
 const LocationMapPicker = ({
     isOpen,
@@ -121,13 +84,12 @@ const LocationMapPicker = ({
     onConfirm,
 }: LocationMapPickerProps) => {
     const markerRef = useRef<LeafletMarker | null>(null);
-    const [mapTheme, setMapTheme] = useState<LeafletMapTheme>(() => {
-        const stored = localStorage.getItem(LEAFLET_MAP_THEME_STORAGE_KEY);
-        if (stored && stored in LEAFLET_MAP_THEMES) {
-            return stored as LeafletMapTheme;
-        }
-        return "light";
-    });
+    const mapTheme: LeafletMapTheme = "satellite";
+    
+    // Fallback logic state
+    const [useFallback, setUseFallback] = useState(false);
+    const tileErrorCountRef = useRef(0);
+
     const [toastMessage, setToastMessage] = useState("");
 
     const boundedValue = useMemo(
@@ -139,10 +101,13 @@ const LocationMapPicker = ({
         [boundedValue.lat, boundedValue.lng],
     );
 
-    const handleThemeChange = (theme: LeafletMapTheme) => {
-        setMapTheme(theme);
-        localStorage.setItem(LEAFLET_MAP_THEME_STORAGE_KEY, theme);
-    };
+    const handleTileError = useCallback(() => {
+        tileErrorCountRef.current += 1;
+        if (tileErrorCountRef.current >= 3 && !useFallback) {
+            setUseFallback(true);
+            setToastMessage("Đang chuyển sang bản đồ nền dự phòng...");
+        }
+    }, [useFallback]);
 
     const handleOutOfBounds = () => {
         setToastMessage("Minh Thành Villa hiện chỉ hỗ trợ tìm kiếm trong khu vực Vũng Tàu.");
@@ -204,34 +169,38 @@ const LocationMapPicker = ({
         return null;
     }
 
+    const currentTileUrl = useFallback 
+        ? LEAFLET_MAP_THEMES[mapTheme].fallbackUrl 
+        : LEAFLET_MAP_THEMES[mapTheme].url;
+
     return (
         <div
-            className="fixed inset-0 z-[100000] flex items-end justify-center bg-slate-950/55 p-0 sm:items-center sm:p-5"
+            className="fixed inset-0 z-[100000] flex items-end justify-center bg-slate-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-5"
             role="dialog"
             aria-modal="true"
             aria-label="Tìm kiếm bằng bản đồ"
             onKeyDown={handleKeyDown}
         >
             <button className="absolute inset-0 cursor-default" type="button" onClick={onClose} aria-label="Đóng bản đồ" />
-            <div className="relative flex h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-[28px] bg-white shadow-2xl sm:h-[min(760px,90dvh)] sm:rounded-[28px]">
-                <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4 sm:px-6">
+            <div className="relative flex h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-t-[32px] bg-white shadow-2xl sm:h-[min(720px,80dvh)] sm:rounded-[36px]">
+                <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5 sm:px-8">
                     <div>
-                        <h2 className="text-lg font-semibold text-slate-950">Tìm kiếm bằng bản đồ</h2>
+                        <h2 className="text-xl font-bold tracking-tight text-slate-900">Tìm kiếm trên bản đồ</h2>
                         <p className="mt-1 text-sm leading-6 text-slate-500">
-                            Chọn hoặc kéo ghim trên bản đồ để tìm chỗ nghỉ trong bán kính {radiusMeters}m.
+                            Di chuyển bản đồ hoặc kéo ghim để chọn vị trí. Chúng tôi sẽ tìm các villa xung quanh khu vực này.
                         </p>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-slate-50"
+                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
                         aria-label="Đóng bản đồ"
                     >
-                        <X size={18} />
+                        <X size={20} />
                     </button>
                 </div>
 
-                <div className="relative min-h-0 flex-1 bg-slate-100">
+                <div className="relative min-h-0 flex-1 bg-[#f1f5f9]">
                     {toastMessage && (
                         <div className="absolute left-1/2 top-4 z-[1000] -translate-x-1/2">
                             <Toast 
@@ -245,7 +214,7 @@ const LocationMapPicker = ({
                     
                     <MapContainer
                         center={markerPosition}
-                        zoom={13}
+                        zoom={14}
                         minZoom={VUNG_TAU_MIN_MAP_ZOOM}
                         maxBounds={VUNG_TAU_LEAFLET_BOUNDS}
                         maxBoundsViscosity={1}
@@ -253,41 +222,55 @@ const LocationMapPicker = ({
                         className="h-full w-full"
                     >
                         <TileLayer
-                            key={mapTheme}
-                            url={LEAFLET_MAP_THEMES[mapTheme].url}
+                            key={mapTheme + (useFallback ? "-fallback" : "")}
+                            url={currentTileUrl}
                             attribution={LEAFLET_MAP_THEMES[mapTheme].attribution}
+                            eventHandlers={{ tileerror: handleTileError }}
                         />
                         <VungTauMapBoundsLimiter />
                         <MapViewUpdater position={boundedValue} />
                         <MapClickHandler onChange={onChange} onOutOfBounds={handleOutOfBounds} />
+                        
+                        <Circle
+                            center={markerPosition}
+                            radius={radiusMeters}
+                            pathOptions={{
+                                color: "#06b6d4",
+                                weight: 1.5,
+                                fillColor: "#06b6d4",
+                                fillOpacity: 0.1,
+                            }}
+                        />
+
                         <Marker
                             draggable
                             eventHandlers={eventHandlers}
                             position={markerPosition}
                             ref={markerRef}
+                            icon={customMarkerIcon}
                         />
                     </MapContainer>
-
-                    <ThemeSelector currentTheme={mapTheme} onSelectTheme={handleThemeChange} />
                 </div>
 
-                <div className="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <div className="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-5">
                     <div className="flex min-w-0 items-center gap-3 text-sm text-slate-600">
-                        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-50 text-cyan-700">
-                            <MapPin size={18} />
+                        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cyan-50 text-cyan-600 shadow-sm">
+                            <MapPin size={20} />
                         </span>
                         <span className="min-w-0">
                             <span className="block font-semibold text-slate-900">
-                                {boundedValue.lat.toFixed(6)}, {boundedValue.lng.toFixed(6)}
+                                {boundedValue.lat.toFixed(5)}, {boundedValue.lng.toFixed(5)}
                             </span>
-                            <span className="block truncate">Kết quả trong bán kính {radiusMeters}m từ vị trí bạn chọn</span>
+                            <span className="block truncate text-slate-500">
+                                Tìm kiếm trong bán kính <strong>{radiusMeters}m</strong> quanh vị trí này
+                            </span>
                         </span>
                     </div>
 
                     <button
                         type="button"
                         onClick={() => onConfirm(boundedValue)}
-                        className="inline-flex h-12 items-center justify-center rounded-2xl bg-cyan-500 px-5 text-sm font-semibold text-white transition hover:bg-cyan-500"
+                        className="inline-flex h-12 items-center justify-center rounded-2xl bg-cyan-500 px-6 text-[15px] font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:bg-cyan-400"
                     >
                         Tìm quanh vị trí này
                     </button>
@@ -298,4 +281,3 @@ const LocationMapPicker = ({
 };
 
 export default LocationMapPicker;
-
