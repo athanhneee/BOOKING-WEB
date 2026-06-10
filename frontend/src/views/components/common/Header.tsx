@@ -233,6 +233,32 @@ const Header = () => {
                             ))}
 
                             {renderBecomeHostLink(true)}
+
+                            <div className="mt-1 border-t border-gray-100 pt-1">
+                                {currentUser ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setMobileMenuPath(null);
+                                            import("../../../services/authService").then(({ logout: doLogout }) => {
+                                                doLogout();
+                                                window.location.href = APP_ROUTES.login;
+                                            });
+                                        }}
+                                        className="w-full rounded-xl px-4 py-3 text-left text-sm font-medium text-red-600 transition-all duration-200 hover:bg-red-50"
+                                    >
+                                        Đăng xuất
+                                    </button>
+                                ) : (
+                                    <Link
+                                        to={APP_ROUTES.login}
+                                        className="block rounded-xl px-4 py-3 text-sm font-semibold text-cyan-700 transition-all duration-200 hover:bg-cyan-50"
+                                        onClick={() => setMobileMenuPath(null)}
+                                    >
+                                        Đăng nhập
+                                    </Link>
+                                )}
+                            </div>
                         </nav>
                     </div>
                 </div>
