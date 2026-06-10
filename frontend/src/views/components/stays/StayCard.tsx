@@ -64,7 +64,7 @@ const StayCard = ({ stay }: StayCardProps) => {
 
             <div className="flex flex-1 flex-col p-4">
                 <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                         <h3 className="truncate text-lg font-semibold text-gray-900">{stay.name}</h3>
                         <p className="mt-1 flex items-center gap-2 text-sm text-gray-500">
                             <FaMapMarkerAlt className="shrink-0 text-cyan-500" />
@@ -72,19 +72,10 @@ const StayCard = ({ stay }: StayCardProps) => {
                         </p>
                     </div>
 
-                    <div className="flex flex-col items-end gap-1">
-                        <div className="inline-flex items-center gap-0.5 text-amber-400">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                                <FaStar
-                                    key={i}
-                                    className={`text-[11px] ${i < Math.round(stay.rating) ? "text-amber-400" : "text-slate-200"}`}
-                                />
-                            ))}
-                        </div>
-                        <span className="text-sm font-bold text-slate-700">
-                            {stay.rating.toFixed(1)}
-                        </span>
-                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-sm font-bold text-amber-600 ring-1 ring-amber-100">
+                        <FaStar className="text-[11px] text-amber-400" />
+                        {stay.rating.toFixed(1)}
+                    </span>
                 </div>
 
                 <p className="mt-3 text-sm leading-6 text-gray-600 sm:min-h-[3rem]">{stay.description}</p>

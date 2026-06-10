@@ -379,9 +379,9 @@ const AiSearchPage = () => {
                         ) : items.length > 0 ? (
                             <>
                                 {availabilityNotice ? (
-                                    <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-700">
-                                        <Calendar size={16} className="mr-2 inline-block" />
-                                        {availabilityNotice}
+                                    <div className="mb-4 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-700">
+                                        <Calendar size={16} className="shrink-0" />
+                                        <span>{availabilityNotice}</span>
                                     </div>
                                 ) : null}
                                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
