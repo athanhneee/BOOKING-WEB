@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { getAdminUsers, updateAdminUser } from "../../../../services/userService";
 import { pageWrapperClass, primaryButtonClass, secondaryButtonClass, tableClassName } from "../../Host/sharedStyles";
 
-const roles = ["Guest", "host", "Admin"];
+const roles = ["guest", "host", "moderator", "admin"];
+const roleLabel = { guest: "Guest", host: "Host", moderator: "Moderator", admin: "Admin" };
 
 const PhanQuyenHeThong = () => {
     const [users, setUsers] = useState([]);
@@ -89,7 +90,7 @@ const PhanQuyenHeThong = () => {
                                                     onChange={(event) => setDraftRoles((current) => ({ ...current, [userId]: event.target.value }))} 
                                                     className="min-w-[120px] cursor-pointer rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none transition-all focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 hover:border-gray-300"
                                                 >
-                                                    {roles.map((role) => <option key={role} value={role}>{role}</option>)}
+                                                    {roles.map((role) => <option key={role} value={role}>{roleLabel[role] ?? role}</option>)}
                                                 </select>
                                             </td>
                                             <td className="px-5 py-4 text-right">
