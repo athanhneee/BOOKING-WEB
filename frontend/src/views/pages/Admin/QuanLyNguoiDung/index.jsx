@@ -60,14 +60,70 @@ const QuanLyNguoiDung = () => {
                 <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                     <div className="overflow-x-auto">
                         <table className={`${tableClassName} text-left text-sm`}>
-                            <thead className="bg-gray-50 text-gray-500"><tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Email/Phone</th><th className="px-4 py-3">Role</th><th className="px-4 py-3">Trạng thái</th><th className="px-4 py-3">Hành động</th></tr></thead>
+                        <table className={`${tableClassName} text-left text-sm`}>
+                            <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                                <tr>
+                                    <th className="px-5 py-4 font-semibold">User</th>
+                                    <th className="px-5 py-4 font-semibold">Email/Phone</th>
+                                    <th className="px-5 py-4 font-semibold">Role</th>
+                                    <th className="px-5 py-4 font-semibold">Trạng thái</th>
+                                    <th className="px-5 py-4 font-semibold text-right">Hành động</th>
+                                </tr>
+                            </thead>
                             <tbody className="divide-y divide-gray-100 bg-white">
-                                {loading ? <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-500">Đang tải...</td></tr> : null}
-                                {!loading && users.length === 0 ? <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-500">Không có user.</td></tr> : null}
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-5 py-12">
+                                            <div className="flex flex-col items-center justify-center">
+                                                <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                                                <span className="text-sm font-medium text-slate-500">Đang tải người dùng...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : null}
+                                {!loading && users.length === 0 ? <tr><td colSpan={5} className="px-5 py-12 text-center text-slate-500">Không có user.</td></tr> : null}
                                 {users.map((user) => {
                                     const userId = user.userId ?? user.id;
                                     const locked = ["blocked", "suspended", "locked"].includes(user.status);
-                                    return <tr key={userId}><td className="px-4 py-4"><p className="font-semibold text-gray-900">{user.fullName || user.name || user.username || `User #${userId}`}</p><p className="mt-1 text-xs text-gray-500">ID: {userId}</p></td><td className="px-4 py-4 text-gray-600"><p>{user.email}</p><p>{user.phone || "-"}</p></td><td className="px-4 py-4 text-gray-600">{(user.roles || [user.role]).filter(Boolean).join(", ")}</td><td className="px-4 py-4"><span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-600">{user.status}</span></td><td className="px-4 py-4"><button disabled={actionId === userId} type="button" onClick={() => changeStatus(user, locked ? "active" : "blocked")} className={locked ? "rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-medium text-white" : "rounded-xl border border-rose-200 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50"}>{locked ? "Mở khóa" : "Khóa"}</button></td></tr>;
+                                    return (
+                                        <tr key={userId} className="transition-colors hover:bg-slate-50/50">
+                                            <td className="px-5 py-4">
+                                                <p className="font-semibold text-slate-900">{user.fullName || user.name || user.username || `User #${userId}`}</p>
+                                                <p className="mt-1 text-xs font-medium text-slate-500">ID: {userId}</p>
+                                            </td>
+                                            <td className="px-5 py-4 text-slate-600">
+                                                <p>{user.email}</p>
+                                                <p className="mt-0.5 text-xs text-slate-400">{user.phone || "-"}</p>
+                                            </td>
+                                            <td className="px-5 py-4">
+                                                <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                                                    {(user.roles || [user.role]).filter(Boolean).join(", ")}
+                                                </span>
+                                            </td>
+                                            <td className="px-5 py-4">
+                                                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                                    locked ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600"
+                                                }`}>
+                                                    <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${locked ? "bg-rose-500" : "bg-emerald-500"}`}></span>
+                                                    {user.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-5 py-4 text-right">
+                                                <button 
+                                                    disabled={actionId === userId} 
+                                                    type="button" 
+                                                    onClick={() => changeStatus(user, locked ? "active" : "blocked")} 
+                                                    className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all disabled:opacity-50 ${
+                                                        locked 
+                                                            ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100" 
+                                                            : "bg-rose-50 text-rose-600 hover:bg-rose-100"
+                                                    }`}
+                                                >
+                                                    {locked ? "Mở khóa" : "Khóa"}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
                                 })}
                             </tbody>
                         </table>

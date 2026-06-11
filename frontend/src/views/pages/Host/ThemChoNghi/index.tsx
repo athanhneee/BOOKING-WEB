@@ -1182,7 +1182,12 @@ const ThemChoNghi = () => {
                     actions={<button type="button" onClick={() => navigate(APP_ROUTES.hostProperties)} className={secondaryButtonClass}>Quay lại danh sách</button>}
                 />
 
-                {loadingDetail ? <div className="rounded-2xl border border-gray-100 bg-white p-4 text-sm text-gray-600">Đang tải chỗ nghỉ...</div> : null}
+                {loadingDetail ? (
+                    <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-white p-8">
+                        <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                        <span className="text-sm font-medium text-slate-500">Đang tải chỗ nghỉ...</span>
+                    </div>
+                ) : null}
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
                 {success ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{success}</div> : null}
                 {uploadMessage ? <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-4 text-sm font-medium text-cyan-600">{uploadMessage}</div> : null}
