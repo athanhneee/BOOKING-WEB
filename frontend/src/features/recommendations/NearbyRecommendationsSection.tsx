@@ -92,77 +92,90 @@ const NearbyRecommendationsSection = ({ currentListing, searchState }: NearbyRec
     };
 
     return (
-        <section className="bg-white py-12 sm:py-14">
+        <section className="bg-gradient-to-b from-slate-50/80 to-white py-12 sm:py-16">
             <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between gap-4">
+                {/* Header */}
+                <div className="flex items-end justify-between gap-4">
                     <div>
-
-                        <h2 className="mt-3 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+                        <span className="text-sm font-semibold uppercase tracking-widest text-cyan-600">
+                            Đề xuất cho bạn
+                        </span>
+                        <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                             Chỗ ở khác gần đó
                         </h2>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-3">
-                        <span className="hidden text-sm font-medium text-zinc-700 sm:inline">
+                    <div className="flex shrink-0 items-center gap-2">
+                        <span className="mr-1 hidden text-sm font-medium text-slate-500 sm:inline">
                             {page + 1} / {totalPages}
                         </span>
                         <button
                             type="button"
                             onClick={() => scrollByStep("previous")}
                             disabled={page === 0}
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:border-cyan-200 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-35"
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_2px_8px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(15,23,42,0.12)] hover:text-cyan-600 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:translate-y-0 disabled:hover:shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
                             aria-label="Xem đề xuất trước"
                         >
-                            <FaChevronLeft />
+                            <FaChevronLeft size={13} />
                         </button>
                         <button
                             type="button"
                             onClick={() => scrollByStep("next")}
                             disabled={page >= totalPages - 1}
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:border-cyan-200 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-35"
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_2px_8px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(15,23,42,0.12)] hover:text-cyan-600 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:translate-y-0 disabled:hover:shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
                             aria-label="Xem đề xuất tiếp theo"
                         >
-                            <FaChevronRight />
+                            <FaChevronRight size={13} />
                         </button>
                     </div>
                 </div>
 
+                {/* Carousel */}
                 <div
                     ref={railRef}
-                    className="mt-6 flex snap-x gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    className="mt-8 flex snap-x gap-5 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 >
                     {recommendations.map(({ listing, reason }) => (
                         <button
                             key={listing.id}
                             type="button"
                             onClick={() => openListing(listing.id)}
-                            className="group w-[178px] shrink-0 snap-start text-left sm:w-[210px]"
+                            className="group w-[240px] shrink-0 snap-start text-left sm:w-[260px]"
                         >
-                            <div className="relative aspect-[1.05] overflow-hidden rounded-xl bg-slate-100">
-                                {listing.imageUrl ? (
-                                    <img
-                                        src={listing.imageUrl}
-                                        alt={listing.name}
-                                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                        loading="lazy"
-                                    />
-                                ) : null}
-                                <span className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-white/92 px-2.5 py-1 text-[11px] font-bold text-cyan-700 shadow-sm">
-                                    {reason}
-                                </span>
-                            </div>
-
-                            <div className="mt-3 min-w-0">
-                                <h3 className="h-10 overflow-hidden text-sm font-semibold leading-5 text-zinc-900">
-                                    {listing.name}
-                                </h3>
-                                <div className="mt-1 flex items-center gap-2 text-xs text-zinc-500">
-                                    <span>{currencyFormatter.format(listing.pricePerNight)}</span>
-                                    <span className="h-1 w-1 rounded-full bg-zinc-300" />
-                                    <span className="inline-flex items-center gap-1">
-                                        <FaStar className="text-[10px] text-zinc-500" />
-                                        {listing.rating.toFixed(1)}
+                            <div className="overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)]">
+                                {/* Image */}
+                                <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                                    {listing.imageUrl ? (
+                                        <img
+                                            src={listing.imageUrl}
+                                            alt={listing.name}
+                                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
+                                            loading="lazy"
+                                        />
+                                    ) : (
+                                        <div className="flex h-full w-full items-center justify-center text-sm font-medium text-slate-400">
+                                            Chưa có ảnh
+                                        </div>
+                                    )}
+                                    <span className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-bold text-cyan-700 shadow-sm backdrop-blur-sm">
+                                        {reason}
                                     </span>
+                                </div>
+
+                                {/* Content */}
+                                <div className="p-4">
+                                    <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-slate-900">
+                                        {listing.name}
+                                    </h3>
+                                    <div className="mt-3 flex items-center justify-between gap-2">
+                                        <span className="text-sm font-bold text-cyan-700">
+                                            {currencyFormatter.format(listing.pricePerNight)}
+                                        </span>
+                                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                                            <FaStar className="text-[10px] text-amber-400" />
+                                            {listing.rating.toFixed(1)}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </button>
