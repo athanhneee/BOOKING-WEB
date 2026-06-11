@@ -488,7 +488,7 @@ const AiSearchPage = () => {
                                                     checkIn={dateIntent?.checkIn}
                                                     checkOut={dateIntent?.checkOut}
                                                 />
-                                                {visibleReasons.length ? (
+                                                {shouldShowAiDebug && visibleReasons.length ? (
                                                     <div className="space-y-2 border-t border-slate-100 p-4">
                                                         {visibleReasons.map((reason) => (
                                                             <p
