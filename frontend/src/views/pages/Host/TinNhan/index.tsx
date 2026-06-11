@@ -360,7 +360,10 @@ const HostTinNhan = () => {
 
                     <div className="max-h-[260px] space-y-2 overflow-y-auto p-3 sm:max-h-[320px] lg:max-h-none lg:flex-1">
                         {isLoadingConversations ? (
-                            <div className="rounded-2xl bg-white px-4 py-8 text-sm text-gray-500">Đang tải hội thoại...</div>
+                            <div className="flex flex-col items-center justify-center rounded-2xl bg-white px-4 py-8">
+                                <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                                <span className="text-sm font-medium text-slate-500">Đang tải hội thoại...</span>
+                            </div>
                         ) : error ? (
                             <div className="rounded-2xl bg-white px-4 py-8 text-sm text-rose-600">{error}</div>
                         ) : conversations.length === 0 ? (
@@ -435,7 +438,10 @@ const HostTinNhan = () => {
 
                             <div className="min-h-[360px] max-h-[56vh] flex-1 overflow-y-auto bg-[#f8fafc] px-3 py-4 sm:px-5 sm:py-5 lg:min-h-0 lg:max-h-none">
                                 {isLoadingMessages ? (
-                                    <div className="py-10 text-center text-sm text-gray-500">Đang tải tin nhắn...</div>
+                                    <div className="flex flex-col items-center justify-center py-10">
+                                        <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                                        <span className="text-sm font-medium text-slate-500">Đang tải tin nhắn...</span>
+                                    </div>
                                 ) : messageError && messages.length === 0 ? (
                                     <div className="py-10 text-center text-sm text-rose-600">{messageError}</div>
                                 ) : messages.length === 0 ? (

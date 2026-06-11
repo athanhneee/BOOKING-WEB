@@ -192,7 +192,8 @@ const GuestPayment = () => {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-[#F7F8FA] px-4 py-16 text-center">
+            <div className="flex min-h-screen flex-col items-center justify-center bg-[#F7F8FA] px-4 py-16 text-center">
+                <div className="mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-cyan-500 border-t-transparent"></div>
                 <p className="text-sm font-semibold text-gray-500">Đang tải thông tin thanh toán...</p>
             </div>
         );
@@ -402,7 +403,7 @@ const GuestPayment = () => {
                         >
                             {isSubmitting ? (
                                 <span className="inline-flex items-center gap-2">
-                                    <FiLoader className="animate-spin" />
+                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                                     Đang tạo thanh toán...
                                 </span>
                             ) : method === "vnpay" ? (

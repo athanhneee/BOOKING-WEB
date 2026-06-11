@@ -66,7 +66,16 @@ const KhachLuuTru = () => {
                             <tr><th className="px-4 py-3">Khách</th><th className="px-4 py-3">Chỗ nghỉ</th><th className="px-4 py-3">Ngày lưu trú</th><th className="px-4 py-3">Số khách</th><th className="px-4 py-3">Trạng thái</th></tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 bg-white">
-                            {loading ? <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-500">Đang tải...</td></tr> : null}
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={5} className="px-4 py-10">
+                                        <div className="flex flex-col items-center justify-center">
+                                            <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                                            <span className="text-sm font-medium text-slate-500">Đang tải...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : null}
                             {!loading && guests.length === 0 ? <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-500">Chưa có khách lưu trú.</td></tr> : null}
                             {guests.map((guest) => (
                                 <tr key={guest.id}>

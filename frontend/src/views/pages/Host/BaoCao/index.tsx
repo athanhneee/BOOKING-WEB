@@ -100,7 +100,10 @@ const BaoCao = () => {
                         <h2 className="text-lg font-semibold text-gray-900">Doanh thu host theo kỳ</h2>
                         <div className="mt-6 h-80">
                             {loading ? (
-                                <div className="flex h-full items-center justify-center text-sm text-gray-500">Đang tải biểu đồ...</div>
+                                <div className="flex h-full flex-col items-center justify-center">
+                                    <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                                    <span className="text-sm font-medium text-slate-500">Đang tải biểu đồ...</span>
+                                </div>
                             ) : (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={chartData}>
@@ -119,7 +122,10 @@ const BaoCao = () => {
                         <h2 className="text-lg font-semibold text-gray-900">Số booking theo kỳ</h2>
                         <div className="mt-6 h-80">
                             {loading ? (
-                                <div className="flex h-full items-center justify-center text-sm text-gray-500">Đang tải biểu đồ...</div>
+                                <div className="flex h-full flex-col items-center justify-center">
+                                    <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                                    <span className="text-sm font-medium text-slate-500">Đang tải biểu đồ...</span>
+                                </div>
                             ) : (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={chartData}>

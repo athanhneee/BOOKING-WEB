@@ -469,7 +469,7 @@ const MultiBookingPage = () => {
                 {phase === "creating" && (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
                         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-cyan-50">
-                            <FiLoader size={36} className="animate-spin text-cyan-600" />
+                            <div className="h-10 w-10 animate-spin rounded-full border-4 border-cyan-600 border-t-transparent"></div>
                         </div>
                         <h2 className="mb-2 text-xl font-bold text-slate-900">Đang tạo đặt phòng...</h2>
                         <p className="text-slate-500">Vui lòng không đóng trang này</p>

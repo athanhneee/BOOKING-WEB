@@ -84,7 +84,16 @@ const ThanhToan = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 bg-white">
-                                {loading ? <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-500">Đang tải...</td></tr> : null}
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={6} className="px-4 py-10">
+                                            <div className="flex flex-col items-center justify-center">
+                                                <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                                                <span className="text-sm font-medium text-slate-500">Đang tải...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : null}
                                 {!loading && payouts.length === 0 ? <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-500">Chưa có payout.</td></tr> : null}
                                 {payouts.map((payout) => (
                                     <tr key={payout.payoutId}>

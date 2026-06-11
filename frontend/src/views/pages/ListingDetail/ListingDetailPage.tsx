@@ -437,11 +437,15 @@ type StatusCardProps = {
     title: string;
     description?: string;
     action?: ReactNode;
+    isLoading?: boolean;
 };
 
-const StatusCard = ({ title, description, action }: StatusCardProps) => (
-    <section className="min-h-screen bg-[#f4f0eb] px-4 pb-16 pt-28 text-center sm:px-6">
-        <div className={`mx-auto max-w-3xl px-6 py-12 ${cardClass}`}>
+const StatusCard = ({ title, description, action, isLoading }: StatusCardProps) => (
+    <section className="min-h-screen bg-[#f4f0eb] px-4 pb-16 pt-28 text-center sm:px-6 flex items-start justify-center">
+        <div className={`w-full max-w-3xl px-6 py-16 flex flex-col items-center justify-center ${cardClass}`}>
+            {isLoading && (
+                <div className="mb-6 h-12 w-12 animate-spin rounded-full border-[4px] border-cyan-600 border-t-transparent"></div>
+            )}
             <h1 className="text-3xl font-bold text-zinc-900">{title}</h1>
             {description ? (
                 <p className="mt-3 text-sm leading-6 text-zinc-500">{description}</p>
@@ -2093,7 +2097,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
     };
 
     if (isLoading) {
-        return <StatusCard title="Đang tải chỗ nghỉ..." />;
+        return <StatusCard title="Đang tải chỗ nghỉ..." isLoading />;
     }
 
     if (loadError) {

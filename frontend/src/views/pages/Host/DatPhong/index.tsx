@@ -176,7 +176,14 @@ const DatPhong = () => {
                             </thead>
                             <tbody className="divide-y divide-gray-100 bg-white">
                                 {loading ? (
-                                    <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-500">Đang tải booking...</td></tr>
+                                    <tr>
+                                        <td colSpan={7} className="px-4 py-10">
+                                            <div className="flex flex-col items-center justify-center">
+                                                <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                                                <span className="text-sm font-medium text-slate-500">Đang tải booking...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 ) : visibleBookings.length === 0 ? (
                                     <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-500">Chưa có booking phù hợp.</td></tr>
                                 ) : (

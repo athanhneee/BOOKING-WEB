@@ -156,7 +156,10 @@ const LichLuuTru = () => {
 
                 <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                     {loading ? (
-                        <div className="py-12 text-center text-sm text-gray-500">Đang tải lịch...</div>
+                        <div className="flex flex-col items-center justify-center py-12">
+                            <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                            <span className="text-sm font-medium text-slate-500">Đang tải lịch...</span>
+                        </div>
                     ) : days.length === 0 ? (
                         <div className="py-12 text-center text-sm text-gray-500">Chưa có dữ liệu lịch cho tháng này.</div>
                     ) : (
