@@ -317,7 +317,7 @@ const CaiDat = () => {
                             key={item.value}
                             type="button"
                             onClick={() => setTab(item.value)}
-                            className={`rounded-xl px-4 py-2.5 text-sm font-medium ${tab === item.value ? "bg-cyan-300/15 text-cyan-700" : "text-gray-500 hover:bg-gray-50"}`}
+                            className={`rounded-xl px-4 py-2.5 text-sm font-medium ${tab === item.value ? "bg-cyan-300/15 text-cyan-600" : "text-gray-500 hover:bg-gray-50"}`}
                         >
                             {item.label}
                         </button>

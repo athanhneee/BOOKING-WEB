@@ -364,7 +364,7 @@ const ProfilePage = () => {
             <div className="mx-auto max-w-[1680px]">
                 <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
                     <div>
-                        <p className="text-sm font-semibold text-cyan-700 sm:text-base">Khu vực tài khoản</p>
+                        <p className="text-sm font-semibold text-cyan-600 sm:text-base">Khu vực tài khoản</p>
                         <h1 className="mt-2 text-2xl font-semibold tracking-normal text-slate-950 sm:text-4xl md:text-5xl">
                             {copy.title}
                         </h1>

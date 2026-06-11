@@ -462,7 +462,7 @@ const HostMessagePage = () => {
                             {listing.address}
                         </p>
 
-                        <p className="mt-4 text-2xl font-bold text-cyan-700">
+                        <p className="mt-4 text-2xl font-bold text-cyan-600">
                             {currencyFormatter.format(listing.pricePerNight)} / đêm
                         </p>
 

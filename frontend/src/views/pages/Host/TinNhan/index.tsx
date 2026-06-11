@@ -352,7 +352,7 @@ const HostTinNhan = () => {
                     <div className="flex items-center justify-between gap-3 border-b border-gray-200 bg-white/90 px-4 py-4">
                         <h2 className="text-sm font-semibold text-gray-900">Hội thoại</h2>
                         {conversations.length > 0 ? (
-                            <span className="rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700">
+                            <span className="rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-600">
                                 {conversations.length}
                             </span>
                         ) : null}

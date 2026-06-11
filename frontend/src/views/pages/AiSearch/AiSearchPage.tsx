@@ -66,7 +66,7 @@ const AiSearchPage = () => {
 
     const locationQuery = locationState?.initialQuery?.trim();
     const sessionQuery = getSessionQuery().trim();
-    
+
     const initialQuery = useMemo(
         () => locationQuery || sessionQuery,
         [locationQuery, sessionQuery],
@@ -131,7 +131,7 @@ const AiSearchPage = () => {
                 setAvailabilityNotice(result.availabilityNotice);
             }
 
-            const isHardRejection = 
+            const isHardRejection =
                 result.reason === "INVALID_SEARCH_INTENT" ||
                 result.reason === "UNSUPPORTED_LOCATION" ||
                 result.reason === "PAST_DATE_NOT_ALLOWED" ||
@@ -247,7 +247,7 @@ const AiSearchPage = () => {
                                 type="button"
                                 onClick={() => handleChipClick(chip)}
                                 disabled={isLoading}
-                                className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-70"
+                                className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-600 disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 {chip}
                             </button>
@@ -259,7 +259,7 @@ const AiSearchPage = () => {
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         {/* Date intent detected banner */}
                         {dateIntent?.checkIn ? (
-                            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-700">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-600">
                                 <Calendar size={16} />
                                 <span>
                                     {DATE_LABEL_MAP[dateIntent.label] ?? dateIntent.label}:{" "}
@@ -273,7 +273,7 @@ const AiSearchPage = () => {
                         <button
                             type="button"
                             onClick={() => navigate(APP_ROUTES.search)}
-                            className="inline-flex h-14 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 text-sm font-bold text-slate-800 shadow-[0_8px_20px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700"
+                            className="inline-flex h-14 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 text-sm font-bold text-slate-800 shadow-[0_8px_20px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-600"
                         >
                             <ArrowRightLeft size={18} />
                             Chuyển sang tìm kiếm thường
@@ -285,7 +285,7 @@ const AiSearchPage = () => {
                             <>
                                 <div className="mb-6 flex items-center justify-center gap-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-5 py-4">
                                     <Sparkles size={18} className="animate-pulse text-cyan-500" />
-                                    <span className="text-sm font-semibold text-cyan-700">
+                                    <span className="text-sm font-semibold text-cyan-600">
                                         AI đang phân tích yêu cầu của bạn...
                                     </span>
                                     <div className="flex gap-1">

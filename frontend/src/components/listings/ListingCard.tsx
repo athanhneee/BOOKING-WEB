@@ -115,12 +115,12 @@ const ListingCard = ({ listing, checkIn, checkOut }: ListingCardProps) => {
                 <div className="mt-4 flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Giá từ</p>
-                        <p className="mt-1 text-lg font-bold text-cyan-700">
+                        <p className="mt-1 text-lg font-bold text-cyan-600">
                             {currencyFormatter.format(Number(listing.basePrice || 0))}
                         </p>
                         <p className="text-sm text-slate-500">/ đêm</p>
                     </div>
-                    <span className="rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">
+                    <span className="rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-600">
                         Còn trống
                     </span>
                 </div>

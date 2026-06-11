@@ -75,7 +75,7 @@ const AdminOverview = () => {
                             <Link key={card.label} to={card.link} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                                 <div className="flex items-center justify-between gap-4">
                                     <div><p className="text-sm font-medium text-gray-500">{card.label}</p><p className="mt-3 text-3xl font-bold text-gray-900">{loading ? "..." : card.value}</p></div>
-                                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-cyan-50 text-cyan-700"><Icon size={20} /></span>
+                                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-cyan-50 text-cyan-600"><Icon size={20} /></span>
                                 </div>
                             </Link>
                         );

@@ -36,7 +36,7 @@ const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
                         </div>
 
                         <div>
-                            <p className="text-xs font-semibold tracking-[0.16em] text-cyan-700">minhthanhvilla</p>
+                            <p className="text-xs font-semibold tracking-[0.16em] text-cyan-600">minhthanhvilla</p>
                             <h1 className="text-lg font-semibold text-gray-900">Bảng điều khiển host</h1>
                         </div>
                     </Link>
@@ -75,7 +75,7 @@ const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
                                             className={cn(
                                                 "inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-colors",
                                                 isActive
-                                                    ? "border-cyan-300/30 bg-white text-cyan-700"
+                                                    ? "border-cyan-300/30 bg-white text-cyan-600"
                                                     : "border-transparent bg-gray-100 text-gray-500",
                                             )}
                                         >
@@ -96,7 +96,7 @@ const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
                         className="group block rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-cyan-300 hover:bg-cyan-50"
                     >
                         <div className="flex items-start gap-3">
-                            <span className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 transition-colors group-hover:bg-white">
+                            <span className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-cyan-50 text-cyan-600 transition-colors group-hover:bg-white">
                                 <FiCompass size={18} />
                             </span>
 
@@ -107,13 +107,13 @@ const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
                                 </p>
                             </div>
 
-                            <FiArrowRight className="mt-1 flex-none text-gray-400 transition-colors group-hover:text-cyan-700" size={16} />
+                            <FiArrowRight className="mt-1 flex-none text-gray-400 transition-colors group-hover:text-cyan-600" size={16} />
                         </div>
                     </Link>
 
                     <div className="rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-4">
                         <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                            <FiMenu className="text-cyan-700" />
+                            <FiMenu className="text-cyan-600" />
                             Gợi ý hôm nay
                         </div>
                         <p className="mt-2 text-sm leading-6 text-gray-600">

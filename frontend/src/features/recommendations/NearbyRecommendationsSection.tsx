@@ -157,7 +157,7 @@ const NearbyRecommendationsSection = ({ currentListing, searchState }: NearbyRec
                                             Chưa có ảnh
                                         </div>
                                     )}
-                                    <span className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-bold text-cyan-700 shadow-sm backdrop-blur-sm">
+                                    <span className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-bold text-cyan-600 shadow-sm backdrop-blur-sm">
                                         {reason}
                                     </span>
                                 </div>
@@ -168,7 +168,7 @@ const NearbyRecommendationsSection = ({ currentListing, searchState }: NearbyRec
                                         {listing.name}
                                     </h3>
                                     <div className="mt-3 flex items-center justify-between gap-2">
-                                        <span className="text-sm font-bold text-cyan-700">
+                                        <span className="text-sm font-bold text-cyan-600">
                                             {currencyFormatter.format(listing.pricePerNight)}
                                         </span>
                                         <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">

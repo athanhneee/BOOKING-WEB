@@ -84,7 +84,7 @@ const StayFilterModal = ({ isOpen, onClose, value, bounds, onApply }: StayFilter
             <div className="flex-shrink-0 border-b border-slate-100 px-4 py-4 sm:px-8 sm:py-6">
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <div className="inline-flex items-center gap-2 rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-600">
                             <FiSliders />
                             Bộ lọc
                         </div>
@@ -97,7 +97,7 @@ const StayFilterModal = ({ isOpen, onClose, value, bounds, onApply }: StayFilter
                     <button
                         type="button"
                         onClick={onClose}
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-zinc-600 transition hover:border-cyan-200 hover:text-cyan-700"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-zinc-600 transition hover:border-cyan-200 hover:text-cyan-600"
                         aria-label="Đóng bộ lọc"
                     >
                         <FiX size={18} />
@@ -105,7 +105,7 @@ const StayFilterModal = ({ isOpen, onClose, value, bounds, onApply }: StayFilter
                 </div>
 
                 {activeCount > 0 ? (
-                    <div className="mt-4 inline-flex rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-700">
+                    <div className="mt-4 inline-flex rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-600">
                         Đang áp dụng {activeCount} lựa chọn
                     </div>
                 ) : null}
@@ -196,7 +196,7 @@ const StayFilterModal = ({ isOpen, onClose, value, bounds, onApply }: StayFilter
                                     </div>
 
                                     <div className="min-w-0 flex-1">
-                                        <p className={`text-sm font-semibold ${isSelected ? "text-cyan-700" : "text-gray-800"}`}>
+                                        <p className={`text-sm font-semibold ${isSelected ? "text-cyan-600" : "text-gray-800"}`}>
                                             {option.label}
                                         </p>
                                         <p className="mt-0.5 text-xs leading-relaxed text-gray-400">
@@ -219,7 +219,7 @@ const StayFilterModal = ({ isOpen, onClose, value, bounds, onApply }: StayFilter
                     <button
                         type="button"
                         onClick={handleClearAll}
-                        className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 transition hover:border-cyan-200 hover:text-cyan-700"
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 transition hover:border-cyan-200 hover:text-cyan-600"
                     >
                         Xóa tất cả
                     </button>

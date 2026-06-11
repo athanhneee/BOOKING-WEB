@@ -986,7 +986,7 @@ const SearchBarInner = ({
                                                     type="button"
                                                     tabIndex={aiOverlayOpen ? 0 : -1}
                                                     onClick={() => handleAiSuggestionClick(suggestion)}
-                                                    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                                    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-600 focus:outline-none focus:ring-4 focus:ring-cyan-100"
                                                 >
                                                     {suggestion}
                                                 </button>
@@ -1001,7 +1001,7 @@ const SearchBarInner = ({
                                     onClick={openAiOverlay}
                                     aria-expanded={aiOverlayOpen}
                                     className={cn(
-                                        "h-14 shrink-0 items-center justify-center gap-2 rounded-full border border-cyan-200 bg-white px-4 text-sm font-semibold text-cyan-700 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-md sm:px-5",
+                                        "h-14 shrink-0 items-center justify-center gap-2 rounded-full border border-cyan-200 bg-white px-4 text-sm font-semibold text-cyan-600 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-md sm:px-5",
                                         aiOverlayOpen ? "hidden md:inline-flex" : "inline-flex",
                                     )}
                                 >
@@ -1136,7 +1136,7 @@ const SearchBarInner = ({
                                             type="button"
                                             onClick={() => updateGuests(field.key, -1, field.min, field.max)}
                                             disabled={disableMinus}
-                                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 text-gray-600 transition-colors hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-35"
+                                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 text-gray-600 transition-colors hover:border-cyan-300 hover:text-cyan-600 disabled:cursor-not-allowed disabled:opacity-35"
                                             aria-label={`Giảm ${field.label}`}
                                         >
                                             <FaMinus size={10} />
@@ -1148,7 +1148,7 @@ const SearchBarInner = ({
                                             type="button"
                                             onClick={() => updateGuests(field.key, 1, field.min, field.max)}
                                             disabled={disablePlus}
-                                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 text-gray-600 transition-colors hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-35"
+                                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 text-gray-600 transition-colors hover:border-cyan-300 hover:text-cyan-600 disabled:cursor-not-allowed disabled:opacity-35"
                                             aria-label={`Tăng ${field.label}`}
                                         >
                                             <FaPlus size={10} />
@@ -1180,147 +1180,147 @@ const SearchBarInner = ({
                         </div>
 
                         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-                          <div className="space-y-4">
-                            <section className="rounded-[28px] border border-white/80 bg-white p-4 shadow-sm">
-                                <p className="text-sm font-semibold text-gray-900">Địa điểm</p>
-                                <input
-                                    type="text"
-                                    value={draftState.location}
-                                    onChange={(event) => setLocationText(event.target.value)}
-                                    placeholder="Tìm kiếm điểm đến"
-                                    className="mt-3 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-base text-gray-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
-                                />
-
-                                <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                                    {locationSuggestions.map((item) => (
-                                        <button
-                                            key={item.id}
-                                            type="button"
-                                            onClick={() => handleLocationSuggestionSelect(item)}
-                                            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700"
-                                        >
-                                            <span
-                                                className={cn(
-                                                    "flex h-7 w-7 items-center justify-center rounded-full",
-                                                    item.accentClassName,
-                                                )}
-                                            >
-                                                {item.icon}
-                                            </span>
-                                            {item.title}
-                                        </button>
-                                    ))}
-                                </div>
-                            </section>
-
-                            <section className="rounded-[28px] border border-white/80 bg-white p-4 shadow-sm">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setMobileDateField("checkIn")}
-                                        className={cn(
-                                            "rounded-full border px-6 py-3 text-left transition",
-                                            mobileDateField === "checkIn"
-                                                ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-                                                : "border-gray-200 bg-white text-gray-700",
-                                        )}
-                                    >
-                                        <p className="text-xs font-semibold uppercase tracking-[0.12em]">Nhận phòng</p>
-                                        <p className="mt-2 text-sm font-semibold">
-                                            {draftState.checkIn ? formatSearchDate(draftState.checkIn) : "Thêm ngày"}
-                                        </p>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => setMobileDateField("checkOut")}
-                                        className={cn(
-                                            "rounded-full border px-6 py-3 text-left transition",
-                                            mobileDateField === "checkOut"
-                                                ? "border-cyan-500 bg-cyan-50 text-cyan-700"
-                                                : "border-gray-200 bg-white text-gray-700",
-                                        )}
-                                    >
-                                        <p className="text-xs font-semibold uppercase tracking-[0.12em]">Trả phòng</p>
-                                        <p className="mt-2 text-sm font-semibold">
-                                            {draftState.checkOut ? formatSearchDate(draftState.checkOut) : "Thêm ngày"}
-                                        </p>
-                                    </button>
-                                </div>
-
-                                <div className="mt-4">
-                                    <DatePickerPanel
-                                        key={`mobile-${mobileDateField}-${draftState.checkIn}-${draftState.checkOut}`}
-                                        isOpen
-                                        selectedDate={
-                                            mobileDateField === "checkIn" ? draftState.checkIn : draftState.checkOut
-                                        }
-                                        minDate={mobileDateField === "checkIn" ? todayIso : draftState.checkIn || todayIso}
-                                        rangeStartDate={draftState.checkIn}
-                                        rangeEndDate={draftState.checkOut}
-                                        activeField={mobileDateField}
-                                        onSelectDate={(nextDate) => handleDateChange(mobileDateField, nextDate)}
-                                        onClear={clearDates}
-                                        onApply={() => {
-                                            mobileGuestSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                                        }}
-                                        variant="inline"
+                            <div className="space-y-4">
+                                <section className="rounded-[28px] border border-white/80 bg-white p-4 shadow-sm">
+                                    <p className="text-sm font-semibold text-gray-900">Địa điểm</p>
+                                    <input
+                                        type="text"
+                                        value={draftState.location}
+                                        onChange={(event) => setLocationText(event.target.value)}
+                                        placeholder="Tìm kiếm điểm đến"
+                                        className="mt-3 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-base text-gray-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
                                     />
-                                </div>
-                            </section>
 
-                            <section ref={mobileGuestSectionRef} className="rounded-[28px] border border-white/80 bg-white p-4 shadow-sm">
-                                <p className="text-sm font-semibold text-gray-900">Khách</p>
-
-                                <div className="mt-4 space-y-4">
-                                    {guestFieldConfigs.map((field) => {
-                                        const currentValue = draftState.guests[field.key];
-                                        const disableMinus = currentValue <= field.min;
-                                        const disablePlus = currentValue >= field.max;
-
-                                        return (
-                                            <div
-                                                key={field.key}
-                                                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4"
+                                    <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                        {locationSuggestions.map((item) => (
+                                            <button
+                                                key={item.id}
+                                                type="button"
+                                                onClick={() => handleLocationSuggestionSelect(item)}
+                                                className="inline-flex shrink-0 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700"
                                             >
-                                                <div>
-                                                    <p className="font-semibold text-gray-900">{field.label}</p>
-                                                    <p className="text-sm text-gray-500">{field.description}</p>
-                                                </div>
+                                                <span
+                                                    className={cn(
+                                                        "flex h-7 w-7 items-center justify-center rounded-full",
+                                                        item.accentClassName,
+                                                    )}
+                                                >
+                                                    {item.icon}
+                                                </span>
+                                                {item.title}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </section>
 
-                                                <div className="flex items-center gap-3">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            updateGuests(field.key, -1, field.min, field.max)
-                                                        }
-                                                        disabled={disableMinus}
-                                                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 text-gray-600 disabled:cursor-not-allowed disabled:opacity-35"
-                                                        aria-label={`Giảm ${field.label}`}
-                                                    >
-                                                        <FaMinus size={10} />
-                                                    </button>
-                                                    <span className="w-6 text-center font-semibold text-gray-900">
-                                                        {currentValue}
-                                                    </span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            updateGuests(field.key, 1, field.min, field.max)
-                                                        }
-                                                        disabled={disablePlus}
-                                                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 text-gray-600 disabled:cursor-not-allowed disabled:opacity-35"
-                                                        aria-label={`Tăng ${field.label}`}
-                                                    >
-                                                        <FaPlus size={10} />
-                                                    </button>
+                                <section className="rounded-[28px] border border-white/80 bg-white p-4 shadow-sm">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setMobileDateField("checkIn")}
+                                            className={cn(
+                                                "rounded-full border px-6 py-3 text-left transition",
+                                                mobileDateField === "checkIn"
+                                                    ? "border-cyan-500 bg-cyan-50 text-cyan-600"
+                                                    : "border-gray-200 bg-white text-gray-700",
+                                            )}
+                                        >
+                                            <p className="text-xs font-semibold uppercase tracking-[0.12em]">Nhận phòng</p>
+                                            <p className="mt-2 text-sm font-semibold">
+                                                {draftState.checkIn ? formatSearchDate(draftState.checkIn) : "Thêm ngày"}
+                                            </p>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setMobileDateField("checkOut")}
+                                            className={cn(
+                                                "rounded-full border px-6 py-3 text-left transition",
+                                                mobileDateField === "checkOut"
+                                                    ? "border-cyan-500 bg-cyan-50 text-cyan-600"
+                                                    : "border-gray-200 bg-white text-gray-700",
+                                            )}
+                                        >
+                                            <p className="text-xs font-semibold uppercase tracking-[0.12em]">Trả phòng</p>
+                                            <p className="mt-2 text-sm font-semibold">
+                                                {draftState.checkOut ? formatSearchDate(draftState.checkOut) : "Thêm ngày"}
+                                            </p>
+                                        </button>
+                                    </div>
+
+                                    <div className="mt-4">
+                                        <DatePickerPanel
+                                            key={`mobile-${mobileDateField}-${draftState.checkIn}-${draftState.checkOut}`}
+                                            isOpen
+                                            selectedDate={
+                                                mobileDateField === "checkIn" ? draftState.checkIn : draftState.checkOut
+                                            }
+                                            minDate={mobileDateField === "checkIn" ? todayIso : draftState.checkIn || todayIso}
+                                            rangeStartDate={draftState.checkIn}
+                                            rangeEndDate={draftState.checkOut}
+                                            activeField={mobileDateField}
+                                            onSelectDate={(nextDate) => handleDateChange(mobileDateField, nextDate)}
+                                            onClear={clearDates}
+                                            onApply={() => {
+                                                mobileGuestSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                            }}
+                                            variant="inline"
+                                        />
+                                    </div>
+                                </section>
+
+                                <section ref={mobileGuestSectionRef} className="rounded-[28px] border border-white/80 bg-white p-4 shadow-sm">
+                                    <p className="text-sm font-semibold text-gray-900">Khách</p>
+
+                                    <div className="mt-4 space-y-4">
+                                        {guestFieldConfigs.map((field) => {
+                                            const currentValue = draftState.guests[field.key];
+                                            const disableMinus = currentValue <= field.min;
+                                            const disablePlus = currentValue >= field.max;
+
+                                            return (
+                                                <div
+                                                    key={field.key}
+                                                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4"
+                                                >
+                                                    <div>
+                                                        <p className="font-semibold text-gray-900">{field.label}</p>
+                                                        <p className="text-sm text-gray-500">{field.description}</p>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-3">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                updateGuests(field.key, -1, field.min, field.max)
+                                                            }
+                                                            disabled={disableMinus}
+                                                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 text-gray-600 disabled:cursor-not-allowed disabled:opacity-35"
+                                                            aria-label={`Giảm ${field.label}`}
+                                                        >
+                                                            <FaMinus size={10} />
+                                                        </button>
+                                                        <span className="w-6 text-center font-semibold text-gray-900">
+                                                            {currentValue}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                updateGuests(field.key, 1, field.min, field.max)
+                                                            }
+                                                            disabled={disablePlus}
+                                                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 text-gray-600 disabled:cursor-not-allowed disabled:opacity-35"
+                                                            aria-label={`Tăng ${field.label}`}
+                                                        >
+                                                            <FaPlus size={10} />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </section>
-                          </div>
+                                            );
+                                        })}
+                                    </div>
+                                </section>
+                            </div>
                         </div>
 
                         <div className="shrink-0 border-t border-gray-200 bg-[#f7f6f3] px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-4">
@@ -1343,7 +1343,7 @@ const SearchBarInner = ({
                                 <button
                                     type="button"
                                     onClick={openAiOverlay}
-                                    className="inline-flex h-12 flex-1 items-center justify-center gap-1 sm:gap-2 whitespace-nowrap rounded-full border border-cyan-200 bg-white px-2 text-[13px] sm:text-sm font-semibold text-cyan-700 transition-colors hover:bg-cyan-50 sm:px-4"
+                                    className="inline-flex h-12 flex-1 items-center justify-center gap-1 sm:gap-2 whitespace-nowrap rounded-full border border-cyan-200 bg-white px-2 text-[13px] sm:text-sm font-semibold text-cyan-600 transition-colors hover:bg-cyan-50 sm:px-4"
                                 >
                                     <Sparkles size={16} className="shrink-0" />
                                     Tìm AI

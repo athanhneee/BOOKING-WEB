@@ -18,7 +18,7 @@ const Pagination = ({ page, totalPages, onChange }: PaginationProps) => {
                 onClick={() => onChange(page - 1)}
                 disabled={page === 1}
                 aria-label="Trang trước"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.45)] transition-all hover:-translate-y-0.5 hover:border-cyan-200 hover:text-cyan-700 hover:shadow-[0_18px_36px_-22px_rgba(8,145,178,0.35)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 sm:h-12 sm:w-12"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.45)] transition-all hover:-translate-y-0.5 hover:border-cyan-200 hover:text-cyan-600 hover:shadow-[0_18px_36px_-22px_rgba(8,145,178,0.35)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 sm:h-12 sm:w-12"
             >
                 <FiChevronLeft size={18} />
             </button>
@@ -32,7 +32,7 @@ const Pagination = ({ page, totalPages, onChange }: PaginationProps) => {
                     aria-current={value === page ? "page" : undefined}
                     className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition-all sm:h-12 sm:w-12 ${value === page
                         ? "bg-cyan-500 text-white shadow-[0_18px_36px_-20px_rgba(6,182,212,0.7)]"
-                        : "border border-slate-200 bg-white text-slate-600 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.45)] hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700 hover:shadow-[0_18px_36px_-22px_rgba(8,145,178,0.35)]"
+                        : "border border-slate-200 bg-white text-slate-600 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.45)] hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-600 hover:shadow-[0_18px_36px_-22px_rgba(8,145,178,0.35)]"
                         }`}
                 >
                     {value}
@@ -44,7 +44,7 @@ const Pagination = ({ page, totalPages, onChange }: PaginationProps) => {
                 onClick={() => onChange(page + 1)}
                 disabled={page === totalPages}
                 aria-label="Trang sau"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.45)] transition-all hover:-translate-y-0.5 hover:border-cyan-200 hover:text-cyan-700 hover:shadow-[0_18px_36px_-22px_rgba(8,145,178,0.35)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 sm:h-12 sm:w-12"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.45)] transition-all hover:-translate-y-0.5 hover:border-cyan-200 hover:text-cyan-600 hover:shadow-[0_18px_36px_-22px_rgba(8,145,178,0.35)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 sm:h-12 sm:w-12"
             >
                 <FiChevronRight size={18} />
             </button>

@@ -72,7 +72,7 @@ const NotFoundPage = () => {
                 </div>
 
                 <div className="w-full max-w-[560px] flex-1 text-center lg:text-left">
-                    <span className="inline-flex rounded-full border border-cyan-200 bg-white/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700 shadow-sm">
+                    <span className="inline-flex rounded-full border border-cyan-200 bg-white/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-cyan-600 shadow-sm">
                         404 / Điều hướng lạc nhịp
                     </span>
 
@@ -80,7 +80,7 @@ const NotFoundPage = () => {
                         Xin lỗi, chúng tôi không tìm thấy trang bạn cần.
                     </h1>
 
-                    <p className="mt-5 text-base leading-8 text-cyan-700/85 sm:text-lg">
+                    <p className="mt-5 text-base leading-8 text-cyan-600/85 sm:text-lg">
                         Liên kết này có thể đã thay đổi hoặc không còn tồn tại. Bạn có thể quay về trang chủ hoặc tiếp tục khám
                         phá các chỗ ở đang mở để không bị ngắt mạch trải nghiệm.
                     </p>
@@ -96,7 +96,7 @@ const NotFoundPage = () => {
                         <button
                             type="button"
                             onClick={handleGoBack}
-                            className="inline-flex items-center justify-center rounded-full border border-cyan-200 bg-white/85 px-7 py-4 text-base font-semibold text-cyan-700 shadow-[0_14px_32px_rgba(15,118,110,0.12)] transition-colors duration-200 hover:border-cyan-300 hover:bg-white"
+                            className="inline-flex items-center justify-center rounded-full border border-cyan-200 bg-white/85 px-7 py-4 text-base font-semibold text-cyan-600 shadow-[0_14px_32px_rgba(15,118,110,0.12)] transition-colors duration-200 hover:border-cyan-300 hover:bg-white"
                         >
                             Quay lại trang trước
                         </button>
@@ -104,13 +104,13 @@ const NotFoundPage = () => {
 
                     <div className="mt-8 grid gap-4 text-left sm:grid-cols-2">
                         <div className="rounded-2xl border border-cyan-200/80 bg-white/75 p-5 shadow-[0_18px_40px_rgba(8,145,178,0.12)] backdrop-blur">
-                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700">Mã lỗi</p>
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-600">Mã lỗi</p>
                             <p className="mt-3 text-4xl font-black text-cyan-500">404</p>
-                            <p className="mt-2 text-sm leading-6 text-cyan-700/80">Trang hiện tại không có dữ liệu để hiển thị.</p>
+                            <p className="mt-2 text-sm leading-6 text-cyan-600/80">Trang hiện tại không có dữ liệu để hiển thị.</p>
                         </div>
 
                         <div className="rounded-2xl border border-cyan-200/80 bg-white/75 p-5 shadow-[0_18px_40px_rgba(15,118,110,0.12)] backdrop-blur">
-                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700">Gợi ý tiếp theo</p>
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-600">Gợi ý tiếp theo</p>
                             <p className="mt-3 text-lg font-semibold leading-7 text-cyan-900">
                                 Kiểm tra lại đường dẫn hoặc chuyển sang danh sách nơi lưu trú.
                             </p>

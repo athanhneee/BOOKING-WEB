@@ -91,7 +91,7 @@ const Topbar = ({ onOpenSidebar }: TopbarProps) => {
                 </button>
 
                 <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">host Center</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-600">host Center</p>
                     <h2 className="mt-1 text-lg font-semibold text-gray-900 sm:text-xl md:text-2xl">{activeMeta.title}</h2>
                     <p className="mt-1 hidden text-sm text-gray-500 sm:block">{activeMeta.subtitle}</p>
                     <p className="mt-2 text-xs font-medium capitalize text-gray-400">{today}</p>

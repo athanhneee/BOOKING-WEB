@@ -66,7 +66,7 @@ const ProfileInfoList = ({ user, onEditField }: ProfileInfoListProps) => {
                             isEditable ? "cursor-pointer hover:bg-slate-50" : "cursor-default",
                         )}
                     >
-                        <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-700">
+                        <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-600">
                             <Icon size={18} />
                         </span>
 

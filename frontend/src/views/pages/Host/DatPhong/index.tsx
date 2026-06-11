@@ -146,7 +146,7 @@ const DatPhong = () => {
                                     <p className="text-sm text-gray-500">{item.label}</p>
                                     <p className="mt-2 text-2xl font-bold text-gray-900">{item.value}</p>
                                 </div>
-                                <span className="rounded-full bg-cyan-50 p-3 text-cyan-700">{item.icon}</span>
+                                <span className="rounded-full bg-cyan-50 p-3 text-cyan-600">{item.icon}</span>
                             </div>
                         </article>
                     ))}
@@ -154,7 +154,7 @@ const DatPhong = () => {
 
                 <div className="flex flex-wrap gap-2 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
                     {filters.map((item) => (
-                        <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={`rounded-xl px-3 py-2 text-xs font-medium sm:px-4 sm:text-sm ${filter === item.value ? "bg-cyan-50 text-cyan-700" : "text-gray-500 hover:bg-gray-50"}`}>
+                        <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={`rounded-xl px-3 py-2 text-xs font-medium sm:px-4 sm:text-sm ${filter === item.value ? "bg-cyan-50 text-cyan-600" : "text-gray-500 hover:bg-gray-50"}`}>
                             {item.label}
                         </button>
                     ))}
@@ -162,77 +162,77 @@ const DatPhong = () => {
 
                 <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                     <div className="overflow-x-auto">
-                    <table className={`${tableClassName} text-left text-sm`}>
-                        <thead className="bg-gray-50 text-gray-500">
-                            <tr>
-                                <th className="px-4 py-3 font-medium">Booking</th>
-                                <th className="px-4 py-3 font-medium">Chỗ nghỉ</th>
-                                <th className="px-4 py-3 font-medium">Ngày</th>
-                                <th className="px-4 py-3 font-medium">Khách</th>
-                                <th className="px-4 py-3 font-medium">Tổng tiền</th>
-                                <th className="px-4 py-3 font-medium">Trạng thái</th>
-                                <th className="px-4 py-3 font-medium">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 bg-white">
-                            {loading ? (
-                                <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-500">Đang tải booking...</td></tr>
-                            ) : visibleBookings.length === 0 ? (
-                                <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-500">Chưa có booking phù hợp.</td></tr>
-                            ) : (
-                                visibleBookings.map((booking) => {
-                                    const isBusy = actionId === booking.bookingId;
-                                    const displayStatus = getBookingDisplayStatus(booking, { role: "host", now: statusNow });
-                                    const actions = getBookingStatusActions(booking, { role: "host", today: statusNow });
-                                    const canConfirm = actions.canConfirm;
-                                    const canCheckIn = actions.canCheckIn;
-                                    const canCheckOut = actions.canCheckOut;
-                                    const canCancel = actions.canCancel;
-                                    const cancelLabel = displayStatus.normalizedStatus === "paid"
-                                        ? "Từ chối"
-                                        : "Hủy";
+                        <table className={`${tableClassName} text-left text-sm`}>
+                            <thead className="bg-gray-50 text-gray-500">
+                                <tr>
+                                    <th className="px-4 py-3 font-medium">Booking</th>
+                                    <th className="px-4 py-3 font-medium">Chỗ nghỉ</th>
+                                    <th className="px-4 py-3 font-medium">Ngày</th>
+                                    <th className="px-4 py-3 font-medium">Khách</th>
+                                    <th className="px-4 py-3 font-medium">Tổng tiền</th>
+                                    <th className="px-4 py-3 font-medium">Trạng thái</th>
+                                    <th className="px-4 py-3 font-medium">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 bg-white">
+                                {loading ? (
+                                    <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-500">Đang tải booking...</td></tr>
+                                ) : visibleBookings.length === 0 ? (
+                                    <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-500">Chưa có booking phù hợp.</td></tr>
+                                ) : (
+                                    visibleBookings.map((booking) => {
+                                        const isBusy = actionId === booking.bookingId;
+                                        const displayStatus = getBookingDisplayStatus(booking, { role: "host", now: statusNow });
+                                        const actions = getBookingStatusActions(booking, { role: "host", today: statusNow });
+                                        const canConfirm = actions.canConfirm;
+                                        const canCheckIn = actions.canCheckIn;
+                                        const canCheckOut = actions.canCheckOut;
+                                        const canCancel = actions.canCancel;
+                                        const cancelLabel = displayStatus.normalizedStatus === "paid"
+                                            ? "Từ chối"
+                                            : "Hủy";
 
-                                    return (
-                                        <tr key={booking.bookingId}>
-                                            <td className="px-4 py-4 font-semibold text-gray-900">#{booking.bookingId}</td>
-                                            <td className="px-4 py-4 text-gray-600">{booking.listing?.title ?? booking.listingTitle ?? `Listing #${booking.listingId}`}</td>
-                                            <td className="px-4 py-4 text-gray-600">{formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)}</td>
-                                            <td className="px-4 py-4 text-gray-600">{booking.guests ?? booking.guestCount ?? booking.guestsCount} khách</td>
-                                            <td className="px-4 py-4 text-gray-600">{formatCurrency(getBookingAmount(booking))}</td>
-                                            <td className="px-4 py-4">
-                                                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${bookingStatusToneClassNames[displayStatus.tone]}`}>
-                                                    {displayStatus.label}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                <div className="flex flex-wrap gap-2">
-                                                    {canConfirm ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => confirmHostBooking(booking.bookingId))} className={primaryButtonClass}>Xác nhận</button> : null}
-                                                    {canCheckIn ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => checkInHostBooking(booking.bookingId))} className={secondaryButtonClass}>Check-in</button> : null}
-                                                    {canCheckOut ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => checkOutHostBooking(booking.bookingId))} className={secondaryButtonClass}>Check-out</button> : null}
-                                                    {canCancel ? (
-                                                        <button
-                                                            disabled={isBusy}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                const note = window.prompt(`Lý do ${cancelLabel.toLowerCase()} booking?`, hostRejectedReason) || hostRejectedReason;
-                                                                void runAction(booking.bookingId, () => cancelHostBooking(booking.bookingId, note));
-                                                            }}
-                                                            className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm text-rose-600 transition-colors hover:bg-rose-50"
-                                                        >
-                                                            <FiXCircle className="mr-1 inline" /> {cancelLabel}
-                                                        </button>
-                                                    ) : null}
-                                                    {!canConfirm && !canCheckIn && !canCheckOut && !canCancel ? (
-                                                        <span className="px-1 py-2.5 text-sm text-gray-400">Không có thao tác</span>
-                                                    ) : null}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
+                                        return (
+                                            <tr key={booking.bookingId}>
+                                                <td className="px-4 py-4 font-semibold text-gray-900">#{booking.bookingId}</td>
+                                                <td className="px-4 py-4 text-gray-600">{booking.listing?.title ?? booking.listingTitle ?? `Listing #${booking.listingId}`}</td>
+                                                <td className="px-4 py-4 text-gray-600">{formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)}</td>
+                                                <td className="px-4 py-4 text-gray-600">{booking.guests ?? booking.guestCount ?? booking.guestsCount} khách</td>
+                                                <td className="px-4 py-4 text-gray-600">{formatCurrency(getBookingAmount(booking))}</td>
+                                                <td className="px-4 py-4">
+                                                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${bookingStatusToneClassNames[displayStatus.tone]}`}>
+                                                        {displayStatus.label}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {canConfirm ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => confirmHostBooking(booking.bookingId))} className={primaryButtonClass}>Xác nhận</button> : null}
+                                                        {canCheckIn ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => checkInHostBooking(booking.bookingId))} className={secondaryButtonClass}>Check-in</button> : null}
+                                                        {canCheckOut ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => checkOutHostBooking(booking.bookingId))} className={secondaryButtonClass}>Check-out</button> : null}
+                                                        {canCancel ? (
+                                                            <button
+                                                                disabled={isBusy}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const note = window.prompt(`Lý do ${cancelLabel.toLowerCase()} booking?`, hostRejectedReason) || hostRejectedReason;
+                                                                    void runAction(booking.bookingId, () => cancelHostBooking(booking.bookingId, note));
+                                                                }}
+                                                                className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm text-rose-600 transition-colors hover:bg-rose-50"
+                                                            >
+                                                                <FiXCircle className="mr-1 inline" /> {cancelLabel}
+                                                            </button>
+                                                        ) : null}
+                                                        {!canConfirm && !canCheckIn && !canCheckOut && !canCancel ? (
+                                                            <span className="px-1 py-2.5 text-sm text-gray-400">Không có thao tác</span>
+                                                        ) : null}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

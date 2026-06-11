@@ -67,7 +67,7 @@ const Checkin = ({
                 aria-expanded={isOpen}
                 aria-label={"Ch\u1ecdn ng\u00e0y nh\u1eadn ph\u00f2ng"}
             >
-                <FaCalendarAlt className={`${isOpen ? "text-cyan-700" : "text-gray-400"}`} />
+                <FaCalendarAlt className={`${isOpen ? "text-cyan-600" : "text-gray-400"}`} />
                 <div className="min-w-0 text-left">
                     <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">{"Nh\u1eadn ph\u00f2ng"}</p>
                     <p className={`truncate text-sm ${value ? "font-semibold text-gray-900" : "text-gray-500"}`}>

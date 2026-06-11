@@ -526,7 +526,7 @@ export const bookingStatusToneClassNames: Record<BookingStatusTone, string> = {
     warning: "bg-amber-50 text-amber-700",
     danger: "bg-rose-50 text-rose-700",
     success: "bg-emerald-50 text-emerald-700",
-    info: "bg-cyan-50 text-cyan-700",
+    info: "bg-cyan-50 text-cyan-600",
     muted: "bg-slate-100 text-slate-600",
 };
 

@@ -425,7 +425,7 @@ const MessagesPage = () => {
                                 onClick={() => setConversationFilter("all")}
                                 className={`inline-flex min-h-12 items-center gap-2 rounded-full px-5 text-sm font-semibold transition ${conversationFilter === "all"
                                     ? "bg-gradient-to-r from-cyan-500 to-cyan-500 text-white shadow-sm shadow-cyan-200"
-                                    : "border border-cyan-100 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
+                                    : "border border-cyan-100 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-600"
                                     }`}
                             >
                                 Tất cả
@@ -436,7 +436,7 @@ const MessagesPage = () => {
                                 onClick={() => setConversationFilter("unread")}
                                 className={`inline-flex min-h-12 items-center rounded-full px-5 text-sm font-semibold transition ${conversationFilter === "unread"
                                     ? "bg-gradient-to-r from-cyan-500 to-cyan-500 text-white shadow-sm shadow-cyan-200"
-                                    : "border border-cyan-100 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700"
+                                    : "border border-cyan-100 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-600"
                                     }`}
                             >
                                 Chưa đọc
@@ -516,7 +516,7 @@ const MessagesPage = () => {
                                     className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition ${conversationFilter === "all"
                                         ? "bg-cyan-500 text-white shadow-sm"
                                         : "border border-zinc-200 bg-white text-slate-700 hover:bg-zinc-50"
-                                    }`}
+                                        }`}
                                 >
                                     Tất cả
                                     <FiChevronDown size={14} />
@@ -527,7 +527,7 @@ const MessagesPage = () => {
                                     className={`inline-flex min-h-9 items-center rounded-full px-4 text-sm font-semibold transition ${conversationFilter === "unread"
                                         ? "bg-cyan-500 text-white shadow-sm"
                                         : "border border-zinc-200 bg-white text-slate-700 hover:bg-zinc-50"
-                                    }`}
+                                        }`}
                                 >
                                     Chưa đọc
                                 </button>

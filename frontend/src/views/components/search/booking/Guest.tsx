@@ -102,7 +102,7 @@ const Guest = ({ value, isOpen, onOpen, onChange, className, popupClassName, onC
                 aria-expanded={isOpen}
                 aria-label="Chọn số lượng khách"
             >
-                <FaUser className={isOpen ? "text-cyan-700" : "text-gray-400"} />
+                <FaUser className={isOpen ? "text-cyan-600" : "text-gray-400"} />
                 <div className="min-w-0 text-left">
                     <p className="text-[11px] font-semibold tracking-[0.08em] text-slate-500">Khách</p>
                     <p className={`truncate text-sm ${summary === "Thêm khách" ? "text-gray-500" : "font-semibold text-gray-900"}`}>

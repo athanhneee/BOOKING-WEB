@@ -60,7 +60,7 @@ const AdminLayout = () => {
                         {adminNavItems.map((item) => {
                             const Icon = item.icon;
                             return (
-                                <NavLink key={item.id} to={item.to} end={item.to === APP_ROUTES.adminOverview} onClick={() => setSidebarOpen(false)} className={({ isActive }) => cn("flex items-center gap-3 rounded-xl border-l-2 px-3 py-3 text-sm transition-colors", isActive ? "border-cyan-500 bg-cyan-50 font-semibold text-cyan-700" : "border-transparent text-gray-600 hover:bg-gray-50")}>
+                                <NavLink key={item.id} to={item.to} end={item.to === APP_ROUTES.adminOverview} onClick={() => setSidebarOpen(false)} className={({ isActive }) => cn("flex items-center gap-3 rounded-xl border-l-2 px-3 py-3 text-sm transition-colors", isActive ? "border-cyan-500 bg-cyan-50 font-semibold text-cyan-600" : "border-transparent text-gray-600 hover:bg-gray-50")}>
                                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-600"><Icon size={18} /></span>
                                     <span>{item.label}</span>
                                 </NavLink>
@@ -79,7 +79,7 @@ const AdminLayout = () => {
                     <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur">
                         <div className="flex flex-wrap items-center gap-4 px-4 py-4 sm:px-6">
                             <button type="button" onClick={() => setSidebarOpen(true)} className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-600 transition-colors hover:bg-gray-50 lg:hidden" aria-label="Mở menu admin"><FiMenu size={18} /></button>
-                            <div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">Admin Center</p><h1 className="mt-1 text-lg font-bold text-gray-900 sm:text-xl md:text-2xl">{activeMeta.title}</h1><p className="mt-1 hidden text-sm text-gray-500 sm:block">{activeMeta.subtitle}</p></div>
+                            <div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-600">Admin Center</p><h1 className="mt-1 text-lg font-bold text-gray-900 sm:text-xl md:text-2xl">{activeMeta.title}</h1><p className="mt-1 hidden text-sm text-gray-500 sm:block">{activeMeta.subtitle}</p></div>
                             <NotificationBell buttonClassName="border-gray-200 text-gray-600 shadow-none hover:bg-gray-50" />
                         </div>
                     </header>

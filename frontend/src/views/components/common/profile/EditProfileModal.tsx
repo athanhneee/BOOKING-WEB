@@ -205,7 +205,7 @@ const EditProfileModal = ({
                                         "min-h-11 rounded-full border px-5 py-2.5 text-sm font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5",
                                         isActive
                                             ? "border-cyan-300 bg-cyan-50 text-cyan-800 ring-4 ring-cyan-100"
-                                            : "border-slate-200 bg-white text-slate-600 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700",
+                                            : "border-slate-200 bg-white text-slate-600 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-600",
                                     )}
                                 >
                                     {option}
@@ -232,7 +232,7 @@ const EditProfileModal = ({
                         <button
                             type="button"
                             onClick={addCustomLanguage}
-                            className="inline-flex min-h-13 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700"
+                            className="inline-flex min-h-13 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-600"
                         >
                             <LuPlus size={17} />
                             Thêm

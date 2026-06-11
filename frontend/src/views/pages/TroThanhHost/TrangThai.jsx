@@ -35,7 +35,7 @@ const TrangThaiHost = () => {
     return (
         <div className="bg-[#F7F8FA] px-4 py-12">
             <div className="mx-auto max-w-3xl rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-700">Trạng thái host</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-600">Trạng thái host</p>
                 <h1 className="mt-3 text-3xl font-bold text-gray-900">Theo dõi hồ sơ chủ nhà</h1>
 
 

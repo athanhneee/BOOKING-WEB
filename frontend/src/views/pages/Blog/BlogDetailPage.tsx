@@ -28,7 +28,7 @@ type StatusCardProps = {
 const StatusCard = ({ title, description, action }: StatusCardProps) => (
     <div className="min-h-screen bg-[#f7f8fb] px-4 pt-28 text-slate-900 sm:px-6 lg:px-8">
         <section className="mx-auto max-w-3xl rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm sm:p-10">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-700">Blog Minh Thành Villa</p>
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-600">Blog Minh Thành Villa</p>
             <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">{title}</h1>
             {description ? <p className="mt-4 text-base leading-8 text-slate-600">{description}</p> : null}
             {action ? <div className="mt-7">{action}</div> : null}
@@ -128,7 +128,7 @@ const BlogDetailPage = () => {
                 <section className="mx-auto max-w-5xl px-4 pb-10 sm:px-6 lg:px-8">
                     <Link
                         to={APP_ROUTES.blog}
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition-colors hover:text-cyan-900"
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-600 transition-colors hover:text-cyan-900"
                     >
                         <FaArrowLeft className="text-xs" />
                         Quay lại danh sách bài viết
@@ -139,7 +139,7 @@ const BlogDetailPage = () => {
 
                         <article className="px-5 py-7 sm:px-8 lg:px-10 lg:py-10">
                             <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                                <span className="rounded-full bg-cyan-50 px-3 py-1 font-semibold text-cyan-700">
+                                <span className="rounded-full bg-cyan-50 px-3 py-1 font-semibold text-cyan-600">
                                     {post.category}
                                 </span>
                                 <span className="inline-flex items-center gap-2">
@@ -174,14 +174,14 @@ const BlogDetailPage = () => {
                     <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                             <div>
-                                <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-700">Bài viết liên quan</p>
+                                <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-600">Bài viết liên quan</p>
                                 <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
                                     Gợi ý đọc tiếp
                                 </h2>
                             </div>
                             <Link
                                 to={APP_ROUTES.blog}
-                                className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition-colors hover:text-cyan-900"
+                                className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-600 transition-colors hover:text-cyan-900"
                             >
                                 Xem tất cả bài viết
                                 <FaArrowLeft className="rotate-180 text-xs" />

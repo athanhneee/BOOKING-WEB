@@ -28,7 +28,7 @@ type StatCardProps = {
     accentClassName?: string;
 };
 
-export const StatCard = ({ label, value, description, icon, accentClassName = "bg-cyan-300/15 text-cyan-700" }: StatCardProps) => {
+export const StatCard = ({ label, value, description, icon, accentClassName = "bg-cyan-300/15 text-cyan-600" }: StatCardProps) => {
     return (
         <div className={hostCardClass}>
             <div className="flex items-start justify-between gap-4">
@@ -67,10 +67,10 @@ export const FilterTabs = <T extends string,>({ options, value, onChange, underl
                             underline ? "rounded-none px-3 py-2 text-sm font-medium transition-colors" : "rounded-xl px-3 py-2 text-sm font-medium transition-colors",
                             underline
                                 ? isActive
-                                    ? "border-b-2 border-cyan-500 text-cyan-700"
+                                    ? "border-b-2 border-cyan-500 text-cyan-600"
                                     : "border-b-2 border-transparent text-gray-500 hover:text-gray-700"
                                 : isActive
-                                    ? "bg-cyan-300/15 text-cyan-700"
+                                    ? "bg-cyan-300/15 text-cyan-600"
                                     : "text-gray-500 hover:bg-white hover:text-gray-700",
                         )}
                     >

@@ -203,10 +203,10 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
                     current.map((item) =>
                         item.notificationLogId === notification.notificationLogId
                             ? {
-                                  ...item,
-                                  isRead: true,
-                                  readAt: updated.readAt ?? new Date().toISOString(),
-                              }
+                                ...item,
+                                isRead: true,
+                                readAt: updated.readAt ?? new Date().toISOString(),
+                            }
                             : item,
                     ),
                 );
@@ -347,7 +347,7 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
                                         type="button"
                                         onClick={() => void markAllRead()}
                                         disabled={unreadCount === 0}
-                                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-cyan-700 disabled:opacity-40"
+                                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-cyan-600 disabled:opacity-40"
                                         aria-label="Đánh dấu tất cả đã đọc"
                                     >
                                         <CheckCheck size={17} />
@@ -371,7 +371,7 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
                                 type="button"
                                 onClick={() => void markAllRead()}
                                 disabled={unreadCount === 0}
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-cyan-700 disabled:opacity-40"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-cyan-600 disabled:opacity-40"
                                 aria-label="Đánh dấu tất cả đã đọc"
                             >
                                 <CheckCheck size={17} />

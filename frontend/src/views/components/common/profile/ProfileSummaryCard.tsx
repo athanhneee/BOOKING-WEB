@@ -38,7 +38,7 @@ const ProfileSummaryCard = ({ user, onEdit, onAvatarUpload }: ProfileSummaryCard
                     <button
                         type="button"
                         onClick={() => inputRef.current?.click()}
-                        className="absolute bottom-0 right-0 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:text-cyan-700"
+                        className="absolute bottom-0 right-0 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:text-cyan-600"
                         aria-label="Tải ảnh đại diện"
                     >
                         <LuCamera size={16} />

@@ -64,7 +64,7 @@ const BlogPage = () => {
                 <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
                     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end">
                         <div>
-                            <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-700">
+                            <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-600">
                                 Blog Minh Thanh Villa
                             </p>
                             <h1 className="mt-4 max-w-4xl text-2xl font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl md:text-5xl">
@@ -77,11 +77,11 @@ const BlogPage = () => {
 
                         <div className="grid grid-cols-2 gap-3 rounded-2xl border border-cyan-100 bg-white p-4 shadow-sm">
                             <div>
-                                <p className="text-2xl font-bold text-cyan-700 sm:text-3xl">{visiblePostCount || "--"}</p>
+                                <p className="text-2xl font-bold text-cyan-600 sm:text-3xl">{visiblePostCount || "--"}</p>
                                 <p className="mt-1 text-sm text-slate-500">bài viết kinh nghiệm</p>
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-cyan-700 sm:text-3xl">24/7</p>
+                                <p className="text-2xl font-bold text-cyan-600 sm:text-3xl">24/7</p>
                                 <p className="mt-1 text-sm text-slate-500">hỗ trợ khách</p>
                             </div>
                         </div>
@@ -120,7 +120,7 @@ const BlogPage = () => {
                                     />
                                     <div className="p-5 sm:p-7">
                                         <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                                            <span className="rounded-full bg-cyan-50 px-3 py-1 font-semibold text-cyan-700">
+                                            <span className="rounded-full bg-cyan-50 px-3 py-1 font-semibold text-cyan-600">
                                                 {featuredBlogPost.category}
                                             </span>
                                             <span className="inline-flex items-center gap-2">
@@ -136,7 +136,7 @@ const BlogPage = () => {
                                                 {featuredBlogPost.location}
                                             </span>
                                         </div>
-                                        <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-950 transition-colors group-hover:text-cyan-700 sm:text-3xl">
+                                        <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-950 transition-colors group-hover:text-cyan-600 sm:text-3xl">
                                             {featuredBlogPost.title}
                                         </h2>
                                         <p className="mt-3 text-base leading-8 text-slate-600">{featuredBlogPost.excerpt}</p>
@@ -176,7 +176,7 @@ const BlogPage = () => {
                 <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                            <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-700">Bài viết mới</p>
+                            <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-600">Bài viết mới</p>
                             <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
                                 Kinh nghiệm lưu trú nổi bật
                             </h2>

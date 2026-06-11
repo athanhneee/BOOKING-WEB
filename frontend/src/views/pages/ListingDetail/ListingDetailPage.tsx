@@ -478,7 +478,7 @@ const BookingSelectionField = ({
             }`}
     >
         <span
-            className={`mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[18px] ${isActive ? "bg-cyan-100 text-cyan-700" : "bg-slate-50 text-slate-500"
+            className={`mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[18px] ${isActive ? "bg-cyan-100 text-cyan-600" : "bg-slate-50 text-slate-500"
                 }`}
         >
             {icon}
@@ -543,7 +543,7 @@ const GuestControls = ({
                             type="button"
                             disabled={disableMinus}
                             onClick={() => onAdjust(field.key, -1, field.min, field.max)}
-                            className={`inline-flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 shadow-sm transition-colors hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-35 ${compact ? "h-9 w-9" : "h-10 w-10"
+                            className={`inline-flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 shadow-sm transition-colors hover:border-cyan-300 hover:text-cyan-600 disabled:cursor-not-allowed disabled:opacity-35 ${compact ? "h-9 w-9" : "h-10 w-10"
                                 }`}
                             aria-label={`Giảm ${field.label}`}
                         >
@@ -556,7 +556,7 @@ const GuestControls = ({
                             type="button"
                             disabled={disablePlus}
                             onClick={() => onAdjust(field.key, 1, field.min, effectiveMax)}
-                            className={`inline-flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 shadow-sm transition-colors hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-35 ${compact ? "h-9 w-9" : "h-10 w-10"
+                            className={`inline-flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 shadow-sm transition-colors hover:border-cyan-300 hover:text-cyan-600 disabled:cursor-not-allowed disabled:opacity-35 ${compact ? "h-9 w-9" : "h-10 w-10"
                                 }`}
                             aria-label={`Tăng ${field.label}`}
                         >
@@ -741,7 +741,7 @@ const HostCard = ({
                         <h3 className="text-xl font-semibold text-zinc-900">{host.name}</h3>
                         <span
                             className={`rounded-full px-3 py-1 text-xs font-semibold ${host.verified
-                                ? "bg-cyan-50 text-cyan-700"
+                                ? "bg-cyan-50 text-cyan-600"
                                 : "bg-amber-50 text-amber-700"
                                 }`}
                         >
@@ -762,7 +762,7 @@ const HostCard = ({
                         type="button"
                         onClick={onMessageHost}
                         disabled={isOpeningConversation}
-                        className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-5 py-3 text-sm font-semibold text-cyan-700 transition-colors hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60 sm:self-start"
+                        className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-5 py-3 text-sm font-semibold text-cyan-600 transition-colors hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60 sm:self-start"
                     >
                         <FiMessageCircle />
                         {isOpeningConversation ? "Đang mở..." : "Nhắn tin cho host"}
@@ -1001,7 +1001,7 @@ const BookingCard = ({
                             Giá linh hoạt theo thời gian lưu trú.
                         </p>
                     </div>
-                    <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-700">
+                    <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-600">
                         <FiUsers className="text-sm" />
                         {guestCount} khách
                     </div>
@@ -1058,7 +1058,7 @@ const BookingCard = ({
                     type="button"
                     onClick={onBookNow}
                     disabled={isBooking}
-                    className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-[26px] bg-cyan-600 px-6 text-base font-semibold text-white shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-cyan-300"
+                    className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-[26px] bg-cyan-600 px-6 text-base font-semibold text-white shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-600 disabled:cursor-not-allowed disabled:bg-cyan-300"
                 >
                     {isBooking ? "Đang tạo đặt phòng..." : "Đặt ngay"}
                 </button>
@@ -1208,7 +1208,7 @@ const MobileBookingSheetPanel = ({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-cyan-100 bg-white text-zinc-700 transition-colors hover:border-cyan-300 hover:text-cyan-700"
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-cyan-100 bg-white text-zinc-700 transition-colors hover:border-cyan-300 hover:text-cyan-600"
                             aria-label="Đóng"
                         >
                             <FaTimes />
@@ -1286,7 +1286,7 @@ const MobileBookingSheetPanel = ({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="inline-flex min-h-14 w-full items-center justify-center rounded-[26px] bg-cyan-600 px-6 text-base font-semibold text-white shadow-lg transition-colors hover:bg-cyan-700"
+                        className="inline-flex min-h-14 w-full items-center justify-center rounded-[26px] bg-cyan-600 px-6 text-base font-semibold text-white shadow-lg transition-colors hover:bg-cyan-600"
                     >
                         {sheet === "dates" && checkIn && checkOut ? "Xác nhận ngày" : "Áp dụng"}
                     </button>
@@ -2162,7 +2162,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                                     <button
                                         type="button"
                                         onClick={handleShare}
-                                        className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#e0d1c1] bg-white/90 px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:border-cyan-300 hover:text-cyan-700"
+                                        className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#e0d1c1] bg-white/90 px-4 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm transition-colors hover:border-cyan-300 hover:text-cyan-600"
                                     >
                                         <FiShare2 />
                                         Chia sẻ
@@ -2185,8 +2185,8 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                                         type="button"
                                         onClick={handleToggleBookingQueue}
                                         className={`relative inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors ${isListingInQueue
-                                            ? "border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100"
-                                            : "border-[#e0d1c1] bg-white/90 text-zinc-900 hover:border-cyan-300 hover:text-cyan-700"
+                                            ? "border-cyan-200 bg-cyan-50 text-cyan-600 hover:bg-cyan-100"
+                                            : "border-[#e0d1c1] bg-white/90 text-zinc-900 hover:border-cyan-300 hover:text-cyan-600"
                                             }`}
                                     >
                                         <FiShoppingBag />
@@ -2202,7 +2202,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                                 {actionFeedback || wishlistError ? (
                                     <p className={`rounded-[24px] border px-4 py-3 text-sm font-medium ${wishlistError && !actionFeedback
                                         ? "border-amber-100 bg-amber-50 text-amber-700"
-                                        : "border-cyan-100 bg-cyan-50 text-cyan-700"
+                                        : "border-cyan-100 bg-cyan-50 text-cyan-600"
                                         }`}>
                                         {actionFeedback ?? wishlistError}
                                     </p>
@@ -2289,7 +2289,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                                                 type="button"
                                                 onClick={handleOpenHostMessage}
                                                 disabled={isOpeningConversation}
-                                                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-cyan-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-cyan-300"
+                                                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-cyan-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-cyan-600 disabled:cursor-not-allowed disabled:bg-cyan-300"
                                             >
                                                 <FiMessageCircle />
                                                 {isOpeningConversation

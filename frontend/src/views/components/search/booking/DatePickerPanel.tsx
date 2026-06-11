@@ -302,7 +302,7 @@ function CalendarMonth({
                                     " cursor-pointer text-gray-800 hover:bg-cyan-100 hover:text-cyan-800";
                             } else if (state === "normal") {
                                 buttonClassName +=
-                                    " cursor-pointer text-gray-800 hover:bg-cyan-50 hover:text-cyan-700";
+                                    " cursor-pointer text-gray-800 hover:bg-cyan-50 hover:text-cyan-600";
                             } else {
                                 buttonClassName += " invisible";
                             }
@@ -519,34 +519,34 @@ const DatePickerPanel = ({
                         />
                     </div>
                 ) : (
-                <div key={`${baseMonth.year}-${baseMonth.month}`} className="month-grid-enter grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
-                    <CalendarMonth
-                        {...sharedMonthProps}
-                        year={leftYear}
-                        month={leftMonth}
-                        onDateSelect={(date) => onSelectDate(toIsoDate(date))}
-                        showPrev
-                        showNext={false}
-                        onPrev={() => {
-                            const previousMonth = new Date(baseMonth.year, baseMonth.month - 1, 1);
-                            setBaseMonth({ year: previousMonth.getFullYear(), month: previousMonth.getMonth() });
-                        }}
-                        onNext={() => undefined}
-                    />
-                    <CalendarMonth
-                        {...sharedMonthProps}
-                        year={rightYear}
-                        month={rightMonth}
-                        onDateSelect={(date) => onSelectDate(toIsoDate(date))}
-                        showPrev={false}
-                        showNext
-                        onPrev={() => undefined}
-                        onNext={() => {
-                            const nextMonth = new Date(baseMonth.year, baseMonth.month + 1, 1);
-                            setBaseMonth({ year: nextMonth.getFullYear(), month: nextMonth.getMonth() });
-                        }}
-                    />
-                </div>
+                    <div key={`${baseMonth.year}-${baseMonth.month}`} className="month-grid-enter grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
+                        <CalendarMonth
+                            {...sharedMonthProps}
+                            year={leftYear}
+                            month={leftMonth}
+                            onDateSelect={(date) => onSelectDate(toIsoDate(date))}
+                            showPrev
+                            showNext={false}
+                            onPrev={() => {
+                                const previousMonth = new Date(baseMonth.year, baseMonth.month - 1, 1);
+                                setBaseMonth({ year: previousMonth.getFullYear(), month: previousMonth.getMonth() });
+                            }}
+                            onNext={() => undefined}
+                        />
+                        <CalendarMonth
+                            {...sharedMonthProps}
+                            year={rightYear}
+                            month={rightMonth}
+                            onDateSelect={(date) => onSelectDate(toIsoDate(date))}
+                            showPrev={false}
+                            showNext
+                            onPrev={() => undefined}
+                            onNext={() => {
+                                const nextMonth = new Date(baseMonth.year, baseMonth.month + 1, 1);
+                                setBaseMonth({ year: nextMonth.getFullYear(), month: nextMonth.getMonth() });
+                            }}
+                        />
+                    </div>
                 )
             ) : calendarMode === "month" ? (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -562,7 +562,7 @@ const DatePickerPanel = ({
                                 className={cn(
                                     "rounded-[24px] border px-5 py-7 text-center transition-all",
                                     isActive
-                                        ? "border-cyan-300 bg-cyan-50 text-cyan-700"
+                                        ? "border-cyan-300 bg-cyan-50 text-cyan-600"
                                         : "border-gray-200 bg-white text-gray-700 hover:border-cyan-200 hover:bg-cyan-50/60",
                                 )}
                             >
@@ -586,7 +586,7 @@ const DatePickerPanel = ({
                                         "rounded-full border px-6 py-2.5 text-sm font-semibold transition-all",
                                         flexDuration === option
                                             ? "border-cyan-500 bg-cyan-500 text-white"
-                                            : "border-gray-300 bg-white text-gray-700 hover:border-cyan-300 hover:text-cyan-700",
+                                            : "border-gray-300 bg-white text-gray-700 hover:border-cyan-300 hover:text-cyan-600",
                                     )}
                                 >
                                     {option}
@@ -608,7 +608,7 @@ const DatePickerPanel = ({
                                     className={cn(
                                         "flex min-h-[156px] flex-col items-center justify-center rounded-[24px] border px-5 py-6 text-center transition-all",
                                         isActive
-                                            ? "border-cyan-300 bg-cyan-50 text-cyan-700"
+                                            ? "border-cyan-300 bg-cyan-50 text-cyan-600"
                                             : "border-gray-200 bg-white text-gray-700 hover:border-cyan-200 hover:bg-cyan-50/60",
                                     )}
                                 >
@@ -687,8 +687,8 @@ const DatePickerPanel = ({
                             className={cn(
                                 "rounded-full border px-4 py-2 text-sm font-medium transition-all",
                                 selectedNightOffset === option.nights
-                                    ? "border-cyan-300 bg-cyan-50 text-cyan-700"
-                                    : "border-gray-300 bg-white text-gray-700 hover:border-cyan-200 hover:text-cyan-700",
+                                    ? "border-cyan-300 bg-cyan-50 text-cyan-600"
+                                    : "border-gray-300 bg-white text-gray-700 hover:border-cyan-200 hover:text-cyan-600",
                             )}
                         >
                             {option.label}

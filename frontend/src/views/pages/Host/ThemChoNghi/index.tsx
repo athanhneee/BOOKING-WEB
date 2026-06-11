@@ -1185,7 +1185,7 @@ const ThemChoNghi = () => {
                 {loadingDetail ? <div className="rounded-2xl border border-gray-100 bg-white p-4 text-sm text-gray-600">Đang tải chỗ nghỉ...</div> : null}
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
                 {success ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{success}</div> : null}
-                {uploadMessage ? <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-4 text-sm font-medium text-cyan-700">{uploadMessage}</div> : null}
+                {uploadMessage ? <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-4 text-sm font-medium text-cyan-600">{uploadMessage}</div> : null}
                 {aiMessage ? <div className="rounded-2xl border border-violet-100 bg-violet-50 p-4 text-sm font-medium text-violet-700">{aiMessage}</div> : null}
 
                 <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -1503,7 +1503,7 @@ const ThemChoNghi = () => {
                                                     {tags.length > 0 ? (
                                                         <div className="flex flex-wrap gap-1.5">
                                                             {tags.map((tag) => (
-                                                                <span key={tag.tag} className="inline-flex max-w-full items-center gap-1 rounded-full bg-cyan-50 px-2 py-1 text-[11px] font-semibold text-cyan-700">
+                                                                <span key={tag.tag} className="inline-flex max-w-full items-center gap-1 rounded-full bg-cyan-50 px-2 py-1 text-[11px] font-semibold text-cyan-600">
                                                                     <span className="truncate">{tag.labelVi}</span>
                                                                     <button
                                                                         type="button"
@@ -1537,7 +1537,7 @@ const ThemChoNghi = () => {
                                                     </select>
 
                                                     <div className="flex items-center justify-between gap-2">
-                                                        {image.isCover ? <span className="text-xs font-semibold text-cyan-700">Ảnh bìa</span> : <span />}
+                                                        {image.isCover ? <span className="text-xs font-semibold text-cyan-600">Ảnh bìa</span> : <span />}
                                                         <div className="flex flex-wrap items-center justify-end gap-2">
                                                             <button
                                                                 type="button"
@@ -1548,7 +1548,7 @@ const ThemChoNghi = () => {
                                                                 {analysisStatus.label.includes("lỗi") ? "Thử lại" : "Phân tích"}
                                                             </button>
                                                             {!image.isCover ? (
-                                                                <button type="button" onClick={() => handleSetCoverImage(image.imageId)} className="text-xs font-semibold text-cyan-700 hover:text-cyan-800">Đặt bìa</button>
+                                                                <button type="button" onClick={() => handleSetCoverImage(image.imageId)} className="text-xs font-semibold text-cyan-600 hover:text-cyan-800">Đặt bìa</button>
                                                             ) : null}
                                                             <button type="button" onClick={() => handleDeleteExistingImage(image.imageId)} className="text-xs font-semibold text-rose-600 hover:text-rose-700">Xóa</button>
                                                         </div>

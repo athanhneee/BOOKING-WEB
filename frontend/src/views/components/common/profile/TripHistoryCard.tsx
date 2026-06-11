@@ -87,7 +87,7 @@ const getStatusMeta = (trip: TripHistory) => {
         case "active":
             return {
                 label: "Đang hiệu lực",
-                className: "bg-cyan-50 text-cyan-700",
+                className: "bg-cyan-50 text-cyan-600",
             };
         case "cancelled":
             return {
@@ -131,7 +131,7 @@ const getPaymentStatusLabel = (status?: string | null) => {
 
 const DetailItem = ({ icon, label, value }: DetailItemProps) => (
     <div className="flex gap-3">
-        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cyan-50 text-cyan-700">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cyan-50 text-cyan-600">
             {icon}
         </span>
         <div className="min-w-0">
@@ -223,7 +223,7 @@ const TripHistoryCard = ({ trip, onReview }: TripHistoryCardProps) => {
                 </div>
 
                 <div className="flex flex-col gap-3 xl:items-end">
-                    <p className="text-2xl font-semibold text-cyan-700">{priceFormatter.format(trip.totalPrice)}</p>
+                    <p className="text-2xl font-semibold text-cyan-600">{priceFormatter.format(trip.totalPrice)}</p>
 
                     <div className="flex flex-col gap-2 sm:flex-row xl:flex-col xl:items-stretch">
                         {actions.map((action) => (
@@ -370,7 +370,7 @@ const TripHistoryCard = ({ trip, onReview }: TripHistoryCardProps) => {
                                 ) : null}
                                 <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-3">
                                     <dt className="font-semibold text-slate-900">Tổng cộng</dt>
-                                    <dd className="text-lg font-semibold text-cyan-700">
+                                    <dd className="text-lg font-semibold text-cyan-600">
                                         {priceFormatter.format(trip.totalPrice)}
                                     </dd>
                                 </div>

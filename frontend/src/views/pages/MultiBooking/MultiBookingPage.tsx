@@ -98,11 +98,10 @@ const CartItemCard = ({ item, isCurrentBooking, onRemove }: CartItemCardProps) =
 
     return (
         <div
-            className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm ${
-                isCurrentBooking
+            className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm ${isCurrentBooking
                     ? "border-cyan-400 ring-2 ring-cyan-100"
                     : "border-slate-100"
-            }`}
+                }`}
         >
             {isCurrentBooking && (
                 <div className="absolute right-3 top-3 rounded-full bg-cyan-600 px-2 py-0.5 text-xs font-semibold text-white">
@@ -210,7 +209,7 @@ const BookingResultCard = ({ booking, title, imageUrl, onPay, isPaying, isPaid }
                 type="button"
                 onClick={() => onPay(booking.bookingId)}
                 disabled={isPaying}
-                className="flex items-center gap-1.5 rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-cyan-700 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-cyan-600 disabled:opacity-50"
             >
                 {isPaying ? <FiLoader size={14} className="animate-spin" /> : null}
                 Thanh toán
@@ -459,7 +458,7 @@ const MultiBookingPage = () => {
                         <button
                             type="button"
                             onClick={handleConfirm}
-                            className="w-full rounded-2xl bg-gradient-to-r from-cyan-600 to-cyan-700 py-4 text-base font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
+                            className="w-full rounded-2xl bg-gradient-to-r from-cyan-600 to-cyan-600 py-4 text-base font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
                         >
                             Xác nhận & Tạo {allItems.length} đặt phòng
                         </button>

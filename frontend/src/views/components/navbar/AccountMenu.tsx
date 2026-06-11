@@ -223,7 +223,7 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
 
     const triggerContent = (
         <>
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-700 text-sm font-semibold text-white shadow-sm">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-sm font-semibold text-white shadow-sm">
                 {user.avatarUrl ? (
                     <img src={user.avatarUrl} alt={user.displayName} className="h-10 w-10 rounded-full object-cover" />
                 ) : (
@@ -238,7 +238,7 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
     const renderMenuItem = (item: MenuItem, close: () => void) => {
         const content = (
             <>
-                <item.icon size={17} className="text-slate-500 transition-colors duration-200 group-hover:text-cyan-700" />
+                <item.icon size={17} className="text-slate-500 transition-colors duration-200 group-hover:text-cyan-600" />
                 <span className="flex-1">{item.label}</span>
             </>
         );
@@ -324,7 +324,7 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
 
                             <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-cyan-300/10 px-4 py-4">
                                 <div className="flex items-center gap-3">
-                                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-700 text-sm font-semibold text-white">
+                                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-sm font-semibold text-white">
                                         {user.avatarUrl ? (
                                             <img
                                                 src={user.avatarUrl}

@@ -318,7 +318,7 @@ const GuestPayment = () => {
                                 </div>
                             ) : null}
 
-                            <div className="flex items-center justify-between border-t border-gray-100 px-4 py-4 text-lg font-semibold text-cyan-700">
+                            <div className="flex items-center justify-between border-t border-gray-100 px-4 py-4 text-lg font-semibold text-cyan-600">
                                 <span>Tổng cộng</span>
                                 <span>{formatCurrency(totalAmount)}</span>
                             </div>
@@ -341,7 +341,7 @@ const GuestPayment = () => {
                                 onClick={() => isVnpayAvailable && setMethod("vnpay")}
                                 disabled={!isVnpayAvailable}
                                 className={`rounded-xl border p-4 text-left font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${method === "vnpay"
-                                    ? "border-cyan-400 bg-cyan-50 text-cyan-700"
+                                    ? "border-cyan-400 bg-cyan-50 text-cyan-600"
                                     : "border-gray-200 text-gray-700"
                                     }`}
                             >
@@ -356,7 +356,7 @@ const GuestPayment = () => {
                                 onClick={() => isMomoAvailable && setMethod("momo")}
                                 disabled={!isMomoAvailable}
                                 className={`rounded-xl border p-4 text-left font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${method === "momo"
-                                    ? "border-cyan-400 bg-cyan-50 text-cyan-700"
+                                    ? "border-cyan-400 bg-cyan-50 text-cyan-600"
                                     : "border-gray-200 text-gray-700"
                                     }`}
                             >

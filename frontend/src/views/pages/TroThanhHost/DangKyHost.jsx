@@ -53,7 +53,7 @@ const FilePicker = ({ id, label, file, required, onChange, onRemove }) => (
             type="file"
             accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
             onChange={(event) => onChange(event.target.files?.[0] ?? null)}
-            className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-xl file:border-0 file:bg-cyan-50 file:px-4 file:py-2 file:font-medium file:text-cyan-700 hover:file:bg-cyan-100"
+            className="block w-full text-sm text-gray-700 file:mr-4 file:rounded-xl file:border-0 file:bg-cyan-50 file:px-4 file:py-2 file:font-medium file:text-cyan-600 hover:file:bg-cyan-100"
         />
         {file ? (
             <div className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-600">
@@ -249,7 +249,7 @@ const DangKyHost = () => {
         <div className="bg-[#F7F8FA] px-4 py-12">
             <div className="mx-auto max-w-3xl rounded-xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
                 <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-700">Trở thành host</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-600">Trở thành host</p>
                     <h1 className="mt-3 text-3xl font-bold text-gray-900">Đăng ký hồ sơ chủ nhà</h1>
                 </div>
 

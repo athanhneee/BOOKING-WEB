@@ -211,7 +211,7 @@ const SearchPage = () => {
         <button
             type="button"
             onClick={() => setIsFilterOpen(true)}
-            className={`inline-flex h-14 items-center gap-2.5 rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-zinc-700 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:text-cyan-700 hover:shadow-md ${className}`}
+            className={`inline-flex h-14 items-center gap-2.5 rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-zinc-700 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:text-cyan-600 hover:shadow-md ${className}`}
         >
             <FiSliders size={17} />
             <span>Bộ lọc</span>
@@ -260,10 +260,10 @@ const SearchPage = () => {
                         ) : null}
 
                         <div className="flex flex-wrap gap-2">
-                            <span className="rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-700">
+                            <span className="rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-600">
                                 Villa được yêu thích
                             </span>
-                            <span className="rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-700">
+                            <span className="rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1.5 text-sm font-semibold text-cyan-600">
                                 Giá tốt theo lịch của bạn
                             </span>
                             <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-600">

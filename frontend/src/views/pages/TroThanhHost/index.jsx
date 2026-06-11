@@ -64,7 +64,7 @@ const TroThanhHostLanding = () => {
                         <button
                             type="button"
                             onClick={() => navigate(APP_ROUTES.hostRegister)}
-                            className="rounded-xl bg-white px-8 py-3 font-semibold text-cyan-700 transition-colors hover:bg-gray-50"
+                            className="rounded-xl bg-white px-8 py-3 font-semibold text-cyan-600 transition-colors hover:bg-gray-50"
                         >
                             Bắt đầu đăng ký
                         </button>
@@ -150,7 +150,7 @@ const TroThanhHostLanding = () => {
                     <button
                         type="button"
                         onClick={() => navigate(APP_ROUTES.hostRegister)}
-                        className="mt-6 rounded-xl px-8 py-3 font-semibold text-cyan-700 transition-colors"
+                        className="mt-6 rounded-xl px-8 py-3 font-semibold text-cyan-600 transition-colors"
                     >
                         Đăng ký ngay
                     </button>

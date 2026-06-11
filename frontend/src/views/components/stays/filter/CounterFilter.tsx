@@ -23,7 +23,7 @@ const CounterFilter = ({ items, value, onChange }: CounterFilterProps) => {
                             <button
                                 type="button"
                                 onClick={() => onChange(item.key, Math.max(0, currentValue - 1))}
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-lg font-semibold text-zinc-700 transition hover:border-cyan-200 hover:text-cyan-700"
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-lg font-semibold text-zinc-700 transition hover:border-cyan-200 hover:text-cyan-600"
                             >
                                 -
                             </button>
@@ -33,7 +33,7 @@ const CounterFilter = ({ items, value, onChange }: CounterFilterProps) => {
                             <button
                                 type="button"
                                 onClick={() => onChange(item.key, currentValue + 1)}
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-lg font-semibold text-zinc-700 transition hover:border-cyan-200 hover:text-cyan-700"
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-lg font-semibold text-zinc-700 transition hover:border-cyan-200 hover:text-cyan-600"
                             >
                                 +
                             </button>

@@ -78,7 +78,7 @@ const BaoCao = () => {
                                 ["90d", "90 ngày"],
                                 ["year", "1 năm"],
                             ] as Array<[RangeKey, string]>).map(([value, label]) => (
-                                <button key={value} type="button" onClick={() => setRange(value)} className={`${secondaryButtonClass} ${range === value ? "border-cyan-500 bg-cyan-50 text-cyan-700" : ""}`}>
+                                <button key={value} type="button" onClick={() => setRange(value)} className={`${secondaryButtonClass} ${range === value ? "border-cyan-500 bg-cyan-50 text-cyan-600" : ""}`}>
                                     {label}
                                 </button>
                             ))}

@@ -47,7 +47,7 @@ const ContactPage = () => {
             <main>
                 <section className="mx-auto grid max-w-7xl gap-8 px-4 pb-12 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:px-8">
                     <div className="flex flex-col justify-center">
-                        <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-700">Liên hệminh thanh villa </p>
+                        <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-600">Liên hệminh thanh villa </p>
                         <h1 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl md:text-5xl">
                             Cần tư vấn villa hoặc hỗ trợ đặt phòng?
                         </h1>
@@ -67,7 +67,7 @@ const ContactPage = () => {
                                         rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
                                         className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:border-cyan-200 hover:shadow-md"
                                     >
-                                        <Icon className="text-lg text-cyan-700" />
+                                        <Icon className="text-lg text-cyan-600" />
                                         <p className="mt-3 text-sm font-semibold text-slate-950">{item.label}</p>
                                         <p className="mt-1 break-words text-sm leading-6 text-slate-500">{item.value}</p>
                                     </a>
@@ -87,7 +87,7 @@ const ContactPage = () => {
                             <h2 className="text-2xl font-bold text-slate-950">Thông tin hỗ trợ</h2>
                             <div className="mt-5 space-y-4">
                                 <div className="flex gap-3">
-                                    <FiClock className="mt-1 shrink-0 text-xl text-cyan-700" />
+                                    <FiClock className="mt-1 shrink-0 text-xl text-cyan-600" />
                                     <div>
                                         <p className="font-semibold text-slate-950">Thời gian phản hồi</p>
                                         <p className="mt-1 text-sm leading-6 text-slate-600">08:00 - 22:00 hằng ngày, ưu tiên khách có lịch nhận phòng gần.</p>
@@ -152,7 +152,7 @@ const ContactPage = () => {
                                 </label>
 
                                 {sentMessage ? (
-                                    <p className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-700">
+                                    <p className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-600">
                                         {sentMessage}
                                     </p>
                                 ) : null}
@@ -165,7 +165,7 @@ const ContactPage = () => {
                                         <FiSend />
                                         Gửi yêu cầu
                                     </button>
-                                    <Link to={APP_ROUTES.search} className="text-sm font-semibold text-cyan-700 transition-colors hover:text-cyan-800">
+                                    <Link to={APP_ROUTES.search} className="text-sm font-semibold text-cyan-600 transition-colors hover:text-cyan-800">
                                         Xem danh sách villa
                                     </Link>
                                 </div>

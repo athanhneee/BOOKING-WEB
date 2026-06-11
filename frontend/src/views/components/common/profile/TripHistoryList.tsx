@@ -16,7 +16,7 @@ const TripHistoryList = ({ trips }: TripHistoryListProps) => {
     if (trips.length === 0) {
         return (
             <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
-                <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-cyan-300/10 text-cyan-700">
+                <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-cyan-300/10 text-cyan-600">
                     <LuPlane size={34} />
                 </span>
                 <h3 className="mt-5 text-2xl font-semibold text-slate-900">Bạn chưa có chuyến đi nào</h3>
@@ -37,10 +37,10 @@ const TripHistoryList = ({ trips }: TripHistoryListProps) => {
     return (
         <div className="space-y-4">
             {trips.map((trip) => (
-                <TripHistoryCard 
-                    key={trip.id} 
-                    trip={trip} 
-                    onReview={() => setReviewingTrip(trip)} 
+                <TripHistoryCard
+                    key={trip.id}
+                    trip={trip}
+                    onReview={() => setReviewingTrip(trip)}
                 />
             ))}
 

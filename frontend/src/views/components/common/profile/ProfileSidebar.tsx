@@ -66,11 +66,11 @@ const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
                                     className={cn(
                                         "flex w-full items-center gap-3 rounded-xl border-l-4 px-4 py-3.5 text-left transition-all duration-200",
                                         isActive
-                                            ? "border-l-cyan-700 bg-cyan-300/10 text-cyan-800"
+                                            ? "border-l-cyan-600 bg-cyan-300/10 text-cyan-800"
                                             : "border-l-transparent text-slate-600 hover:bg-slate-50",
                                     )}
                                 >
-                                    <Icon size={16} className={isActive ? "text-cyan-700" : "text-slate-400"} />
+                                    <Icon size={16} className={isActive ? "text-cyan-600" : "text-slate-400"} />
                                     <span className="flex-1 text-[15px] font-medium">{item.label}</span>
                                     <LuChevronRight size={16} className={isActive ? "text-cyan-500" : "text-slate-300"} />
                                 </button>
