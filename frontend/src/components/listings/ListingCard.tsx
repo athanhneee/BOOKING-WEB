@@ -50,7 +50,7 @@ const ListingCard = ({ listing, checkIn, checkOut }: ListingCardProps) => {
         <Link
             to={detailUrl}
             state={{ returnTo }}
-            className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.1)] transition hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)]"
         >
             <div className="relative aspect-[4/3] bg-slate-100">
                 {listing.imageUrl ? (

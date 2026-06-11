@@ -38,7 +38,7 @@ const RecentlyViewedSection = () => {
                             key={listing.id}
                             listing={listing}
                             onClick={() => handleOpenDetail(listing.id)}
-                            className="h-full cursor-pointer shadow-sm hover:shadow-md"
+                            className="h-full"
                         />
                     ))}
                 </div>

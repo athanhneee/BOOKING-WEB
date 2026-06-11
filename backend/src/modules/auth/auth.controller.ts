@@ -51,13 +51,19 @@ export const register: RequestHandler = asyncHandler(async (req, res) => {
 
     writeAuthCookies(res, session);
 
-    const emailVerificationOtp = await issueAuthOtp(
+    // Fire-and-forget: send email verification OTP without blocking the response
+    let emailVerificationOtp: unknown = null;
+    issueAuthOtp(
         {
             identifier: user.email,
             purpose: "verify_email",
         },
         authContextFromRequest(req),
-    );
+    ).then((result) => {
+        emailVerificationOtp = result;
+    }).catch(() => {
+        // Silently ignore — user is already registered, OTP can be re-requested later
+    });
 
     return sendSuccess(res, {
         statusCode: 201,
@@ -66,7 +72,7 @@ export const register: RequestHandler = asyncHandler(async (req, res) => {
             token: session.accessToken,
             accessToken: session.accessToken,
             user: await toAuthResponseUser(user, session.roles),
-            ...(getEnv().authDebugOtp ? { emailVerificationOtp } : {}),
+            ...(getEnv().authDebugOtp && emailVerificationOtp ? { emailVerificationOtp } : {}),
 
         },
     });
@@ -78,7 +84,7 @@ export const login: RequestHandler = asyncHandler(async (req, res) => {
     const payload = getValidatedBody<{ identifier: string; password: string }>(req);
 
     if (await isLoginTemporarilyLocked(payload.identifier)) {
-        throw new ApiError(423, "Account is temporarily locked. Please try again later.");
+        throw new ApiError(423, "Tài khoản tạm thời bị khóa. Vui lòng thử lại sau.");
     }
 
     const user = await findUserForLogin(payload.identifier);
@@ -88,10 +94,10 @@ export const login: RequestHandler = asyncHandler(async (req, res) => {
         const failedCount = await recordFailedLoginAttempt(payload.identifier, authContextFromRequest(req), user);
 
         if (failedCount >= 5) {
-            throw new ApiError(423, "Account is temporarily locked. Please try again later.");
+            throw new ApiError(423, "Tài khoản tạm thời bị khóa. Vui lòng thử lại sau.");
         }
 
-        throw new ApiError(401, "Invalid credentials");
+        throw new ApiError(401, "Email/SĐT hoặc mật khẩu không đúng.");
     }
 
     const session = await issueAuthSession(user, authContextFromRequest(req));

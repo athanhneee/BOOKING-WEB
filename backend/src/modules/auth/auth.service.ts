@@ -405,10 +405,10 @@ const createUniqueUsername = async (name: string, email: string, preferredUserna
         const normalizedUsername = preferredUsername.trim().toLowerCase();
 
         if (await User.exists({ username: normalizedUsername })) {
-            throw new ApiError(409, "Account already exists", [
+            throw new ApiError(409, "Tài khoản đã tồn tại", [
                 {
                     path: "username",
-                    msg: "Account already exists",
+                    msg: "Tên người dùng đã được sử dụng",
                 },
             ]);
         }
@@ -468,10 +468,10 @@ export const registerUser = async (input: RegisterUserInput) => {
     ]);
 
     if (existingEmail || existingPhone) {
-        throw new ApiError(409, "Account already exists", [
+        throw new ApiError(409, "Tài khoản đã tồn tại. Email hoặc số điện thoại đã được sử dụng.", [
             {
                 path: existingEmail ? "email" : "phone",
-                msg: "Account already exists",
+                msg: existingEmail ? "Email đã được sử dụng" : "Số điện thoại đã được sử dụng",
             },
         ]);
     }

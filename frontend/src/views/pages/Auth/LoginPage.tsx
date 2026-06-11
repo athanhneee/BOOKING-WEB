@@ -47,7 +47,24 @@ const LoginPage = () => {
             const user = await loginWithCredentials({ identifier, password });
             redirectAfterLogin(user);
         } catch (submissionError) {
-            setError(submissionError instanceof Error ? submissionError.message : "Không thể đăng nhập lúc này.");
+            if (submissionError instanceof Error) {
+                const message = submissionError.message;
+                // Translate common English error messages to Vietnamese
+                if (/invalid credentials/i.test(message)) {
+                    setError("Email/SĐT hoặc mật khẩu không đúng.");
+                } else if (/temporarily locked/i.test(message)) {
+                    setError("Tài khoản tạm thời bị khóa. Vui lòng thử lại sau.");
+                } else if (/validation error/i.test(message)) {
+                    // Try to extract specific field errors from ApiError
+                    const apiErr = submissionError as { errors?: Array<{ msg?: string }> };
+                    const detail = apiErr.errors?.find((e) => e.msg)?.msg;
+                    setError(detail ?? "Thông tin đăng nhập không hợp lệ.");
+                } else {
+                    setError(message);
+                }
+            } else {
+                setError("Không thể đăng nhập lúc này.");
+            }
         } finally {
             setIsSubmitting(false);
         }

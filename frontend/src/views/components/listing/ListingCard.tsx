@@ -16,15 +16,20 @@ const currencyFormatter = new Intl.NumberFormat("vi-VN", {
 const ListingCard = ({ listing, onClick, className = "" }: ListingCardProps) => {
     const content = (
         <>
-            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-100">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-t-2xl bg-slate-100">
                 {listing.imageUrl ? (
-                    <img src={listing.imageUrl} alt={listing.name} className="h-full w-full object-cover" loading="lazy" />
+                    <img
+                        src={listing.imageUrl}
+                        alt={listing.name}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                    />
                 ) : (
                     <div className="flex h-full w-full items-center justify-center text-sm font-medium text-slate-500">
                         Chưa có ảnh
                     </div>
                 )}
-                <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-slate-950/80 px-3 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur-sm">
+                <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur-sm">
                     <span className="inline-flex items-center gap-0.5">
                         {Array.from({ length: 5 }).map((_, i) => (
                             <FaStar
@@ -37,32 +42,38 @@ const ListingCard = ({ listing, onClick, className = "" }: ListingCardProps) => 
                 </span>
             </div>
 
-            <div className="mt-3 min-w-0">
-                <div className="flex items-start justify-between gap-3">
-                    <h3 className="min-w-0 truncate text-base font-semibold text-slate-900">{listing.name}</h3>
-                    <p className="shrink-0 text-sm font-bold text-slate-900">{currencyFormatter.format(listing.pricePerNight)}</p>
-                </div>
-                <p className="mt-1 flex min-w-0 items-center gap-2 truncate text-sm text-slate-500">
-                    <FaMapMarkerAlt className="shrink-0 text-slate-400" />
-                    {listing.address}
+            <div className="flex flex-1 flex-col p-4">
+                <h3 className="truncate text-base font-semibold text-slate-900">
+                    {listing.name}
+                </h3>
+                <p className="mt-2 text-lg font-bold text-cyan-600">
+                    {currencyFormatter.format(listing.pricePerNight)}
+                    <span className="ml-1 text-xs font-normal text-slate-400">/ đêm</span>
+                </p>
+                <p className="mt-2 flex items-start gap-1.5 text-sm leading-5 text-slate-500">
+                    <FaMapMarkerAlt className="mt-0.5 shrink-0 text-cyan-400" />
+                    <span className="line-clamp-2">{listing.address}</span>
                 </p>
             </div>
         </>
     );
+
+    const cardClass =
+        `group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)] ${className}`.trim();
 
     if (onClick) {
         return (
             <button
                 type="button"
                 onClick={onClick}
-                className={`group w-full min-w-0 cursor-pointer rounded-2xl bg-white p-0 text-left transition-transform hover:-translate-y-0.5 ${className}`.trim()}
+                className={`${cardClass} cursor-pointer text-left`}
             >
                 {content}
             </button>
         );
     }
 
-    return <article className={`group min-w-0 rounded-2xl bg-white ${className}`.trim()}>{content}</article>;
+    return <article className={cardClass}>{content}</article>;
 };
 
 export default ListingCard;

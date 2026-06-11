@@ -16,7 +16,7 @@ const AuthCard = ({ title, description, children, align = "center" }: AuthCardPr
     return (
         <section className="font-sans rounded-2xl border border-white/70 bg-white/88 px-6 py-8 shadow-[0_36px_120px_-48px_rgba(15,23,42,0.45)] backdrop-blur-xl sm:px-10 sm:py-10">
             <div className={`flex flex-col ${headerClassName}`}>
-                <img src={logo} alt="Minh Thanh Villa" className="h-24 w-auto sm:h-28" />
+                <img src={logo} alt="Minh Thanh Villa" className="h-16 w-auto sm:h-20" />
                 <h1 className={`mt-5 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl ${titleClassName ?? ""}`}>
                     {title}
                 </h1>

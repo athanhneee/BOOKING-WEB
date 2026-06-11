@@ -279,7 +279,7 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
                     key={item.notificationLogId}
                     type="button"
                     onClick={() => void markItemRead(item)}
-                    className="flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-cyan-50/60"
+                    className="flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-cyan-50/60 overflow-hidden"
                 >
                     <span
                         className={cn(
@@ -292,7 +292,7 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
                             {item.title ?? "Thông báo mới"}
                         </span>
                         {item.body ? (
-                            <span className="mt-1 block break-words text-sm leading-5 text-slate-600">
+                            <span className="mt-1 block break-words text-sm leading-5 text-slate-600" style={{ wordBreak: "break-word" }}>
                                 {item.body}
                             </span>
                         ) : null}

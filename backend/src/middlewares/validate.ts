@@ -31,7 +31,9 @@ export const validate = (schemas: RequestSchemas): RequestHandler => {
             const parsed = schema.safeParse(req[location]);
 
             if (!parsed.success) {
-                return next(new AppError(422, "Validation error", toValidationErrors(parsed.error.issues)));
+                const details = toValidationErrors(parsed.error.issues);
+                const firstMessage = details[0]?.msg || "Validation error";
+                return next(new AppError(422, firstMessage, details));
             }
 
             validatedData[location] = parsed.data;

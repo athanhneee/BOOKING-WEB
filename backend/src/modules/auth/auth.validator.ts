@@ -92,7 +92,7 @@ export const registerBodySchema = z.object({
 
 export const loginBodySchema = z.object({
     identifier: identifierSchema,
-    password: z.string().trim().min(8, "password must be at least 8 characters"),
+    password: z.string().trim().min(8, "Mật khẩu phải có ít nhất 8 ký tự"),
 });
 
 export const forgotPasswordBodySchema = z.object({
