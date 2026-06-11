@@ -50,9 +50,9 @@ const ListingCard = ({ listing, checkIn, checkOut }: ListingCardProps) => {
         <Link
             to={detailUrl}
             state={{ returnTo }}
-            className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.1)] transition hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)]"
+            className="group flex h-full flex-col overflow-hidden bg-white"
         >
-            <div className="relative aspect-[4/3] bg-slate-100">
+            <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
                 {listing.imageUrl ? (
                     <img
                         src={listing.imageUrl}
@@ -87,13 +87,13 @@ const ListingCard = ({ listing, checkIn, checkOut }: ListingCardProps) => {
                             <span className="truncate">{address || listing.city}</span>
                         </p>
                     </div>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-sm font-semibold text-amber-700">
+                    <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-2.5 py-1 text-sm font-semibold text-amber-700">
                         <Star size={13} />
                         {Number(listing.ratingAvg || 0).toFixed(1)}
                     </span>
                 </div>
 
-                <p className="mt-3 line-clamp-2 min-h-[3rem] text-sm leading-6 text-slate-600">
+                <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">
                     {listing.description}
                 </p>
 
@@ -112,7 +112,7 @@ const ListingCard = ({ listing, checkIn, checkOut }: ListingCardProps) => {
                     </span>
                 </div>
 
-                <div className="mt-auto flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
+                <div className="mt-4 flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Giá từ</p>
                         <p className="mt-1 text-lg font-bold text-cyan-700">

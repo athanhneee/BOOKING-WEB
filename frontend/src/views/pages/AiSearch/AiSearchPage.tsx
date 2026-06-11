@@ -388,7 +388,7 @@ const AiSearchPage = () => {
                                     {items.map((listing) => (
                                         <div
                                             key={listing.listingId}
-                                            className="overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-sm"
+                                            className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)]"
                                         >
                                             <ListingCard
                                                 listing={listing}
