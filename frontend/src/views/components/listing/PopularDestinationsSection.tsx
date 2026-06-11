@@ -98,8 +98,9 @@ const PopularDestinationsSection = ({
     if (loading) {
         return (
             <section className="bg-[#efefef] py-12 sm:py-16 md:py-20 lg:py-24">
-                <div className="mx-auto w-full max-w-[74rem] px-4 text-center text-sm font-medium text-zinc-500 md:px-6">
-                    Đang tải chỗ nghỉ ...
+                <div className="mx-auto flex w-full max-w-[74rem] flex-col items-center justify-center px-4 text-center md:px-6">
+                    <div className="mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-cyan-500 border-t-transparent"></div>
+                    <span className="text-sm font-medium text-zinc-500">Đang tải chỗ nghỉ ...</span>
                 </div>
             </section>
         );

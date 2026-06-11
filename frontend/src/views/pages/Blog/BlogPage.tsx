@@ -18,10 +18,14 @@ type BlogStatusPanelProps = {
     title: string;
     description?: string;
     action?: ReactNode;
+    isLoading?: boolean;
 };
 
-const BlogStatusPanel = ({ title, description, action }: BlogStatusPanelProps) => (
-    <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm">
+const BlogStatusPanel = ({ title, description, action, isLoading }: BlogStatusPanelProps) => (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm">
+        {isLoading && (
+            <div className="mb-4 h-10 w-10 animate-spin rounded-full border-[4px] border-cyan-600 border-t-transparent shadow-sm"></div>
+        )}
         <h2 className="text-2xl font-bold text-slate-950">{title}</h2>
         {description ? <p className="mt-3 text-sm leading-6 text-slate-500">{description}</p> : null}
         {action ? <div className="mt-5">{action}</div> : null}
@@ -91,7 +95,7 @@ const BlogPage = () => {
                 <section className="bg-white py-10">
                     <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)] lg:px-8">
                         {isLoading ? (
-                            <BlogStatusPanel title="Đang tải blog..." />
+                            <BlogStatusPanel title="Đang tải blog..." isLoading />
                         ) : loadError ? (
                             <BlogStatusPanel
                                 title="Không tải được blog"

@@ -39,7 +39,12 @@ const TrangThaiHost = () => {
                 <h1 className="mt-3 text-3xl font-bold text-gray-900">Theo dõi hồ sơ chủ nhà</h1>
 
 
-                {loading ? <div className="mt-8 rounded-2xl bg-gray-50 p-6 text-center text-gray-500">Đang tải trạng thái...</div> : null}
+                {loading ? (
+                    <div className="mt-8 flex flex-col items-center justify-center rounded-2xl bg-gray-50 p-10 text-center">
+                        <div className="mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-cyan-500 border-t-transparent"></div>
+                        <span className="text-sm font-medium text-gray-500">Đang tải trạng thái...</span>
+                    </div>
+                ) : null}
                 {error ? <div className="mt-8 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
                 {!loading && !error ? (
                     <div className="mt-8 rounded-2xl border border-gray-100 bg-gray-50 p-6">

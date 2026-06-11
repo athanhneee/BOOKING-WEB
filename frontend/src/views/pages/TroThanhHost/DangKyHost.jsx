@@ -254,8 +254,9 @@ const DangKyHost = () => {
                 </div>
 
                 {loadingStatus ? (
-                    <div className="mt-6 rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
-                        Đang tải trạng thái hồ sơ...
+                    <div className="mt-6 flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-gray-50 p-10 text-center">
+                        <div className="mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-cyan-500 border-t-transparent"></div>
+                        <span className="text-sm font-medium text-gray-600">Đang tải trạng thái hồ sơ...</span>
                     </div>
                 ) : null}
 
