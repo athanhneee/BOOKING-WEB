@@ -1,4 +1,4 @@
-export type UserRole = "Guest" | "host" | "host new" | "Admin" | "Moderator" | string;
+export type UserRole = "Guest" | "host" | "host new" | "Admin" | string;
 
 export type AuthUser = {
     id: string;

@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { getAdminUsers, updateAdminUser } from "../../../../services/userService";
 import { pageWrapperClass, primaryButtonClass, secondaryButtonClass, tableClassName } from "../../Host/sharedStyles";
 
-const roles = ["guest", "host", "moderator", "admin"];
-const roleLabel = { guest: "Guest", host: "Host", moderator: "Moderator", admin: "Admin" };
+const roles = ["guest", "host", "admin"];
+const roleLabel = { guest: "Guest", host: "Host", admin: "Admin" };
 
 const PhanQuyenHeThong = () => {
     const [users, setUsers] = useState([]);
@@ -72,10 +72,10 @@ const PhanQuyenHeThong = () => {
                                     </tr>
                                 ) : null}
                                 {!loading && users.length === 0 ? <tr><td colSpan={5} className="px-5 py-12 text-center text-slate-500">Không có user.</td></tr> : null}
-                                {users.map((user) => { 
-                                    const userId = user.userId ?? user.id; 
-                                    const currentRole = user.role ?? user.roles?.[0] ?? "Guest"; 
-                                    const draftRole = draftRoles[userId] ?? currentRole; 
+                                {users.map((user) => {
+                                    const userId = user.userId ?? user.id;
+                                    const currentRole = user.role ?? user.roles?.[0] ?? "Guest";
+                                    const draftRole = draftRoles[userId] ?? currentRole;
                                     const isChanged = draftRole !== currentRole;
                                     return (
                                         <tr key={userId} className="transition-colors hover:bg-slate-50/50">
@@ -85,9 +85,9 @@ const PhanQuyenHeThong = () => {
                                                 <span className="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{currentRole}</span>
                                             </td>
                                             <td className="px-5 py-4 text-center">
-                                                <select 
-                                                    value={draftRole} 
-                                                    onChange={(event) => setDraftRoles((current) => ({ ...current, [userId]: event.target.value }))} 
+                                                <select
+                                                    value={draftRole}
+                                                    onChange={(event) => setDraftRoles((current) => ({ ...current, [userId]: event.target.value }))}
                                                     className="min-w-[120px] cursor-pointer rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none transition-all focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 hover:border-gray-300"
                                                 >
                                                     {roles.map((role) => <option key={role} value={role}>{roleLabel[role] ?? role}</option>)}
@@ -95,20 +95,19 @@ const PhanQuyenHeThong = () => {
                                             </td>
                                             <td className="px-5 py-4 text-right">
                                                 <div className="flex flex-wrap justify-end gap-2">
-                                                    <button 
-                                                        type="button" 
-                                                        disabled={savingId === userId || !isChanged} 
-                                                        onClick={() => saveRole(user)} 
-                                                        className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all disabled:pointer-events-none ${
-                                                            isChanged ? "bg-cyan-600 text-white hover:bg-cyan-700 shadow-sm" : "bg-slate-100 text-slate-400"
-                                                        }`}
+                                                    <button
+                                                        type="button"
+                                                        disabled={savingId === userId || !isChanged}
+                                                        onClick={() => saveRole(user)}
+                                                        className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all disabled:pointer-events-none ${isChanged ? "bg-cyan-600 text-white hover:bg-cyan-700 shadow-sm" : "bg-slate-100 text-slate-400"
+                                                            }`}
                                                     >
                                                         {savingId === userId ? "Đang lưu..." : "Lưu"}
                                                     </button>
                                                     {isChanged && (
-                                                        <button 
-                                                            type="button" 
-                                                            onClick={() => setDraftRoles((current) => ({ ...current, [userId]: currentRole }))} 
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDraftRoles((current) => ({ ...current, [userId]: currentRole }))}
                                                             className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-100"
                                                         >
                                                             Hủy
@@ -117,10 +116,10 @@ const PhanQuyenHeThong = () => {
                                                 </div>
                                             </td>
                                         </tr>
-                                    ); 
+                                    );
                                 })}
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
                     </div>
                 </section>
             </div>
