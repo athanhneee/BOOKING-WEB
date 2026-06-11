@@ -150,14 +150,6 @@ const StayFilterModal = ({ isOpen, onClose, value, bounds, onApply }: StayFilter
                     />
                 </FilterSection>
 
-                <FilterSection title="Lựa chọn nhanh" description="Những gợi ý phổ biến dành cho nhóm gia đình hoặc các chuyến đi ngắn ngày.">
-                    <FilterChipGroup
-                        options={stayQuickChoiceOptions}
-                        selectedValues={draftFilters.quickChoices}
-                        onToggle={(valueToToggle) => toggleMultiValue("quickChoices", valueToToggle)}
-                    />
-                </FilterSection>
-
                 <FilterSection title="Sắp xếp" description="Chọn cách ưu tiên hiển thị kết quả phù hợp với nhu cầu của bạn.">
                     <div className="grid gap-2.5 sm:grid-cols-2">
                         {staySortOptions.map((option) => {
