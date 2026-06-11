@@ -58,7 +58,13 @@ const queryTokens = (query: string) =>
 const centralTourismAreaKeys = ["trung_tam", "bai_sau", "thuy_van", "bai_truoc", "tran_phu"];
 const nearBeachAreaKeys = ["bai_sau", "thuy_van", "long_cung", "tran_phu", "bai_truoc"];
 
-const expandPreferredAreaKeys = (areaKeys: string[], proximity: string[]) => {
+const expandPreferredAreaKeys = (areaKeys: string[], proximity: string[], hasSpecificLocation: boolean) => {
+    // If user mentioned a specific area (e.g. "bãi sau", "long cung"), do NOT expand
+    // with generic beach/tourism areas — they asked for THAT specific area.
+    if (hasSpecificLocation) {
+        return uniqueStrings(areaKeys);
+    }
+
     const expanded = [...areaKeys];
 
     if (areaKeys.includes("trung_tam")) {
@@ -485,14 +491,24 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
     const page = Math.max(1, Math.floor(input.page ?? 1));
     const limit = Math.min(maxLimit, Math.max(1, Math.floor(input.limit ?? 12)));
     const explicitLocationAreaKeys = getExplicitLocationAreaKeys(input.locationGroup);
+    const parsedLocationAreaKeys = parsed.locationIntent?.areaKeys ?? [];
     const inferredAreaKeys = inferVungTauAreaKeys(`${query} ${semanticQuery}`);
+
+    // Determine if user specified a specific location group (e.g. "bãi sau", "long cung")
+    // Either via UI dropdown (explicitLocationAreaKeys) or via query text (parsedLocationAreaKeys)
+    const hasSpecificLocation = explicitLocationAreaKeys.length > 0 || parsedLocationAreaKeys.length > 0;
+
     const preferredAreaKeys = uniqueStrings([
         ...explicitLocationAreaKeys,
-        ...(parsed.locationIntent?.areaKeys ?? []),
+        ...parsedLocationAreaKeys,
         ...inferredAreaKeys,
     ]);
-    const vungTauAreaKeys = expandPreferredAreaKeys(preferredAreaKeys, parsed.proximity);
-    const locationAreaFilterMode = explicitLocationAreaKeys.length > 0 ? "hard" : "soft";
+    const vungTauAreaKeys = expandPreferredAreaKeys(preferredAreaKeys, parsed.proximity, hasSpecificLocation);
+
+    // Use hard filter when user explicitly mentioned a specific area.
+    // This ensures "villa gần bãi sau" only returns Bãi Sau listings,
+    // not Bãi Long Cung or other beach areas.
+    const locationAreaFilterMode = hasSpecificLocation ? "hard" : "soft";
 
     return {
         query,
