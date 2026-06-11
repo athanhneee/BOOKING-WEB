@@ -69,6 +69,15 @@ const getErrorMessage = (error, fallback) => {
     return error instanceof Error ? error.message : fallback;
 };
 
+const getStatusBadgeClass = (status) => {
+    switch (status) {
+        case "pending": return "bg-amber-50 text-amber-700 ring-amber-600/20";
+        case "approved": return "bg-emerald-50 text-emerald-700 ring-emerald-600/20";
+        case "rejected": return "bg-rose-50 text-rose-700 ring-rose-600/20";
+        default: return "bg-gray-50 text-gray-700 ring-gray-600/20";
+    }
+};
+
 const HoSoHost = () => {
     const [status, setStatus] = useState("pending");
     const [applications, setApplications] = useState([]);
@@ -167,18 +176,19 @@ const HoSoHost = () => {
     };
 
     return (
-        <div className={pageWrapperClass}>
-            <div className="mx-auto max-w-7xl space-y-6">
-                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className={`${pageWrapperClass} bg-slate-50/50 min-h-screen`}>
+            <div className="mx-auto max-w-[1400px] space-y-6">
+                {/* Header */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Hồ sơ host</h1>
-
+                        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Hồ sơ đăng ký Host</h1>
+                        <p className="mt-1.5 text-sm text-slate-500">Quản lý và xét duyệt các yêu cầu trở thành chủ nhà.</p>
                     </div>
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                         <select
                             value={status}
                             onChange={(event) => setStatus(event.target.value)}
-                            className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm"
+                            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                         >
                             {statusOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -186,229 +196,316 @@ const HoSoHost = () => {
                                 </option>
                             ))}
                         </select>
-                        <button type="button" onClick={fetchApplications} className={reloadButtonClass}>
-                            <FiRefreshCw className="shrink-0" />
+                        <button 
+                            type="button" 
+                            onClick={fetchApplications} 
+                            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-cyan-600 active:scale-95"
+                        >
+                            <FiRefreshCw className={`shrink-0 ${loadingList ? "animate-spin" : ""}`} />
                             Tải lại
                         </button>
                     </div>
                 </div>
 
-                {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
-                {message ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{message}</div> : null}
+                {/* Alerts */}
+                {error ? (
+                    <div className="animate-in fade-in slide-in-from-top-2 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700 shadow-sm">
+                        {error}
+                    </div>
+                ) : null}
+                {message ? (
+                    <div className="animate-in fade-in slide-in-from-top-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700 shadow-sm">
+                        {message}
+                    </div>
+                ) : null}
 
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(420px,0.85fr)]">
-                    <section className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+                {/* Main Content Grid */}
+                <div className="flex flex-col xl:flex-row gap-6 items-start">
+                    {/* Left Pane - List */}
+                    <section className="flex-1 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md">
                         <div className="overflow-x-auto">
-                        <table className={`${tableClassName} text-left text-sm`}>
-                            <thead className="bg-gray-50 text-gray-500">
-                                <tr>
-                                    <th className="px-4 py-3">Người dùng</th>
-                                    <th className="px-4 py-3">Số điện thoại</th>
-                                    <th className="px-4 py-3">Loại hồ sơ</th>
-                                    <th className="px-4 py-3">Trạng thái</th>
-                                    <th className="px-4 py-3">Ngày gửi</th>
-                                    <th className="px-4 py-3">Giấy tờ</th>
-                                    <th className="px-4 py-3">Hành động</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100 bg-white">
-                                {loadingList ? (
+                            <table className={`${tableClassName} w-full text-left text-sm whitespace-nowrap`}>
+                                <thead className="border-b border-slate-100 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
                                     <tr>
-                                        <td colSpan={7} className="px-4 py-10 text-center text-gray-500">
-                                            Đang tải...
-                                        </td>
+                                        <th className="px-5 py-4">Người dùng</th>
+                                        <th className="px-5 py-4">Liên hệ</th>
+                                        <th className="px-5 py-4">Hồ sơ</th>
+                                        <th className="px-5 py-4">Trạng thái</th>
+                                        <th className="px-5 py-4">Ngày gửi</th>
+                                        <th className="px-5 py-4 text-center">Giấy tờ</th>
+                                        <th className="px-5 py-4 text-right">Thao tác</th>
                                     </tr>
-                                ) : null}
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 bg-white">
+                                    {loadingList ? (
+                                        <tr>
+                                            <td colSpan={7} className="px-5 py-12 text-center text-slate-500">
+                                                <div className="flex justify-center mb-3">
+                                                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-cyan-600 border-t-transparent"></div>
+                                                </div>
+                                                Đang tải danh sách...
+                                            </td>
+                                        </tr>
+                                    ) : null}
 
-                                {!loadingList && applications.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={7} className="px-4 py-10 text-center text-gray-500">
-                                            Không có hồ sơ host phù hợp.
-                                        </td>
-                                    </tr>
-                                ) : null}
+                                    {!loadingList && applications.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className="px-5 py-16 text-center text-slate-500">
+                                                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+                                                    <FiEye className="text-xl text-slate-400" />
+                                                </div>
+                                                <p className="font-medium text-slate-600">Không có hồ sơ host phù hợp</p>
+                                            </td>
+                                        </tr>
+                                    ) : null}
 
-                                {applications.map((application) => (
-                                    <tr
-                                        key={application.applicationId}
-                                        className={application.applicationId === selectedId ? "bg-cyan-50/40" : undefined}
-                                    >
-                                        <td className="px-4 py-4">
-                                            <p className="font-semibold text-gray-900">
-                                                {application.user?.name || application.contactName || "-"}
-                                            </p>
-                                            <p className="text-xs text-gray-500">{application.user?.email || application.contactEmail || "-"}</p>
-                                        </td>
-                                        <td className="px-4 py-4 text-gray-600">{application.phone || application.user?.phone || "-"}</td>
-                                        <td className="px-4 py-4 text-gray-600">{profileTypeLabel[application.profileType] ?? application.profileType}</td>
-                                        <td className="px-4 py-4">
-                                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
-                                                {statusLabel[application.status] ?? application.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-4 text-gray-600">{formatDate(application.createdAt)}</td>
-                                        <td className="px-4 py-4 text-gray-600">{application.documentCount}</td>
-                                        <td className="px-4 py-4">
-                                            <button
-                                                type="button"
-                                                onClick={() => fetchDetail(application.applicationId)}
-                                                className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                    {applications.map((application) => {
+                                        const isSelected = application.applicationId === selectedId;
+                                        return (
+                                            <tr
+                                                key={application.applicationId}
+                                                className={`group transition-colors duration-200 ${isSelected ? "bg-cyan-50/50" : "hover:bg-slate-50"}`}
                                             >
-                                                <FiEye className="mr-1 inline" />
-                                                Xem chi tiết
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                                <td className="px-5 py-4">
+                                                    <p className={`font-semibold transition-colors ${isSelected ? "text-cyan-800" : "text-slate-900 group-hover:text-cyan-700"}`}>
+                                                        {application.user?.name || application.contactName || "-"}
+                                                    </p>
+                                                    <p className="mt-0.5 text-xs text-slate-500 truncate max-w-[150px]">{application.user?.email || application.contactEmail || "-"}</p>
+                                                </td>
+                                                <td className="px-5 py-4 text-slate-600 font-medium">
+                                                    {application.phone || application.user?.phone || "-"}
+                                                </td>
+                                                <td className="px-5 py-4">
+                                                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">
+                                                        {profileTypeLabel[application.profileType] ?? application.profileType}
+                                                    </span>
+                                                </td>
+                                                <td className="px-5 py-4">
+                                                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${getStatusBadgeClass(application.status)}`}>
+                                                        {statusLabel[application.status] ?? application.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-5 py-4 text-slate-500">{formatDate(application.createdAt)}</td>
+                                                <td className="px-5 py-4 text-center">
+                                                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
+                                                        {application.documentCount}
+                                                    </span>
+                                                </td>
+                                                <td className="px-5 py-4 text-right">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => fetchDetail(application.applicationId)}
+                                                        className={`inline-flex items-center justify-center rounded-xl border px-3 py-2 text-sm font-medium transition-all active:scale-95 ${
+                                                            isSelected 
+                                                            ? "border-cyan-200 bg-cyan-100 text-cyan-800" 
+                                                            : "border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 shadow-sm hover:shadow"
+                                                        }`}
+                                                    >
+                                                        <FiEye className="mr-1.5" />
+                                                        Chi tiết
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
                     </section>
 
-                    <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+                    {/* Right Pane - Detail View */}
+                    <section className="w-full xl:w-[480px] shrink-0 xl:sticky xl:top-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-lg xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto custom-scrollbar transition-all duration-300">
                         {!selectedId ? (
-                            <div className="py-12 text-center text-sm text-gray-500">
-                                Chọn một hồ sơ để xem giấy tờ bằng.
+                            <div className="flex flex-col items-center justify-center py-20 text-center">
+                                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 ring-8 ring-slate-50/50">
+                                    <FiEye className="text-2xl text-slate-400" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-slate-900">Chưa chọn hồ sơ</h3>
+                                <p className="mt-2 text-sm text-slate-500 max-w-[250px]">
+                                    Chọn một hồ sơ từ danh sách bên trái để xem chi tiết thông tin và giấy tờ xác minh.
+                                </p>
                             </div>
                         ) : null}
 
                         {selectedId && loadingDetail ? (
-                            <div className="py-12 text-center text-sm text-gray-500">Đang tải chi tiết...</div>
+                            <div className="flex flex-col items-center justify-center py-20">
+                                <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-cyan-600 border-t-transparent"></div>
+                                <p className="text-sm font-medium text-slate-500">Đang tải thông tin chi tiết...</p>
+                            </div>
                         ) : null}
 
                         {selectedId && !loadingDetail && detail ? (
-                            <div className="space-y-5">
-                                <div className="border-b border-gray-100 pb-4">
-                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+                                {/* Detail Header */}
+                                <div className="border-b border-slate-100 pb-5">
+                                    <div className="flex items-start justify-between gap-4">
                                         <div>
-                                            <h2 className="text-xl font-bold text-gray-900">
+                                            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
                                                 {detail.user?.name || detail.contactName || "Hồ sơ host"}
                                             </h2>
-                                            <p className="mt-1 text-sm text-gray-500">{detail.user?.email || detail.contactEmail || "-"}</p>
+                                            <div className="mt-1.5 flex items-center gap-2 text-sm text-slate-500">
+                                                <span className="truncate">{detail.user?.email || detail.contactEmail || "Không có email"}</span>
+                                            </div>
                                         </div>
-                                        <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                                        <span className={`shrink-0 inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ring-1 ring-inset ${getStatusBadgeClass(detail.status)}`}>
                                             {statusLabel[detail.status] ?? detail.status}
                                         </span>
                                     </div>
                                 </div>
 
-                                <dl className="grid gap-3 text-sm md:grid-cols-2">
+                                {/* Detail Info Grid */}
+                                <div className="grid gap-x-4 gap-y-5 rounded-xl bg-slate-50/50 p-5 ring-1 ring-inset ring-slate-100 md:grid-cols-2">
                                     <div>
-                                        <dt className="text-gray-500">Người liên hệ</dt>
-                                        <dd className="font-medium text-gray-900">{detail.contactName || "-"}</dd>
+                                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Người liên hệ</p>
+                                        <p className="mt-1 text-sm font-semibold text-slate-900">{detail.contactName || "-"}</p>
                                     </div>
                                     <div>
-                                        <dt className="text-gray-500">Số điện thoại</dt>
-                                        <dd className="font-medium text-gray-900">{detail.phone || detail.user?.phone || "-"}</dd>
+                                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Số điện thoại</p>
+                                        <p className="mt-1 text-sm font-semibold text-slate-900">{detail.phone || detail.user?.phone || "-"}</p>
                                     </div>
                                     <div>
-                                        <dt className="text-gray-500">Loại hồ sơ</dt>
-                                        <dd className="font-medium text-gray-900">{profileTypeLabel[detail.profileType] ?? detail.profileType}</dd>
+                                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Loại hồ sơ</p>
+                                        <p className="mt-1 text-sm font-semibold text-slate-900">{profileTypeLabel[detail.profileType] ?? detail.profileType}</p>
                                     </div>
                                     <div>
-                                        <dt className="text-gray-500">Ngày gửi</dt>
-                                        <dd className="font-medium text-gray-900">{formatDate(detail.createdAt)}</dd>
+                                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Ngày gửi</p>
+                                        <p className="mt-1 text-sm font-semibold text-slate-900">{formatDate(detail.createdAt)}</p>
                                     </div>
                                     <div className="md:col-span-2">
-                                        <dt className="text-gray-500">Địa chỉ kinh doanh</dt>
-                                        <dd className="font-medium text-gray-900">{detail.businessAddress || "-"}</dd>
+                                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Địa chỉ kinh doanh</p>
+                                        <p className="mt-1 text-sm font-medium text-slate-900 leading-relaxed">{detail.businessAddress || "-"}</p>
                                     </div>
                                     <div className="md:col-span-2">
-                                        <dt className="text-gray-500">Ghi chú</dt>
-                                        <dd className="font-medium text-gray-900">{detail.note || "-"}</dd>
+                                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Ghi chú</p>
+                                        <div className="mt-1 rounded-lg bg-white p-3 text-sm text-slate-700 shadow-sm ring-1 ring-slate-200/50 min-h-[60px] italic">
+                                            {detail.note || "Không có ghi chú"}
+                                        </div>
                                     </div>
                                     {detail.rejectReason ? (
-                                        <div className="md:col-span-2">
-                                            <dt className="text-gray-500">Lý do từ chối</dt>
-                                            <dd className="rounded-xl bg-rose-50 p-3 font-medium text-rose-700">{detail.rejectReason}</dd>
+                                        <div className="md:col-span-2 mt-2">
+                                            <p className="text-xs font-semibold text-rose-600 uppercase tracking-wider mb-1">Lý do từ chối trước đó</p>
+                                            <div className="rounded-lg bg-rose-50 p-3.5 text-sm font-medium text-rose-800 ring-1 ring-inset ring-rose-200">
+                                                {detail.rejectReason}
+                                            </div>
                                         </div>
                                     ) : null}
-                                </dl>
-
-                                <div className="space-y-4">
-                                    <h3 className="text-base font-bold text-gray-900">Giấy tờ xác minh</h3>
-                                    {detail.documents?.length ? (
-                                        detail.documents.map((document) => (
-                                            <div key={document.id} className="rounded-xl border border-gray-100 p-4">
-                                                <div className="mb-3 flex flex-wrap justify-between gap-2 text-sm">
-                                                    <div>
-                                                        <p className="font-semibold text-gray-900">
-                                                            {documentTypeLabel[document.documentType] ?? document.documentType} - {sideLabel[document.side] ?? document.side}
-                                                        </p>
-                                                        <p className="text-gray-500">
-                                                            {document.originalFilename || "document"} · {formatFileSize(document.fileSize)}
-                                                        </p>
-                                                    </div>
-                                                    <p className="text-xs text-gray-500">
-                                                        Hết hạn: {formatDate(document.signedUrlExpiresAt)}
-                                                    </p>
-                                                </div>
-
-                                                {document.mimeType === "application/pdf" ? (
-                                                    <div className="space-y-3">
-                                                        <iframe
-                                                            title={document.originalFilename || `document-${document.id}`}
-                                                            src={document.signedUrl}
-                                                            className="h-72 w-full rounded-xl border border-gray-200"
-                                                        />
-                                                        <a
-                                                            href={document.signedUrl}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="inline-flex rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                                                        >
-                                                            Mở PDF trong tab mới
-                                                        </a>
-                                                    </div>
-                                                ) : (
-                                                    <img
-                                                        src={document.signedUrl}
-                                                        alt={document.originalFilename || document.documentType}
-                                                        className="max-h-[420px] w-full rounded-xl border border-gray-200 object-contain"
-                                                    />
-                                                )}
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="rounded-xl bg-gray-50 p-4 text-sm text-gray-500">Chưa có giấy tờ.</p>
-                                    )}
                                 </div>
 
-                                <div className="space-y-3 border-t border-gray-100 pt-4">
-                                    <textarea
-                                        value={rejectReason}
-                                        onChange={(event) => setRejectReason(event.target.value)}
-                                        placeholder="Nhập lý do từ chối nếu hồ sơ không hợp lệ"
-                                        className="min-h-[96px] w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm"
-                                    />
-                                    <div className="flex flex-wrap gap-2">
-                                        <button
-                                            type="button"
-                                            disabled={actionLoading || detail.status === "approved"}
-                                            onClick={runApprove}
-                                            className={primaryButtonClass}
-                                        >
-                                            <FiCheck className="mr-1 inline" />
-                                            Duyệt
-                                        </button>
-                                        <button
-                                            type="button"
-                                            disabled={actionLoading || detail.status === "rejected"}
-                                            onClick={runReject}
-                                            className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                        >
-                                            <FiX className="mr-1 inline" />
-                                            Từ chối
-                                        </button>
+                                {/* Documents Section */}
+                                <div>
+                                    <h3 className="mb-4 flex items-center gap-2 text-base font-bold text-slate-900">
+                                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-100 text-cyan-700">
+                                            <FiCheck size={14} />
+                                        </span>
+                                        Giấy tờ xác minh ({detail.documents?.length || 0})
+                                    </h3>
+                                    
+                                    <div className="space-y-4">
+                                        {detail.documents?.length ? (
+                                            detail.documents.map((document) => (
+                                                <div key={document.id} className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-cyan-200">
+                                                    <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3 flex flex-wrap justify-between items-center gap-2">
+                                                        <div>
+                                                            <p className="font-semibold text-slate-900 text-sm">
+                                                                {documentTypeLabel[document.documentType] ?? document.documentType} <span className="text-slate-400 font-normal mx-1">/</span> {sideLabel[document.side] ?? document.side}
+                                                            </p>
+                                                            <p className="mt-0.5 text-xs text-slate-500">
+                                                                {formatFileSize(document.fileSize)} · Hết hạn: {formatDate(document.signedUrlExpiresAt)}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="p-4 bg-slate-50/30 flex justify-center">
+                                                        {document.mimeType === "application/pdf" ? (
+                                                            <div className="w-full space-y-3">
+                                                                <div className="relative rounded-lg border border-slate-200 overflow-hidden bg-white shadow-sm">
+                                                                    <iframe
+                                                                        title={document.originalFilename || `document-${document.id}`}
+                                                                        src={document.signedUrl}
+                                                                        className="h-64 w-full"
+                                                                    />
+                                                                </div>
+                                                                <a
+                                                                    href={document.signedUrl}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-cyan-600 active:scale-95"
+                                                                >
+                                                                    <FiEye /> Mở PDF trong tab mới
+                                                                </a>
+                                                            </div>
+                                                        ) : (
+                                                            <a href={document.signedUrl} target="_blank" rel="noreferrer" className="block w-full">
+                                                                <img
+                                                                    src={document.signedUrl}
+                                                                    alt={document.originalFilename || document.documentType}
+                                                                    className="max-h-[360px] w-full rounded-lg object-contain shadow-sm ring-1 ring-slate-200 transition-transform duration-300 group-hover:scale-[1.01]"
+                                                                />
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 py-10">
+                                                <div className="mb-2 h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
+                                                    <FiX className="text-slate-400" />
+                                                </div>
+                                                <p className="text-sm font-medium text-slate-500">Không có giấy tờ đính kèm.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Actions Section */}
+                                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm mt-6">
+                                    <h3 className="mb-3 text-sm font-bold text-slate-900">Quyết định xét duyệt</h3>
+                                    <div className="space-y-4">
+                                        <textarea
+                                            value={rejectReason}
+                                            onChange={(event) => setRejectReason(event.target.value)}
+                                            placeholder="Nhập lý do nếu bạn muốn từ chối hồ sơ này..."
+                                            className="min-h-[100px] w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                                        />
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            <button
+                                                type="button"
+                                                disabled={actionLoading || detail.status === "approved"}
+                                                onClick={runApprove}
+                                                className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all active:scale-95 ${
+                                                    actionLoading || detail.status === "approved"
+                                                    ? "bg-emerald-400 cursor-not-allowed opacity-80"
+                                                    : "bg-emerald-500 hover:bg-emerald-600 hover:shadow-md hover:-translate-y-0.5"
+                                                }`}
+                                            >
+                                                {actionLoading ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <FiCheck size={16} />}
+                                                Phê duyệt hồ sơ
+                                            </button>
+                                            <button
+                                                type="button"
+                                                disabled={actionLoading || detail.status === "rejected"}
+                                                onClick={runReject}
+                                                className={`flex-1 flex items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-all active:scale-95 ${
+                                                    actionLoading || detail.status === "rejected"
+                                                    ? "border-rose-200 bg-rose-50 text-rose-400 cursor-not-allowed"
+                                                    : "border-rose-200 bg-white text-rose-600 hover:bg-rose-50 hover:border-rose-300 shadow-sm"
+                                                }`}
+                                            >
+                                                {actionLoading ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-rose-600 border-t-transparent" /> : <FiX size={16} />}
+                                                Từ chối
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         ) : null}
 
                         {selectedId && !loadingDetail && !detail && selectedApplication ? (
-                            <p className="py-12 text-center text-sm text-gray-500">
-                                Không thể tải chi tiết hồ sơ #{selectedApplication.applicationId}.
-                            </p>
+                            <div className="rounded-xl border border-rose-200 bg-rose-50 py-10 text-center">
+                                <p className="text-sm font-medium text-rose-700">
+                                    Không thể tải chi tiết hồ sơ #{selectedApplication.applicationId}.
+                                </p>
+                            </div>
                         ) : null}
                     </section>
                 </div>
