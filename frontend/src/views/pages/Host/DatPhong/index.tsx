@@ -204,11 +204,11 @@ const DatPhong = () => {
                                                         {displayStatus.label}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-4">
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {canConfirm ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => confirmHostBooking(booking.bookingId))} className={primaryButtonClass}>Xác nhận</button> : null}
-                                                        {canCheckIn ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => checkInHostBooking(booking.bookingId))} className={secondaryButtonClass}>Check-in</button> : null}
-                                                        {canCheckOut ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => checkOutHostBooking(booking.bookingId))} className={secondaryButtonClass}>Check-out</button> : null}
+                                                <td className="px-4 py-4 text-right">
+                                                    <div className="flex flex-wrap items-center justify-end gap-2">
+                                                        {canConfirm ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => confirmHostBooking(booking.bookingId))} className={`${primaryButtonClass} whitespace-nowrap`}>Xác nhận</button> : null}
+                                                        {canCheckIn ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => checkInHostBooking(booking.bookingId))} className={`${secondaryButtonClass} whitespace-nowrap`}>Check-in</button> : null}
+                                                        {canCheckOut ? <button disabled={isBusy} type="button" onClick={() => runAction(booking.bookingId, () => checkOutHostBooking(booking.bookingId))} className={`${secondaryButtonClass} whitespace-nowrap`}>Check-out</button> : null}
                                                         {canCancel ? (
                                                             <button
                                                                 disabled={isBusy}
@@ -217,13 +217,13 @@ const DatPhong = () => {
                                                                     const note = window.prompt(`Lý do ${cancelLabel.toLowerCase()} booking?`, hostRejectedReason) || hostRejectedReason;
                                                                     void runAction(booking.bookingId, () => cancelHostBooking(booking.bookingId, note));
                                                                 }}
-                                                                className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm text-rose-600 transition-colors hover:bg-rose-50"
+                                                                className="flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 shadow-sm transition-all hover:bg-rose-50 active:scale-95 disabled:opacity-50"
                                                             >
-                                                                <FiXCircle className="mr-1 inline" /> {cancelLabel}
+                                                                <FiXCircle size={16} /> {cancelLabel}
                                                             </button>
                                                         ) : null}
                                                         {!canConfirm && !canCheckIn && !canCheckOut && !canCancel ? (
-                                                            <span className="px-1 py-2.5 text-sm text-gray-400">Không có thao tác</span>
+                                                            <span className="px-2 py-2 text-sm font-medium text-slate-400 whitespace-nowrap">Không có thao tác</span>
                                                         ) : null}
                                                     </div>
                                                 </td>

@@ -446,7 +446,10 @@ const MessagesPage = () => {
 
                     <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5">
                         {isLoadingConversations ? (
-                            <div className="px-2 py-8 text-sm text-zinc-500">Đang tải hội thoại...</div>
+                            <div className="flex flex-col items-center justify-center py-10">
+                                <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                                <span className="text-sm font-medium text-zinc-500">Đang tải hội thoại...</span>
+                            </div>
                         ) : error ? (
                             <div className="px-2 py-8 text-sm text-rose-600">{error}</div>
                         ) : conversations.length === 0 ? (
@@ -535,7 +538,10 @@ const MessagesPage = () => {
                         </div>
                         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-5">
                             {isLoadingConversations ? (
-                                <div className="px-2 py-8 text-sm text-zinc-500">Đang tải hội thoại...</div>
+                                <div className="flex flex-col items-center justify-center py-10">
+                                    <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                                    <span className="text-sm font-medium text-zinc-500">Đang tải hội thoại...</span>
+                                </div>
                             ) : error ? (
                                 <div className="px-2 py-8 text-sm text-rose-600">{error}</div>
                             ) : conversations.length === 0 ? (
@@ -613,7 +619,10 @@ const MessagesPage = () => {
 
                             <div className="min-h-0 flex-1 overflow-y-auto bg-white px-5 py-6 md:px-10">
                                 {isLoadingMessages ? (
-                                    <div className="py-12 text-center text-sm text-zinc-500">Đang tải tin nhắn...</div>
+                                    <div className="flex h-full flex-col items-center justify-center py-12">
+                                        <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                                        <span className="text-sm font-medium text-zinc-500">Đang tải tin nhắn...</span>
+                                    </div>
                                 ) : messageError && messages.length === 0 ? (
                                     <div className="py-12 text-center text-sm text-rose-600">{messageError}</div>
                                 ) : messages.length === 0 ? (
