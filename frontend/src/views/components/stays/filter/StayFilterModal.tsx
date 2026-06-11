@@ -150,22 +150,6 @@ const StayFilterModal = ({ isOpen, onClose, value, bounds, onApply }: StayFilter
                     />
                 </FilterSection>
 
-                <FilterSection title="Đặc điểm nổi bật" description="Ưu tiên các chỗ nghỉ được yêu thích, mới đăng hoặc đang có ưu đãi.">
-                    <FilterChipGroup
-                        options={stayHighlightOptions}
-                        selectedValues={draftFilters.highlights}
-                        onToggle={(valueToToggle) => toggleMultiValue("highlights", valueToToggle)}
-                    />
-                </FilterSection>
-
-                <FilterSection title="Chính sách đặt phòng" description="Lọc theo mức độ linh hoạt và tốc độ xác nhận phòng.">
-                    <FilterChipGroup
-                        options={stayPolicyOptions}
-                        selectedValues={draftFilters.policies}
-                        onToggle={(valueToToggle) => toggleMultiValue("policies", valueToToggle)}
-                    />
-                </FilterSection>
-
                 <FilterSection title="Lựa chọn nhanh" description="Những gợi ý phổ biến dành cho nhóm gia đình hoặc các chuyến đi ngắn ngày.">
                     <FilterChipGroup
                         options={stayQuickChoiceOptions}
