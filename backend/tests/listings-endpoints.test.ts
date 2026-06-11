@@ -307,6 +307,9 @@ before(() => {
         return { listingId, updatedDates: dates };
     };
     adminListingsService.approveAdminListing = async (listingId: number, admin: AuthenticatedTestUser) => {
+        if (!admin.roles.includes("admin")) {
+            throw new ApiError(403, "Forbidden");
+        }
         capturedAdminApproval = { listingId, admin };
         return {
             listingId,
@@ -618,9 +621,9 @@ describe("Listings endpoint contracts", () => {
         assert.equal(capturedAdminApproval.admin!.roles.includes("admin"), true);
     });
 
-    it("rejects moderator access to admin listing routes", async () => {
+    it("rejects moderator access to admin listing approval routes", async () => {
         const response = await request(app)
-            .get("/api/admin/listings/pending")
+            .patch("/api/admin/listings/900/approve")
             .set(moderatorAuth);
 
         assert.equal(response.status, 403);

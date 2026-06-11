@@ -39,6 +39,7 @@ describe("semantic search query understanding", () => {
         assert.equal(parsed.locationIntent.areaKeys.includes("bai_sau"), true);
         assert.deepEqual(parsed.dateIntent, {
             label: "this_weekend",
+            friendlyName: "Cuối tuần này",
             checkIn: "2026-06-06",
             checkOut: "2026-06-08",
         });
@@ -56,6 +57,7 @@ describe("semantic search query understanding", () => {
         const futureRange = parseSearchQuery("villa vung tau 15/6 - 19/6", [], now);
         assert.deepEqual(futureRange.dateIntent, {
             label: "date_range",
+            friendlyName: "Ngày đã chọn",
             checkIn: "2026-06-15",
             checkOut: "2026-06-19",
         });
@@ -63,6 +65,7 @@ describe("semantic search query understanding", () => {
         const shortRange = parseSearchQuery("villa bai sau 10-12/7", [], now);
         assert.deepEqual(shortRange.dateIntent, {
             label: "date_range",
+            friendlyName: "Ngày đã chọn",
             checkIn: "2026-07-10",
             checkOut: "2026-07-12",
         });
@@ -73,6 +76,7 @@ describe("semantic search query understanding", () => {
         const thisWeekend = parseSearchQuery("villa cuoi tuan nay", [], now);
         assert.deepEqual(thisWeekend.dateIntent, {
             label: "this_weekend",
+            friendlyName: "Cuối tuần này",
             checkIn: "2026-06-13",
             checkOut: "2026-06-15",
         });
@@ -80,6 +84,7 @@ describe("semantic search query understanding", () => {
         const tomorrow = parseSearchQuery("villa ngay mai", [], now);
         assert.deepEqual(tomorrow.dateIntent, {
             label: "tomorrow",
+            friendlyName: "Ngày mai",
             checkIn: "2026-06-11",
             checkOut: "2026-06-12",
         });
@@ -87,6 +92,7 @@ describe("semantic search query understanding", () => {
         const crossYear = parseSearchQuery("villa vung tau 30/12 - 2/1", [], now);
         assert.deepEqual(crossYear.dateIntent, {
             label: "date_range",
+            friendlyName: "Ngày đã chọn",
             checkIn: "2026-12-30",
             checkOut: "2027-01-02",
         });

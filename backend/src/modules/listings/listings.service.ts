@@ -217,8 +217,8 @@ const buildListingKeywordSearchText = (
         ...(Array.isArray(listing.aiImageTags) ? listing.aiImageTags : []),
         ...getListingLocationSearchTerms(listing),
         ...getListingAmenitySearchTerms(listingAmenityIds, amenityLookup),
-        listing.petsAllowed ? "Cho mang thú cưng pets allowed pet friendly" : "",
-        listing.instantBookEnabled ? "Tự check-in self check in nhận phòng nhanh" : "",
+        listing.petsAllowed ? "Cho mang thú cưng pets allowed pet friendly petfriendly chó mèo" : "",
+        listing.instantBookEnabled ? "Tự check-in self check in nhận phòng nhanh selfcheckin" : "",
     ]
         .filter(Boolean)
         .join(" ");
@@ -269,6 +269,23 @@ const matchesAmenityTextToken = (
     const searchableText = buildListingKeywordSearchText(listing, listingAmenityIds, amenityLookup);
     const normalizedText = normalizeComparableText(searchableText);
     const compactText = normalizeAmenityToken(searchableText);
+
+    if (textToken === "nearbeach" || textToken === "ganbien") {
+        return normalizedText.includes("bien") || 
+               normalizedText.includes("beach") || 
+               normalizedText.includes("bai sau") || 
+               normalizedText.includes("thuy van") || 
+               normalizedText.includes("long cung") || 
+               normalizedText.includes("tran phu");
+    }
+
+    if (textToken === "bbq") {
+        return normalizedText.includes("bbq") || normalizedText.includes("nuong");
+    }
+
+    if (textToken === "niceview" || textToken === "viewdep") {
+        return normalizedText.includes("view dep") || normalizedText.includes("view bien") || normalizedText.includes("sea view") || normalizedText.includes("ocean view");
+    }
 
     return normalizedText.includes(normalizeComparableText(textToken)) || compactText.includes(textToken);
 };
@@ -451,11 +468,15 @@ const buildAmenityLookup = async (): Promise<AmenityLookup> => {
         ["pool", 5],
         ["hồ bơi", 5],
         ["ho boi", 5],
+        ["swimming pool", 5],
         ["parking", 6],
         ["chỗ đậu xe", 6],
         ["cho dau xe", 6],
         ["đậu xe", 6],
         ["dau xe", 6],
+        ["đỗ xe", 6],
+        ["bãi xe", 6],
+        ["gara", 6],
         ["tv", 7],
         ["television", 7],
         ["balcony", 8],
@@ -749,20 +770,22 @@ export const getPublicListings = async (query: PublicListingsQuery) => {
 
         const listingAmenityIds = amenityIdsMap.get(listing.listingId) ?? [];
 
-        if (
-            amenityFilters &&
-            !amenityFilters.amenityIds.every((amenityId) => listingAmenityIds.includes(amenityId))
-        ) {
-            return false;
-        }
+        if (amenityFilters) {
+            const hasAllAmenityIds = amenityFilters.amenityIds.every((amenityId) => {
+                if (listingAmenityIds.includes(amenityId)) return true;
+                
+                // Fallback to text match if relation is missing
+                const terms = amenityLookup?.searchTermsById.get(amenityId) ?? [];
+                return terms.some(term => matchesAmenityTextToken(listing, listingAmenityIds, term, amenityLookup));
+            });
 
-        if (
-            amenityFilters &&
-            !amenityFilters.textTokens.every((token) =>
-                matchesAmenityTextToken(listing, listingAmenityIds, token, amenityLookup),
-            )
-        ) {
-            return false;
+            if (!hasAllAmenityIds) return false;
+
+            const hasAllTextTokens = amenityFilters.textTokens.every((token) =>
+                matchesAmenityTextToken(listing, listingAmenityIds, token, amenityLookup)
+            );
+
+            if (!hasAllTextTokens) return false;
         }
 
         if (!matchesKeywordQuery(listing, listingAmenityIds, query.q, amenityLookup)) {
