@@ -533,26 +533,31 @@ const DatePickerPanel = ({
                             month={leftMonth}
                             onDateSelect={(date) => onSelectDate(toIsoDate(date))}
                             showPrev
-                            showNext={false}
+                            showNext
                             onPrev={() => {
                                 const previousMonth = new Date(baseMonth.year, baseMonth.month - 1, 1);
                                 setBaseMonth({ year: previousMonth.getFullYear(), month: previousMonth.getMonth() });
                             }}
-                            onNext={() => undefined}
-                        />
-                        <CalendarMonth
-                            {...sharedMonthProps}
-                            year={rightYear}
-                            month={rightMonth}
-                            onDateSelect={(date) => onSelectDate(toIsoDate(date))}
-                            showPrev={false}
-                            showNext
-                            onPrev={() => undefined}
                             onNext={() => {
                                 const nextMonth = new Date(baseMonth.year, baseMonth.month + 1, 1);
                                 setBaseMonth({ year: nextMonth.getFullYear(), month: nextMonth.getMonth() });
                             }}
                         />
+                        <div className="hidden lg:block">
+                            <CalendarMonth
+                                {...sharedMonthProps}
+                                year={rightYear}
+                                month={rightMonth}
+                                onDateSelect={(date) => onSelectDate(toIsoDate(date))}
+                                showPrev={false}
+                                showNext
+                                onPrev={() => undefined}
+                                onNext={() => {
+                                    const nextMonth = new Date(baseMonth.year, baseMonth.month + 1, 1);
+                                    setBaseMonth({ year: nextMonth.getFullYear(), month: nextMonth.getMonth() });
+                                }}
+                            />
+                        </div>
                     </div>
                 )
             ) : calendarMode === "month" ? (
