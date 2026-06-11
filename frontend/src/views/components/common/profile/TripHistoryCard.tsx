@@ -312,18 +312,6 @@ const TripHistoryCard = ({ trip, onReview }: TripHistoryCardProps) => {
                                     <span className="font-medium text-slate-900">Check-out:</span>{" "}
                                     {`12:00 ${formatTripDate(trip.checkOut)}`}
                                 </div>
-                                {trip.checkedInAt ? (
-                                    <div>
-                                        <span className="font-medium text-slate-900">Đã nhận phòng lúc:</span>{" "}
-                                        {formatTripDateTime(trip.checkedInAt)}
-                                    </div>
-                                ) : null}
-                                {trip.checkedOutAt ? (
-                                    <div>
-                                        <span className="font-medium text-slate-900">Đã trả phòng lúc:</span>{" "}
-                                        {formatTripDateTime(trip.checkedOutAt)}
-                                    </div>
-                                ) : null}
                             </div>
 
                             <div className="mt-5 flex gap-3 border-t border-slate-100 pt-4">
