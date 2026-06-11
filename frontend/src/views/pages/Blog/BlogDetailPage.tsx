@@ -23,11 +23,15 @@ type StatusCardProps = {
     title: string;
     description?: string;
     action?: ReactNode;
+    isLoading?: boolean;
 };
 
-const StatusCard = ({ title, description, action }: StatusCardProps) => (
+const StatusCard = ({ title, description, action, isLoading }: StatusCardProps) => (
     <div className="min-h-screen bg-[#f7f8fb] px-4 pt-28 text-slate-900 sm:px-6 lg:px-8">
-        <section className="mx-auto max-w-3xl rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm sm:p-10">
+        <section className="mx-auto flex max-w-3xl flex-col items-center justify-center rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm sm:p-10">
+            {isLoading && (
+                <div className="mb-6 h-12 w-12 animate-spin rounded-full border-[4px] border-cyan-600 border-t-transparent shadow-sm"></div>
+            )}
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-600">Blog Minh Thành Villa</p>
             <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">{title}</h1>
             {description ? <p className="mt-4 text-base leading-8 text-slate-600">{description}</p> : null}
@@ -84,7 +88,7 @@ const BlogDetailPage = () => {
     }, [loadPost]);
 
     if (isLoading) {
-        return <StatusCard title="Đang tải bài viết..." />;
+        return <StatusCard title="Đang tải bài viết..." isLoading />;
     }
 
     if (loadError) {
