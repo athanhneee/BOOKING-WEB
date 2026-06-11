@@ -80,7 +80,7 @@ const formatFilterChipLabel = (filter: FilterChipLike) => {
     const dateRange = formatDateRange(filter.checkIn, filter.checkOut);
 
     if (filter.isAutoFilled && dateRange) {
-        return `AI tự điền lịch: ${dateRange}`;
+        return `Ngày: ${dateRange}`;
     }
 
     const monthMatch = filter.key.match(/^month_(\d{1,2})(?:_\d{4})?$/);
