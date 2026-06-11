@@ -625,7 +625,7 @@ const DatePickerPanel = ({
                     </div>
                     {bookedDatesSet.size > 0 ? (
                         <div className="flex items-center gap-1.5">
-                            <span className="inline-block h-3 w-3 rounded bg-rose-100 ring-1 ring-rose-200" />
+                            <span className="inline-block h-3 w-3 rounded-full bg-rose-100 ring-1 ring-rose-200" />
                             <span className="text-xs text-gray-400">Đã được đặt</span>
                         </div>
                     ) : null}

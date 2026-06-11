@@ -182,14 +182,14 @@ const TableSkeletonRows = ({ cols = 5, rows = 4 }) =>
                 <div className="flex items-center gap-3">
                     <div className="h-20 w-32 shrink-0 rounded-xl bg-slate-200" />
                     <div className="space-y-2">
-                        <div className="h-4 w-40 rounded bg-slate-200" />
-                        <div className="h-3 w-20 rounded bg-slate-200" />
+                        <div className="h-4 w-40 rounded-lg bg-slate-200" />
+                        <div className="h-3 w-20 rounded-lg bg-slate-200" />
                     </div>
                 </div>
             </td>
             {Array.from({ length: cols - 2 }).map((_, colIndex) => (
                 <td key={colIndex} className="px-4 py-4">
-                    <div className="h-4 w-28 rounded bg-slate-200" />
+                    <div className="h-4 w-28 rounded-lg bg-slate-200" />
                 </td>
             ))}
             <td className="px-4 py-4">

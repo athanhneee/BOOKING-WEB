@@ -20,7 +20,7 @@ const ProfileSummaryCard = ({ user, onEdit, onAvatarUpload }: ProfileSummaryCard
     const inputRef = useRef<HTMLInputElement | null>(null);
 
     return (
-        <article className="rounded-2xl border border-slate-200 bg-cyan-300/10 p-6 shadow-sm">
+        <article className="rounded-2xl bg-cyan-300/10 p-6 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
             <div className="flex flex-col items-center text-center">
                 <div className="relative">
                     {user.avatarUrl ? (

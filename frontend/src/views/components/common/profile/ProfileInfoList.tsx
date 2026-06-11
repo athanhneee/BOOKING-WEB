@@ -45,7 +45,7 @@ const ProfileInfoList = ({ user, onEditField }: ProfileInfoListProps) => {
     };
 
     return (
-        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="rounded-2xl bg-white p-3 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
             {rowConfigs.map((row) => {
                 const Icon = row.icon;
                 const value = getValue(row.key);

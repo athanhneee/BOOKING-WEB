@@ -32,7 +32,7 @@ const StayCard = ({ stay }: StayCardProps) => {
                 search: location.search,
             }}
             state={{ returnTo }}
-            className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md"
+            className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)]"
         >
             <div className="relative aspect-[4/3] overflow-hidden bg-slate-200">
                 {stay.imageUrl ? (

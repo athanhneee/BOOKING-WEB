@@ -4,7 +4,7 @@ import Skeleton from "../Skeleton";
  * Skeleton cho 1 card villa — layout giống StayCard.tsx
  */
 const StayCardSkeleton = () => (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
         {/* Image area */}
         <Skeleton className="aspect-[4/3] w-full rounded-none rounded-t-2xl" />
 

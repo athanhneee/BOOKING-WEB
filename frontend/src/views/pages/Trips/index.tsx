@@ -231,7 +231,7 @@ const AboutMeCard = ({
     bio: string;
     onEdit: () => void;
 }) => (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <section className="rounded-2xl bg-white p-5 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
                 <h2 className="text-2xl font-semibold text-slate-900">Về tôi</h2>
@@ -420,32 +420,32 @@ const ProfilePage = () => {
                         ) : loading ? (
                             <div className="grid gap-7 xl:grid-cols-[380px_minmax(0,1fr)]">
                                 {/* Profile summary skeleton */}
-                                <div className="animate-pulse space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                                <div className="animate-pulse space-y-4 rounded-2xl bg-white p-6 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
                                     <div className="flex flex-col items-center gap-4">
                                         <div className="h-24 w-24 rounded-full bg-slate-200" />
-                                        <div className="h-5 w-36 rounded bg-slate-200" />
-                                        <div className="h-4 w-24 rounded bg-slate-200" />
+                                        <div className="h-5 w-36 rounded-lg bg-slate-200" />
+                                        <div className="h-4 w-24 rounded-lg bg-slate-200" />
                                     </div>
                                     <div className="space-y-2 pt-4">
-                                        <div className="h-4 w-full rounded bg-slate-200" />
-                                        <div className="h-4 w-5/6 rounded bg-slate-200" />
-                                        <div className="h-4 w-4/6 rounded bg-slate-200" />
+                                        <div className="h-4 w-full rounded-lg bg-slate-200" />
+                                        <div className="h-4 w-5/6 rounded-lg bg-slate-200" />
+                                        <div className="h-4 w-4/6 rounded-lg bg-slate-200" />
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    <div className="animate-pulse rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
-                                        <div className="h-5 w-32 rounded bg-slate-200" />
+                                    <div className="animate-pulse rounded-2xl bg-white p-6 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] space-y-3">
+                                        <div className="h-5 w-32 rounded-lg bg-slate-200" />
                                         {[1, 2, 3, 4].map((i) => (
                                             <div key={i} className="flex justify-between border-b border-slate-100 py-3">
-                                                <div className="h-4 w-24 rounded bg-slate-200" />
-                                                <div className="h-4 w-32 rounded bg-slate-200" />
+                                                <div className="h-4 w-24 rounded-lg bg-slate-200" />
+                                                <div className="h-4 w-32 rounded-lg bg-slate-200" />
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <section className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
+                            <section className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
                                 <p className="text-sm font-medium text-slate-500">Chưa có dữ liệu hồ sơ.</p>
                             </section>
                         )
