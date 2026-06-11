@@ -185,7 +185,7 @@ const Header = () => {
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
                 onClick={() => setMobileMenuPath(null)}
             >
-                <LuHeart size={17} className="shrink-0 text-cyan-500" />
+                <LuHeart size={17} className="shrink-0 text-slate-500" />
                 Danh sách yêu thích
             </Link>
         );
@@ -256,7 +256,7 @@ const Header = () => {
                                     className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
                                     onClick={() => setMobileMenuPath(null)}
                                 >
-                                    <Icon size={17} className="shrink-0 text-cyan-500" />
+                                    <Icon size={17} className="shrink-0 text-slate-500" />
                                     {label}
                                 </Link>
                             ))}
