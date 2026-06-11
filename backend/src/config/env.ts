@@ -418,7 +418,7 @@ export const getEnv = (): AppEnv => {
     return {
         port: parsePositiveInteger("PORT", process.env.PORT, 7000),
         nodeEnv,
-        trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
+        trustProxy: parseTrustProxy(process.env.TRUST_PROXY ?? (nodeEnv === "production" ? "1" : "false")),
         dbHost,
         dbPort: parsePositiveInteger("MYSQLPORT", readEnv("MYSQLPORT", "MYSQL_PORT"), 3306),
         dbName,

@@ -105,12 +105,12 @@ const Header = () => {
         isAdmin
             ? { label: "Khu vực admin", to: APP_ROUTES.adminOverview }
             : hostApplicationStatus === "approved"
-            ? { label: "Khu vực host", to: APP_ROUTES.ownerDashboard }
-            : hostApplicationStatus === "pending"
-                ? { label: "Đang xét duyệt host", to: APP_ROUTES.hostStatus }
-                : hostApplicationStatus === "rejected"
-                    ? { label: "Gửi lại hồ sơ host", to: APP_ROUTES.hostStatus }
-                    : { label: "Trở thành host", to: APP_ROUTES.hostLanding };
+                ? { label: "Khu vực host", to: APP_ROUTES.ownerDashboard }
+                : hostApplicationStatus === "pending"
+                    ? { label: "Đang xét duyệt host", to: APP_ROUTES.hostStatus }
+                    : hostApplicationStatus === "rejected"
+                        ? { label: "Gửi lại hồ sơ host", to: APP_ROUTES.hostStatus }
+                        : { label: "Trở thành host", to: APP_ROUTES.hostLanding };
 
     const renderBecomeHostLink = (mobile = false) => {
         if (isAdmin) {
@@ -163,6 +163,22 @@ const Header = () => {
         );
     };
 
+    const renderMobileWishlistLink = () => {
+        if (!currentUser) {
+            return null;
+        }
+
+        return (
+            <Link
+                to={APP_ROUTES.accountWishlist}
+                className="rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
+                onClick={() => setMobileMenuPath(null)}
+            >
+                Danh sách yêu thích
+            </Link>
+        );
+    };
+
     return (
         <header
             className={`fixed left-0 top-0 z-50 w-full py-3 transition-transform duration-[520ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] will-change-transform md:py-4 ${isVisible ? "translate-y-0" : "pointer-events-none -translate-y-[110%]"
@@ -184,7 +200,7 @@ const Header = () => {
                             <Link
                                 key={to}
                                 to={to}
-                                className={`${desktopLinkClass} ${isActive ? "text-cyan-700" : ""}`}
+                                className={`${desktopLinkClass} ${isActive ? "text-cyan-600" : ""}`}
                             >
                                 {label}
                             </Link>
@@ -232,7 +248,8 @@ const Header = () => {
                                 </Link>
                             ))}
 
-                            {renderBecomeHostLink(true)}
+                            {renderMobileWishlistLink()}
+                            {hostApplicationStatus === "pending" ? null : renderBecomeHostLink(true)}
 
                             <div className="mt-1 border-t border-gray-100 pt-1">
                                 {currentUser ? (
@@ -252,7 +269,7 @@ const Header = () => {
                                 ) : (
                                     <Link
                                         to={APP_ROUTES.login}
-                                        className="block rounded-xl px-4 py-3 text-sm font-semibold text-cyan-700 transition-all duration-200 hover:bg-cyan-50"
+                                        className="block rounded-xl px-4 py-3 text-sm font-semibold text-cyan-600 transition-all duration-200 hover:bg-cyan-50"
                                         onClick={() => setMobileMenuPath(null)}
                                     >
                                         Đăng nhập

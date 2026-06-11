@@ -47,7 +47,7 @@ const EmptyState = () => (
         </p>
         <Link
             to={APP_ROUTES.search}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 px-6 py-3 font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-600 px-6 py-3 font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg"
         >
             <LuSparkles size={18} />
             Khám phá nơi lưu trú
@@ -70,9 +70,8 @@ const WishlistCard = ({ item, onRemove, isRemoving }: WishlistCardProps) => {
 
     return (
         <div
-            className={`group relative overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)] ${
-                isRemoving ? "opacity-50 scale-95" : ""
-            }`}
+            className={`group relative overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)] ${isRemoving ? "opacity-50 scale-95" : ""
+                }`}
         >
             {/* Remove button */}
             <button
@@ -112,7 +111,7 @@ const WishlistCard = ({ item, onRemove, isRemoving }: WishlistCardProps) => {
             {/* Content */}
             <div className="p-4">
                 <Link to={APP_ROUTES.villaDetail(String(item.listingId))}>
-                    <h3 className="mb-1 line-clamp-1 text-base font-semibold text-slate-900 transition-colors hover:text-cyan-700">
+                    <h3 className="mb-1 line-clamp-1 text-base font-semibold text-slate-900 transition-colors hover:text-cyan-600">
                         {listing.title}
                     </h3>
                 </Link>
@@ -142,7 +141,7 @@ const WishlistCard = ({ item, onRemove, isRemoving }: WishlistCardProps) => {
                     </div>
                     <Link
                         to={APP_ROUTES.villaDetail(String(item.listingId))}
-                        className="rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                        className="rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                     >
                         Xem chi tiết
                     </Link>
@@ -192,8 +191,9 @@ const WishlistPage = () => {
         try {
             await removeWishlistListing(listingId);
             setItems((prev) => prev.filter((item) => item.listingId !== listingId));
+            setError(null);
         } catch {
-            // silent fail — item stays visible
+            setError("Không thể xóa khỏi danh sách yêu thích. Vui lòng thử lại.");
         } finally {
             setRemovingIds((prev) => {
                 const next = new Set(prev);
@@ -241,7 +241,7 @@ const WishlistPage = () => {
                         {error}
                     </div>
                 )}
-                
+
                 {notice && (
                     <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 flex items-center gap-2">
                         <FiAlertCircle className="shrink-0" size={16} />
