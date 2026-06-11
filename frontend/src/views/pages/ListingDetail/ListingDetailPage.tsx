@@ -1266,6 +1266,7 @@ const MobileBookingSheetPanel = ({
                                 }
                                 onNightOffsetChange={onNightOffsetChange}
                                 variant="inline"
+                                hideFooter
                             />
                         </div>
                     ) : (
@@ -1278,19 +1279,35 @@ const MobileBookingSheetPanel = ({
                 </div>
 
                 <div className="shrink-0 border-t border-zinc-200 bg-[#f4f0eb] px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
-                    {sheet === "dates" && (checkIn || checkOut) ? (
-                        <p className="mb-2 text-center text-sm text-zinc-600">
-                            {checkIn && checkOut
-                                ? `${formatFieldDate(checkIn)} → ${formatFieldDate(checkOut)}`
-                                : checkIn
-                                    ? `Nhận phòng: ${formatFieldDate(checkIn)}`
-                                    : `Trả phòng: ${formatFieldDate(checkOut)}`}
-                        </p>
+                    {sheet === "dates" ? (
+                        <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                                    {mobileDateField === "checkin" ? "Đang chọn nhận phòng" : "Đang chọn trả phòng"}
+                                </p>
+                                <p className="mt-1 truncate text-sm font-semibold text-zinc-900">
+                                    {checkIn && checkOut
+                                        ? `${formatFieldDate(checkIn)} → ${formatFieldDate(checkOut)}`
+                                        : checkIn
+                                            ? `Nhận phòng: ${formatFieldDate(checkIn)}`
+                                            : "Chưa chọn ngày"}
+                                </p>
+                            </div>
+                            {(checkIn || checkOut) ? (
+                                <span className="shrink-0 rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-600">
+                                    {checkIn && checkOut ? `${getNightCount(checkIn, checkOut)} đêm` : "Chọn tiếp"}
+                                </span>
+                            ) : null}
+                        </div>
                     ) : null}
                     <button
                         type="button"
                         onClick={onClose}
-                        className="inline-flex min-h-14 w-full items-center justify-center rounded-[26px] bg-cyan-600 px-6 text-base font-semibold text-white shadow-lg transition-colors hover:bg-cyan-600"
+                        className={`inline-flex min-h-14 w-full items-center justify-center rounded-[26px] px-6 text-base font-semibold text-white shadow-lg transition-colors ${
+                            sheet === "dates" && checkIn && checkOut
+                                ? "bg-cyan-600 hover:bg-cyan-700"
+                                : "bg-cyan-600 hover:bg-cyan-700"
+                        }`}
                     >
                         {sheet === "dates" && checkIn && checkOut ? "Xác nhận ngày" : "Áp dụng"}
                     </button>
