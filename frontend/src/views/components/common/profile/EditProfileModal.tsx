@@ -184,15 +184,15 @@ const EditProfileModal = ({
                     onChange={(event) => updateField(fieldKey, event.target.value)}
                     placeholder={config.placeholder}
                     rows={mode === "all" ? 5 : 7}
-                    className="min-h-36 w-full resize-none rounded-[34px] border border-slate-200 bg-white px-6 py-5 text-sm font-medium leading-6 text-slate-800 shadow-[0_10px_28px_rgba(15,23,42,0.06)] outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                    className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 text-sm leading-6 text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(34,211,238,0.1)]"
                 />
             );
         }
 
         if (config.type === "tags") {
             return (
-                <div className="space-y-5 rounded-[34px] border border-slate-100 bg-slate-50/80 p-5 shadow-inner">
-                    <div className="flex flex-wrap gap-2.5">
+                <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
                         {languageOptions.map((option) => {
                             const isActive = draftUser.languages.includes(option);
 
@@ -202,10 +202,10 @@ const EditProfileModal = ({
                                     type="button"
                                     onClick={() => toggleLanguage(option)}
                                     className={cn(
-                                        "min-h-11 rounded-full border px-5 py-2.5 text-sm font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5",
+                                        "rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200",
                                         isActive
-                                            ? "border-cyan-300 bg-cyan-50 text-cyan-800 ring-4 ring-cyan-100"
-                                            : "border-slate-200 bg-white text-slate-600 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-600",
+                                            ? "border-cyan-400 bg-cyan-50 text-cyan-700 shadow-sm"
+                                            : "border-slate-200 bg-white text-slate-600 hover:border-cyan-300 hover:bg-cyan-50/50 hover:text-cyan-600",
                                     )}
                                 >
                                     {option}
@@ -214,7 +214,7 @@ const EditProfileModal = ({
                         })}
                     </div>
 
-                    <div className="flex flex-col gap-3 sm:flex-row">
+                    <div className="flex gap-2">
                         <input
                             type="text"
                             value={customLanguage}
@@ -226,35 +226,35 @@ const EditProfileModal = ({
                                 }
                             }}
                             placeholder={config.placeholder}
-                            className="min-h-13 flex-1 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-800 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                            className="min-h-[42px] flex-1 rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(34,211,238,0.1)]"
                         />
 
                         <button
                             type="button"
                             onClick={addCustomLanguage}
-                            className="inline-flex min-h-13 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-600"
+                            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-600"
                         >
-                            <LuPlus size={17} />
+                            <LuPlus size={15} />
                             Thêm
                         </button>
                     </div>
 
                     {draftUser.languages.length > 0 ? (
-                        <div className="flex flex-wrap gap-2.5">
+                        <div className="flex flex-wrap gap-2">
                             {draftUser.languages.map((language) => (
                                 <span
                                     key={language}
-                                    className="inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm"
+                                    className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-medium text-cyan-700"
                                 >
                                     {language}
 
                                     <button
                                         type="button"
                                         onClick={() => toggleLanguage(language)}
-                                        className="inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                                        className="inline-flex h-5 w-5 items-center justify-center rounded-full text-cyan-500 transition-colors hover:bg-cyan-100 hover:text-cyan-700"
                                         aria-label={`Xóa ${language}`}
                                     >
-                                        <LuX size={14} />
+                                        <LuX size={12} />
                                     </button>
                                 </span>
                             ))}
@@ -270,7 +270,7 @@ const EditProfileModal = ({
                 value={String(draftUser[fieldKey] ?? "")}
                 onChange={(event) => updateField(fieldKey, event.target.value)}
                 placeholder={config.placeholder}
-                className="min-h-13 w-full rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-800 shadow-[0_10px_28px_rgba(15,23,42,0.06)] outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                className="min-h-[42px] w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(34,211,238,0.1)]"
             />
         );
     };
@@ -294,33 +294,36 @@ const EditProfileModal = ({
             isOpen={isOpen}
             onClose={onClose}
             panelClassName={cn(
-                "mt-auto h-auto max-h-[92dvh] overflow-hidden rounded-t-[44px] border border-white/80 bg-white shadow-[0_34px_100px_-42px_rgba(15,23,42,0.6)] sm:mt-8 sm:max-h-[calc(100dvh-4rem)] sm:rounded-[44px]",
+                "mt-auto h-auto max-h-[92dvh] overflow-hidden rounded-t-3xl border border-slate-200/60 bg-white shadow-2xl sm:mt-8 sm:max-h-[calc(100dvh-4rem)] sm:rounded-2xl",
                 mode === "all" ? "sm:w-[min(880px,calc(100vw-2.5rem))]" : "sm:w-[min(680px,calc(100vw-2.5rem))]",
             )}
         >
-            <div className="flex h-full flex-col overflow-hidden rounded-t-[44px] bg-white sm:rounded-[44px]">
-                <div className="flex shrink-0 items-start justify-between gap-4 rounded-t-[44px] border-b border-slate-100 bg-white px-5 py-5 sm:px-8 sm:py-6">
-                    <div className="min-w-0">
-                        <h2 className="text-2xl font-bold tracking-[-0.03em] text-slate-950 sm:text-[30px]">
-                            {modalTitle}
-                        </h2>
+            <div className="flex h-full flex-col overflow-hidden">
+                {/* Header */}
+                <div className="shrink-0 border-b border-slate-100 bg-gradient-to-b from-slate-50/80 to-white px-6 pb-5 pt-6 sm:px-8">
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                            <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                                {modalTitle}
+                            </h2>
+                            <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-500">
+                                {modalDescription}
+                            </p>
+                        </div>
 
-                        <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-500">
-                            {modalDescription}
-                        </p>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all duration-200 hover:bg-slate-50 hover:text-slate-700"
+                            aria-label="Đóng chỉnh sửa hồ sơ"
+                        >
+                            <LuX size={16} />
+                        </button>
                     </div>
-
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:text-slate-900"
-                        aria-label="Đóng chỉnh sửa hồ sơ"
-                    >
-                        <LuX size={19} />
-                    </button>
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto bg-[#f7f8fb] px-5 py-5 sm:px-8 sm:py-6">
+                {/* Body */}
+                <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-8">
                     <div className={cn("grid gap-5", mode === "all" ? "lg:grid-cols-2" : "grid-cols-1")}>
                         {visibleFields.map((fieldKey) => {
                             const config = fieldConfigMap[fieldKey];
@@ -330,19 +333,19 @@ const EditProfileModal = ({
                                 <div
                                     key={fieldKey}
                                     className={cn(
-                                        "rounded-[36px] border border-white/80 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)] sm:p-6",
+                                        "rounded-2xl border border-slate-100 bg-white p-5 transition-all duration-200 hover:border-slate-200 hover:shadow-sm",
                                         spanClass,
                                     )}
                                 >
-                                    <label className="block text-sm font-bold text-slate-850">
+                                    <label className="block text-sm font-semibold text-slate-800">
                                         {config.label}
                                     </label>
 
-                                    <p className="mt-1.5 text-sm font-medium leading-6 text-slate-500">
+                                    <p className="mt-1 text-[13px] leading-5 text-slate-500">
                                         {config.description}
                                     </p>
 
-                                    <div className="mt-4">
+                                    <div className="mt-3.5">
                                         {renderInput(fieldKey)}
                                     </div>
                                 </div>
@@ -351,12 +354,13 @@ const EditProfileModal = ({
                     </div>
                 </div>
 
-                <div className="sticky bottom-0 shrink-0 rounded-b-[44px] border-t border-slate-100 bg-white px-5 py-4 shadow-[0_-18px_40px_-30px_rgba(15,23,42,0.45)] sm:px-8">
+                {/* Footer */}
+                <div className="shrink-0 border-t border-slate-100 bg-slate-50/50 px-6 py-4 sm:px-8">
                     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="inline-flex min-h-13 items-center justify-center rounded-full border border-slate-200 bg-white px-7 py-3 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:text-slate-900"
+                            className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 hover:text-slate-900"
                         >
                             Hủy
                         </button>
@@ -365,7 +369,7 @@ const EditProfileModal = ({
                             type="button"
                             disabled={!hasChanged || isSaving}
                             onClick={handleSave}
-                            className="inline-flex min-h-13 items-center justify-center rounded-full bg-cyan-500 px-8 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(14,116,144,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-white disabled:shadow-none"
+                            className="inline-flex min-h-[42px] items-center justify-center rounded-xl bg-cyan-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
                         >
                             {isSaving ? "Đang lưu..." : "Lưu"}
                         </button>
