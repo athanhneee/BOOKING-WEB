@@ -50,6 +50,10 @@ export type ParsedQueryFilters = {
     beds?: number;
     bathrooms?: number;
     propertyType?: PropertyType;
+    nearBeach?: boolean;
+    beachDistanceMeters?: number;
+    nearCenter?: boolean;
+    parkingRequired?: boolean;
     proximity: string[];
     amenityCodes: string[];
     locationIntent?: {
@@ -59,10 +63,12 @@ export type ParsedQueryFilters = {
     };
     dateIntent?: {
         label: string;
+        friendlyName?: string;
         checkIn?: string;
         checkOut?: string;
         reason?: SearchRejectionReason;
         message?: string;
+        isAutoFilled?: boolean;
     };
 };
 
@@ -86,6 +92,8 @@ export type SemanticSearchFilters = {
     bedrooms?: number;
     beds?: number;
     bathrooms?: number;
+    nearBeach: boolean;
+    beachDistanceMeters?: number;
 
     amenityIds: number[];
     amenityCodes: string[];
@@ -175,6 +183,7 @@ export type SemanticSearchItem = {
     locationScore: number;
     availabilityScore: number;
     popularityScore: number;
+    featureScore: number;
     finalScore: number;
     scoreBreakdown: {
         semanticScore: number;
@@ -182,6 +191,17 @@ export type SemanticSearchItem = {
         locationScore: number;
         availabilityScore: number;
         popularityScore: number;
+        featureScore: number;
+    };
+    matchSignals?: {
+        amenityCodes: string[];
+        pool: boolean;
+        beach: boolean;
+        beachDistanceMeters?: number;
+        beachName?: string;
+        exactBedrooms: boolean;
+        largerBedroomsFallback: boolean;
+        locationAreaMatch: boolean;
     };
     matchedReasons: string[];
 };
@@ -235,6 +255,8 @@ export type SemanticSearchResponse = {
             bedrooms?: number;
             beds?: number;
             bathrooms?: number;
+            nearBeach?: boolean;
+            beachDistanceMeters?: number;
             amenityIds: number[];
             amenityCodes: string[];
             locationGroup?: string;

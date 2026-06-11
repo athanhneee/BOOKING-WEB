@@ -100,8 +100,18 @@ const cityAliases: Record<string, string> = {
 
 const amenitySynonyms: Record<string, string[]> = {
     wifi: ["wifi", "wi fi", "internet", "mang"],
-    pool: ["ho boi", "be boi", "pool", "swimming pool", "co ho boi"],
-    parking: ["bai xe", "dau xe", "do xe", "parking", "cho dau xe", "nha xe"],
+    pool: [
+        "ho boi",
+        "ho boi rieng",
+        "ho boi lon",
+        "ho boi tre em",
+        "be boi",
+        "be boi rieng",
+        "pool",
+        "swimming pool",
+        "co ho boi",
+    ],
+    parking: ["bai xe", "dau xe", "do xe", "parking", "cho dau xe", "nha xe", "gara", "garage", "cho do xe", "dau o to", "do o to", "dau xe hoi", "cho de xe", "san dau xe"],
     air_conditioning: ["dieu hoa", "may lanh", "air conditioning", "air conditioner", "ac"],
     kitchen: ["bep", "nau an", "kitchen", "co bep", "bep day du"],
     washer: ["may giat", "giat ui", "washer", "giat do"],
@@ -124,7 +134,7 @@ const amenitySynonyms: Record<string, string[]> = {
 // ─── Property type synonyms ───────────────────────────────────────────────────
 
 const propertyTypeSynonyms: Record<PropertyType, string[]> = {
-    villa: ["villa", "biet thu", "biet thu nghi duong", "nha rieng lon", "nguyen can"],
+    villa: ["villa", "biet thu", "biet thu nghi duong", "nha rieng lon", "nha nguyen can", "nguyen can"],
     apartment: ["can ho", "apartment", "chung cu", "studio"],
     hotel: ["khach san", "hotel"],
     homestay: ["homestay", "home stay", "nha nghi homestay", "nha nghi"],
@@ -464,6 +474,27 @@ const parsePrice = (normalized: string): PriceParseResult => {
 // GUEST PARSING
 // ═══════════════════════════════════════════════════════════════════════════════
 
+const BEACH_DISTANCE_TARGET_PATTERN =
+    "(?:bien|bo bien|bai tam|bai sau|bai truoc|bai long cung|long cung|thuy van|tran phu|bai dau)";
+const DISTANCE_UNIT_PATTERN = "(?:m|met|meter|meters|km|kilomet|kilometer|kilometers)";
+
+const stripBeachDistanceForPriceParsing = (normalized: string) =>
+    normalized
+        .replace(
+            new RegExp(
+                `(?:cach|gan|sat)?\\s*${BEACH_DISTANCE_TARGET_PATTERN}(?:\\s+[a-z0-9]+){0,3}\\s+\\d+(?:[,.]\\d+)?\\s*${DISTANCE_UNIT_PATTERN}\\b`,
+                "g",
+            ),
+            " ",
+        )
+        .replace(
+            new RegExp(
+                `cach\\s+(?:khoang\\s+)?\\d+(?:[,.]\\d+)?\\s*${DISTANCE_UNIT_PATTERN}\\s*(?:toi|den|ra)?\\s*${BEACH_DISTANCE_TARGET_PATTERN}\\b`,
+                "g",
+            ),
+            " ",
+        );
+
 type GuestParseResult = {
     guests?: number;
     capacity?: number;
@@ -555,13 +586,13 @@ const parseRooms = (normalized: string): RoomParseResult => {
 
     // ── Bedrooms: "4 phòng ngủ" / "4pn" / "4 PN" / "4 phòng" ───────────────
     const bedroomMatch = normalized.match(
-        /(\d+)\s*(?:phong ngu|pn\b|bedroom|br\b)/,
+        /(\d+)\s*(?:phong\s*ngu|pn\b|bedrooms?\b|br\b)/,
     );
     if (bedroomMatch) {
         result.bedrooms = Number(bedroomMatch[1]);
     } else {
         // "4 phòng" without "ngủ" — treat as bedrooms if no other context
-        const roomOnlyMatch = normalized.match(/(\d+)\s*phong(?!\s*(?:tam|ve sinh|hat|gym|an))/);
+        const roomOnlyMatch = normalized.match(/(?:nha\s+)?(\d+)\s*phong(?!\s*(?:tam|ve sinh|hat|gym|an))/);
         if (roomOnlyMatch) {
             result.bedrooms = Number(roomOnlyMatch[1]);
         }
@@ -573,14 +604,14 @@ const parseRooms = (normalized: string): RoomParseResult => {
     }
 
     // ── Beds: "10 giường" / "10 bed" ────────────────────────────────────────
-    const bedMatch = normalized.match(/(\d+)\s*(?:giuong|bed)/);
+    const bedMatch = normalized.match(/(\d+)\s*(?:giuong|beds?\b)/);
     if (bedMatch) {
         result.beds = Number(bedMatch[1]);
     }
 
     // ── Bathrooms: "9 wc" / "9 toilet" / "9 phòng tắm" / "9 phòng vệ sinh"
     const bathMatch = normalized.match(
-        /(\d+)\s*(?:wc|toilet|phong tam|phong ve sinh|bathroom)/,
+        /(\d+)\s*(?:wc|toilets?|nha ve sinh|phong tam|phong ve sinh|bathrooms?)/,
     );
     if (bathMatch) {
         result.bathrooms = Number(bathMatch[1]);
@@ -592,6 +623,74 @@ const parseRooms = (normalized: string): RoomParseResult => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // DATE PARSING — Vietnam timezone (UTC+7)
 // ═══════════════════════════════════════════════════════════════════════════════
+
+type BeachParseResult = {
+    nearBeach: boolean;
+    beachDistanceMeters?: number;
+};
+
+const parseDistanceToMeters = (rawValue: string, rawUnit: string) => {
+    const value = Number(rawValue.replace(",", "."));
+    if (!Number.isFinite(value) || value <= 0) {
+        return undefined;
+    }
+
+    const unit = rawUnit.toLowerCase();
+    return unit.startsWith("km") || unit.startsWith("kilo")
+        ? Math.round(value * 1000)
+        : Math.round(value);
+};
+
+const firstBeachDistanceMatch = (normalized: string) => {
+    const patterns = [
+        new RegExp(
+            `(?:cach|gan|sat)?\\s*${BEACH_DISTANCE_TARGET_PATTERN}(?:\\s+[a-z0-9]+){0,3}\\s+(\\d+(?:[,.]\\d+)?)\\s*(${DISTANCE_UNIT_PATTERN})\\b`,
+        ),
+        new RegExp(
+            `cach\\s+(?:khoang\\s+)?(\\d+(?:[,.]\\d+)?)\\s*(${DISTANCE_UNIT_PATTERN})\\s*(?:toi|den|ra)?\\s*${BEACH_DISTANCE_TARGET_PATTERN}\\b`,
+        ),
+    ];
+
+    for (const pattern of patterns) {
+        const match = normalized.match(pattern);
+        if (match) {
+            return parseDistanceToMeters(match[1], match[2]);
+        }
+    }
+
+    return undefined;
+};
+
+const parseBeachIntent = (normalized: string): BeachParseResult => {
+    const beachDistanceMeters = firstBeachDistanceMatch(normalized);
+    const nearBeach =
+        beachDistanceMeters !== undefined ||
+        [
+            "gan bien",
+            "sat bien",
+            "gan bo bien",
+            "sat bo bien",
+            "di bo ra bien",
+            "di bo ra bai",
+            "ven bien",
+            "bo bien",
+            "gan bai tam",
+            "gan bai sau",
+            "gan bai truoc",
+            "gan bai long cung",
+            "gan thuy van",
+            "gan tran phu",
+            "cach bien",
+            "cach bai sau",
+            "cach bai truoc",
+            "cach bai long cung",
+        ].some((phrase) => normalized.includes(phrase));
+
+    return {
+        nearBeach,
+        beachDistanceMeters,
+    };
+};
 
 const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
 
@@ -617,6 +716,7 @@ const createPastDateIntent = (
     reason: "PAST_DATE_NOT_ALLOWED" | "PAST_DATE_IN_QUERY" = "PAST_DATE_IN_QUERY",
 ): ParsedQueryFilters["dateIntent"] => ({
     label,
+    friendlyName: "Ngày đã chọn",
     reason,
     message: pastDateMessage,
 });
@@ -654,6 +754,7 @@ const buildSingleDateIntent = (
 
     return {
         label,
+        friendlyName: "Ngày đã chọn",
         checkIn: formatDate(date),
         checkOut: formatDate(addDays(date, 1)),
     };
@@ -695,6 +796,7 @@ const buildDateRangeIntent = (
 
     return {
         label: "date_range",
+        friendlyName: "Ngày đã chọn",
         checkIn: formatDate(checkInDate),
         checkOut: formatDate(checkOutDate),
     };
@@ -707,6 +809,7 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
     if (normalized.includes("hom nay")) {
         return {
             label: "today",
+            friendlyName: "Hôm nay",
             checkIn: formatDate(today),
             checkOut: formatDate(addDays(today, 1)),
         };
@@ -717,6 +820,7 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
         const checkIn = addDays(today, 1);
         return {
             label: "tomorrow",
+            friendlyName: "Ngày mai",
             checkIn: formatDate(checkIn),
             checkOut: formatDate(addDays(checkIn, 1)),
         };
@@ -741,6 +845,7 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
             const checkIn = addDays(today, daysUntil);
             return {
                 label: `day_of_week_${targetDay}`,
+                friendlyName: `Thứ ${targetDay === 0 ? "Chủ nhật" : targetDay + 1}`,
                 checkIn: formatDate(checkIn),
                 checkOut: formatDate(addDays(checkIn, 1)),
             };
@@ -753,6 +858,7 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
         const checkIn = addDays(today, daysUntilNextSaturday);
         return {
             label: "next_weekend",
+            friendlyName: "Cuối tuần sau",
             checkIn: formatDate(checkIn),
             checkOut: formatDate(addDays(checkIn, 2)),
         };
@@ -764,6 +870,7 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
         const checkIn = addDays(today, daysUntilSaturday);
         return {
             label: "this_weekend",
+            friendlyName: "Cuối tuần này",
             checkIn: formatDate(checkIn),
             checkOut: formatDate(addDays(checkIn, 2)),
         };
@@ -776,6 +883,7 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
         const checkIn = addDays(today, daysUntilNextMonday);
         return {
             label: "next_week",
+            friendlyName: "Tuần sau",
             checkIn: formatDate(checkIn),
             checkOut: formatDate(addDays(checkIn, 2)),
         };
@@ -828,6 +936,7 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
             const checkIn = addDays(today, 1); // default to tomorrow
             return {
                 label: `${nightsDaysMatch[1]}_days_${nights}_nights`,
+                friendlyName: `${nightsDaysMatch[1]} ngày ${nights} đêm`,
                 checkIn: formatDate(checkIn),
                 checkOut: formatDate(addDays(checkIn, nights)),
             };
@@ -866,8 +975,10 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
         const checkIn = addDays(firstOfNextMonth, daysToSaturday);
         return {
             label: "next_month",
+            friendlyName: "Tháng sau",
             checkIn: formatDate(checkIn),
             checkOut: formatDate(addDays(checkIn, 2)),
+            isAutoFilled: true,
         };
     }
 
@@ -893,8 +1004,10 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
             if (checkIn < today) checkIn = today;
             return {
                 label: `month_${month + 1}_${year}`,
+                friendlyName: `Tháng ${month + 1} năm ${year}`,
                 checkIn: formatDate(checkIn),
                 checkOut: formatDate(addDays(checkIn, 2)),
+                isAutoFilled: true,
             };
         }
     }
@@ -924,8 +1037,10 @@ const parseDateIntent = (normalized: string, now = new Date(), lightNorm?: strin
 
             return {
                 label: `month_${month + 1}`,
+                friendlyName: `Tháng ${month + 1}`,
                 checkIn: formatDate(checkIn),
                 checkOut: formatDate(addDays(checkIn, 2)),
+                isAutoFilled: true,
             };
         }
     }
@@ -997,7 +1112,7 @@ export const parseSearchQuery = (
 
     // ── Price (use light normalization to preserve dots/dashes/commas) ─────────
     const lightNorm = normalizeLight(query);
-    const priceResult = parsePrice(lightNorm);
+    const priceResult = parsePrice(stripBeachDistanceForPriceParsing(lightNorm));
     if (priceResult.minPrice !== undefined) filters.minPrice = priceResult.minPrice;
     if (priceResult.maxPrice !== undefined) filters.maxPrice = priceResult.maxPrice;
     if (priceResult.priceMode) filters.priceMode = priceResult.priceMode;
@@ -1014,6 +1129,15 @@ export const parseSearchQuery = (
     if (roomResult.bedrooms) filters.bedrooms = roomResult.bedrooms;
     if (roomResult.beds) filters.beds = roomResult.beds;
     if (roomResult.bathrooms) filters.bathrooms = roomResult.bathrooms;
+
+    const beachResult = parseBeachIntent(normalized);
+    if (beachResult.nearBeach) {
+        filters.nearBeach = true;
+        filters.proximity.push("near_beach");
+    }
+    if (beachResult.beachDistanceMeters !== undefined) {
+        filters.beachDistanceMeters = beachResult.beachDistanceMeters;
+    }
 
     // ── Property type ─────────────────────────────────────────────────────────
     for (const [propertyType, synonyms] of Object.entries(propertyTypeSynonyms) as Array<[PropertyType, string[]]>) {
@@ -1040,7 +1164,20 @@ export const parseSearchQuery = (
         }
     }
 
+    if (filters.amenityCodes.includes("parking")) {
+        filters.parkingRequired = true;
+    }
+
     // ── Proximity / context ───────────────────────────────────────────────────
+    if (
+        normalized.includes("gan trung tam") ||
+        normalized.includes("trung tam") ||
+        normalized.includes("cho") ||
+        normalized.includes("city center")
+    ) {
+        filters.nearCenter = true;
+    }
+
     if (
         normalized.includes("gan bien") ||
         normalized.includes("sat bien") ||
@@ -1160,6 +1297,12 @@ export const buildSemanticQuery = (input: SemanticSearchRequest, parsed: ParsedQ
 
     if (parsed.proximity.includes("near_beach")) {
         parts.push("Uu tien cho o gan bien, di chuyen nhanh ra bai tam.");
+    }
+
+    if (parsed.beachDistanceMeters) {
+        parts.push(
+            `Uu tien cho o cach bien khoang ${parsed.beachDistanceMeters}m; neu khong co dung khoang cach thi uu tien noi gan bien nhat.`,
+        );
     }
 
     if (amenityCodes.includes("pool")) {

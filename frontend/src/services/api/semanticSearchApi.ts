@@ -109,6 +109,7 @@ export type AiListingSearchResponse = {
                 checkOut?: string;
                 reason?: AiSearchRejectionReason;
                 message?: string;
+                isAutoFilled?: boolean;
             };
             guests?: number;
             minPrice?: number;

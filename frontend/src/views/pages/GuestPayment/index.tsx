@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FiCalendar, FiCreditCard, FiHelpCircle, FiLoader, FiMapPin } from "react-icons/fi";
+import { FiCalendar, FiCreditCard, FiHelpCircle, FiMapPin } from "react-icons/fi";
 import { Link, useParams } from "react-router-dom";
 
 import logo from "../../../assets/img/logo_mau.svg";

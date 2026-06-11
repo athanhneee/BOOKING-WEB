@@ -25,7 +25,6 @@ import {
 } from "./semantic-search.types";
 import {
     getSemanticDefaultCity,
-    getVungTauAreaDisplayName,
     inferVungTauAreaKeys,
     normalizeKey,
     normalizeVietnameseText,
@@ -40,9 +39,8 @@ const maxLimit = 30;
 /**
  * Minimum cosine-similarity score from Qdrant below which a result is
  * discarded.  Prevents irrelevant listings from surfacing for vague or
- * unrelated queries like "Hello" or "abc".
  */
-const MIN_SEMANTIC_SCORE = 0.35;
+const MIN_SEMANTIC_SCORE = 0.28;
 
 type SemanticSearchContext = {
     userId?: number | null;
@@ -58,10 +56,10 @@ const queryTokens = (query: string) =>
 const centralTourismAreaKeys = ["trung_tam", "bai_sau", "thuy_van", "bai_truoc", "tran_phu"];
 const nearBeachAreaKeys = ["bai_sau", "thuy_van", "long_cung", "tran_phu", "bai_truoc"];
 
-const expandPreferredAreaKeys = (areaKeys: string[], proximity: string[], hasSpecificLocation: boolean) => {
+const expandPreferredAreaKeys = (areaKeys: string[], proximity: string[], suppressGenericExpansion: boolean) => {
     // If user mentioned a specific area (e.g. "bãi sau", "long cung"), do NOT expand
     // with generic beach/tourism areas — they asked for THAT specific area.
-    if (hasSpecificLocation) {
+    if (suppressGenericExpansion) {
         return uniqueStrings(areaKeys);
     }
 
@@ -97,12 +95,14 @@ const getVietnamDateString = (now = new Date()) =>
 const ACCOMMODATION_KEYWORDS = [
     "villa", "biet thu", "homestay", "home stay", "can ho", "chung cu",
     "phong", "resort", "nha nghi", "cho o", "khach san", "hotel",
-    "nha", "apartment", "studio", "nha rieng", "nguyen can",
+    "nha", "apartment", "studio", "nha rieng", "nha nguyen can", "nguyen can",
 ];
 
 const AMENITY_KEYWORDS = [
-    "ho boi", "be boi", "pool", "karaoke", "bida", "bi a", "bbq", "nuong",
-    "gan bien", "view bien", "san vuon", "thang may", "may giat",
+    "ho boi", "ho boi rieng", "ho boi lon", "be boi", "pool", "swimming pool",
+    "karaoke", "bida", "bi a", "bbq", "nuong",
+    "gan bien", "sat bien", "cach bien", "di bo ra bien", "gan bai sau", "gan thuy van",
+    "view bien", "san vuon", "thang may", "may giat",
     "bep", "wifi", "dieu hoa", "may lanh", "bon tam", "jacuzzi",
     "ban cong", "parking", "bai xe", "dau xe", "pet", "thu cung",
     "gym", "sang trong", "gia re", "yen tinh",
@@ -113,6 +113,7 @@ const AMENITY_KEYWORDS = [
 const LOCATION_KEYWORDS = [
     "vung tau", "bai sau", "bai truoc", "long cung", "chi linh",
     "thuy tien", "trung tam", "gan trung tam", "tran phu", "thuy van",
+    "bai dau", "rach dua", "hoanh son", "thuy duong",
     "vt", "vtau", "br vt", "brvt",
 
 ];
@@ -234,9 +235,81 @@ const calculateKeywordScore = (item: SemanticSearchItem, filters: SemanticSearch
     }
 
     const matchedTokenCount = tokens.filter((token) => searchable.includes(token)).length;
-    const amenityBoost = filters.amenityIds.length > 0 ? 0.15 : 0;
+    const requestedAmenityCount = filters.amenityCodes.length;
+    const matchedAmenityCount = item.matchSignals?.amenityCodes.filter((code) =>
+        filters.amenityCodes.includes(code),
+    ).length ?? 0;
+    const amenityBoost = requestedAmenityCount > 0
+        ? Math.min(0.25, (matchedAmenityCount / requestedAmenityCount) * 0.25)
+        : 0;
 
     return clamp01(matchedTokenCount / tokens.length + amenityBoost);
+};
+
+const calculateBedroomFeatureScore = (item: SemanticSearchItem, requestedBedrooms?: number) => {
+    if (!requestedBedrooms) {
+        return 0;
+    }
+
+    if (item.bedrooms === requestedBedrooms) {
+        return 0.35;
+    }
+
+    if (item.bedrooms > requestedBedrooms) {
+        const extraBedrooms = item.bedrooms - requestedBedrooms;
+        return Math.max(0.1, 0.25 - extraBedrooms * 0.04);
+    }
+
+    return Math.max(0, 0.15 - (requestedBedrooms - item.bedrooms) * 0.05);
+};
+
+const calculateBeachFeatureScore = (item: SemanticSearchItem, filters: SemanticSearchFilters) => {
+    if (!filters.nearBeach && !filters.beachDistanceMeters) {
+        return 0;
+    }
+
+    const beachDistanceMeters = item.matchSignals?.beachDistanceMeters;
+
+    if (filters.beachDistanceMeters && beachDistanceMeters !== undefined) {
+        if (beachDistanceMeters <= filters.beachDistanceMeters) return 0.3;
+        if (beachDistanceMeters <= Math.max(200, filters.beachDistanceMeters * 2)) return 0.24;
+        if (beachDistanceMeters <= 500) return 0.18;
+        if (item.matchSignals?.beach) return 0.1;
+        return 0;
+    }
+
+    return item.matchSignals?.beach ? 0.22 : 0;
+};
+
+const calculateFeatureScore = (item: SemanticSearchItem, filters: SemanticSearchFilters) => {
+    let score = 0;
+
+    score += calculateBedroomFeatureScore(item, filters.bedrooms);
+    score += calculateBeachFeatureScore(item, filters);
+
+    if (filters.amenityCodes.includes("pool") && item.matchSignals?.pool) {
+        score += 0.24;
+    }
+
+    if (filters.parsedFilters.parkingRequired && item.matchSignals?.amenityCodes.includes("parking")) {
+        score += 0.20;
+    }
+
+    const requestedNonPoolAmenities = filters.amenityCodes.filter((code) => code !== "pool" && code !== "parking");
+    if (requestedNonPoolAmenities.length > 0) {
+        const matchedCount = item.matchSignals?.amenityCodes.filter((code) =>
+            requestedNonPoolAmenities.includes(code),
+        ).length ?? 0;
+        score += Math.min(0.15, (matchedCount / requestedNonPoolAmenities.length) * 0.15);
+    }
+
+    if (filters.vungTauAreaKeys.length > 0 && item.matchSignals?.locationAreaMatch) {
+        score += 0.14;
+    } else if (filters.parsedFilters.nearCenter && item.vungTauAreaKeys.includes("trung_tam")) {
+        score += 0.14;
+    }
+
+    return clamp01(score);
 };
 
 const calculateLocationScore = (item: SemanticSearchItem, filters: SemanticSearchFilters) => {
@@ -268,6 +341,7 @@ const buildScoreBreakdown = (item: SemanticSearchItem, filters: SemanticSearchFi
     const locationScore = calculateLocationScore(item, filters);
     const availabilityScore = item.isAvailable ? 1 : 0;
     const popularityScore = calculatePopularityScore(item);
+    const featureScore = calculateFeatureScore(item, filters);
 
     return {
         semanticScore,
@@ -275,17 +349,19 @@ const buildScoreBreakdown = (item: SemanticSearchItem, filters: SemanticSearchFi
         locationScore,
         availabilityScore,
         popularityScore,
+        featureScore,
     };
 };
 
 const calculateFinalScore = (item: SemanticSearchItem, filters: SemanticSearchFilters) => {
     const scoreBreakdown = buildScoreBreakdown(item, filters);
     const finalScore =
-        scoreBreakdown.semanticScore * 0.35 +
-        scoreBreakdown.keywordScore * 0.25 +
-        scoreBreakdown.locationScore * 0.2 +
+        scoreBreakdown.semanticScore * 0.25 +
+        scoreBreakdown.keywordScore * 0.2 +
+        scoreBreakdown.locationScore * 0.15 +
         scoreBreakdown.availabilityScore * 0.1 +
-        scoreBreakdown.popularityScore * 0.1;
+        scoreBreakdown.popularityScore * 0.05 +
+        scoreBreakdown.featureScore * 0.25;
 
     return {
         scoreBreakdown,
@@ -300,57 +376,65 @@ const buildMatchedReasons = (
 ) => {
     const reasons: string[] = [];
 
-    if (filters.forceVungTauOnly) {
-        reasons.push("Nam trong pham vi tim kiem Vung Tau");
-    }
-
-    if (item.vungTauAreas.length > 0) {
-        reasons.push(`Khu vuc phu hop: ${item.vungTauAreas.join(", ")}`);
-    }
-
-    if (filters.vungTauAreaKeys.length > 0) {
-        const matchedAreaNames = filters.vungTauAreaKeys
-            .filter((areaKey) => item.vungTauAreaKeys.includes(areaKey))
-            .map(getVungTauAreaDisplayName);
-
-        if (matchedAreaNames.length > 0) {
-            reasons.push(`Khop locationGroup: ${matchedAreaNames.join(", ")}`);
-        }
-    }
+    reasons.push("Phù hợp với nhu cầu của bạn");
 
     if (filters.district && normalizeKey(item.district) === filters.districtKey) {
-        reasons.push(`Dung khu vuc ${item.district}`);
+        reasons.push(`Khu vực ${item.district}`);
     }
 
-    if (item.maxGuests >= filters.guests) {
-        reasons.push(`Phu hop ${filters.guests} khach`);
+    if (filters.guests > 1 && item.maxGuests >= filters.guests) {
+        reasons.push(`Đủ cho nhóm ${filters.guests} khách`);
+    }
+
+    if (filters.bedrooms && item.bedrooms === filters.bedrooms) {
+        reasons.push(`Đúng ${filters.bedrooms} phòng ngủ`);
+    } else if (filters.bedrooms && item.bedrooms > filters.bedrooms) {
+        reasons.push(`${item.bedrooms} phòng ngủ (nhiều hơn yêu cầu)`);
     }
 
     if (filters.maxPrice !== undefined && item.basePrice <= filters.maxPrice) {
-        reasons.push(`Gia khong vuot ${filters.maxPrice.toLocaleString("vi-VN")} VND`);
+        reasons.push(`Trong ngân sách`);
     }
 
-    if (filters.minPrice !== undefined && item.basePrice >= filters.minPrice) {
-        reasons.push(`Gia tu ${filters.minPrice.toLocaleString("vi-VN")} VND`);
+    if (filters.amenityCodes.includes("pool") && item.matchSignals?.pool) {
+        reasons.push("Có hồ bơi");
     }
 
-    if (filters.amenityIds.length > 0) {
-        reasons.push("Khop tien nghi");
+    if (filters.parsedFilters.parkingRequired && item.matchSignals?.amenityCodes.includes("parking")) {
+        reasons.push("Có chỗ đậu xe");
     }
 
-    if (item.semanticScore > 0) {
-        reasons.push(`Semantic score ${scoreBreakdown.semanticScore.toFixed(3)}`);
+    const hasNonPoolAmenityMatch = item.matchSignals?.amenityCodes.some((code) =>
+        code !== "pool" && code !== "parking" && filters.amenityCodes.includes(code),
+    );
+    if (hasNonPoolAmenityMatch) {
+        reasons.push("Có tiện nghi yêu cầu");
     }
 
-    if (scoreBreakdown.keywordScore > 0) {
-        reasons.push(`Keyword score ${scoreBreakdown.keywordScore.toFixed(3)}`);
+    if ((filters.nearBeach || filters.beachDistanceMeters) && item.matchSignals?.beach) {
+        const distance = item.matchSignals.beachDistanceMeters;
+        if (
+            filters.beachDistanceMeters &&
+            distance !== undefined &&
+            distance <= Math.max(500, filters.beachDistanceMeters * 5)
+        ) {
+            reasons.push(`Cách biển ~${distance.toLocaleString("vi-VN")}m`);
+        } else {
+            reasons.push("Gần biển");
+        }
     }
 
-    if (item.isAvailable) {
-        reasons.push("Con kha dung theo ngay da chon hoac chua yeu cau ngay");
+    if (filters.vungTauAreaKeys.length > 0 && item.matchSignals?.locationAreaMatch) {
+        reasons.push("Khu vực bạn tìm kiếm");
+    } else if (filters.parsedFilters.nearCenter && item.vungTauAreaKeys.includes("trung_tam")) {
+        reasons.push("Gần trung tâm");
     }
 
-    return reasons;
+    if (filters.checkIn && filters.checkOut && item.isAvailable) {
+        reasons.push("Còn trống theo ngày chọn");
+    }
+
+    return uniqueStrings(reasons);
 };
 
 // ─── Date validation ──────────────────────────────────────────────────────────
@@ -496,19 +580,22 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
 
     // Determine if user specified a specific location group (e.g. "bãi sau", "long cung")
     // Either via UI dropdown (explicitLocationAreaKeys) or via query text (parsedLocationAreaKeys)
-    const hasSpecificLocation = explicitLocationAreaKeys.length > 0 || parsedLocationAreaKeys.length > 0;
+    const hasExplicitLocation = explicitLocationAreaKeys.length > 0;
+    const suppressGenericExpansion =
+        hasExplicitLocation ||
+        (parsedLocationAreaKeys.length > 0 && !parsedLocationAreaKeys.includes("trung_tam"));
 
     const preferredAreaKeys = uniqueStrings([
         ...explicitLocationAreaKeys,
         ...parsedLocationAreaKeys,
         ...inferredAreaKeys,
     ]);
-    const vungTauAreaKeys = expandPreferredAreaKeys(preferredAreaKeys, parsed.proximity, hasSpecificLocation);
+    const vungTauAreaKeys = expandPreferredAreaKeys(preferredAreaKeys, parsed.proximity, suppressGenericExpansion);
 
     // Use hard filter when user explicitly mentioned a specific area.
     // This ensures "villa gần bãi sau" only returns Bãi Sau listings,
     // not Bãi Long Cung or other beach areas.
-    const locationAreaFilterMode = hasSpecificLocation ? "hard" : "soft";
+    const locationAreaFilterMode = hasExplicitLocation ? "hard" : "soft";
 
     return {
         query,
@@ -530,6 +617,8 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
         bedrooms: parsed.bedrooms,
         beds: parsed.beds,
         bathrooms: parsed.bathrooms,
+        nearBeach: Boolean(parsed.nearBeach || parsed.proximity.includes("near_beach")),
+        beachDistanceMeters: parsed.beachDistanceMeters,
 
         amenityIds,
         amenityCodes,
@@ -552,6 +641,22 @@ const buildFilters = async (input: SemanticSearchRequest): Promise<SemanticSearc
 
 // ─── Ranking & pagination ─────────────────────────────────────────────────────
 
+const bedroomPriority = (item: SemanticSearchItem, filters: SemanticSearchFilters) => {
+    if (!filters.bedrooms) {
+        return 0;
+    }
+
+    if (item.bedrooms === filters.bedrooms) {
+        return 3;
+    }
+
+    if (item.bedrooms > filters.bedrooms) {
+        return 2 - (item.bedrooms - filters.bedrooms) * 0.1;
+    }
+
+    return 1 - (filters.bedrooms - item.bedrooms) * 0.1;
+};
+
 const rankItems = (items: SemanticSearchItem[], filters: SemanticSearchFilters) =>
     items
         .map((item) => {
@@ -565,7 +670,11 @@ const rankItems = (items: SemanticSearchItem[], filters: SemanticSearchFilters) 
                 matchedReasons: buildMatchedReasons(item, filters, scoreBreakdown),
             };
         })
-        .sort((left, right) => right.finalScore - left.finalScore || right.listingId - left.listingId);
+        .sort((left, right) =>
+            bedroomPriority(right, filters) - bedroomPriority(left, filters) ||
+            right.finalScore - left.finalScore ||
+            right.listingId - left.listingId,
+        );
 
 const paginate = (
     items: SemanticSearchItem[],
@@ -612,6 +721,8 @@ const paginate = (
                 bedrooms: filters.bedrooms,
                 beds: filters.beds,
                 bathrooms: filters.bathrooms,
+                nearBeach: filters.nearBeach,
+                beachDistanceMeters: filters.beachDistanceMeters,
                 amenityIds: filters.amenityIds,
                 amenityCodes: filters.amenityCodes,
                 locationGroup: filters.locationGroup,
@@ -633,7 +744,12 @@ const buildEmptyResponse = (
     reason: SearchRejectionReason,
     message: string,
 ): SemanticSearchResponse =>
-    paginate([], filters, false, false, 0, { reason, message });
+    paginate([], filters, false, false, 0, {
+        reason,
+        message: reason === "UNSUPPORTED_LOCATION"
+            ? "Minh Thành Villa hiện chỉ hỗ trợ khu vực Vũng Tàu."
+            : message,
+    });
 
 // ─── Logging ──────────────────────────────────────────────────────────────────
 

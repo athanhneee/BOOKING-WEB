@@ -14,6 +14,7 @@ import ListingEmbedding from "../../models/listing-embedding";
 import Listing, {
     ListingAvailabilityDayRecord,
     ListingDocument,
+    ListingImageRecord,
 } from "../../models/listing";
 import Review from "../../models/review";
 import SearchLog from "../../models/search-log";
@@ -109,6 +110,36 @@ const beachAnchors = [
     { name: "Long Cung", latitude: 10.374, longitude: 107.151 },
 ];
 
+const nearBeachAreaKeys = new Set(["bai_sau", "thuy_van", "long_cung", "tran_phu", "bai_truoc"]);
+
+const amenityEvidenceTerms: Record<string, string[]> = {
+    pool: ["pool", "swimming pool", "ho boi", "be boi", "ho boi rieng", "ho boi lon"],
+    karaoke: ["karaoke", "phong hat", "loa keo", "loa karaoke", "hat ho"],
+    billiards: ["bida", "bi a", "billiards", "ban bida", "pool table"],
+    bbq: ["bbq", "nuong", "bep nuong", "khu nuong", "san nuong"],
+    sea_view: ["view bien", "huong bien", "nhin ra bien", "sea view", "ocean view"],
+    kitchen: ["bep", "kitchen", "nau an"],
+    parking: ["bai xe", "dau xe", "do xe", "parking"],
+    pet_friendly: ["thu cung", "pet", "cho meo", "cho mang"],
+    elevator: ["thang may", "elevator", "lift"],
+};
+
+const beachEvidenceTerms = [
+    "gan bien",
+    "sat bien",
+    "cach bien",
+    "di bo ra bien",
+    "di bo ra bai",
+    "bai sau",
+    "bai truoc",
+    "thuy van",
+    "long cung",
+    "tran phu",
+    "bai dau",
+    "bo bien",
+    "ven bien",
+];
+
 const safeStringArray = (value: unknown): string[] => {
     if (Array.isArray(value)) {
         return value.map(String).map((item) => item.trim()).filter(Boolean);
@@ -126,6 +157,82 @@ const safeStringArray = (value: unknown): string[] => {
     }
 
     return [];
+};
+
+const normalizedIncludesAny = (text: string, terms: string[]) => {
+    const normalizedText = normalizeVietnameseText(text);
+    const compactText = normalizedText.replace(/\s+/g, "");
+
+    return terms.some((term) => {
+        const normalizedTerm = normalizeVietnameseText(term);
+        return normalizedText.includes(normalizedTerm) ||
+            compactText.includes(normalizedTerm.replace(/\s+/g, ""));
+    });
+};
+
+const getImageEvidenceText = (images: ListingImageRecord[]) =>
+    images.flatMap((image) => [
+        image.caption ?? "",
+        image.displayTitle ?? "",
+        image.altText ?? "",
+        image.aiImageType ?? "",
+        image.aiDescription ?? "",
+        ...safeStringArray(image.aiSceneTags),
+        ...safeStringArray(image.aiAmenityTags),
+        ...safeStringArray(image.aiQualityWarnings),
+    ]).join(" ");
+
+const getListingEvidenceText = (
+    listing: ListingDocument,
+    amenityNames: string[],
+    images: ListingImageRecord[],
+) =>
+    [
+        listing.title,
+        listing.description,
+        listing.addressLine,
+        listing.ward,
+        listing.district,
+        listing.city,
+        listing.stateRegion ?? "",
+        listing.searchText ?? "",
+        listing.aiImageSummary ?? "",
+        ...safeStringArray(listing.aiImageTags),
+        ...amenityNames,
+        getImageEvidenceText(images),
+    ].join(" ");
+
+const parseDistanceValue = (rawValue: string, rawUnit: string) => {
+    const value = Number(rawValue.replace(",", "."));
+    if (!Number.isFinite(value) || value <= 0) {
+        return undefined;
+    }
+
+    const unit = rawUnit.toLowerCase();
+    return unit.startsWith("km") || unit.startsWith("kilo")
+        ? Math.round(value * 1000)
+        : Math.round(value);
+};
+
+const extractBeachDistanceFromText = (text: string) => {
+    const normalized = normalizeVietnameseText(text);
+    const target = "(?:bien|bo bien|bai tam|bai sau|bai truoc|bai long cung|long cung|thuy van|tran phu|bai dau)";
+    const unit = "(m|met|meter|meters|km|kilomet|kilometer|kilometers)";
+    const patterns = [
+        new RegExp(`(?:cach|gan|sat)?\\s*${target}(?:\\s+[a-z0-9]+){0,3}\\s+(\\d+(?:[,.]\\d+)?)\\s*${unit}\\b`),
+        new RegExp(`cach\\s+(?:khoang\\s+)?(\\d+(?:[,.]\\d+)?)\\s*${unit}\\s*(?:toi|den|ra)?\\s*${target}\\b`),
+        new RegExp(`distance to beach\\s*:?\\s*(\\d+(?:[,.]\\d+)?)\\s*${unit}\\b`),
+        new RegExp(`distancetobeach\\s*:?\\s*(\\d+(?:[,.]\\d+)?)\\s*${unit}\\b`),
+    ];
+
+    for (const pattern of patterns) {
+        const match = normalized.match(pattern);
+        if (match) {
+            return parseDistanceValue(match[1], match[2]);
+        }
+    }
+
+    return undefined;
 };
 
 const getDistanceToBeachMeters = (listing: ListingDocument) => {
@@ -151,6 +258,54 @@ const getDistanceToBeachMeters = (listing: ListingDocument) => {
     return {
         beachName: nearest.name,
         meters: Math.round(nearest.distance),
+    };
+};
+
+const getAmenityEvidenceCodes = (
+    filters: SemanticSearchFilters,
+    evidenceText: string,
+    listingAmenityIds: number[],
+) =>
+    uniqueStrings(
+        filters.amenityCodes.filter((code) => {
+            const terms = amenityEvidenceTerms[code] ?? [code];
+            const fallbackAmenityId = defaultAmenityAliases[code];
+
+            return normalizedIncludesAny(evidenceText, terms) ||
+                (fallbackAmenityId !== undefined && listingAmenityIds.includes(fallbackAmenityId));
+        }),
+    );
+
+const buildMatchSignals = (
+    listing: ListingDocument,
+    filters: SemanticSearchFilters,
+    input: {
+        amenityIds: number[];
+        amenityNames: string[];
+        images: ListingImageRecord[];
+        vungTauAreaKeys: string[];
+    },
+): NonNullable<SemanticSearchItem["matchSignals"]> => {
+    const evidenceText = getListingEvidenceText(listing, input.amenityNames, input.images);
+    const amenityCodes = getAmenityEvidenceCodes(filters, evidenceText, input.amenityIds);
+    const coordinateDistance = getDistanceToBeachMeters(listing);
+    const textDistanceMeters = extractBeachDistanceFromText(evidenceText);
+    const beachDistanceMeters = textDistanceMeters ?? coordinateDistance?.meters;
+    const beachByArea = input.vungTauAreaKeys.some((areaKey) => nearBeachAreaKeys.has(areaKey));
+    const beachByDistance = beachDistanceMeters !== undefined && beachDistanceMeters <= 700;
+    const beach = normalizedIncludesAny(evidenceText, beachEvidenceTerms) || beachByArea || beachByDistance;
+    const locationAreaMatch = filters.vungTauAreaKeys.length > 0 &&
+        filters.vungTauAreaKeys.some((areaKey) => input.vungTauAreaKeys.includes(areaKey));
+
+    return {
+        amenityCodes,
+        pool: amenityCodes.includes("pool") || normalizedIncludesAny(evidenceText, amenityEvidenceTerms.pool),
+        beach,
+        ...(beachDistanceMeters !== undefined ? { beachDistanceMeters } : {}),
+        ...(coordinateDistance?.beachName ? { beachName: coordinateDistance.beachName } : {}),
+        exactBedrooms: Boolean(filters.bedrooms && listing.bedrooms === filters.bedrooms),
+        largerBedroomsFallback: Boolean(filters.bedrooms && listing.bedrooms > filters.bedrooms),
+        locationAreaMatch,
     };
 };
 
@@ -661,7 +816,7 @@ export const findAvailableListingItems = async (
 
     const listings = await Listing.findAll({ where });
 
-    const [amenityIdsMap, imageMap, availabilityMap, reviewSummaryMap, bookedListingIds] =
+    const [amenityIdsMap, imageMap, availabilityMap, reviewSummaryMap, bookedListingIds, amenityLookup] =
         await Promise.all([
             getListingAmenityIdsMap(listings),
             getListingImagesMap(listings),
@@ -672,6 +827,7 @@ export const findAvailableListingItems = async (
                 filters.checkIn,
                 filters.checkOut,
             ),
+            getAmenityLookup(),
         ]);
 
     return listings
@@ -691,15 +847,6 @@ export const findAvailableListingItems = async (
                 filters.locationAreaFilterMode === "hard" &&
                 filters.vungTauAreaKeys.length > 0 &&
                 !filters.vungTauAreaKeys.some((areaKey) => listingAreaKeys.includes(areaKey))
-            ) {
-                return false;
-            }
-
-            const listingAmenityIds = amenityIdsMap.get(listing.listingId) ?? [];
-
-            if (
-                filters.amenityIds.length > 0 &&
-                !filters.amenityIds.every((id) => listingAmenityIds.includes(id))
             ) {
                 return false;
             }
@@ -731,6 +878,16 @@ export const findAvailableListingItems = async (
             const locationText = getListingLocationText(listing);
             const vungTauAreaKeys = inferVungTauAreaKeys(locationText);
             const semanticScore = semanticScoreMap.get(listing.listingId) ?? 0;
+            const listingAmenityIds = amenityIdsMap.get(listing.listingId) ?? [];
+            const amenityNames = listingAmenityIds
+                .map((amenityId) => amenityLookup.byId.get(amenityId)?.name)
+                .filter((name): name is string => Boolean(name));
+            const matchSignals = buildMatchSignals(listing, filters, {
+                amenityIds: listingAmenityIds,
+                amenityNames,
+                images,
+                vungTauAreaKeys,
+            });
 
             return {
                 listingId: listing.listingId,
@@ -769,6 +926,7 @@ export const findAvailableListingItems = async (
                 locationScore: 0,
                 availabilityScore: 1,
                 popularityScore: 0,
+                featureScore: 0,
                 finalScore: 0,
                 scoreBreakdown: {
                     semanticScore,
@@ -776,7 +934,9 @@ export const findAvailableListingItems = async (
                     locationScore: 0,
                     availabilityScore: 1,
                     popularityScore: 0,
+                    featureScore: 0,
                 },
+                matchSignals,
                 matchedReasons: [],
             };
         });

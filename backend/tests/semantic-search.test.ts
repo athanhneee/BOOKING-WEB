@@ -91,6 +91,25 @@ describe("semantic search query understanding", () => {
             checkOut: "2027-01-02",
         });
     });
+
+    it("parses pool, beach distance, bedrooms, beds, and bathrooms without price confusion", () => {
+        const { parseSearchQuery } = require("../dist/modules/semantic-search/semantic-search.parser");
+        const now = new Date("2026-06-10T00:00:00+07:00");
+
+        const beachDistance = parseSearchQuery("villa vung tau cho 10 nguoi lon cach bien 100m", [], now);
+        assert.equal(beachDistance.guests, 10);
+        assert.equal(beachDistance.nearBeach, true);
+        assert.equal(beachDistance.beachDistanceMeters, 100);
+        assert.equal(beachDistance.minPrice, undefined);
+        assert.equal(beachDistance.maxPrice, undefined);
+
+        const rooms = parseSearchQuery("villa 6 phong cho 10 nguoi co ho boi 9 giuong 6 nha ve sinh", [], now);
+        assert.equal(rooms.bedrooms, 6);
+        assert.equal(rooms.guests, 10);
+        assert.equal(rooms.beds, 9);
+        assert.equal(rooms.bathrooms, 6);
+        assert.equal(rooms.amenityCodes.includes("pool"), true);
+    });
 });
 
 describe("semantic listing search document", () => {
@@ -289,6 +308,81 @@ describe("semantic search fallback and scoring", () => {
         assert.deepEqual(result.items.map((item: { listingId: number }) => item.listingId), [902]);
     });
 
+    it("prioritizes exact bedroom matches above larger-bedroom fallback results", async () => {
+        const embedding = require("../dist/modules/semantic-search/embedding.service");
+        const repository = require("../dist/modules/semantic-search/semantic-search.repository");
+        const service = require("../dist/modules/semantic-search/semantic-search.service");
+
+        const makeItem = (listingId: number, bedrooms: number) => ({
+            listingId,
+            title: `Villa ${bedrooms} phong`,
+            description: "Villa co ho boi gan bien",
+            basePrice: 3000000,
+            weekendPrice: null,
+            currency: "VND",
+            ratingAvg: 4.8,
+            reviewCount: 3,
+            isAvailable: true,
+            addressLine: "12 Thuy Van",
+            ward: "Ward 2",
+            district: "Vung Tau",
+            city: "Vung Tau",
+            vungTauAreas: ["Bai Sau"],
+            vungTauAreaKeys: ["bai_sau"],
+            propertyType: "villa",
+            roomType: "entire_place",
+            maxGuests: 12,
+            bedrooms,
+            beds: bedrooms + 2,
+            bathrooms: bedrooms,
+            imageUrl: null,
+            semanticScore: 0,
+            keywordScore: 0,
+            locationScore: 0,
+            availabilityScore: 1,
+            popularityScore: 0,
+            featureScore: 0,
+            finalScore: 0,
+            scoreBreakdown: {
+                semanticScore: 0,
+                keywordScore: 0,
+                locationScore: 0,
+                availabilityScore: 1,
+                popularityScore: 0,
+                featureScore: 0,
+            },
+            matchSignals: {
+                amenityCodes: ["pool"],
+                pool: true,
+                beach: true,
+                beachDistanceMeters: 200,
+                exactBedrooms: bedrooms === 6,
+                largerBedroomsFallback: bedrooms > 6,
+                locationAreaMatch: true,
+            },
+            matchedReasons: [],
+        });
+
+        patch(embedding, "generateEmbedding", async () => {
+            throw new Error("Qdrant unavailable");
+        });
+        patch(repository, "listSemanticSynonymRows", async () => []);
+        patch(repository, "resolveAmenityIds", async () => [5]);
+        patch(repository, "recordSemanticSearchLog", async () => undefined);
+        patch(repository, "keywordSearchFallback", async () => [
+            makeItem(908, 8),
+            makeItem(906, 6),
+        ]);
+
+        const result = await service.semanticSearchListings({
+            query: "villa 6 phong cho 10 nguoi co ho boi",
+            limit: 5,
+        });
+
+        assert.deepEqual(result.items.map((item: { listingId: number }) => item.listingId), [906, 908]);
+        assert.equal(result.items[0].matchedReasons.some((reason: string) => /locationGroup|Semantic score|Keyword score/i.test(reason)), false);
+    });
+
     it("rejects invalid intent and unsupported cities before returning Vung Tau listings", async () => {
         const embedding = require("../dist/modules/semantic-search/embedding.service");
         const repository = require("../dist/modules/semantic-search/semantic-search.repository");
@@ -310,6 +404,7 @@ describe("semantic search fallback and scoring", () => {
 
         const unsupported = await service.semanticSearchListings({ query: "villa nha trang" });
         assert.equal(unsupported.reason, "UNSUPPORTED_LOCATION");
+        assert.equal(unsupported.message, "Minh Thành Villa hiện chỉ hỗ trợ khu vực Vũng Tàu.");
         assert.equal(unsupported.items.length, 0);
     });
 

@@ -26,8 +26,10 @@ const suggestionChips = [
 
 type DateIntent = {
     label: string;
+    friendlyName?: string;
     checkIn?: string;
     checkOut?: string;
+    isAutoFilled?: boolean;
 };
 
 type AiSearchLocationState = {
@@ -52,10 +54,98 @@ const DATE_LABEL_MAP: Record<string, string> = {
     specific_date: "Ngày được chọn",
 };
 
+const shouldShowAiDebug = import.meta.env.VITE_SHOW_AI_DEBUG === "true";
+
+type FilterChipLike = {
+    key: string;
+    friendlyName?: string;
+    value?: unknown;
+    checkIn?: string;
+    checkOut?: string;
+    isAutoFilled?: boolean;
+};
+
 const formatShortDate = (iso: string) => {
     const d = new Date(`${iso}T00:00:00`);
     if (Number.isNaN(d.getTime())) return iso;
     return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(d);
+};
+
+const formatDateRange = (checkIn?: string, checkOut?: string) => {
+    if (!checkIn) return "";
+    return checkOut ? `${formatShortDate(checkIn)} – ${formatShortDate(checkOut)}` : formatShortDate(checkIn);
+};
+
+const formatFilterChipLabel = (filter: FilterChipLike) => {
+    const dateRange = formatDateRange(filter.checkIn, filter.checkOut);
+
+    if (filter.isAutoFilled && dateRange) {
+        return `AI tự điền lịch: ${dateRange}`;
+    }
+
+    const monthMatch = filter.key.match(/^month_(\d{1,2})(?:_\d{4})?$/);
+    if (monthMatch && dateRange) {
+        return `Tháng ${Number(monthMatch[1])}: ${dateRange}`;
+    }
+
+    if (filter.key === "date_range" && dateRange) {
+        return `Ngày đã chọn: ${dateRange}`;
+    }
+
+    if (filter.key === "guests" && typeof filter.value === "number") {
+        return `${filter.value} khách`;
+    }
+
+    if (filter.key === "bedrooms" && typeof filter.value === "number") {
+        return `${filter.value} phòng ngủ`;
+    }
+
+    if (filter.key === "pool") {
+        return "Hồ bơi";
+    }
+
+    if (filter.key === "beach_distance" && typeof filter.value === "number") {
+        return `Cách biển khoảng ${filter.value}m`;
+    }
+
+    if (filter.friendlyName) {
+        return dateRange ? `${filter.friendlyName}: ${dateRange}` : filter.friendlyName;
+    }
+
+    return dateRange
+        ? `${DATE_LABEL_MAP[filter.key] ?? "Ngày đã chọn"}: ${dateRange}`
+        : String(filter.value ?? DATE_LABEL_MAP[filter.key] ?? filter.key);
+};
+
+const formatDateIntentChipLabel = (intent: DateIntent) =>
+    formatFilterChipLabel({
+        key: intent.label,
+        friendlyName: intent.friendlyName,
+        checkIn: intent.checkIn,
+        checkOut: intent.checkOut,
+        isAutoFilled: intent.isAutoFilled,
+    });
+
+const INTERNAL_REASON_PATTERNS = [
+    /locationGroup/i,
+    /semantic score/i,
+    /keyword score/i,
+    /searchScore/i,
+    /withinVungTau/i,
+    /matchedLocationGroups/i,
+    /parsedFilters/i,
+    /N[aă]m trong ph[aạ]m vi/i,
+    /Khu v[uư]c ph[uù] h[oợ]p/i,
+];
+
+const getVisibleMatchedReasons = (reasons?: string[]) => {
+    if (!reasons?.length) {
+        return [];
+    }
+
+    return shouldShowAiDebug
+        ? reasons
+        : reasons.filter((reason) => !INTERNAL_REASON_PATTERNS.some((pattern) => pattern.test(reason)));
 };
 
 const AiSearchPage = () => {
@@ -199,6 +289,10 @@ const AiSearchPage = () => {
         void runSearch(chip);
     };
 
+    const dateIntentChipLabel = dateIntent?.checkIn
+        ? formatDateIntentChipLabel(dateIntent)
+        : "";
+
     return (
         <div className="min-h-screen bg-[#f7f8fb] pt-24">
             <main className="mx-auto max-w-6xl px-4 pb-16">
@@ -261,12 +355,7 @@ const AiSearchPage = () => {
                         {dateIntent?.checkIn ? (
                             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-600">
                                 <Calendar size={16} />
-                                <span>
-                                    {DATE_LABEL_MAP[dateIntent.label] ?? dateIntent.label}:{" "}
-                                    <strong>{formatShortDate(dateIntent.checkIn)}</strong>
-                                    {dateIntent.checkOut ? ` – ${formatShortDate(dateIntent.checkOut)}` : ""}
-                                </span>
-                                <span className="ml-1 text-xs text-cyan-500">· Tự điền vào lịch</span>
+                                <span>{dateIntentChipLabel}</span>
                             </div>
                         ) : null}
 
@@ -385,30 +474,35 @@ const AiSearchPage = () => {
                                     </div>
                                 ) : null}
                                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                                    {items.map((listing) => (
-                                        <div
-                                            key={listing.listingId}
-                                            className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)]"
-                                        >
-                                            <ListingCard
-                                                listing={listing}
-                                                checkIn={dateIntent?.checkIn}
-                                                checkOut={dateIntent?.checkOut}
-                                            />
-                                            {listing.matchedReasons?.length ? (
-                                                <div className="space-y-2 border-t border-slate-100 p-4">
-                                                    {listing.matchedReasons.slice(0, 3).map((reason) => (
-                                                        <p
-                                                            key={reason}
-                                                            className="rounded-xl bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-800"
-                                                        >
-                                                            {reason}
-                                                        </p>
-                                                    ))}
-                                                </div>
-                                            ) : null}
-                                        </div>
-                                    ))}
+                                    {items.map((listing) => {
+                                        const visibleReasons = getVisibleMatchedReasons(listing.matchedReasons)
+                                            .slice(0, shouldShowAiDebug ? 6 : 3);
+
+                                        return (
+                                            <div
+                                                key={listing.listingId}
+                                                className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)]"
+                                            >
+                                                <ListingCard
+                                                    listing={listing}
+                                                    checkIn={dateIntent?.checkIn}
+                                                    checkOut={dateIntent?.checkOut}
+                                                />
+                                                {visibleReasons.length ? (
+                                                    <div className="space-y-2 border-t border-slate-100 p-4">
+                                                        {visibleReasons.map((reason) => (
+                                                            <p
+                                                                key={reason}
+                                                                className="rounded-xl bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-800"
+                                                            >
+                                                                {reason}
+                                                            </p>
+                                                        ))}
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </>
                         ) : (

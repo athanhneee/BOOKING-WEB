@@ -319,10 +319,6 @@ const buildQdrantFilter = (filters: SemanticSearchFilters) => {
         must.push({ key: "room_type", match: { value: filters.roomType } });
     }
 
-    for (const amenityId of filters.amenityIds) {
-        must.push({ key: "amenity_ids", match: { value: amenityId } });
-    }
-
     return { must };
 };
 

@@ -8,7 +8,6 @@ import {
     LuMenu,
     LuMessageSquare,
     LuPlane,
-    LuSearch,
     LuUserRound,
     LuX,
 } from "react-icons/lu";

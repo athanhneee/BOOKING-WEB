@@ -60,7 +60,6 @@ const QuanLyNguoiDung = () => {
                 <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                     <div className="overflow-x-auto">
                         <table className={`${tableClassName} text-left text-sm`}>
-                        <table className={`${tableClassName} text-left text-sm`}>
                             <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
                                 <tr>
                                     <th className="px-5 py-4 font-semibold">User</th>
