@@ -524,7 +524,7 @@ const MessagesPage = () => {
                                     Tất cả
                                     <FiChevronDown size={14} />
                                 </button>
-                                <button
+                                {/* <button
                                     type="button"
                                     onClick={() => setConversationFilter("unread")}
                                     className={`inline-flex min-h-9 items-center rounded-full px-4 text-sm font-semibold transition ${conversationFilter === "unread"
@@ -533,7 +533,7 @@ const MessagesPage = () => {
                                         }`}
                                 >
                                     Chưa đọc
-                                </button>
+                                </button> */}
                             </div>
                         </div>
                         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-5">
