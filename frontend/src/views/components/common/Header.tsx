@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { LuMenu, LuX } from "react-icons/lu";
+import type { IconType } from "react-icons";
+import {
+    LuBookOpen,
+    LuHeart,
+    LuHouse,
+    LuLogIn,
+    LuLogOut,
+    LuMenu,
+    LuPhone,
+    LuSearch,
+    LuX,
+} from "react-icons/lu";
 import { Link, useLocation } from "react-router-dom";
 import logo from "../../../assets/img/logo_mau.svg";
 import { APP_ROUTES } from "../../../config/routes";
@@ -10,11 +21,11 @@ import { getCurrentUser, isAdminUser } from "../../../store/authStore";
 import AccountMenu from "../navbar/AccountMenu";
 import NotificationBell from "../notifications/NotificationBell";
 
-const navLinks = [
-    { to: APP_ROUTES.home, label: "Trang chủ" },
-    { to: APP_ROUTES.search, label: "Nơi lưu trú" },
-    { to: APP_ROUTES.blog, label: "Blog" },
-    { to: APP_ROUTES.contact, label: "Liên hệ" },
+const navLinks: { to: string; label: string; icon: IconType }[] = [
+    { to: APP_ROUTES.home, label: "Trang chủ", icon: LuHouse },
+    { to: APP_ROUTES.search, label: "Nơi lưu trú", icon: LuSearch },
+    { to: APP_ROUTES.blog, label: "Blog", icon: LuBookOpen },
+    { to: APP_ROUTES.contact, label: "Liên hệ", icon: LuPhone },
 ];
 
 const Header = () => {
@@ -171,9 +182,10 @@ const Header = () => {
         return (
             <Link
                 to={APP_ROUTES.accountWishlist}
-                className="rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
                 onClick={() => setMobileMenuPath(null)}
             >
+                <LuHeart size={17} className="shrink-0 text-cyan-500" />
                 Danh sách yêu thích
             </Link>
         );
@@ -237,13 +249,14 @@ const Header = () => {
                 <div className="px-4 pt-3 md:hidden">
                     <div className="mx-auto max-w-7xl rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-md backdrop-blur">
                         <nav className="flex flex-col text-slate-900">
-                            {navLinks.map(({ to, label }) => (
+                            {navLinks.map(({ to, label, icon: Icon }) => (
                                 <Link
                                     key={to}
                                     to={to}
-                                    className="rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
+                                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
                                     onClick={() => setMobileMenuPath(null)}
                                 >
+                                    <Icon size={17} className="shrink-0 text-cyan-500" />
                                     {label}
                                 </Link>
                             ))}
@@ -262,16 +275,18 @@ const Header = () => {
                                                 window.location.href = APP_ROUTES.login;
                                             });
                                         }}
-                                        className="w-full rounded-xl px-4 py-3 text-left text-sm font-medium text-red-600 transition-all duration-200 hover:bg-red-50"
+                                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-red-600 transition-all duration-200 hover:bg-red-50"
                                     >
+                                        <LuLogOut size={17} className="shrink-0" />
                                         Đăng xuất
                                     </button>
                                 ) : (
                                     <Link
                                         to={APP_ROUTES.login}
-                                        className="block rounded-xl px-4 py-3 text-sm font-semibold text-cyan-600 transition-all duration-200 hover:bg-cyan-50"
+                                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-cyan-600 transition-all duration-200 hover:bg-cyan-50"
                                         onClick={() => setMobileMenuPath(null)}
                                     >
+                                        <LuLogIn size={17} className="shrink-0" />
                                         Đăng nhập
                                     </Link>
                                 )}
