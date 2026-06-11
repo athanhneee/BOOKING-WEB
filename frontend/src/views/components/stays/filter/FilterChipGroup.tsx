@@ -2,6 +2,7 @@ type FilterChipGroupProps<T extends string> = {
     options: T[];
     selectedValues: T[];
     onToggle: (value: T) => void;
+    renderLabel?: (value: T) => React.ReactNode;
     columnsClassName?: string;
 };
 
@@ -9,6 +10,7 @@ const FilterChipGroup = <T extends string>({
     options,
     selectedValues,
     onToggle,
+    renderLabel,
     columnsClassName = "grid-cols-2 lg:grid-cols-3",
 }: FilterChipGroupProps<T>) => {
     return (
@@ -26,7 +28,7 @@ const FilterChipGroup = <T extends string>({
                             : "border-slate-200 bg-white text-zinc-700 hover:border-cyan-200 hover:bg-cyan-50/50"
                             }`}
                     >
-                        {option}
+                        {renderLabel ? renderLabel(option) : option}
                     </button>
                 );
             })}

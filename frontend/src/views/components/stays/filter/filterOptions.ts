@@ -17,19 +17,37 @@ import type { CounterFilterItem, StaySortOption } from "./types";
 export const stayCategoryOptions: StayCategory[] = ["Villa", "Căn hộ", "Homestay", "Nhà nguyên căn", "Khách sạn"];
 
 export const stayAmenityOptions: StayAmenity[] = [
-    "Hồ bơi",
-    "Wifi",
-    "Bếp",
-    "Điều hòa",
-    "Máy giặt",
-    "Chỗ đậu xe",
-    "Cho mang thú cưng",
-    "Gần biển",
-    "Có BBQ",
-    "Ban công",
-    "View đẹp",
-    "Tự check-in",
+    "pool",
+    "wifi",
+    "kitchen",
+    "air_conditioner",
+    "washer",
+    "parking",
+    "pet_friendly",
+    "near_beach",
+    "bbq",
+    "balcony",
+    "nice_view",
+    "self_checkin",
 ];
+
+export const stayAmenityLabels: Record<string, string> = {
+    pool: "Hồ bơi",
+    wifi: "Wifi",
+    kitchen: "Bếp",
+    air_conditioner: "Điều hòa",
+    washer: "Máy giặt",
+    parking: "Chỗ đậu xe",
+    pet_friendly: "Cho mang thú cưng",
+    near_beach: "Gần biển",
+    bbq: "Có BBQ",
+    balcony: "Ban công",
+    nice_view: "View đẹp",
+    self_checkin: "Tự check-in",
+    karaoke: "Karaoke",
+    billiards: "Bida",
+    elevator: "Thang máy",
+};
 
 export const stayHighlightOptions: StayHighlight[] = [
     "Chủ nhà siêu cấp",

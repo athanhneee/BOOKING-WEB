@@ -9,6 +9,7 @@ import PriceRangeFilter from "./PriceRangeFilter";
 import {
     counterFilterItems,
     stayAmenityOptions,
+    stayAmenityLabels,
     stayCategoryOptions,
     stayHighlightOptions,
     stayPolicyOptions,
@@ -145,6 +146,7 @@ const StayFilterModal = ({ isOpen, onClose, value, bounds, onApply }: StayFilter
                         options={stayAmenityOptions}
                         selectedValues={draftFilters.amenities}
                         onToggle={(valueToToggle) => toggleMultiValue("amenities", valueToToggle)}
+                        renderLabel={(value) => stayAmenityLabels[value] ?? value}
                     />
                 </FilterSection>
 
