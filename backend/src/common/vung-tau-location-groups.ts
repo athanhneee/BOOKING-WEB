@@ -19,6 +19,18 @@ export const VUNG_TAU_LOCATION_GROUPS = {
         "Phan Huy Ích",
         "Lạc Long Quân",
         "Bình Giã",
+        "Bãi Sau Vũng Tàu",
+        "Bãi tắm bãi sau",
+        "Tào Mạt",
+        "Hoàng Trung Thông",
+        "Đồi Ngọc Tước",
+        "Trần Văn Thời",
+        "Dương Minh Châu",
+        "Nguyễn Thị Minh Khai",
+        "Hồ Quý Ly",
+        "Nguyễn Hữu Tiến",
+        "Trần Bình Trọng",
+        "Trần Quý Cáp",
     ],
     "Bãi Trước": [
         "Front Beach",
@@ -79,6 +91,37 @@ export const VUNG_TAU_LOCATION_GROUPS = {
         "Bacu",
         "Ba Cu",
         "Đồ Chiểu",
+        "Back Beach",
+        "Hoàng Hoa Thám",
+        "Phan Chu Trinh",
+        "Lê Hồng Phong",
+        "Nguyễn An Ninh",
+        "Phan Văn Trị",
+        "La Văn Cầu",
+        "Phó Đức Chính",
+        "Võ Thị Sáu",
+        "Nguyễn Hiền",
+        "Trần Quý Cáp",
+        "Hồ Quý Ly",
+        "Bàu Sen",
+        "Thi Sách",
+        "Mạc Thanh Đạm",
+        "Phan Huy Chú",
+        "Phan Huy Ích",
+        "Lạc Long Quân",
+        "Bình Giã",
+        "Bãi Sau Vũng Tàu",
+        "Bãi tắm bãi sau",
+        "Tào Mạt",
+        "Hoàng Trung Thông",
+        "Đồi Ngọc Tước",
+        "Trần Văn Thời",
+        "Dương Minh Châu",
+        "Nguyễn Thị Minh Khai",
+        "Hồ Quý Ly",
+        "Nguyễn Hữu Tiến",
+        "Trần Bình Trọng",
+        "Trần Quý Cáp",
     ],
     "Trần Phú": [
         "Trần Phú",
@@ -230,8 +273,8 @@ export const getDistanceMeters = (
     const a =
         Math.sin(dLat / 2) ** 2 +
         Math.cos(toRad(lat1)) *
-            Math.cos(toRad(lat2)) *
-            Math.sin(dLng / 2) ** 2;
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLng / 2) ** 2;
 
     return 2 * earthRadiusMeters * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
