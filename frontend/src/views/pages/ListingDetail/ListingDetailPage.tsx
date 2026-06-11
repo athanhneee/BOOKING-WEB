@@ -1202,7 +1202,7 @@ const MobileBookingSheetPanel = ({
                 onClick={onClose}
                 role="presentation"
             />
-            <div className="absolute inset-x-0 bottom-0 top-0 flex flex-col rounded-t-[38px] bg-[#f4f0eb] shadow-2xl">
+            <div className="absolute inset-x-0 bottom-0 top-[30vh] flex flex-col rounded-t-[38px] bg-[#f4f0eb] shadow-2xl">
                 <div className="shrink-0 px-4 pt-4">
                     <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-zinc-300" />
                     <div className="flex items-center justify-between gap-4">
