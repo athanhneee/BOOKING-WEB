@@ -123,6 +123,55 @@ const ensureEnumContains = async (
     );
 };
 
+const checkConstraintMatchesValues = async (
+    tableName: string,
+    constraintName: string,
+    requiredValues: string[],
+) => {
+    const [rows] = await sequelize.query(
+        `
+        SELECT CHECK_CLAUSE AS checkClause
+        FROM information_schema.CHECK_CONSTRAINTS
+        WHERE CONSTRAINT_SCHEMA = DATABASE()
+          AND CONSTRAINT_NAME = ?
+        LIMIT 1
+        `,
+        {
+            replacements: [constraintName],
+        },
+    );
+
+    const clause = (rows as Array<{ checkClause?: string }>)[0]?.checkClause ?? "";
+
+    if (!clause) {
+        return false;
+    }
+
+    return requiredValues.every((value) => clause.includes(`'${value}'`));
+};
+
+const ensureCheckConstraint = async (
+    tableName: string,
+    constraintName: string,
+    columnName: string,
+    values: string[],
+) => {
+    if (await checkConstraintMatchesValues(tableName, constraintName, values)) {
+        return;
+    }
+
+    try {
+        await sequelize.query(`ALTER TABLE \`${tableName}\` DROP CHECK \`${constraintName}\``);
+    } catch {
+        // constraint may not exist
+    }
+
+    const inList = values.map((v) => `'${v.replace(/'/g, "''")}'`).join(",");
+    await sequelize.query(
+        `ALTER TABLE \`${tableName}\` ADD CONSTRAINT \`${constraintName}\` CHECK (\`${columnName}\` IN (${inList}))`,
+    );
+};
+
 const ensureUsersSchema = async () => {
     if (!(await tableExists("users"))) {
         await sequelize.query(`
@@ -193,6 +242,12 @@ const ensureUsersSchema = async () => {
         ["active", "inactive", "blocked", "suspended", "deleted", "locked"],
         "NOT NULL",
         "DEFAULT 'active'",
+    );
+    await ensureCheckConstraint(
+        "users",
+        "chk_users_status",
+        "status",
+        ["active", "inactive", "blocked", "suspended", "deleted", "locked"],
     );
 };
 
