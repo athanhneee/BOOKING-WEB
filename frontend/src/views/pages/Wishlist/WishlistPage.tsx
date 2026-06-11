@@ -206,7 +206,7 @@ const WishlistPage = () => {
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Header */}
-            <div className="bg-white border-b border-slate-100">
+            <div className="border-b border-slate-100 bg-white pt-24 md:pt-28">
                 <div className="container mx-auto max-w-6xl px-4 py-6 md:px-6">
                     <button
                         type="button"
