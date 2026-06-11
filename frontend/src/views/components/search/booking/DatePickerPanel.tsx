@@ -15,9 +15,13 @@ type DatePickerPanelProps = {
     onSelectDate: (nextDate: string) => void;
     onNightOffsetChange?: (nextOffset: number) => void;
     onClear?: () => void;
+    /** Called when the user confirms their date selection ("Áp dụng" button) */
+    onApply?: () => void;
     className?: string;
     style?: CSSProperties;
     variant?: "popover" | "inline";
+    /** When true, hides the built-in footer (so the parent can render its own) */
+    hideFooter?: boolean;
 };
 
 type CalendarMode = "day" | "month" | "flexible";
@@ -356,9 +360,11 @@ const DatePickerPanel = ({
     onSelectDate,
     onNightOffsetChange,
     onClear,
+    onApply,
     className,
     style,
     variant = "popover",
+    hideFooter = false,
 }: DatePickerPanelProps) => {
     const isInline = variant === "inline";
     const activeDate = useMemo(() => parseIsoDate(selectedDate), [selectedDate]);
@@ -460,6 +466,8 @@ const DatePickerPanel = ({
         bookedDatesSet,
         onDateHover: setHoveredDate,
     };
+
+    const showFooter = !hideFooter;
 
     return (
         <div className={containerClassName} style={style} onMouseDown={(event) => event.stopPropagation()}>
@@ -617,30 +625,55 @@ const DatePickerPanel = ({
                 </div>
             )}
 
-            <div className={cn("flex items-center justify-between border-t border-gray-100", isInline ? "mt-4 pt-3" : "mt-6 pt-5")}>
-                <div className="flex items-center gap-6">
-                    <div>
-                        <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">Lựa chọn</p>
-                        <p className="text-sm font-semibold text-gray-900">{clearSummary}</p>
-                    </div>
-                    {bookedDatesSet.size > 0 ? (
-                        <div className="flex items-center gap-1.5">
-                            <span className="inline-block h-3 w-3 rounded-full bg-rose-100 ring-1 ring-rose-200" />
-                            <span className="text-xs text-gray-400">Đã được đặt</span>
+            {showFooter ? (
+                <div className={cn("border-t border-gray-100", isInline ? "mt-4 pt-3" : "mt-6 pt-5")}>
+                    <div className="flex items-center justify-between">
+                        <div className="min-w-0 flex-1">
+                            <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">Lựa chọn</p>
+                            <p className="truncate text-sm font-semibold text-gray-900">{clearSummary}</p>
                         </div>
-                    ) : null}
-                </div>
 
-                {onClear ? (
-                    <button
-                        type="button"
-                        onMouseDown={(event) => handleMouseSelect(event, onClear)}
-                        className="text-sm font-semibold text-gray-600 underline underline-offset-2 transition-colors duration-150 hover:text-gray-900"
-                    >
-                        Xóa tất cả
-                    </button>
-                ) : null}
-            </div>
+                        {bookedDatesSet.size > 0 ? (
+                            <div className="mx-4 hidden items-center gap-1.5 sm:flex">
+                                <span className="inline-block h-3 w-3 rounded-full bg-rose-100 ring-1 ring-rose-200" />
+                                <span className="text-xs text-gray-400">Đã được đặt</span>
+                            </div>
+                        ) : null}
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                        {onClear ? (
+                            <button
+                                type="button"
+                                onMouseDown={(event) => handleMouseSelect(event, onClear)}
+                                className="shrink-0 text-sm font-medium text-gray-500 underline underline-offset-2 transition-colors duration-150 hover:text-gray-900"
+                            >
+                                Xóa tất cả
+                            </button>
+                        ) : <span />}
+
+                        {onApply ? (
+                            <button
+                                type="button"
+                                disabled={!checkIn || !checkOut}
+                                onMouseDown={(event) => {
+                                    if (checkIn && checkOut) {
+                                        handleMouseSelect(event, onApply);
+                                    }
+                                }}
+                                className={cn(
+                                    "shrink-0 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-150",
+                                    checkIn && checkOut
+                                        ? "bg-cyan-500 text-white shadow-sm hover:bg-cyan-600 active:scale-95"
+                                        : "cursor-not-allowed bg-gray-200 text-gray-400",
+                                )}
+                            >
+                                Áp dụng
+                            </button>
+                        ) : null}
+                    </div>
+                </div>
+            ) : null}
 
             {onNightOffsetChange ? (
                 <div className="mt-5 flex flex-wrap gap-2 border-t border-gray-100 pt-5">

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { FiChevronDown, FiInbox, FiSearch, FiSend } from "react-icons/fi";
+import { FiArrowLeft, FiChevronDown, FiInbox, FiSearch, FiSend } from "react-icons/fi";
 import { useLocation } from "react-router-dom";
 import {
     getConversationMessages,
@@ -505,25 +505,101 @@ const MessagesPage = () => {
                 </aside>
 
                 <main className="flex min-w-0 flex-1 flex-col">
-                    <div className="border-b border-zinc-200 bg-white px-4 py-3 md:hidden">
-                        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Tin nhắn</h1>
-                        <select
-                            value={selectedConversationId ?? ""}
-                            onChange={(event) => setSelectedConversationId(event.target.value ? Number(event.target.value) : null)}
-                            className="mt-2 w-full rounded-xl border border-zinc-200 bg-white px-3 py-3 text-sm outline-none sm:mt-3"
-                        >
-                            <option value="">Chọn hội thoại</option>
-                            {conversations.map((conversation) => (
-                                <option key={conversation.id} value={conversation.id}>
-                                    {conversation.otherParticipant?.fullName || "Người dùng"}
-                                </option>
-                            ))}
-                        </select>
+                    {/* Mobile: conversation list (shown when no conversation is selected) */}
+                    <div className={`flex-1 flex-col bg-white md:hidden ${selectedConversationId ? "hidden" : "flex"}`}>
+                        <div className="px-4 pb-3 pt-4">
+                            <h1 className="text-xl font-semibold tracking-tight">Tin nhắn</h1>
+                            <div className="mt-3 flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setConversationFilter("all")}
+                                    className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition ${conversationFilter === "all"
+                                        ? "bg-cyan-500 text-white shadow-sm"
+                                        : "border border-zinc-200 bg-white text-slate-700 hover:bg-zinc-50"
+                                    }`}
+                                >
+                                    Tất cả
+                                    <FiChevronDown size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setConversationFilter("unread")}
+                                    className={`inline-flex min-h-9 items-center rounded-full px-4 text-sm font-semibold transition ${conversationFilter === "unread"
+                                        ? "bg-cyan-500 text-white shadow-sm"
+                                        : "border border-zinc-200 bg-white text-slate-700 hover:bg-zinc-50"
+                                    }`}
+                                >
+                                    Chưa đọc
+                                </button>
+                            </div>
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-5">
+                            {isLoadingConversations ? (
+                                <div className="px-2 py-8 text-sm text-zinc-500">Đang tải hội thoại...</div>
+                            ) : error ? (
+                                <div className="px-2 py-8 text-sm text-rose-600">{error}</div>
+                            ) : conversations.length === 0 ? (
+                                <div className="px-2 py-12 text-center">
+                                    <FiInbox className="mx-auto text-4xl text-zinc-300" />
+                                    <p className="mt-3 text-sm font-semibold text-zinc-900">Bạn chưa có tin nhắn nào.</p>
+                                </div>
+                            ) : visibleConversations.length === 0 ? (
+                                <div className="px-2 py-12 text-center text-sm font-semibold text-zinc-500">
+                                    Không có tin nhắn chưa đọc.
+                                </div>
+                            ) : (
+                                <div className="space-y-1">
+                                    {visibleConversations.map((conversation) => {
+                                        const participantName = conversation.otherParticipant?.fullName || "Người dùng";
+
+                                        return (
+                                            <button
+                                                key={conversation.id}
+                                                type="button"
+                                                onClick={() => handleSelectConversation(conversation)}
+                                                className="flex w-full gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-cyan-50/70 active:bg-cyan-50"
+                                            >
+                                                <ConversationAvatar conversation={conversation} />
+                                                <span className="min-w-0 flex-1">
+                                                    <span className="flex items-start justify-between gap-3">
+                                                        <span className="truncate text-base font-semibold">{participantName}</span>
+                                                        <span className="shrink-0 text-xs text-zinc-500">
+                                                            {formatConversationTime(conversation.lastMessageAt || conversation.updatedAt)}
+                                                        </span>
+                                                    </span>
+                                                    <span className="mt-1 block truncate text-sm text-zinc-500">
+                                                        {conversation.lastMessage || "Chưa có tin nhắn."}
+                                                    </span>
+                                                    {conversation.listing?.title ? (
+                                                        <span className="mt-1 block truncate text-xs font-medium text-zinc-400">
+                                                            {conversation.listing.title}
+                                                        </span>
+                                                    ) : null}
+                                                </span>
+                                                {conversation.unreadCount > 0 ? (
+                                                    <span className="mt-4 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[11px] font-bold text-white">
+                                                        {conversation.unreadCount}
+                                                    </span>
+                                                ) : null}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {selectedConversation ? (
                         <>
-                            <header className="flex min-h-[72px] items-center gap-3 border-b border-zinc-200 bg-white px-4 sm:min-h-[88px] sm:gap-4 md:px-9">
+                            <header className="flex min-h-[72px] items-center gap-2 border-b border-zinc-200 bg-white px-2 sm:min-h-[88px] sm:gap-4 sm:px-4 md:px-9">
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedConversationId(null)}
+                                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-zinc-600 transition-colors hover:bg-zinc-100 md:hidden"
+                                    aria-label="Quay lại danh sách"
+                                >
+                                    <FiArrowLeft size={22} />
+                                </button>
                                 <ConversationAvatar conversation={selectedConversation} size="lg" />
                                 <div className="min-w-0">
                                     <h2 className="truncate text-lg font-semibold sm:text-2xl">

@@ -279,24 +279,24 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
                     key={item.notificationLogId}
                     type="button"
                     onClick={() => void markItemRead(item)}
-                    className="flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-cyan-50/60 overflow-hidden"
+                    className="flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-cyan-50/60"
                 >
                     <span
                         className={cn(
-                            "mt-1 h-2.5 w-2.5 shrink-0 rounded-full",
+                            "mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full",
                             item.isRead ? "bg-slate-200" : "bg-cyan-500",
                         )}
                     />
-                    <span className="min-w-0 flex-1">
-                        <span className="block break-words text-sm font-semibold text-slate-900">
+                    <span className="min-w-0 flex-1 overflow-hidden">
+                        <span className="block text-sm font-semibold text-slate-900" style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>
                             {item.title ?? "Thông báo mới"}
                         </span>
                         {item.body ? (
-                            <span className="mt-1 block break-words text-sm leading-5 text-slate-600" style={{ wordBreak: "break-word" }}>
+                            <span className="mt-1 block text-sm leading-5 text-slate-600" style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>
                                 {item.body}
                             </span>
                         ) : null}
-                        <span className="mt-2 block text-xs text-slate-400">
+                        <span className="mt-1.5 block text-xs text-slate-400">
                             {formatNotificationTime(item.createdAt)}
                         </span>
                     </span>
@@ -335,7 +335,7 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
                             onClick={() => setOpen(false)}
                             role="presentation"
                         />
-                        <div className="absolute inset-x-0 bottom-0 flex max-h-[85vh] flex-col rounded-t-2xl bg-white shadow-xl">
+                        <div className="absolute inset-x-0 bottom-0 flex max-h-[80vh] flex-col rounded-t-2xl bg-white shadow-xl" style={{ maxWidth: "100vw" }}>
                             <div className="shrink-0 px-4 pt-3">
                                 <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200" />
                                 <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
@@ -347,14 +347,14 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
                                         type="button"
                                         onClick={() => void markAllRead()}
                                         disabled={unreadCount === 0}
-                                        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-cyan-700 disabled:opacity-40"
+                                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-cyan-700 disabled:opacity-40"
                                         aria-label="Đánh dấu tất cả đã đọc"
                                     >
                                         <CheckCheck size={17} />
                                     </button>
                                 </div>
                             </div>
-                            <div className="min-h-0 flex-1 overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))]">
+                            <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-[max(1rem,env(safe-area-inset-bottom))]">
                                 {renderNotificationList()}
                             </div>
                         </div>

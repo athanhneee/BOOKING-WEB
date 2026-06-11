@@ -279,6 +279,7 @@ const SearchBarInner = ({
     const checkOutButtonRef = useRef<HTMLButtonElement | null>(null);
     const guestsButtonRef = useRef<HTMLButtonElement | null>(null);
     const closeCalendarTimeoutRef = useRef<number | null>(null);
+    const mobileGuestSectionRef = useRef<HTMLElement | null>(null);
 
     const isListing = inferredVariant === "listing";
 
@@ -1097,6 +1098,7 @@ const SearchBarInner = ({
                         handleDateChange(openField === "checkOut" ? "checkOut" : "checkIn", nextDate)
                     }
                     onClear={clearDates}
+                    onApply={() => setOpenField(null)}
                     variant="popover"
                 />
             </SearchPopover>
@@ -1217,7 +1219,7 @@ const SearchBarInner = ({
                                         type="button"
                                         onClick={() => setMobileDateField("checkIn")}
                                         className={cn(
-                                            "rounded-2xl border px-3 py-3 text-left transition",
+                                            "rounded-full border px-6 py-3 text-left transition",
                                             mobileDateField === "checkIn"
                                                 ? "border-cyan-500 bg-cyan-50 text-cyan-700"
                                                 : "border-gray-200 bg-white text-gray-700",
@@ -1233,7 +1235,7 @@ const SearchBarInner = ({
                                         type="button"
                                         onClick={() => setMobileDateField("checkOut")}
                                         className={cn(
-                                            "rounded-2xl border px-3 py-3 text-left transition",
+                                            "rounded-full border px-6 py-3 text-left transition",
                                             mobileDateField === "checkOut"
                                                 ? "border-cyan-500 bg-cyan-50 text-cyan-700"
                                                 : "border-gray-200 bg-white text-gray-700",
@@ -1259,12 +1261,15 @@ const SearchBarInner = ({
                                         activeField={mobileDateField}
                                         onSelectDate={(nextDate) => handleDateChange(mobileDateField, nextDate)}
                                         onClear={clearDates}
+                                        onApply={() => {
+                                            mobileGuestSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                        }}
                                         variant="inline"
                                     />
                                 </div>
                             </section>
 
-                            <section className="rounded-[28px] border border-white/80 bg-white p-4 shadow-sm">
+                            <section ref={mobileGuestSectionRef} className="rounded-[28px] border border-white/80 bg-white p-4 shadow-sm">
                                 <p className="text-sm font-semibold text-gray-900">Khách</p>
 
                                 <div className="mt-4 space-y-4">
@@ -1319,28 +1324,28 @@ const SearchBarInner = ({
                         </div>
 
                         <div className="shrink-0 border-t border-gray-200 bg-[#f7f6f3] px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-4">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5 sm:gap-3">
                                 <button
                                     type="button"
                                     onClick={resetSearch}
-                                    className="inline-flex h-12 flex-1 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+                                    className="inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-full border border-gray-200 bg-white px-2 text-[13px] sm:text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 sm:px-4"
                                 >
                                     Xóa tất cả
                                 </button>
                                 <button
                                     type="button"
                                     onClick={handleSearch}
-                                    className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-cyan-500"
+                                    className="inline-flex h-12 flex-1 items-center justify-center gap-1 sm:gap-2 whitespace-nowrap rounded-full bg-cyan-500 px-2 text-[13px] sm:text-sm font-semibold text-white transition-colors hover:bg-cyan-500 sm:px-4"
                                 >
-                                    <FiSearch size={16} />
+                                    <FiSearch size={16} className="shrink-0" />
                                     Tìm kiếm
                                 </button>
                                 <button
                                     type="button"
                                     onClick={openAiOverlay}
-                                    className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-cyan-200 bg-white px-4 text-sm font-semibold text-cyan-700 transition-colors hover:bg-cyan-50"
+                                    className="inline-flex h-12 flex-1 items-center justify-center gap-1 sm:gap-2 whitespace-nowrap rounded-full border border-cyan-200 bg-white px-2 text-[13px] sm:text-sm font-semibold text-cyan-700 transition-colors hover:bg-cyan-50 sm:px-4"
                                 >
-                                    <Sparkles size={16} />
+                                    <Sparkles size={16} className="shrink-0" />
                                     Tìm AI
                                 </button>
                             </div>

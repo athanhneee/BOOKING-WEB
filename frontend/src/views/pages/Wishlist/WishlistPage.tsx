@@ -155,6 +155,7 @@ const WishlistCard = ({ item, onRemove, isRemoving }: WishlistCardProps) => {
 const WishlistPage = () => {
     const navigate = useNavigate();
     const currentUser = getCurrentUser();
+    const currentUserId = currentUser?.id ?? null;
     const [items, setItems] = useState<WishlistItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [removingIds, setRemovingIds] = useState<Set<number>>(new Set());
@@ -162,7 +163,7 @@ const WishlistPage = () => {
     const [notice, setNotice] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!currentUser) {
+        if (!currentUserId) {
             navigate(APP_ROUTES.login + "?redirectTo=" + encodeURIComponent(APP_ROUTES.accountWishlist));
             return;
         }
@@ -184,7 +185,7 @@ const WishlistPage = () => {
         };
 
         void fetchWishlist();
-    }, [currentUser, navigate]);
+    }, [currentUserId, navigate]);
 
     const handleRemove = useCallback(async (listingId: number) => {
         setRemovingIds((prev) => new Set([...prev, listingId]));
