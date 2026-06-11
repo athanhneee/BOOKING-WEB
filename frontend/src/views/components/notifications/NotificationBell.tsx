@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Bell, CheckCheck, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -91,6 +92,8 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
     const navigate = useNavigate();
     const currentUser = getCurrentUser();
     const rootRef = useRef<HTMLDivElement | null>(null);
+    const mobilePanelRef = useRef<HTMLDivElement | null>(null);
+    const desktopPanelRef = useRef<HTMLDivElement | null>(null);
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [items, setItems] = useState<NotificationItem[]>([]);
@@ -170,9 +173,17 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
         }
 
         const handlePointerDown = (event: PointerEvent) => {
-            if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
-                setOpen(false);
+            const target = event.target as Node;
+
+            if (
+                rootRef.current?.contains(target) ||
+                mobilePanelRef.current?.contains(target) ||
+                desktopPanelRef.current?.contains(target)
+            ) {
+                return;
             }
+
+            setOpen(false);
         };
 
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -305,6 +316,43 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
         </>
     );
 
+    const mobilePanel =
+        open && typeof document !== "undefined"
+            ? createPortal(
+                <div ref={mobilePanelRef} className="fixed inset-0 z-[120] md:hidden">
+                    <div
+                        className="absolute inset-0 bg-black/40"
+                        onClick={() => setOpen(false)}
+                        role="presentation"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 flex max-h-[82vh] flex-col rounded-t-2xl bg-white shadow-xl">
+                        <div className="shrink-0 px-4 pt-3">
+                            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200" />
+                            <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                                <div>
+                                    <p className="text-base font-semibold text-slate-900">Thông báo</p>
+                                    <p className="text-xs text-slate-500">{unreadCount} chưa đọc</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => void markAllRead()}
+                                    disabled={unreadCount === 0}
+                                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-cyan-600 disabled:opacity-40"
+                                    aria-label="Đánh dấu tất cả đã đọc"
+                                >
+                                    <CheckCheck size={17} />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-[max(1rem,env(safe-area-inset-bottom))]">
+                            {renderNotificationList()}
+                        </div>
+                    </div>
+                </div>,
+                document.body,
+            )
+            : null;
+
     return (
         <div ref={rootRef} className="relative">
             <button
@@ -326,62 +374,32 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
                 ) : null}
             </button>
 
-            {open ? (
-                <>
-                    {/* Mobile: full-screen overlay */}
-                    <div className="fixed inset-0 z-[85] md:hidden">
-                        <div
-                            className="absolute inset-0 bg-black/40"
-                            onClick={() => setOpen(false)}
-                            role="presentation"
-                        />
-                        <div className="absolute inset-x-0 bottom-0 flex max-h-[80vh] flex-col rounded-t-2xl bg-white shadow-xl" style={{ maxWidth: "100vw" }}>
-                            <div className="shrink-0 px-4 pt-3">
-                                <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200" />
-                                <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                                    <div>
-                                        <p className="text-base font-semibold text-slate-900">Thông báo</p>
-                                        <p className="text-xs text-slate-500">{unreadCount} chưa đọc</p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => void markAllRead()}
-                                        disabled={unreadCount === 0}
-                                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-cyan-600 disabled:opacity-40"
-                                        aria-label="Đánh dấu tất cả đã đọc"
-                                    >
-                                        <CheckCheck size={17} />
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-[max(1rem,env(safe-area-inset-bottom))]">
-                                {renderNotificationList()}
-                            </div>
-                        </div>
-                    </div>
+            {mobilePanel}
 
-                    {/* Desktop: absolute popover */}
-                    <div className="absolute right-0 top-[calc(100%+12px)] z-50 hidden w-[22rem] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl md:block">
-                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
-                            <div>
-                                <p className="text-sm font-semibold text-slate-900">Thông báo</p>
-                                <p className="text-xs text-slate-500">{unreadCount} chưa đọc</p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => void markAllRead()}
-                                disabled={unreadCount === 0}
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-cyan-600 disabled:opacity-40"
-                                aria-label="Đánh dấu tất cả đã đọc"
-                            >
-                                <CheckCheck size={17} />
-                            </button>
+            {open ? (
+                <div
+                    ref={desktopPanelRef}
+                    className="absolute right-0 top-[calc(100%+12px)] z-50 hidden w-[22rem] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl md:block"
+                >
+                    <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+                        <div>
+                            <p className="text-sm font-semibold text-slate-900">Thông báo</p>
+                            <p className="text-xs text-slate-500">{unreadCount} chưa đọc</p>
                         </div>
-                        <div className="max-h-[420px] overflow-y-auto py-1">
-                            {renderNotificationList()}
-                        </div>
+                        <button
+                            type="button"
+                            onClick={() => void markAllRead()}
+                            disabled={unreadCount === 0}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-50 hover:text-cyan-600 disabled:opacity-40"
+                            aria-label="Đánh dấu tất cả đã đọc"
+                        >
+                            <CheckCheck size={17} />
+                        </button>
                     </div>
-                </>
+                    <div className="max-h-[420px] overflow-y-auto py-1">
+                        {renderNotificationList()}
+                    </div>
+                </div>
             ) : null}
         </div>
     );
