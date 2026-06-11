@@ -304,15 +304,23 @@ const TripHistoryCard = ({ trip, onReview }: TripHistoryCardProps) => {
                                         {formatTripDateTime(trip.paidAt)}
                                     </div>
                                 ) : null}
+                                <div>
+                                    <span className="font-medium text-slate-900">Check-in:</span>{" "}
+                                    {`14:00 ${formatTripDate(trip.checkIn)}`}
+                                </div>
+                                <div>
+                                    <span className="font-medium text-slate-900">Check-out:</span>{" "}
+                                    {`12:00 ${formatTripDate(trip.checkOut)}`}
+                                </div>
                                 {trip.checkedInAt ? (
                                     <div>
-                                        <span className="font-medium text-slate-900">Check-in:</span>{" "}
+                                        <span className="font-medium text-slate-900">Đã nhận phòng lúc:</span>{" "}
                                         {formatTripDateTime(trip.checkedInAt)}
                                     </div>
                                 ) : null}
                                 {trip.checkedOutAt ? (
                                     <div>
-                                        <span className="font-medium text-slate-900">Check-out:</span>{" "}
+                                        <span className="font-medium text-slate-900">Đã trả phòng lúc:</span>{" "}
                                         {formatTripDateTime(trip.checkedOutAt)}
                                     </div>
                                 ) : null}
