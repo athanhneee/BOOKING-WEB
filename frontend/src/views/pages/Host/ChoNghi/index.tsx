@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FiCalendar, FiEdit2, FiEye, FiEyeOff, FiPlus, FiSend } from "react-icons/fi";
+import { FiCalendar, FiEdit2, FiEye, FiEyeOff, FiPlus, FiSend, FiMapPin, FiUsers, FiHome } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog";
 import { APP_ROUTES } from "../../../../config/routes";
@@ -16,7 +16,6 @@ import {
     formatCurrency,
     pageWrapperClass,
     primaryButtonClass,
-    secondaryButtonClass,
 } from "../sharedStyles";
 
 type PropertyFilter = "all" | HostListingStatus;
@@ -29,11 +28,14 @@ const filterOptions: Array<{ label: string; value: PropertyFilter }> = [
     { label: "Đang ẩn", value: "hidden" },
 ];
 
-const statusStyles: Record<HostListingStatus, string> = {
-    draft: "bg-slate-100 text-slate-700",
-    pending_approval: "bg-amber-100 text-amber-700",
-    published: "bg-emerald-500 text-white",
-    hidden: "bg-gray-900/75 text-white",
+const statusStyles = (status: HostListingStatus) => {
+    switch (status) {
+        case "draft": return "bg-slate-50 text-slate-700 ring-slate-600/20";
+        case "pending_approval": return "bg-amber-50 text-amber-700 ring-amber-600/20";
+        case "published": return "bg-emerald-50 text-emerald-700 ring-emerald-600/20";
+        case "hidden": return "bg-gray-50 text-gray-700 ring-gray-600/20";
+        default: return "bg-slate-50 text-slate-700 ring-slate-600/20";
+    }
 };
 
 const statusLabels: Record<HostListingStatus, string> = {
@@ -111,8 +113,8 @@ const ChoNghi = () => {
         );
 
     return (
-        <div className={pageWrapperClass}>
-            <div className="mx-auto max-w-7xl space-y-6">
+        <div className={`${pageWrapperClass} bg-slate-50/50 min-h-screen`}>
+            <div className="mx-auto max-w-[1400px] space-y-6">
                 <PageHeader
                     title="Chỗ nghỉ của bạn"
                     subtitle="Danh sách chỗ nghỉ"
@@ -120,10 +122,10 @@ const ChoNghi = () => {
                         <button
                             type="button"
                             onClick={() => navigate(APP_ROUTES.hostNewProperty)}
-                            className={primaryButtonClass}
+                            className={`${primaryButtonClass} shadow-md transition-transform hover:-translate-y-0.5`}
                         >
                             <span className="inline-flex items-center gap-2">
-                                <FiPlus size={16} />
+                                <FiPlus size={18} />
                                 Thêm chỗ nghỉ
                             </span>
                         </button>
@@ -132,110 +134,135 @@ const ChoNghi = () => {
 
                 <FilterTabs options={filterOptions} value={filter} onChange={setFilter} underline />
 
-                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
-                {success ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{success}</div> : null}
+                {error ? (
+                    <div className="animate-in fade-in slide-in-from-top-2 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700 shadow-sm">
+                        {error}
+                    </div>
+                ) : null}
+                {success ? (
+                    <div className="animate-in fade-in slide-in-from-top-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700 shadow-sm">
+                        {success}
+                    </div>
+                ) : null}
 
                 {loading ? (
-                    <div className="rounded-2xl border border-gray-100 bg-white p-10 text-center text-sm font-medium text-gray-500 shadow-sm">
-                        Đang tải chỗ nghỉ từ ...
+                    <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-100 bg-white py-20 shadow-sm">
+                        <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-cyan-600 border-t-transparent"></div>
+                        <p className="text-sm font-medium text-slate-500">Đang tải chỗ nghỉ của bạn...</p>
                     </div>
                 ) : null}
 
                 {!loading && filteredProperties.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center shadow-sm">
-                        <p className="text-base font-semibold text-gray-900">Chưa có chỗ nghỉ nào</p>
-                        <p className="mt-2 text-sm text-gray-500">Bấm "Thêm chỗ nghỉ" để tạo phòng."</p>
+                    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white py-20 text-center shadow-sm">
+                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 ring-8 ring-slate-50/50">
+                            <FiHome className="text-2xl text-slate-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900">Chưa có chỗ nghỉ nào</h3>
+                        <p className="mt-2 text-sm text-slate-500">Bấm "Thêm chỗ nghỉ" để tạo phòng và bắt đầu cho thuê.</p>
+                        <button
+                            type="button"
+                            onClick={() => navigate(APP_ROUTES.hostNewProperty)}
+                            className="mt-6 rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cyan-700"
+                        >
+                            Thêm chỗ nghỉ ngay
+                        </button>
                     </div>
                 ) : null}
 
-                <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-start">
                     {filteredProperties.map((property) => {
                         const status = property.status ?? "draft";
                         const isPublished = status === "published";
 
                         return (
-                            <article key={property.listingId} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                                <div className="relative">
+                            <article 
+                                key={property.listingId} 
+                                className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-cyan-200"
+                            >
+                                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
                                     {property.imageUrl ? (
                                         <img
                                             src={property.imageUrl}
                                             alt={property.title}
-                                            className="aspect-video w-full rounded-t-2xl object-cover"
+                                            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                                         />
                                     ) : (
-                                        <div className="flex aspect-video w-full items-center justify-center rounded-t-2xl bg-slate-100 text-sm font-medium text-slate-500">
-                                            Chưa có ảnh URL
+                                        <div className="flex h-full w-full items-center justify-center font-medium text-slate-400">
+                                            Chưa có ảnh
                                         </div>
                                     )}
-                                    <span
-                                        className={`absolute right-4 top-4 rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[status]}`}
-                                    >
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-slate-900/10 opacity-60 transition-opacity group-hover:opacity-40"></div>
+                                    
+                                    {/* Status Badge */}
+                                    <span className={`absolute left-4 top-4 inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur-md bg-white/95 shadow-sm ring-1 ring-inset ${statusStyles(status)}`}>
+                                        <div className={`mr-1.5 h-1.5 w-1.5 rounded-full ${status === 'published' ? 'bg-emerald-500' : status === 'pending_approval' ? 'bg-amber-500' : 'bg-slate-400'}`}></div>
                                         {statusLabels[status]}
                                     </span>
                                 </div>
 
-                                <div className="space-y-4 p-6">
-                                    <div>
-                                        <h2 className="text-lg font-semibold text-gray-900">{property.title}</h2>
-                                        <div className="mt-2 inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                                <div className="flex flex-1 flex-col p-5">
+                                    <div className="mb-3 flex items-start justify-between gap-2">
+                                        <span className="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-600 ring-1 ring-inset ring-slate-500/10">
                                             {property.propertyType}
-                                        </div>
-                                        <p className="mt-2 text-sm text-gray-500">{getAddress(property)}</p>
+                                        </span>
+                                        <span className="text-right text-sm font-bold text-slate-900">
+                                            {formatCurrency(Number(property.basePrice || 0))}
+                                            <span className="block text-[11px] font-medium text-slate-500">/ đêm</span>
+                                        </span>
                                     </div>
-
-                                    <p className="text-sm text-gray-600">
-                                        {property.maxGuests} khách · {property.bedrooms} phòng ngủ · {formatCurrency(Number(property.basePrice || 0))}/đêm
+                                    
+                                    <h2 className="text-lg font-bold text-slate-900 line-clamp-1 transition-colors group-hover:text-cyan-700">
+                                        {property.title}
+                                    </h2>
+                                    
+                                    <p className="mt-2 flex items-start gap-1.5 text-sm text-slate-500 line-clamp-2 min-h-[40px]">
+                                        <FiMapPin className="mt-0.5 shrink-0 text-slate-400" />
+                                        <span className="leading-relaxed">{getAddress(property)}</span>
                                     </p>
 
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => navigate(`${APP_ROUTES.hostNewProperty}?listingId=${property.listingId}`)}
-                                            className={secondaryButtonClass}
-                                        >
-                                            <span className="inline-flex items-center gap-2">
-                                                <FiEdit2 size={15} />
-                                                Chỉnh sửa
-                                            </span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => navigate(APP_ROUTES.hostCalendar)}
-                                            className={secondaryButtonClass}
-                                        >
-                                            <span className="inline-flex items-center gap-2">
-                                                <FiCalendar size={15} />
-                                                Xem lịch
-                                            </span>
-                                        </button>
-
-                                        {(status === "draft" || status === "hidden") ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleSubmitForApproval(property.listingId)}
-                                                className={secondaryButtonClass}
-                                            >
-                                                <span className="inline-flex items-center gap-2">
-                                                    <FiSend size={15} />
-                                                    Gửi duyệt
-                                                </span>
-                                            </button>
-                                        ) : null}
-
-                                        {status === "published" || status === "hidden" ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => setDialogProperty(property)}
-                                                className={secondaryButtonClass}
-                                            >
-                                                <span className="inline-flex items-center gap-2">
-                                                    {isPublished ? <FiEyeOff size={15} /> : <FiEye size={15} />}
-                                                    {isPublished ? "Ẩn" : "Hiện"}
-                                                </span>
-                                            </button>
-                                        ) : null}
+                                    <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-100 pt-4 text-[13px] font-medium text-slate-600">
+                                        <div className="flex items-center gap-1.5"><FiUsers className="text-slate-400"/> {property.maxGuests} khách</div>
+                                        <div className="flex items-center gap-1.5"><FiHome className="text-slate-400"/> {property.bedrooms} phòng ngủ</div>
                                     </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 bg-slate-50/80 p-4 border-t border-slate-100">
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate(`${APP_ROUTES.hostNewProperty}?listingId=${property.listingId}`)}
+                                        className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
+                                    >
+                                        <FiEdit2 size={14} /> Chỉnh sửa
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate(APP_ROUTES.hostCalendar)}
+                                        className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
+                                    >
+                                        <FiCalendar size={14} /> Lịch
+                                    </button>
+
+                                    {(status === "draft" || status === "hidden") ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSubmitForApproval(property.listingId)}
+                                            className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
+                                        >
+                                            <FiSend size={14} /> Gửi duyệt
+                                        </button>
+                                    ) : null}
+
+                                    {status === "published" || status === "hidden" ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setDialogProperty(property)}
+                                            className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 active:scale-95"
+                                        >
+                                            {isPublished ? <FiEyeOff size={14} /> : <FiEye size={14} />}
+                                            {isPublished ? "Ẩn chỗ nghỉ" : "Hiện lại chỗ nghỉ"}
+                                        </button>
+                                    ) : null}
                                 </div>
                             </article>
                         );
@@ -250,7 +277,7 @@ const ChoNghi = () => {
                 title={dialogProperty?.status === "published" ? "Ẩn chỗ nghỉ này?" : "Hiện lại chỗ nghỉ này?"}
                 description={
                     dialogProperty?.status === "published"
-                        ? "Chỗ nghỉ sẽ tạm thời không hiển thị với khách trênminh thanh villa ."
+                        ? "Chỗ nghỉ sẽ tạm thời không hiển thị với khách trên hệ thống."
                         : ""
                 }
                 confirmLabel={dialogProperty?.status === "published" ? "Ẩn chỗ nghỉ" : "Hiện chỗ nghỉ"}
