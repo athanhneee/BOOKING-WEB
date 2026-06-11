@@ -69,7 +69,7 @@ const createMenuGroups = (
                 key: "host",
                 items: [
                     { key: "become-host", label: hostAction?.label ?? "Trở thành host", icon: LuHouse, to: hostAction?.to ?? APP_ROUTES.hostLanding },
-                    { key: "host-support", label: "Tìm hỗ trợ host", icon: LuSearch, to: APP_ROUTES.hostSupport },
+                    // { key: "host-support", label: "Tìm hỗ trợ host", icon: LuSearch, to: APP_ROUTES.hostSupport },
                 ],
             },
         {
