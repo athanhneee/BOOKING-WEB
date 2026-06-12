@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { FiExternalLink } from "react-icons/fi";
+import { APP_ROUTES } from "../../../../config/routes";
 import type { ApiBooking } from "../../../../models/entities/Booking";
 import { getHostBookings } from "../../../../services/hostService";
 import { bookingStatusToneClassNames, getBookingDisplayStatus } from "../../../../utils/bookingStatus";
@@ -57,11 +60,13 @@ const KhachLuuTru = () => {
                 .filter((booking) => selectedListingId === "all" || booking.listingId === selectedListingId)
                 .map((booking) => {
                     const displayStatus = getBookingDisplayStatus(booking, { role: "host", now: statusNow });
+                    const guestInfo = booking as ApiBooking & { guestName?: string | null; guestEmail?: string | null };
 
                     return {
                         id: booking.bookingId,
-                        name: (booking as any).guestName || `Khách #${booking.bookingId}`,
-                        email: (booking as any).guestEmail || null,
+                        name: guestInfo.guestName || `Khách #${booking.bookingId}`,
+                        email: guestInfo.guestEmail || null,
+                        listingId: booking.listingId,
                         listing: booking.listing?.title ?? booking.listingTitle ?? `Listing #${booking.listingId}`,
                         dates: `${formatDate(booking.checkInDate)} - ${formatDate(booking.checkOutDate)}`,
                         guestCount: booking.guests ?? booking.guestCount ?? booking.guestsCount ?? 1,
@@ -134,7 +139,18 @@ const KhachLuuTru = () => {
                             {guests.map((guest) => (
                                 <tr key={guest.id}>
                                     <td className="px-4 py-4"><p className="font-semibold text-gray-900">{guest.name}</p>{guest.email ? <p className="mt-1 text-xs text-gray-500">{guest.email}</p> : null}</td>
-                                    <td className="px-4 py-4 text-gray-600">{guest.listing}</td>
+                                    <td className="px-4 py-4">
+                                        <Link
+                                            to={APP_ROUTES.villaDetail(String(guest.listingId))}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1.5 font-medium text-cyan-600 transition-colors hover:text-cyan-700 hover:underline"
+                                            title="Xem chi tiết chỗ nghỉ"
+                                        >
+                                            {guest.listing}
+                                            <FiExternalLink size={13} className="shrink-0 opacity-70" />
+                                        </Link>
+                                    </td>
                                     <td className="px-4 py-4 text-gray-600">{guest.dates}</td>
                                     <td className="px-4 py-4 text-gray-600">{guest.guestCount}</td>
                                     <td className="px-4 py-4"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${bookingStatusToneClassNames[guest.statusTone]}`}>{guest.statusLabel}</span></td>
