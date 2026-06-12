@@ -351,105 +351,105 @@ const KiemDuyetBaiDang = () => {
 
                 <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                     <div className="overflow-x-auto">
-                    <table className={`${tableClassName} text-left text-sm`}>
-                        <thead className="bg-gray-50 text-gray-500">
-                            <tr>
-                                <th className="px-4 py-3">Listing</th>
-                                <th className="px-4 py-3">Địa chỉ</th>
-                                <th className="px-4 py-3">Loại</th>
-                                <th className="px-4 py-3">Giá</th>
-                                <th className="px-4 py-3">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 bg-white">
-                            {isLoadingTable ? (
-                                <TableSkeletonRows cols={5} rows={4} />
-                            ) : null}
-
-                            {!isLoadingTable && listings.length === 0 ? (
+                        <table className={`${tableClassName} text-left text-sm`}>
+                            <thead className="bg-gray-50 text-gray-500">
                                 <tr>
-                                    <td colSpan={5} className="px-4 py-10 text-center text-gray-500">
-                                        Không có listing chờ duyệt.
-                                    </td>
+                                    <th className="px-4 py-3">Listing</th>
+                                    <th className="px-4 py-3">Địa chỉ</th>
+                                    <th className="px-4 py-3">Loại</th>
+                                    <th className="px-4 py-3">Giá</th>
+                                    <th className="px-4 py-3">Hành động</th>
                                 </tr>
-                            ) : null}
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 bg-white">
+                                {isLoadingTable ? (
+                                    <TableSkeletonRows cols={5} rows={4} />
+                                ) : null}
 
-                            {listings.map((listing) => {
-                                const coverImageUrl = getListingCoverImageUrl(listing);
-                                const shouldShowCoverImage = coverImageUrl && !failedImageUrls.has(coverImageUrl);
-                                const isThisRowProcessing = processingListingId === listing.listingId;
-
-                                return (
-                                    <tr
-                                        key={listing.listingId}
-                                        className={isThisRowProcessing ? "opacity-60" : ""}
-                                    >
-                                        <td className="px-4 py-4">
-                                            <div className="flex items-center gap-3">
-                                                {shouldShowCoverImage ? (
-                                                    <img
-                                                        src={coverImageUrl}
-                                                        alt={listing.title}
-                                                        className="h-20 w-32 shrink-0 rounded-xl object-cover"
-                                                        loading="lazy"
-                                                        onError={() => handleListingImageError(coverImageUrl)}
-                                                    />
-                                                ) : (
-                                                    <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-medium text-slate-500">
-                                                        Chưa có ảnh
-                                                    </div>
-                                                )}
-                                                <div>
-                                                    <p className="font-semibold text-gray-900">{listing.title}</p>
-                                                    <p className="text-xs text-gray-500">ID: {listing.listingId}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-4 text-gray-600">{getAddress(listing)}</td>
-                                        <td className="px-4 py-4 text-gray-600">{listing.propertyType}</td>
-                                        <td className="px-4 py-4 text-gray-600">{formatCurrency(Number(listing.basePrice || 0))}</td>
-                                        <td className="px-4 py-4">
-                                            <div className="flex flex-wrap gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleViewDetail(listing.listingId)}
-                                                    disabled={isThisRowProcessing || isModalActionLoading}
-                                                    className="rounded-xl border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                                >
-                                                    {isModalActionLoading && !isThisRowProcessing ? "..." : "Xem chi tiết"}
-                                                </button>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleApprove(listing.listingId)}
-                                                    disabled={isThisRowProcessing || isLoadingTable}
-                                                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                                                >
-                                                    {isThisRowProcessing ? (
-                                                        <>
-                                                            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                                                            Đang duyệt...
-                                                        </>
-                                                    ) : (
-                                                        "Duyệt"
-                                                    )}
-                                                </button>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openRejectModal(listing)}
-                                                    disabled={isThisRowProcessing || isLoadingTable}
-                                                    className="rounded-xl bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                                                >
-                                                    Từ chối
-                                                </button>
-                                            </div>
+                                {!isLoadingTable && listings.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-4 py-10 text-center text-gray-500">
+                                            Không có listing chờ duyệt.
                                         </td>
                                     </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                                ) : null}
+
+                                {listings.map((listing) => {
+                                    const coverImageUrl = getListingCoverImageUrl(listing);
+                                    const shouldShowCoverImage = coverImageUrl && !failedImageUrls.has(coverImageUrl);
+                                    const isThisRowProcessing = processingListingId === listing.listingId;
+
+                                    return (
+                                        <tr
+                                            key={listing.listingId}
+                                            className={isThisRowProcessing ? "opacity-60" : ""}
+                                        >
+                                            <td className="px-4 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    {shouldShowCoverImage ? (
+                                                        <img
+                                                            src={coverImageUrl}
+                                                            alt={listing.title}
+                                                            className="h-20 w-32 shrink-0 rounded-xl object-cover"
+                                                            loading="lazy"
+                                                            onError={() => handleListingImageError(coverImageUrl)}
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-medium text-slate-500">
+                                                            Chưa có ảnh
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <p className="font-semibold text-gray-900">{listing.title}</p>
+                                                        <p className="text-xs text-gray-500">ID: {listing.listingId}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4 text-gray-600">{getAddress(listing)}</td>
+                                            <td className="px-4 py-4 text-gray-600">{listing.propertyType}</td>
+                                            <td className="px-4 py-4 text-gray-600">{formatCurrency(Number(listing.basePrice || 0))}</td>
+                                            <td className="px-4 py-4">
+                                                <div className="flex flex-wrap gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleViewDetail(listing.listingId)}
+                                                        disabled={isThisRowProcessing || isModalActionLoading}
+                                                        className="rounded-xl border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                                    >
+                                                        {isModalActionLoading && !isThisRowProcessing ? "..." : "Xem chi tiết"}
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleApprove(listing.listingId)}
+                                                        disabled={isThisRowProcessing || isLoadingTable}
+                                                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:by-cyal-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                                    >
+                                                        {isThisRowProcessing ? (
+                                                            <>
+                                                                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                                                Đang duyệt...
+                                                            </>
+                                                        ) : (
+                                                            "Duyệt"
+                                                        )}
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openRejectModal(listing)}
+                                                        disabled={isThisRowProcessing || isLoadingTable}
+                                                        className="rounded-xl bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                                    >
+                                                        Từ chối
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 </section>
             </div>
@@ -585,7 +585,7 @@ const KiemDuyetBaiDang = () => {
                                 type="button"
                                 onClick={() => handleApprove(selectedListingDetail.listingId)}
                                 disabled={isModalActionLoading}
-                                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+                                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 font-medium text-white hover:by-cyal-600 disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 {isModalActionLoading ? (
                                     <>
