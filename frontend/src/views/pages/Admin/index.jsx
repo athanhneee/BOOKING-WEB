@@ -53,9 +53,9 @@ const AdminOverview = () => {
         { label: "Tổng người dùng", value: stats.users, icon: FiUsers, link: APP_ROUTES.adminUsers },
         { label: "Bài chờ duyệt", value: stats.pendingListings, icon: FiClipboard, link: APP_ROUTES.adminModeration },
         { label: "Doanh thu 30 ngày", value: formatCurrency(stats.grossRevenue), icon: FiDollarSign, link: null },
-        { label: "Booking 30 ngày", value: stats.bookings, icon: FiCheckCircle, link: null },
+        { label: "Số đơn đặt 30 ngày", value: stats.bookings, icon: FiCheckCircle, link: null },
         { label: "host mới 30 ngày", value: stats.hosts, icon: FiUsers, link: APP_ROUTES.adminUsers },
-        { label: "Listing active 30 ngày", value: stats.activeListings, icon: FiClipboard, link: APP_ROUTES.adminModeration },
+        { label: "Số phòng hoạt động 30 ngày", value: stats.activeListings, icon: FiClipboard, link: APP_ROUTES.adminModeration },
     ];
 
     return (
