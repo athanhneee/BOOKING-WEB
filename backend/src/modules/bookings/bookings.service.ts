@@ -1508,7 +1508,7 @@ export const getHostBookings = async (user: AuthenticatedUser, query: ListBookin
     return listBookingsForDisplayStatus({
         where,
         query,
-        order: [["checkInDate", "ASC"], ["bookingId", "DESC"]],
+        order: [["bookingId", "DESC"]],
     });
 };
 
