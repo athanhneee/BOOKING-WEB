@@ -7,8 +7,6 @@ const statusOptions = [
     { label: "Tất cả", value: "all" },
     { label: "Active", value: "active" },
     { label: "Blocked", value: "blocked" },
-    { label: "Suspended", value: "suspended" },
-    { label: "Locked", value: "locked" },
 ];
 
 const QuanLyNguoiDung = () => {
