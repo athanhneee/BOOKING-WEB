@@ -52,8 +52,8 @@ const AdminOverview = () => {
     const cards = [
         { label: "Tổng người dùng", value: stats.users, icon: FiUsers, link: APP_ROUTES.adminUsers },
         { label: "Bài chờ duyệt", value: stats.pendingListings, icon: FiClipboard, link: APP_ROUTES.adminModeration },
-        { label: "Doanh thu 30 ngày", value: formatCurrency(stats.grossRevenue), icon: FiDollarSign, link: APP_ROUTES.adminOverview },
-        { label: "Booking 30 ngày", value: stats.bookings, icon: FiCheckCircle, link: APP_ROUTES.adminOverview },
+        { label: "Doanh thu 30 ngày", value: formatCurrency(stats.grossRevenue), icon: FiDollarSign, link: null },
+        { label: "Booking 30 ngày", value: stats.bookings, icon: FiCheckCircle, link: null },
         { label: "host mới 30 ngày", value: stats.hosts, icon: FiUsers, link: APP_ROUTES.adminUsers },
         { label: "Listing active 30 ngày", value: stats.activeListings, icon: FiClipboard, link: APP_ROUTES.adminModeration },
     ];
@@ -63,7 +63,7 @@ const AdminOverview = () => {
             <div className="mx-auto max-w-7xl space-y-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Tổng quan hệ thống</h1>
-
+                    <p className="mt-1 text-sm text-gray-500">Số liệu nhanh trong 30 ngày gần nhất.</p>
                 </div>
 
                 {error ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
@@ -71,18 +71,25 @@ const AdminOverview = () => {
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {cards.map((card) => {
                         const Icon = card.icon;
-                        return (
-                            <Link key={card.label} to={card.link} className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                                <div className="flex items-center justify-between gap-4">
-                                    <div><p className="text-sm font-medium text-gray-500">{card.label}</p><p className="mt-3 text-3xl font-bold text-gray-900">{loading ? "..." : card.value}</p></div>
-                                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-cyan-50 text-cyan-600"><Icon size={20} /></span>
-                                </div>
+                        const cardBodyClass = "rounded-3xl border border-gray-100 bg-white p-6 shadow-sm";
+                        const cardBody = (
+                            <div className="flex items-center justify-between gap-4">
+                                <div><p className="text-sm font-medium text-gray-500">{card.label}</p><p className="mt-3 text-3xl font-bold text-gray-900">{loading ? "..." : card.value}</p></div>
+                                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-cyan-50 text-cyan-600"><Icon size={20} /></span>
+                            </div>
+                        );
+
+                        return card.link ? (
+                            <Link key={card.label} to={card.link} className={`${cardBodyClass} transition hover:-translate-y-0.5 hover:shadow-md`}>
+                                {cardBody}
                             </Link>
+                        ) : (
+                            <div key={card.label} className={cardBodyClass}>
+                                {cardBody}
+                            </div>
                         );
                     })}
                 </div>
-
-
             </div>
         </div>
     );
