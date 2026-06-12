@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { CounterFilterItem, StayFilterState } from "./types";
 
 const COUNTER_MAX = 99;
@@ -14,14 +14,14 @@ const clampCounter = (next: number) => Math.min(COUNTER_MAX, Math.max(0, next));
 const CounterRow = ({ item, value, onChange }: CounterRowProps) => {
     const [draft, setDraft] = useState(String(value));
     const [isFocused, setIsFocused] = useState(false);
+    const [lastSyncedValue, setLastSyncedValue] = useState(value);
 
-    // Keep the editable field in sync with external updates (+/- buttons, "Xóa tất cả"),
+    // Reflect external updates (+/- buttons, "Xóa tất cả") in the field during render,
     // but never clobber what the user is actively typing.
-    useEffect(() => {
-        if (!isFocused) {
-            setDraft(String(value));
-        }
-    }, [value, isFocused]);
+    if (value !== lastSyncedValue && !isFocused) {
+        setLastSyncedValue(value);
+        setDraft(String(value));
+    }
 
     const handleInputChange = (raw: string) => {
         const digits = raw.replace(/\D/g, "").slice(0, 2);
