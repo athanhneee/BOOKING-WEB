@@ -929,6 +929,7 @@ type BookingCardProps = {
     bookedDates?: string[];
     /** Listing's max guest count — used to cap the adults selector */
     maxGuests: number;
+    maxNights?: number | null;
     activeDesktopAnchorRef: RefObject<HTMLElement | null>;
     desktopBookingRef: RefObject<HTMLDivElement | null>;
     desktopPopoverRef: RefObject<HTMLDivElement | null>;
@@ -965,6 +966,7 @@ const BookingCard = ({
     nightOffset,
     bookedDates,
     maxGuests,
+    maxNights,
     activeDesktopAnchorRef,
     desktopBookingRef,
     desktopPopoverRef,
@@ -1058,10 +1060,16 @@ const BookingCard = ({
                     </div>
                 </div>
 
+                {maxNights !== null && maxNights !== undefined && nights > maxNights ? (
+                    <div className="mt-6 rounded-[16px] border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
+                        Chỗ nghỉ này chỉ cho phép tối đa {maxNights} đêm. Vui lòng chọn lại ngày.
+                    </div>
+                ) : null}
+
                 <button
                     type="button"
                     onClick={onBookNow}
-                    disabled={isBooking}
+                    disabled={isBooking || (maxNights !== null && maxNights !== undefined && nights > maxNights)}
                     className="mt-6 inline-flex min-h-14 w-full items-center justify-center rounded-[26px] bg-cyan-600 px-6 text-base font-semibold text-white shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:bg-cyan-600 disabled:cursor-not-allowed disabled:bg-cyan-300"
                 >
                     {isBooking ? "Đang tạo đặt phòng..." : "Đặt ngay"}
@@ -1107,6 +1115,7 @@ const BookingCard = ({
                         }
                         selectedNightOffset={nightOffset}
                         bookedDates={bookedDates}
+                        maxNights={maxNights}
                         onSelectDate={
                             activeDesktopField === "checkin"
                                 ? onSelectCheckIn
@@ -1259,6 +1268,7 @@ const MobileBookingSheetPanel = ({
                                 }
                                 selectedNightOffset={nightOffset}
                                 bookedDates={bookedDates}
+                                maxNights={maxNights}
                                 onSelectDate={
                                     mobileDateField === "checkin"
                                         ? onSelectCheckIn
@@ -2257,6 +2267,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                                     nightOffset={nightOffset}
                                     bookedDates={unavailableDates}
                                     maxGuests={destination.maxGuests}
+                                    maxNights={rawListing?.maxNights}
                                     activeDesktopAnchorRef={activeDesktopAnchorRef}
                                     desktopBookingRef={desktopBookingRef}
                                     desktopPopoverRef={desktopPopoverRef}
@@ -2359,6 +2370,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                                 nightOffset={nightOffset}
                                 bookedDates={unavailableDates}
                                 maxGuests={destination.maxGuests}
+                                maxNights={rawListing?.maxNights}
                                 activeDesktopAnchorRef={activeDesktopAnchorRef}
                                 desktopBookingRef={desktopBookingRef}
                                 desktopPopoverRef={desktopPopoverRef}

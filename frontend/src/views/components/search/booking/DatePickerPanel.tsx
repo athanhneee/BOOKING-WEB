@@ -12,6 +12,8 @@ type DatePickerPanelProps = {
     selectedNightOffset?: number;
     /** ISO dates (YYYY-MM-DD) that are booked/unavailable — cannot be selected */
     bookedDates?: string[];
+    /** Listing's maximum nights — caps how far the checkout date can be from check-in */
+    maxNights?: number | null;
     onSelectDate: (nextDate: string) => void;
     onNightOffsetChange?: (nextOffset: number) => void;
     onClear?: () => void;
@@ -133,6 +135,8 @@ type CalendarMonthProps = {
     hoveredDate: Date | null;
     /** First booked date after checkIn (limits selectable checkout range) */
     firstBookedAfterCheckIn: Date | null;
+    /** Latest selectable checkout date based on the listing's maxNights */
+    maxSelectableCheckout: Date | null;
     bookedDatesSet: Set<string>;
     onDateSelect: (date: Date) => void;
     onDateHover: (date: Date | null) => void;
@@ -152,6 +156,7 @@ function CalendarMonth({
     activeField,
     hoveredDate,
     firstBookedAfterCheckIn,
+    maxSelectableCheckout,
     bookedDatesSet,
     onDateSelect,
     onDateHover,
@@ -197,6 +202,16 @@ function CalendarMonth({
             checkIn &&
             firstBookedAfterCheckIn &&
             date > firstBookedAfterCheckIn
+        ) {
+            return "disabled";
+        }
+
+        // When picking checkout, dates beyond the listing's maxNights are disabled
+        if (
+            activeField === "checkOut" &&
+            checkIn &&
+            maxSelectableCheckout &&
+            date > maxSelectableCheckout
         ) {
             return "disabled";
         }
@@ -357,6 +372,7 @@ const DatePickerPanel = ({
     activeField = "checkIn",
     selectedNightOffset = 0,
     bookedDates,
+    maxNights,
     onSelectDate,
     onNightOffsetChange,
     onClear,
@@ -406,6 +422,19 @@ const DatePickerPanel = ({
 
         return earliest;
     }, [checkIn, activeField, bookedDatesSet]);
+
+    // When picking checkout: the latest date the guest may select, based on the
+    // listing's maxNights (checkIn + maxNights days). Null when no limit applies.
+    const maxSelectableCheckout = useMemo(() => {
+        if (!checkIn || activeField !== "checkOut" || !maxNights || maxNights <= 0) {
+            return null;
+        }
+
+        const limit = new Date(checkIn);
+        limit.setDate(limit.getDate() + maxNights);
+        limit.setHours(0, 0, 0, 0);
+        return limit;
+    }, [checkIn, activeField, maxNights]);
 
     const [calendarMode, setCalendarMode] = useState<CalendarMode>("day");
     const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
@@ -470,6 +499,7 @@ const DatePickerPanel = ({
         activeField,
         hoveredDate,
         firstBookedAfterCheckIn,
+        maxSelectableCheckout,
         bookedDatesSet,
         onDateHover: setHoveredDate,
     };
