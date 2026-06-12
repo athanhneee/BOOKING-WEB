@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { getAdminUsers, updateAdminUser } from "../../../../services/userService";
 import { pageWrapperClass, primaryButtonClass, secondaryButtonClass, tableClassName } from "../../Host/sharedStyles";
 
-const roles = ["guest", "host", "moderator", "admin"];
-const roleLabel = { guest: "Guest", host: "Host", moderator: "Moderator", admin: "Admin" };
+const roles = ["guest", "host", "admin"];
+const roleLabel = { guest: "Guest", host: "Host", admin: "Admin" };
 
 const PhanQuyenHeThong = () => {
     const [users, setUsers] = useState([]);
