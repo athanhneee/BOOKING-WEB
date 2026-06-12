@@ -134,7 +134,7 @@ const Header = () => {
 
         if (hostApplicationStatus === "pending") {
             return (
-                <Link to={APP_ROUTES.hostStatus} className={mobile ? "rounded-xl px-4 py-3" : undefined}>
+                <Link to={APP_ROUTES.hostStatus} className={mobile ? "rounded-2xl px-4 py-3" : undefined}>
                     <span className="inline-flex items-center rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-sm font-medium text-yellow-700">
                         ⏳ Đang xét duyệt
                     </span>
@@ -148,7 +148,7 @@ const Header = () => {
                     to={APP_ROUTES.hostStatus}
                     className={
                         mobile
-                            ? "rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
+                            ? "rounded-2xl px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
                             : "text-sm font-medium text-red-600 transition-colors hover:text-red-700"
                     }
                 >
@@ -162,8 +162,8 @@ const Header = () => {
                 to={APP_ROUTES.hostLanding}
                 className={
                     mobile
-                        ? "rounded-xl px-4 py-3 text-sm font-medium text-cyan-800 transition-all duration-200 hover:bg-cyan-300/10"
-                        : `hidden min-h-11 items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 md:inline-flex ${useDarkText
+                        ? "rounded-2xl px-4 py-3 text-sm font-medium text-cyan-800 transition-all duration-200 hover:bg-cyan-300/10"
+                        : `hidden min-h-11 items-center justify-center rounded-2xl border px-4 py-2 text-sm font-medium transition-all duration-200 md:inline-flex ${useDarkText
                             ? "border-cyan-300/50 bg-white text-cyan-800 hover:bg-cyan-300/10"
                             : "border-white/30 bg-white/12 text-white backdrop-blur hover:bg-white/18"
                         }`
@@ -182,7 +182,7 @@ const Header = () => {
         return (
             <Link
                 to={APP_ROUTES.accountWishlist}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
+                className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
                 onClick={() => setMobileMenuPath(null)}
             >
                 <LuHeart size={17} className="shrink-0 text-slate-500" />
@@ -253,7 +253,7 @@ const Header = () => {
                                 <Link
                                     key={to}
                                     to={to}
-                                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
+                                    className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
                                     onClick={() => setMobileMenuPath(null)}
                                 >
                                     <Icon size={17} className="shrink-0 text-slate-500" />
@@ -275,7 +275,7 @@ const Header = () => {
                                                 window.location.href = APP_ROUTES.login;
                                             });
                                         }}
-                                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-red-600 transition-all duration-200 hover:bg-red-50"
+                                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-red-600 transition-all duration-200 hover:bg-red-50"
                                     >
                                         <LuLogOut size={17} className="shrink-0" />
                                         Đăng xuất
@@ -283,7 +283,7 @@ const Header = () => {
                                 ) : (
                                     <Link
                                         to={APP_ROUTES.login}
-                                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-cyan-600 transition-all duration-200 hover:bg-cyan-50"
+                                        className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-cyan-600 transition-all duration-200 hover:bg-cyan-50"
                                         onClick={() => setMobileMenuPath(null)}
                                     >
                                         <LuLogIn size={17} className="shrink-0" />

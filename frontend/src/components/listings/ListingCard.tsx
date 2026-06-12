@@ -98,15 +98,15 @@ const ListingCard = ({ listing, checkIn, checkOut }: ListingCardProps) => {
                 </p>
 
                 <div className="mt-4 grid grid-cols-3 gap-2 text-sm text-slate-600">
-                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-50 px-2.5 py-2">
                         <Users size={15} className="text-cyan-500" />
                         {listing.maxGuests}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-50 px-2.5 py-2">
                         <BedDouble size={15} className="text-cyan-500" />
                         {listing.bedrooms}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-50 px-2.5 py-2">
                         <Bath size={15} className="text-cyan-500" />
                         {listing.bathrooms}
                     </span>

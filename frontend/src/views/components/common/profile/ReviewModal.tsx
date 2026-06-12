@@ -123,7 +123,7 @@ const ReviewModal = ({ isOpen, trip, onClose, onSuccess }: ReviewModalProps) => 
                         </div>
 
                         {error && (
-                            <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+                            <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
                                 {error}
                             </div>
                         )}

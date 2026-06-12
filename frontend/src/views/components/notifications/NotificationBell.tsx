@@ -276,7 +276,7 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
             ) : null}
 
             {!loading && loadError ? (
-                <p className="mx-4 my-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
+                <p className="mx-4 my-3 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
                     {loadError}
                 </p>
             ) : null}

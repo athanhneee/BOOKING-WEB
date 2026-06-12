@@ -32,7 +32,7 @@ const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
                                 type="button"
                                 onClick={() => onTabChange(item.key)}
                                 className={cn(
-                                    "flex min-h-11 items-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-200",
+                                    "flex min-h-11 items-center gap-2.5 rounded-2xl border px-4 py-3 text-sm font-medium transition-all duration-200",
                                     isActive
                                         ? "border-cyan-300/50 bg-cyan-300/10 text-cyan-800 shadow-sm"
                                         : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
@@ -64,7 +64,7 @@ const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
                                     type="button"
                                     onClick={() => onTabChange(item.key)}
                                     className={cn(
-                                        "flex w-full items-center gap-3 rounded-xl border-l-4 px-4 py-3.5 text-left transition-all duration-200",
+                                        "flex w-full items-center gap-3 rounded-2xl border-l-4 px-4 py-3.5 text-left transition-all duration-200",
                                         isActive
                                             ? "border-l-cyan-600 bg-cyan-300/10 text-cyan-800"
                                             : "border-l-transparent text-slate-600 hover:bg-slate-50",

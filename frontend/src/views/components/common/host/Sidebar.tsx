@@ -31,7 +31,7 @@ const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
             >
                 <div className="flex items-center justify-between gap-3">
                     <Link to={APP_ROUTES.ownerDashboard} className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl">
                             <img src={logo} alt="minhthanhvilla" className="h-8 w-8 object-contain" />
                         </div>
 
@@ -62,10 +62,10 @@ const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
                                 onClick={onClose}
                                 className={({ isActive }) =>
                                     cn(
-                                        "group flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors",
+                                        "group flex items-center gap-3 rounded-2xl px-3 py-3 text-sm transition-colors",
                                         isActive
-                                            ? "bg-cyan-300/15 text-cyan-800 font-semibold rounded-xl"
-                                            : "text-gray-600 hover:bg-gray-50 rounded-xl",
+                                            ? "bg-cyan-300/15 text-cyan-800 font-semibold rounded-2xl"
+                                            : "text-gray-600 hover:bg-gray-50 rounded-2xl",
                                     )
                                 }
                             >
@@ -73,7 +73,7 @@ const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
                                     <>
                                         <span
                                             className={cn(
-                                                "inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-colors",
+                                                "inline-flex h-10 w-10 items-center justify-center rounded-2xl border transition-colors",
                                                 isActive
                                                     ? "border-cyan-300/30 bg-white text-cyan-600"
                                                     : "border-transparent bg-gray-100 text-gray-500",
@@ -96,7 +96,7 @@ const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
                         className="group block rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-cyan-300 hover:bg-cyan-50"
                     >
                         <div className="flex items-start gap-3">
-                            <span className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-cyan-50 text-cyan-600 transition-colors group-hover:bg-white">
+                            <span className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600 transition-colors group-hover:bg-white">
                                 <FiCompass size={18} />
                             </span>
 

@@ -25,7 +25,7 @@ const TripHistoryList = ({ trips }: TripHistoryListProps) => {
                 </p>
                 <Link
                     to={APP_ROUTES.home}
-                    className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-500 px-5 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-cyan-500"
+                    className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-5 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-cyan-500"
                 >
                     <LuCompass size={16} />
                     Khám phá nơi lưu trú

@@ -243,7 +243,7 @@ const TripHistoryCard = ({ trip, onReview }: TripHistoryCardProps) => {
                                 }
                                 aria-expanded={action.key === "detail" ? isDetailOpen : undefined}
                                 className={cn(
-                                    "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
+                                    "inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
                                     action.variant === "primary"
                                         ? "bg-cyan-500 text-white hover:bg-cyan-500"
                                         : "border border-cyan-300/50 bg-white text-cyan-800 hover:bg-cyan-300/10",

@@ -125,17 +125,17 @@ const LichLuuTru = () => {
                     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                         <label className="space-y-2 sm:col-span-2">
                             <span className="text-sm font-medium text-gray-700">Chọn chỗ nghỉ</span>
-                            <select value={listingId} onChange={(event) => setListingId(Number(event.target.value) || "")} className="w-full rounded-xl border border-gray-200 px-3 py-2.5">
+                            <select value={listingId} onChange={(event) => setListingId(Number(event.target.value) || "")} className="w-full rounded-2xl border border-gray-200 px-3 py-2.5">
                                 {listings.map((listing) => <option key={listing.listingId} value={listing.listingId}>{listing.title}</option>)}
                             </select>
                         </label>
                         <label className="space-y-2">
                             <span className="text-sm font-medium text-gray-700">Tháng</span>
-                            <input type="number" min={1} max={12} value={month} onChange={(event) => setMonth(Number(event.target.value))} className="w-full rounded-xl border border-gray-200 px-3 py-2.5" />
+                            <input type="number" min={1} max={12} value={month} onChange={(event) => setMonth(Number(event.target.value))} className="w-full rounded-2xl border border-gray-200 px-3 py-2.5" />
                         </label>
                         <label className="space-y-2">
                             <span className="text-sm font-medium text-gray-700">Năm</span>
-                            <input type="number" min={2026} max={2030} value={year} onChange={(event) => setYear(Number(event.target.value))} className="w-full rounded-xl border border-gray-200 px-3 py-2.5" />
+                            <input type="number" min={2026} max={2030} value={year} onChange={(event) => setYear(Number(event.target.value))} className="w-full rounded-2xl border border-gray-200 px-3 py-2.5" />
                         </label>
                     </div>
 

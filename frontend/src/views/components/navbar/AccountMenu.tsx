@@ -248,7 +248,7 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
                     key={item.key}
                     to={item.to}
                     onClick={close}
-                    className="group flex min-h-11 items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-cyan-300/10 hover:text-cyan-800"
+                    className="group flex min-h-11 items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-cyan-300/10 hover:text-cyan-800"
                 >
                     {content}
                 </Link>
@@ -263,7 +263,7 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
                     item.action?.();
                     close();
                 }}
-                className="group flex min-h-11 w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-cyan-300/10 hover:text-cyan-800"
+                className="group flex min-h-11 w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-cyan-300/10 hover:text-cyan-800"
             >
                 {content}
             </button>

@@ -27,9 +27,9 @@ const StayCardSkeleton = () => (
 
             {/* Tags */}
             <div className="flex flex-wrap gap-2">
-                <Skeleton className="h-9 w-20 rounded-xl" />
-                <Skeleton className="h-9 w-24 rounded-xl" />
-                <Skeleton className="h-9 w-20 rounded-xl" />
+                <Skeleton className="h-9 w-20 rounded-2xl" />
+                <Skeleton className="h-9 w-24 rounded-2xl" />
+                <Skeleton className="h-9 w-20 rounded-2xl" />
             </div>
 
             {/* Price */}

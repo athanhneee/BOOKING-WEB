@@ -84,7 +84,7 @@ const DanhGia = () => {
                 <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                     <label className="block space-y-2">
                         <span className="text-sm font-medium text-gray-700">Chọn chỗ nghỉ</span>
-                        <select value={listingId} onChange={(event) => setListingId(Number(event.target.value) || "")} className="w-full rounded-xl border border-gray-200 px-3 py-2.5">
+                        <select value={listingId} onChange={(event) => setListingId(Number(event.target.value) || "")} className="w-full rounded-2xl border border-gray-200 px-3 py-2.5">
                             {listings.map((listing) => <option key={listing.listingId} value={listing.listingId}>{listing.title}</option>)}
                         </select>
                     </label>
@@ -115,7 +115,7 @@ const DanhGia = () => {
                                     <td className="px-4 py-4 text-gray-500">{formatDate(review.createdAt.slice(0, 10))}</td>
                                     <td className="px-4 py-4">
                                         {review.hostReply ? (
-                                            <p className="rounded-xl bg-gray-50 p-3 text-gray-600">{review.hostReply}</p>
+                                            <p className="rounded-2xl bg-gray-50 p-3 text-gray-600">{review.hostReply}</p>
                                         ) : (
                                             <div className="space-y-2">
                                                 <textarea value={replyDrafts[review.reviewId] ?? ""} onChange={(event) => setReplyDrafts((current) => ({ ...current, [review.reviewId]: event.target.value }))} className={`${textareaClassName} min-h-[80px]`} placeholder="Nhập phản hồi..." />

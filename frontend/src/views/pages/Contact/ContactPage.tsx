@@ -95,7 +95,7 @@ const ContactPage = () => {
                                 </div>
 
                                 {supportTopics.map((topic) => (
-                                    <div key={topic} className="rounded-xl bg-white px-4 py-3 text-sm font-medium text-slate-700">
+                                    <div key={topic} className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-700">
                                         {topic}
                                     </div>
                                 ))}
@@ -152,7 +152,7 @@ const ContactPage = () => {
                                 </label>
 
                                 {sentMessage ? (
-                                    <p className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-600">
+                                    <p className="rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-600">
                                         {sentMessage}
                                     </p>
                                 ) : null}

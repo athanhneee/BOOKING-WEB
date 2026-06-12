@@ -130,7 +130,7 @@ const ChoNghi = () => {
                             key={option.value}
                             type="button"
                             onClick={() => setStatus(option.value)}
-                            className={`rounded-xl px-4 py-2 text-sm font-medium ${status === option.value ? "bg-cyan-50 text-cyan-600" : "text-gray-500 hover:bg-gray-50"}`}
+                            className={`rounded-2xl px-4 py-2 text-sm font-medium ${status === option.value ? "bg-cyan-50 text-cyan-600" : "text-gray-500 hover:bg-gray-50"}`}
                         >
                             {option.label}
                         </button>
@@ -176,10 +176,10 @@ const ChoNghi = () => {
                                                         <img
                                                             src={listing.imageUrl}
                                                             alt={listing.title}
-                                                            className="h-16 w-24 rounded-xl object-cover"
+                                                            className="h-16 w-24 rounded-2xl object-cover"
                                                         />
                                                     ) : (
-                                                        <div className="flex h-16 w-24 items-center justify-center rounded-xl bg-slate-100 text-xs font-medium text-slate-500">
+                                                        <div className="flex h-16 w-24 items-center justify-center rounded-2xl bg-slate-100 text-xs font-medium text-slate-500">
                                                             Chưa có ảnh
                                                         </div>
                                                     )}
@@ -244,7 +244,7 @@ const ChoNghi = () => {
                                                                 void runAction(listing.listingId, () => deleteHostListing(listing.listingId));
                                                             }
                                                         }}
-                                                        className="rounded-xl border border-rose-200 px-4 py-2.5 text-sm text-rose-600 transition-colors hover:bg-rose-50"
+                                                        className="rounded-2xl border border-rose-200 px-4 py-2.5 text-sm text-rose-600 transition-colors hover:bg-rose-50"
                                                     >
                                                         <FiTrash2 className="mr-1 inline" /> Xóa
                                                     </button>

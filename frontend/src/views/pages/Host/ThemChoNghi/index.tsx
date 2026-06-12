@@ -1499,7 +1499,7 @@ const ThemChoNghi = () => {
                                             type="button"
                                             onClick={handleAnalyzeImagesWithAi}
                                             disabled={aiAnalyzing}
-                                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-violet-100 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition-colors hover:border-violet-200 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-violet-100 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition-colors hover:border-violet-200 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-60"
                                         >
                                             <Sparkles size={16} />
                                             {aiAnalyzing ? "Đang phân tích ảnh..." : "Phân tích ảnh bằng AI"}
@@ -1516,7 +1516,7 @@ const ThemChoNghi = () => {
                                         const availableTags = tagTaxonomies.filter((taxonomy) => !tagCodes.has(taxonomy.code));
 
                                         return (
-                                            <div key={image.imageId} className="overflow-hidden rounded-xl border border-gray-100 bg-white">
+                                            <div key={image.imageId} className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
                                                 <img src={image.url} alt={buildExistingImageLabel(image, index)} className="h-32 w-full object-cover" />
                                                 <div className="space-y-2 px-3 py-2">
                                                     <div className="truncate text-xs text-gray-500">{buildExistingImageLabel(image, index)}</div>
@@ -1550,7 +1550,7 @@ const ThemChoNghi = () => {
                                                             const tagCode = event.target.value;
                                                             if (tagCode) handleAddImageTag(image, tagCode);
                                                         }}
-                                                        className="w-full rounded-xl border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                                                        className="w-full rounded-2xl border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
                                                     >
                                                         <option value="">Thêm tag thiếu</option>
                                                         {availableTags.map((taxonomy) => (
@@ -1590,7 +1590,7 @@ const ThemChoNghi = () => {
                                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Ảnh mới chờ upload.</p>
                                 <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
                                     {selectedImages.map((image, index) => (
-                                        <div key={image.id} className="overflow-hidden rounded-xl border border-gray-100 bg-white">
+                                        <div key={image.id} className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
                                             <img src={image.previewUrl} alt={`Ảnh mới ${index + 1}`} className="h-32 w-full object-cover" />
                                             <div className="space-y-2 px-3 py-2">
                                                 <div className="truncate text-xs text-gray-500">{`Ảnh chỗ nghỉ ${existingImages.length + index + 1}`}</div>

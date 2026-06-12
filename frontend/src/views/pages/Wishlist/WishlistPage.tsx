@@ -30,7 +30,7 @@ const SkeletonCard = () => (
             <div className="h-4 w-2/3 rounded-lg bg-slate-200" />
             <div className="flex justify-between pt-2">
                 <div className="h-6 w-24 rounded-lg bg-slate-200" />
-                <div className="h-9 w-28 rounded-xl bg-slate-200" />
+                <div className="h-9 w-28 rounded-2xl bg-slate-200" />
             </div>
         </div>
     </div>
@@ -47,7 +47,7 @@ const EmptyState = () => (
         </p>
         <Link
             to={APP_ROUTES.search}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-600 px-6 py-3 font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg"
+            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-cyan-600 px-6 py-3 font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg"
         >
             <LuSparkles size={18} />
             Khám phá nơi lưu trú
@@ -141,7 +141,7 @@ const WishlistCard = ({ item, onRemove, isRemoving }: WishlistCardProps) => {
                     </div>
                     <Link
                         to={APP_ROUTES.villaDetail(String(item.listingId))}
-                        className="rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                        className="rounded-2xl bg-gradient-to-r from-cyan-600 to-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                     >
                         Xem chi tiết
                     </Link>
@@ -217,7 +217,7 @@ const WishlistPage = () => {
                         Quay lại
                     </button>
                     <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-100">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-100">
                             <LuHeart size={22} className="text-rose-500" />
                         </div>
                         <div>
@@ -237,13 +237,13 @@ const WishlistPage = () => {
             {/* Content */}
             <div className="container mx-auto max-w-6xl px-4 py-8 md:px-6">
                 {error && (
-                    <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                         {error}
                     </div>
                 )}
 
                 {notice && (
-                    <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 flex items-center gap-2">
+                    <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 flex items-center gap-2">
                         <FiAlertCircle className="shrink-0" size={16} />
                         {notice}
                     </div>

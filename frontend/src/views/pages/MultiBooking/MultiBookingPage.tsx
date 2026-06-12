@@ -111,7 +111,7 @@ const CartItemCard = ({ item, isCurrentBooking, onRemove }: CartItemCardProps) =
 
             <div className="flex gap-4 p-4">
                 {/* Image */}
-                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
                     {item.imageUrl ? (
                         <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
                     ) : (
@@ -186,7 +186,7 @@ type BookingResultCard = {
 
 const BookingResultCard = ({ booking, title, imageUrl, onPay, isPaying, isPaid }: BookingResultCard) => (
     <div className={`flex items-center gap-4 rounded-2xl border p-4 ${isPaid ? "border-emerald-200 bg-emerald-50" : "border-slate-100 bg-white"}`}>
-        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
             {imageUrl ? (
                 <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
             ) : (
@@ -209,7 +209,7 @@ const BookingResultCard = ({ booking, title, imageUrl, onPay, isPaying, isPaid }
                 type="button"
                 onClick={() => onPay(booking.bookingId)}
                 disabled={isPaying}
-                className="flex items-center gap-1.5 rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-cyan-600 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-2xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-cyan-600 disabled:opacity-50"
             >
                 {isPaying ? <FiLoader size={14} className="animate-spin" /> : null}
                 Thanh toán
@@ -374,7 +374,7 @@ const MultiBookingPage = () => {
                     </button>
 
                     <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-100">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-100">
                             <LuShoppingCart size={22} className="text-cyan-600" />
                         </div>
                         <div>
@@ -391,7 +391,7 @@ const MultiBookingPage = () => {
 
             <div className="container mx-auto max-w-3xl px-4 py-6 md:px-6">
                 {error && (
-                    <div className="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <div className="mb-5 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                         <FiX size={16} className="mt-0.5 shrink-0" />
                         <div className="min-w-0">
                             <div>{error}</div>
@@ -479,7 +479,7 @@ const MultiBookingPage = () => {
                 {/* ── PAYMENT PHASE ── */}
                 {phase === "payment" && (
                     <>
-                        <div className="mb-5 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+                        <div className="mb-5 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
                             <FiCheckCircle size={16} />
                             Đã tạo {createdBookings.length} đặt phòng thành công! Tiến hành thanh toán từng căn.
                         </div>

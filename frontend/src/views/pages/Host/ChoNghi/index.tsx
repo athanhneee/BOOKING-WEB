@@ -162,7 +162,7 @@ const ChoNghi = () => {
                         <button
                             type="button"
                             onClick={() => navigate(APP_ROUTES.hostNewProperty)}
-                            className="mt-6 rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cyan-700"
+                            className="mt-6 rounded-2xl bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cyan-700"
                         >
                             Thêm chỗ nghỉ ngay
                         </button>
@@ -230,7 +230,7 @@ const ChoNghi = () => {
                                     <button
                                         type="button"
                                         onClick={() => navigate(`${APP_ROUTES.hostNewProperty}?listingId=${property.listingId}`)}
-                                        className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
+                                        className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
                                     >
                                         <FiEdit2 size={14} /> Chỉnh sửa
                                     </button>
@@ -238,7 +238,7 @@ const ChoNghi = () => {
                                     <button
                                         type="button"
                                         onClick={() => navigate(APP_ROUTES.hostCalendar)}
-                                        className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
+                                        className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
                                     >
                                         <FiCalendar size={14} /> Lịch
                                     </button>
@@ -247,7 +247,7 @@ const ChoNghi = () => {
                                         <button
                                             type="button"
                                             onClick={() => handleSubmitForApproval(property.listingId)}
-                                            className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
+                                            className="col-span-2 flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
                                         >
                                             <FiSend size={14} /> Gửi duyệt
                                         </button>
@@ -257,7 +257,7 @@ const ChoNghi = () => {
                                         <button
                                             type="button"
                                             onClick={() => setDialogProperty(property)}
-                                            className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 active:scale-95"
+                                            className="col-span-2 flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 active:scale-95"
                                         >
                                             {isPublished ? <FiEyeOff size={14} /> : <FiEye size={14} />}
                                             {isPublished ? "Ẩn chỗ nghỉ" : "Hiện lại chỗ nghỉ"}

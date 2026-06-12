@@ -81,19 +81,19 @@ const StayCard = ({ stay }: StayCardProps) => {
                 <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-600">{stay.description}</p>
 
                 <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-600">
-                    <span className="inline-flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2">
+                    <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
                         <FiUsers className="text-cyan-500" />
                         {stay.guests} khách
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2">
+                    <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
                         <FiHome className="text-cyan-500" />
                         {stay.bedrooms} phòng ngủ
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2">
+                    <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
                         <FaBed className="text-cyan-500" />
                         {stay.beds} giường
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2">
+                    <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
                         <FaBath className="text-cyan-500" />
                         {stay.bathrooms} phòng tắm
                     </span>

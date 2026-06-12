@@ -89,7 +89,7 @@ const KhachLuuTru = () => {
                                 const value = event.target.value;
                                 setSelectedListingId(value === "all" ? "all" : Number(value));
                             }}
-                            className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
+                            className="w-full rounded-2xl border border-gray-200 px-3 py-2.5"
                         >
                             <option value="all">Tất cả chỗ nghỉ</option>
                             {listingOptions.map((listing) => (

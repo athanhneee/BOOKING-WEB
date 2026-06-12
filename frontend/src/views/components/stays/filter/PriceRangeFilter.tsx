@@ -70,7 +70,7 @@ const PriceRangeFilter = ({ bounds, minValue, maxValue, onChange }: PriceRangeFi
                 </div>
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <label className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                    <label className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
                         <span className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">Giá tối thiểu</span>
                         <input
                             type="number"
@@ -85,7 +85,7 @@ const PriceRangeFilter = ({ bounds, minValue, maxValue, onChange }: PriceRangeFi
                         />
                     </label>
 
-                    <label className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                    <label className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
                         <span className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">Giá tối đa</span>
                         <input
                             type="number"

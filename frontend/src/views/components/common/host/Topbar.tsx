@@ -84,7 +84,7 @@ const Topbar = ({ onOpenSidebar }: TopbarProps) => {
                 <button
                     type="button"
                     onClick={onOpenSidebar}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-600 transition-colors hover:bg-gray-50 lg:hidden"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-gray-200 text-gray-600 transition-colors hover:bg-gray-50 lg:hidden"
                     aria-label="Mở menu"
                 >
                     <FiMenu size={18} />
@@ -102,7 +102,7 @@ const Topbar = ({ onOpenSidebar }: TopbarProps) => {
                 {location.pathname !== APP_ROUTES.hostNewProperty ? (
                     <Link
                         to={APP_ROUTES.hostNewProperty}
-                        className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-cyan-500 sm:px-4"
+                        className="inline-flex items-center gap-2 rounded-2xl bg-cyan-500 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-cyan-500 sm:px-4"
                     >
                         <FiPlus size={16} />
                         <span className="hidden sm:inline">Thêm chỗ nghỉ</span>

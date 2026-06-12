@@ -493,7 +493,7 @@ const AiSearchPage = () => {
                                                         {visibleReasons.map((reason) => (
                                                             <p
                                                                 key={reason}
-                                                                className="rounded-xl bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-800"
+                                                                className="rounded-2xl bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-800"
                                                             >
                                                                 {reason}
                                                             </p>
