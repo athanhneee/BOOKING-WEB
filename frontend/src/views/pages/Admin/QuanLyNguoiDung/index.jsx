@@ -14,23 +14,30 @@ const statusOptions = [
 const QuanLyNguoiDung = () => {
     const [users, setUsers] = useState([]);
     const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [status, setStatus] = useState("all");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [actionId, setActionId] = useState(null);
 
+    // Chỉ gọi API sau khi người dùng ngừng gõ 350ms, tránh spam request mỗi ký tự.
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+        return () => clearTimeout(timer);
+    }, [search]);
+
     const fetchUsers = useCallback(async () => {
         setLoading(true);
         setError("");
         try {
-            const result = await getAdminUsers({ page: 1, limit: 100, search, status });
+            const result = await getAdminUsers({ page: 1, limit: 100, search: debouncedSearch, status });
             setUsers(result.items ?? []);
         } catch (fetchError) {
             setError(fetchError instanceof Error ? fetchError.message : "Không thể tải người dùng.");
         } finally {
             setLoading(false);
         }
-    }, [search, status]);
+    }, [debouncedSearch, status]);
 
     useEffect(() => { void fetchUsers(); }, [fetchUsers]);
 
@@ -50,6 +57,10 @@ const QuanLyNguoiDung = () => {
     return (
         <div className={pageWrapperClass}>
             <div className="mx-auto max-w-7xl space-y-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Quản lý người dùng</h1>
+                    <p className="mt-1 text-sm text-gray-500">Tìm kiếm, khóa hoặc mở khóa tài khoản người dùng.</p>
+                </div>
 
                 {error ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
                 <section className="flex flex-col gap-3 rounded-3xl border border-gray-100 bg-white p-4 shadow-sm md:flex-row">
