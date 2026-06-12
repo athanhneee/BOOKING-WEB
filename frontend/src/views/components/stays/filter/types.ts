@@ -10,7 +10,6 @@ export type StaySortOption =
     | "gia-thap-den-cao"
     | "danh-gia-cao-nhat"
     | "gan-trung-tam"
-    | "phu-hop-gia-dinh"
     | "phu-hop-nhom-dong";
 
 export type PriceBounds = {

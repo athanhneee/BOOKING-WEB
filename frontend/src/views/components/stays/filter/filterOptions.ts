@@ -9,7 +9,6 @@ import {
     LuMapPin,
     LuStar,
     LuTrendingUp,
-    LuUsers,
     LuUsersRound,
 } from "react-icons/lu";
 import type { CounterFilterItem, StaySortOption } from "./types";
@@ -85,12 +84,6 @@ export const staySortOptions = [
         label: "Gần trung tâm",
         description: "Sắp xếp theo khoảng cách địa lý",
         icon: LuMapPin,
-    },
-    {
-        value: "phu-hop-gia-dinh" as StaySortOption,
-        label: "Phù hợp gia đình",
-        description: "Tiện nghi và không gian cho gia đình",
-        icon: LuUsers,
     },
     {
         value: "phu-hop-nhom-dong" as StaySortOption,

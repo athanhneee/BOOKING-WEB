@@ -11,9 +11,6 @@ import {
     stayAmenityOptions,
     stayAmenityLabels,
     stayCategoryOptions,
-    stayHighlightOptions,
-    stayPolicyOptions,
-    stayQuickChoiceOptions,
     staySortOptions,
 } from "./filterOptions";
 import { countActiveFilters, createDefaultStayFilters } from "./stayFilterUtils";

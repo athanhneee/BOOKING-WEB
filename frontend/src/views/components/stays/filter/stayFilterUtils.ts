@@ -113,9 +113,6 @@ export const filterAndSortStays = (stays: PopularDestination[], filters: StayFil
         case "gan-trung-tam":
             sorted.sort((a, b) => Number(b.quickChoices.includes("Gần trung tâm")) - Number(a.quickChoices.includes("Gần trung tâm")));
             break;
-        case "phu-hop-gia-dinh":
-            sorted.sort((a, b) => Number(b.quickChoices.includes("Phù hợp gia đình")) - Number(a.quickChoices.includes("Phù hợp gia đình")));
-            break;
         case "phu-hop-nhom-dong":
             sorted.sort((a, b) => Number(b.quickChoices.includes("Phù hợp nhóm đông")) - Number(a.quickChoices.includes("Phù hợp nhóm đông")));
             break;
