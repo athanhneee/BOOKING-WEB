@@ -181,6 +181,37 @@ src/modules/
 
 ---
 
+## API & Health check
+
+Toàn bộ API đặt dưới tiền tố `/api`. Một số nhóm endpoint chính:
+
+| Tiền tố | Mô tả |
+|---|---|
+| `/api/auth` | Đăng nhập, đăng ký, Google OAuth, OTP |
+| `/api/users` | Tài khoản người dùng |
+| `/api/listings` | Listing công khai |
+| `/api/host/listings` | Quản lý listing cho host |
+| `/api/host/applications` | Hồ sơ đăng ký host |
+| `/api/bookings`, `/api/host/bookings` | Đặt phòng (khách & host) |
+| `/api/payments`, `/api/coupons` | Thanh toán & mã giảm giá |
+| `/api/host` (payouts, bank, onboarding) | Doanh thu & rút tiền host |
+| `/api/reviews`, `/api/wishlist` | Đánh giá & yêu thích |
+| `/api/conversations`, `/api/notifications` | Tin nhắn & thông báo |
+| `/api/search` | AI Semantic Search |
+| `/api/ai/listings`, `/api/ai/listings/search` | AI Vision & AI tìm kiếm listing |
+| `/api/admin` | Quản trị viên |
+| `/api/reports`, `/api/host/reports` | Báo cáo thống kê |
+| `/api/amenities`, `/api/banks`, `/api/blogs` | Tiện nghi, ngân hàng, blog |
+
+**Health check:**
+
+| Endpoint | Mục đích |
+|---|---|
+| `GET /api/health` | Tình trạng tổng quát (database + Qdrant + uptime) |
+| `GET /api/health/db` | Kiểm tra riêng kết nối MySQL |
+
+---
+
 ## Kiểm thử (Testing)
 
 Backend sử dụng test runner tích hợp của Node (`node --test`) với `ts-node`. Chạy toàn bộ:
