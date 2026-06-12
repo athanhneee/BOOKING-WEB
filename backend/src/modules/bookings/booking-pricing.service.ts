@@ -216,7 +216,11 @@ export const calculateBookingPricing = async (params: {
     const extraGuestPricing = getExtraGuestPricing(listing, guestCount, totalNights);
     const accommodationAmount = subtotalAmount + extraGuestPricing.extraGuestFeeAmount;
     const cleaningFeeAmount = toNumber(listing.cleaningFee);
-    const surchargeAmount = toNumber((listing as ListingDocument & { surchargeAmount?: number | null }).surchargeAmount);
+    const rawSurcharge = toNumber((listing as ListingDocument & { surchargeAmount?: number | null }).surchargeAmount);
+    const surchargeIncludedGuests = Math.max(1, Math.floor(toNumber(
+        (listing as ListingWithExtraGuestPricing).includedGuests ?? listing.maxGuests,
+    )));
+    const surchargeAmount = guestCount > surchargeIncludedGuests ? rawSurcharge : 0;
     const serviceFeeAmount = Math.round(accommodationAmount * (toNumber(listing.serviceFeePct) / 100));
     const preDiscountTotal = accommodationAmount + cleaningFeeAmount + surchargeAmount + serviceFeeAmount;
     const normalizedCouponCode = normalizeCouponCode(couponCode);
