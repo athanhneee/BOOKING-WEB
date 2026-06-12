@@ -40,6 +40,7 @@ import NotificationLog from "../../models/notification-log";
 import Payment from "../../models/payment";
 import Refund from "../../models/refund";
 import Review from "../../models/review";
+import User from "../../models/user";
 import type { AuthenticatedUser } from "../auth/auth.service";
 import { writeAuditLog } from "../../services/audit-log-service";
 import {
@@ -665,7 +666,7 @@ const autoAdvanceBookingStatus = async (booking: BookingDocument): Promise<void>
 const serializeBooking = async (booking: BookingDocument, includeImages = false) => {
     await autoAdvanceBookingStatus(booking);
 
-    const [latestPayment, latestRefund, payoutStatus, listing, review] = await Promise.all([
+    const [latestPayment, latestRefund, payoutStatus, listing, review, guestUser] = await Promise.all([
         getLatestPaymentForBooking(booking.bookingId),
         getLatestRefundForBooking(booking.bookingId),
         getLatestPayoutStatusForBooking(booking.bookingId),
@@ -679,6 +680,7 @@ const serializeBooking = async (booking: BookingDocument, includeImages = false)
                 bookingId: booking.bookingId,
             },
         }),
+        User.findById(booking.guestUserId),
     ]);
     const images = listing ? await getListingImagesForListing(listing) : [];
     const coverImage = getCoverImage(images);
@@ -726,6 +728,8 @@ const serializeBooking = async (booking: BookingDocument, includeImages = false)
         listingId: booking.listingId,
         guestUserId: String(booking.guestUserId),
         hostUserId: String(booking.hostUserId),
+        guestName: guestUser?.fullName ?? null,
+        guestEmail: guestUser?.email ?? null,
         listingTitle: listing?.title ?? null,
         listing: listing
             ? {
