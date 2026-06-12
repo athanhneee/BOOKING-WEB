@@ -1167,6 +1167,8 @@ type MobileBookingSheetProps = {
     nightOffset: number;
     /** ISO dates that are already booked — shown as disabled in the mobile calendar */
     bookedDates?: string[];
+    /** Listing's maximum nights — caps how far the checkout date can be from check-in */
+    maxNights?: number | null;
     /** Listing's max guest count — used to cap the adults selector */
     maxGuests: number;
     guestSelection: GuestSelection;
@@ -1191,6 +1193,7 @@ const MobileBookingSheetPanel = ({
     todayIso,
     nightOffset,
     bookedDates,
+    maxNights,
     maxGuests,
     guestSelection,
     onClose,
@@ -2406,6 +2409,7 @@ const ListingDetailContent = ({ villaId }: { villaId?: string }) => {
                 todayIso={todayIso}
                 nightOffset={nightOffset}
                 bookedDates={unavailableDates}
+                maxNights={rawListing?.maxNights}
                 maxGuests={destination.maxGuests}
                 guestSelection={guestSelection}
                 onClose={() => setMobileBookingSheet(null)}
