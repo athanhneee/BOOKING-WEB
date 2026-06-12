@@ -4,6 +4,25 @@
 
 ---
 
+## Mục lục
+
+- [Tổng quan kiến trúc](#tổng-quan-kiến-trúc)
+- [Tính năng chính](#tính-năng-chính)
+- [Tech Stack](#tech-stack)
+- [Cài đặt & Chạy](#cài-đặt--chạy)
+- [Biến môi trường quan trọng (Backend)](#biến-môi-trường-quan-trọng-backend)
+- [Scripts hữu ích (Backend)](#scripts-hữu-ích-backend)
+- [Scripts hữu ích (Frontend)](#scripts-hữu-ích-frontend)
+- [Cấu trúc module backend](#cấu-trúc-module-backend)
+- [API & Health check](#api--health-check)
+- [Kiểm thử (Testing)](#kiểm-thử-testing)
+- [Phân quyền người dùng](#phân-quyền-người-dùng)
+- [Bảo mật](#bảo-mật)
+- [Triển khai (Deployment)](#triển-khai-deployment)
+- [Nhánh Git](#nhánh-git)
+
+---
+
 ## Tổng quan kiến trúc
 
 ```
