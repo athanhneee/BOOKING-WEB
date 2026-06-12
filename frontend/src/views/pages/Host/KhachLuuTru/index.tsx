@@ -10,6 +10,7 @@ const KhachLuuTru = () => {
     const [statusNow, setStatusNow] = useState(() => new Date());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [selectedListingId, setSelectedListingId] = useState<number | "all">("all");
 
     useEffect(() => {
         const loadBookings = async () => {
@@ -34,23 +35,41 @@ const KhachLuuTru = () => {
         return () => window.clearInterval(timer);
     }, []);
 
+    const listingOptions = useMemo(() => {
+        const seen = new Map<number, string>();
+
+        for (const booking of bookings) {
+            const id = booking.listingId;
+
+            if (!seen.has(id)) {
+                seen.set(id, booking.listing?.title ?? booking.listingTitle ?? `Listing #${id}`);
+            }
+        }
+
+        return Array.from(seen.entries())
+            .map(([id, title]) => ({ id, title }))
+            .sort((a, b) => a.title.localeCompare(b.title));
+    }, [bookings]);
+
     const guests = useMemo(
         () =>
-            bookings.map((booking) => {
-                const displayStatus = getBookingDisplayStatus(booking, { role: "host", now: statusNow });
+            bookings
+                .filter((booking) => selectedListingId === "all" || booking.listingId === selectedListingId)
+                .map((booking) => {
+                    const displayStatus = getBookingDisplayStatus(booking, { role: "host", now: statusNow });
 
-                return {
-                    id: booking.bookingId,
-                    name: `Khách booking #${booking.bookingId}`,
-                    email: `guest-${booking.guestUserId}@private.local`,
-                    listing: booking.listing?.title ?? booking.listingTitle ?? `Listing #${booking.listingId}`,
-                    dates: `${formatDate(booking.checkInDate)} - ${formatDate(booking.checkOutDate)}`,
-                    guestCount: booking.guests ?? booking.guestCount ?? booking.guestsCount ?? 1,
-                    statusLabel: displayStatus.label,
-                    statusTone: displayStatus.tone,
-                };
-            }),
-        [bookings, statusNow],
+                    return {
+                        id: booking.bookingId,
+                        name: `Khách booking #${booking.bookingId}`,
+                        email: `guest-${booking.guestUserId}@private.local`,
+                        listing: booking.listing?.title ?? booking.listingTitle ?? `Listing #${booking.listingId}`,
+                        dates: `${formatDate(booking.checkInDate)} - ${formatDate(booking.checkOutDate)}`,
+                        guestCount: booking.guests ?? booking.guestCount ?? booking.guestsCount ?? 1,
+                        statusLabel: displayStatus.label,
+                        statusTone: displayStatus.tone,
+                    };
+                }),
+        [bookings, statusNow, selectedListingId],
     );
 
     return (
@@ -59,6 +78,36 @@ const KhachLuuTru = () => {
                 <PageHeader title="Khách lưu trú" subtitle="" />
 
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+
+                <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                    <label htmlFor="listing-filter" className="text-sm font-medium text-gray-700">Lọc theo chỗ nghỉ:</label>
+                    <select
+                        id="listing-filter"
+                        value={selectedListingId}
+                        onChange={(event) => {
+                            const value = event.target.value;
+                            setSelectedListingId(value === "all" ? "all" : Number(value));
+                        }}
+                        className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 shadow-sm transition-colors hover:border-cyan-300 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                    >
+                        <option value="all">Tất cả chỗ nghỉ ({bookings.length})</option>
+                        {listingOptions.map((listing) => (
+                            <option key={listing.id} value={listing.id}>{listing.title}</option>
+                        ))}
+                    </select>
+                    {selectedListingId !== "all" ? (
+                        <button
+                            type="button"
+                            onClick={() => setSelectedListingId("all")}
+                            className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-medium text-gray-500 transition-colors hover:border-cyan-300 hover:text-cyan-600"
+                        >
+                            Xóa bộ lọc
+                        </button>
+                    ) : null}
+                    <span className="ml-auto text-sm text-gray-400">
+                        {guests.length} kết quả
+                    </span>
+                </div>
 
                 <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                     <table className={`${tableClassName} text-left text-sm`}>
