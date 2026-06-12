@@ -423,7 +423,7 @@ const KiemDuyetBaiDang = () => {
                                                         type="button"
                                                         onClick={() => handleApprove(listing.listingId)}
                                                         disabled={isThisRowProcessing || isLoadingTable}
-                                                        className="inline-flex items-center gap-1.5 rounded-3xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:by-cyal-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                                        className="inline-flex items-center gap-1.5 rounded-3xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                                                     >
                                                         {isThisRowProcessing ? (
                                                             <>
@@ -585,7 +585,7 @@ const KiemDuyetBaiDang = () => {
                                 type="button"
                                 onClick={() => handleApprove(selectedListingDetail.listingId)}
                                 disabled={isModalActionLoading}
-                                className="inline-flex items-center gap-2 rounded-3xl bg-emerald-600 px-4 py-2 font-medium text-white hover:by-cyal-600 disabled:cursor-not-allowed disabled:opacity-70"
+                                className="inline-flex items-center gap-2 rounded-3xl bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 {isModalActionLoading ? (
                                     <>

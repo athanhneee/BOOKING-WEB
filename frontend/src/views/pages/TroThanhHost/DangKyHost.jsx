@@ -292,7 +292,7 @@ const DangKyHost = () => {
                         <button
                             type="button"
                             onClick={() => navigate(APP_ROUTES.ownerDashboard)}
-                            className="mt-4 rounded-3xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:by-cyal-600"
+                            className="mt-4 rounded-3xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
                         >
                             Quản lý host
                         </button>
