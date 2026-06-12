@@ -181,6 +181,31 @@ src/modules/
 
 ---
 
+## Kiểm thử (Testing)
+
+Backend sử dụng test runner tích hợp của Node (`node --test`) với `ts-node`. Chạy toàn bộ:
+
+```bash
+cd backend
+npm run test        # Build + chạy tuần tự tất cả integration test
+```
+
+| Test suite | Phạm vi |
+|---|---|
+| `auth-flow.test.ts` | Đăng ký, đăng nhập, refresh token |
+| `auth-token-security.test.ts` | Bảo mật access/refresh token |
+| `users-rbac-verification.test.ts` | Phân quyền (RBAC) & xác minh |
+| `listings-endpoints.test.ts` | API listing công khai |
+| `listing-image-vision.test.ts` | AI Vision nhận diện ảnh listing |
+| `bookings-endpoints.test.ts` | Luồng đặt phòng & trạng thái booking |
+| `payments-coupons-payouts-reports.test.ts` | Thanh toán, mã giảm giá, payout, báo cáo |
+| `host-onboarding-verification-flow.test.ts` | Đăng ký & duyệt hồ sơ host |
+| `semantic-search.test.ts` | AI Semantic Search |
+| `security-middleware.test.ts` | Middleware bảo mật (helmet, rate-limit...) |
+| `trust-safety-uc09.test.ts` | Trust & Safety (UC09) |
+
+---
+
 ## Phân quyền người dùng
 
 | Role | Quyền |
