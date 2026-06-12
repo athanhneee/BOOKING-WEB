@@ -276,7 +276,7 @@ const HoSoHost = () => {
                                                     {application.phone || application.user?.phone || "-"}
                                                 </td>
                                                 <td className="px-5 py-4">
-                                                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">
+                                                    <span className="inline-flex items-center rounded-3xl bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">
                                                         {profileTypeLabel[application.profileType] ?? application.profileType}
                                                     </span>
                                                 </td>
