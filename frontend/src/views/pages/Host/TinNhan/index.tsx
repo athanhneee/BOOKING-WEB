@@ -347,7 +347,7 @@ const HostTinNhan = () => {
                 subtitle=""
             />
 
-            <div className="mt-5 grid overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)] lg:min-h-[640px] lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
+            <div className="mt-5 grid overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)] lg:h-[calc(100vh-200px)] lg:min-h-[480px] lg:max-h-[800px] lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
                 <aside className="flex min-h-0 flex-col border-b border-gray-200 bg-slate-50/80 lg:border-b-0 lg:border-r">
                     <div className="flex items-center justify-between gap-3 border-b border-gray-200 bg-white/90 px-4 py-4">
                         <h2 className="text-sm font-semibold text-gray-900">Hội thoại</h2>
@@ -419,7 +419,7 @@ const HostTinNhan = () => {
                     </div>
                 </aside>
 
-                <main className="flex min-w-0 flex-col bg-white lg:min-h-0">
+                <main className="flex min-w-0 flex-col bg-white lg:min-h-0 lg:h-full lg:overflow-hidden">
                     {selectedConversation ? (
                         <>
                             <div className="flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
@@ -436,7 +436,7 @@ const HostTinNhan = () => {
                                 </div>
                             </div>
 
-                            <div className="min-h-[360px] max-h-[56vh] flex-1 overflow-y-auto bg-[#f8fafc] px-3 py-4 sm:px-5 sm:py-5 lg:min-h-0 lg:max-h-none">
+                            <div className="min-h-[200px] max-h-[56vh] flex-1 overflow-y-auto bg-[#f8fafc] px-3 py-4 sm:px-5 sm:py-5 lg:min-h-0">
                                 {isLoadingMessages ? (
                                     <div className="flex flex-col items-center justify-center py-10">
                                         <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
