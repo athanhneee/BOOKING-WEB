@@ -79,35 +79,42 @@ const KhachLuuTru = () => {
 
                 {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
-                <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                    <label htmlFor="listing-filter" className="text-sm font-medium text-gray-700">Lọc theo chỗ nghỉ:</label>
-                    <select
-                        id="listing-filter"
-                        value={selectedListingId}
-                        onChange={(event) => {
-                            const value = event.target.value;
-                            setSelectedListingId(value === "all" ? "all" : Number(value));
-                        }}
-                        className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700 shadow-sm transition-colors hover:border-cyan-300 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
-                    >
-                        <option value="all">Tất cả chỗ nghỉ ({bookings.length})</option>
-                        {listingOptions.map((listing) => (
-                            <option key={listing.id} value={listing.id}>{listing.title}</option>
-                        ))}
-                    </select>
+                <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+                        <label className="space-y-2 sm:col-span-2">
+                            <span className="text-sm font-medium text-gray-700">Chọn chỗ nghỉ</span>
+                            <select
+                                id="listing-filter"
+                                value={selectedListingId}
+                                onChange={(event) => {
+                                    const value = event.target.value;
+                                    setSelectedListingId(value === "all" ? "all" : Number(value));
+                                }}
+                                className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
+                            >
+                                <option value="all">Tất cả chỗ nghỉ</option>
+                                {listingOptions.map((listing) => (
+                                    <option key={listing.id} value={listing.id}>{listing.title}</option>
+                                ))}
+                            </select>
+                        </label>
+                    </div>
                     {selectedListingId !== "all" ? (
-                        <button
-                            type="button"
-                            onClick={() => setSelectedListingId("all")}
-                            className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-medium text-gray-500 transition-colors hover:border-cyan-300 hover:text-cyan-600"
-                        >
-                            Xóa bộ lọc
-                        </button>
+                        <div className="mt-4 text-sm text-gray-500">
+                            Đang lọc: <strong className="text-gray-700">{listingOptions.find((l) => l.id === selectedListingId)?.title}</strong>
+                            {" · "}
+                            {guests.length} kết quả
+                            {" · "}
+                            <button
+                                type="button"
+                                onClick={() => setSelectedListingId("all")}
+                                className="font-medium text-cyan-600 hover:text-cyan-700"
+                            >
+                                Xóa bộ lọc
+                            </button>
+                        </div>
                     ) : null}
-                    <span className="ml-auto text-sm text-gray-400">
-                        {guests.length} kết quả
-                    </span>
-                </div>
+                </section>
 
                 <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                     <table className={`${tableClassName} text-left text-sm`}>
