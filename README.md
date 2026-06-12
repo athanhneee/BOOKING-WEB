@@ -138,6 +138,17 @@ npm run build                  # Build production
 
 ---
 
+## Scripts hữu ích (Frontend)
+
+```bash
+npm run dev                    # Chạy dev server Vite tại http://localhost:5173
+npm run build                  # Build production vào thư mục dist/
+npm run preview                # Xem thử bản build production
+npm run lint                   # Kiểm tra code với ESLint
+```
+
+---
+
 ## Cấu trúc module backend
 
 ```
