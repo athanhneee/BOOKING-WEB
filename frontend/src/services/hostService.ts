@@ -70,6 +70,7 @@ export type CreateHostListingPayload = {
     basePrice: number;
     weekendPrice?: number | null;
     cleaningFee?: number | null;
+    surchargeAmount?: number | null;
     serviceFeePct?: number | null;
     currency: "VND";
     minNights: number;

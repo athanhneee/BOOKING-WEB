@@ -172,6 +172,7 @@ export type ApiListingDetail = {
     basePrice: number;
     weekendPrice: number | null;
     cleaningFee: number | null;
+    surchargeAmount?: number | null;
     serviceFeePct: number | null;
     extraGuestFee: number | null;
     currency: string;

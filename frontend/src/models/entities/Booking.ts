@@ -48,6 +48,7 @@ export type BookingPriceBreakdown = {
     subtotal: number;
     cleaningFeeAmount: number;
     cleaningFee: number;
+    surchargeAmount: number;
     serviceFeeAmount: number;
     serviceFee: number;
     extraGuestFeeAmount: number;
