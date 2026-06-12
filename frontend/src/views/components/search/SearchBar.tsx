@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { FaMinus, FaPlus } from "react-icons/fa";
-import { FiCalendar, FiSearch, FiUsers } from "react-icons/fi";
+import { FiCalendar, FiNavigation, FiSearch, FiUsers } from "react-icons/fi";
 import { HiOutlineMapPin, HiOutlineSparkles } from "react-icons/hi2";
 import { Sparkles, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -53,7 +53,7 @@ type SearchSuggestion = {
     title: string;
     description: string;
     value: string;
-    kind: "map" | "locationGroup";
+    kind: "map" | "locationGroup" | "nearMe";
     locationGroup?: LocationGroupName;
     icon: ReactNode;
     accentClassName: string;
@@ -63,6 +63,8 @@ const DEFAULT_MAP_SEARCH_POSITION: MapSearchPosition = {
     lat: VUNG_TAU_DEFAULT_COORDINATES.latitude,
     lng: VUNG_TAU_DEFAULT_COORDINATES.longitude,
 };
+
+const NEAR_ME_LABEL = "Gần vị trí của bạn";
 
 const AI_SEARCH_SUGGESTIONS = [
     "Villa gần biển có hồ bơi riêng", "Cho 10-15 người có BBQ ạ, gần biển đi bộ ", "Villa view biển có loa karaoke ",
@@ -124,43 +126,44 @@ const clearLocationSearchParams = (search: string) => {
 };
 
 const createLocationSuggestions = (): SearchSuggestion[] => {
-    const accents = [
-        "bg-sky-100 text-sky-600",
-        "bg-cyan-100 text-cyan-500",
+    const groupAccents = [
         "bg-rose-100 text-rose-500",
         "bg-emerald-100 text-emerald-600",
         "bg-amber-100 text-amber-600",
+        "bg-sky-100 text-sky-600",
     ];
 
-    const icons = [
-        <HiOutlineMapPin key="map-search" size={20} />,
-        <HiOutlineSparkles key="bai-sau" size={20} />,
-        <HiOutlineMapPin key="bai-truoc" size={20} />,
-        <HiOutlineSparkles key="long-cung" size={20} />,
-        <HiOutlineMapPin key="ho-tram" size={20} />,
-    ];
-
-    const locations: Array<Omit<SearchSuggestion, "icon" | "accentClassName">> = [
+    const quickActions: SearchSuggestion[] = [
+        {
+            id: "near-me",
+            title: "Gần tôi",
+            description: "Dùng vị trí hiện tại để tìm quanh bạn",
+            value: NEAR_ME_LABEL,
+            kind: "nearMe",
+            icon: <FiNavigation size={20} />,
+            accentClassName: "bg-cyan-100 text-cyan-600",
+        },
         {
             id: "map-search",
             title: "Tìm kiếm bằng bản đồ",
             description: "Chọn vị trí trên bản đồ, tìm quanh 800m",
             value: MAP_SEARCH_LABEL,
             kind: "map",
+            icon: <HiOutlineMapPin size={20} />,
+            accentClassName: "bg-sky-100 text-sky-600",
         },
-        ...LOCATION_GROUP_SUGGESTIONS.map((suggestion) => ({
-            ...suggestion,
-            value: suggestion.title,
-            kind: "locationGroup" as const,
-            locationGroup: suggestion.title,
-        })),
     ];
 
-    return locations.map((location, index) => ({
-        ...location,
-        icon: icons[index] ?? icons[0],
-        accentClassName: accents[index % accents.length],
+    const groupSuggestions: SearchSuggestion[] = LOCATION_GROUP_SUGGESTIONS.map((suggestion, index) => ({
+        ...suggestion,
+        value: suggestion.title,
+        kind: "locationGroup" as const,
+        locationGroup: suggestion.title,
+        icon: index % 2 === 0 ? <HiOutlineSparkles size={20} /> : <HiOutlineMapPin size={20} />,
+        accentClassName: groupAccents[index % groupAccents.length],
     }));
+
+    return [...quickActions, ...groupSuggestions];
 };
 
 const Divider = ({ visible, className }: { visible: boolean; className?: string }) =>
@@ -322,6 +325,8 @@ const SearchBarInner = ({
     });
     const [timeOfDay, setTimeOfDay] = useState(() => getTimeOfDay());
     const [aiSearchError, setAiSearchError] = useState("");
+    const [nearMeLoading, setNearMeLoading] = useState(false);
+    const [locationError, setLocationError] = useState("");
     const [isPinnedByScroll, setIsPinnedByScroll] = useState(() =>
         typeof window !== "undefined" ? window.scrollY > 320 : false,
     );
@@ -656,14 +661,69 @@ const SearchBarInner = ({
         submitSearchState(draftState);
     };
 
+    const handleNearMeSearch = () => {
+        setLocationError("");
+
+        if (typeof navigator === "undefined" || !navigator.geolocation) {
+            setLocationError("Trình duyệt không hỗ trợ định vị. Hãy chọn vị trí trên bản đồ.");
+            return;
+        }
+
+        setNearMeLoading(true);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setNearMeLoading(false);
+                const coordinates: MapSearchPosition = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                };
+
+                if (!isLatLngInVungTauBounds(coordinates)) {
+                    setLocationError("Vị trí của bạn đang ngoài khu vực Vũng Tàu. Hãy chọn một điểm trên bản đồ.");
+                    setOpenField(null);
+                    setMobileSheetOpen(false);
+                    setMapPickerOpen(true);
+                    return;
+                }
+
+                setMapPosition(coordinates);
+                submitSearchState({
+                    ...draftState,
+                    q: "",
+                    location: NEAR_ME_LABEL,
+                    locationGroup: "",
+                    mapLat: coordinates.lat.toFixed(6),
+                    mapLng: coordinates.lng.toFixed(6),
+                    mapRadius: String(MAP_SEARCH_RADIUS_METERS),
+                });
+            },
+            (error) => {
+                setNearMeLoading(false);
+                setLocationError(
+                    error.code === error.PERMISSION_DENIED
+                        ? "Bạn đã từ chối quyền truy cập vị trí. Hãy bật lại hoặc chọn trên bản đồ."
+                        : "Không lấy được vị trí của bạn. Vui lòng thử lại hoặc chọn trên bản đồ.",
+                );
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+        );
+    };
+
     const handleLocationSuggestionSelect = (item: SearchSuggestion) => {
+        if (item.kind === "nearMe") {
+            handleNearMeSearch();
+            return;
+        }
+
         if (item.kind === "map") {
+            setLocationError("");
             setOpenField(null);
             setMobileSheetOpen(false);
             setMapPickerOpen(true);
             return;
         }
 
+        setLocationError("");
         setDraftState((current) => ({
             ...current,
             q: "",
@@ -1109,32 +1169,47 @@ const SearchBarInner = ({
                     </div>
 
                     <div className="space-y-1">
+                        {locationError ? (
+                            <div className="rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+                                {locationError}
+                            </div>
+                        ) : null}
                         {filteredSuggestions.length > 0 ? (
-                            filteredSuggestions.slice(0, 6).map((item) => (
-                                <button
-                                    key={item.id}
-                                    type="button"
-                                    onClick={() => handleLocationSuggestionSelect(item)}
-                                    className="flex w-full items-center gap-4 rounded-[24px] px-3 py-3 text-left transition-colors hover:bg-gray-50"
-                                >
-                                    <span
-                                        className={cn(
-                                            "flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px]",
-                                            item.accentClassName,
-                                        )}
+                            filteredSuggestions.slice(0, 6).map((item) => {
+                                const isNearMeLoading = item.kind === "nearMe" && nearMeLoading;
+
+                                return (
+                                    <button
+                                        key={item.id}
+                                        type="button"
+                                        onClick={() => handleLocationSuggestionSelect(item)}
+                                        disabled={isNearMeLoading}
+                                        aria-busy={isNearMeLoading}
+                                        className="flex w-full items-center gap-4 rounded-[24px] px-3 py-3 text-left transition-colors hover:bg-gray-50 disabled:cursor-progress"
                                     >
-                                        {item.icon}
-                                    </span>
-                                    <span className="min-w-0 flex-1">
-                                        <span className="block truncate text-base font-semibold text-gray-900">
-                                            {item.title}
+                                        <span
+                                            className={cn(
+                                                "flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px]",
+                                                item.accentClassName,
+                                            )}
+                                        >
+                                            {isNearMeLoading ? (
+                                                <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                            ) : (
+                                                item.icon
+                                            )}
                                         </span>
-                                        <span className="mt-1 block truncate text-sm text-gray-500">
-                                            {item.description}
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate text-base font-semibold text-gray-900">
+                                                {item.title}
+                                            </span>
+                                            <span className="mt-1 block truncate text-sm text-gray-500">
+                                                {isNearMeLoading ? "Đang lấy vị trí của bạn..." : item.description}
+                                            </span>
                                         </span>
-                                    </span>
-                                </button>
-                            ))
+                                    </button>
+                                );
+                            })
                         ) : (
                             <div className="rounded-[24px] border border-dashed border-gray-200 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
                                 Không có gợi ý phù hợp, bạn vẫn có thể bấm tìm kiếm để xem kết quả.
@@ -1263,25 +1338,41 @@ const SearchBarInner = ({
                                     />
 
                                     <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                                        {locationSuggestions.map((item) => (
-                                            <button
-                                                key={item.id}
-                                                type="button"
-                                                onClick={() => handleLocationSuggestionSelect(item)}
-                                                className="inline-flex shrink-0 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700"
-                                            >
-                                                <span
-                                                    className={cn(
-                                                        "flex h-7 w-7 items-center justify-center rounded-full",
-                                                        item.accentClassName,
-                                                    )}
+                                        {locationSuggestions.map((item) => {
+                                            const isNearMeLoading = item.kind === "nearMe" && nearMeLoading;
+
+                                            return (
+                                                <button
+                                                    key={item.id}
+                                                    type="button"
+                                                    onClick={() => handleLocationSuggestionSelect(item)}
+                                                    disabled={isNearMeLoading}
+                                                    aria-busy={isNearMeLoading}
+                                                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 disabled:cursor-progress"
                                                 >
-                                                    {item.icon}
-                                                </span>
-                                                {item.title}
-                                            </button>
-                                        ))}
+                                                    <span
+                                                        className={cn(
+                                                            "flex h-7 w-7 items-center justify-center rounded-full",
+                                                            item.accentClassName,
+                                                        )}
+                                                    >
+                                                        {isNearMeLoading ? (
+                                                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                        ) : (
+                                                            item.icon
+                                                        )}
+                                                    </span>
+                                                    {isNearMeLoading ? "Đang định vị..." : item.title}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
+
+                                    {locationError ? (
+                                        <p className="mt-3 rounded-[18px] border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
+                                            {locationError}
+                                        </p>
+                                    ) : null}
                                 </section>
 
                                 <section className="rounded-[28px] border border-white/80 bg-white p-4 shadow-sm">
