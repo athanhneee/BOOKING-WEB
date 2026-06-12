@@ -15,7 +15,7 @@ const TripHistoryList = ({ trips }: TripHistoryListProps) => {
 
     if (trips.length === 0) {
         return (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
+            <div className="rounded-3xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
                 <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-cyan-300/10 text-cyan-600">
                     <LuPlane size={34} />
                 </span>
@@ -25,7 +25,7 @@ const TripHistoryList = ({ trips }: TripHistoryListProps) => {
                 </p>
                 <Link
                     to={APP_ROUTES.home}
-                    className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-5 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-cyan-500"
+                    className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-3xl bg-cyan-500 px-5 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-cyan-500"
                 >
                     <LuCompass size={16} />
                     Khám phá nơi lưu trú

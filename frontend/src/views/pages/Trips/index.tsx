@@ -231,7 +231,7 @@ const AboutMeCard = ({
     bio: string;
     onEdit: () => void;
 }) => (
-    <section className="rounded-2xl bg-white p-5 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] sm:p-6">
+    <section className="rounded-3xl bg-white p-5 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
                 <h2 className="text-2xl font-semibold text-slate-900">Về tôi</h2>
@@ -243,7 +243,7 @@ const AboutMeCard = ({
             <button
                 type="button"
                 onClick={onEdit}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-all duration-200 hover:border-cyan-300/50 hover:bg-cyan-300/10 hover:text-cyan-800"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-3xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-all duration-200 hover:border-cyan-300/50 hover:bg-cyan-300/10 hover:text-cyan-800"
             >
                 <LuPencilLine size={16} />
                 Chỉnh sửa
@@ -376,7 +376,7 @@ const ProfilePage = () => {
                             type="button"
                             onClick={() => setEditModal({ mode: "all" })}
                             disabled={!profile}
-                            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-cyan-300/70 bg-white px-5 py-3 text-sm font-semibold text-cyan-800 transition-all duration-200 hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-3xl border border-cyan-300/70 bg-white px-5 py-3 text-sm font-semibold text-cyan-800 transition-all duration-200 hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
                         >
                             <LuPencilLine size={17} />
                             Chỉnh sửa
@@ -387,7 +387,7 @@ const ProfilePage = () => {
                 {error || success ? (
                     <div
                         className={cn(
-                            "mt-6 rounded-2xl border px-5 py-4 text-sm font-medium",
+                            "mt-6 rounded-3xl border px-5 py-4 text-sm font-medium",
                             error
                                 ? "border-rose-200 bg-rose-50 text-rose-700"
                                 : "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -420,7 +420,7 @@ const ProfilePage = () => {
                         ) : loading ? (
                             <div className="grid gap-7 xl:grid-cols-[380px_minmax(0,1fr)]">
                                 {/* Profile summary skeleton */}
-                                <div className="animate-pulse space-y-4 rounded-2xl bg-white p-6 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
+                                <div className="animate-pulse space-y-4 rounded-3xl bg-white p-6 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
                                     <div className="flex flex-col items-center gap-4">
                                         <div className="h-24 w-24 rounded-full bg-slate-200" />
                                         <div className="h-5 w-36 rounded-lg bg-slate-200" />
@@ -433,7 +433,7 @@ const ProfilePage = () => {
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    <div className="animate-pulse rounded-2xl bg-white p-6 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] space-y-3">
+                                    <div className="animate-pulse rounded-3xl bg-white p-6 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] space-y-3">
                                         <div className="h-5 w-32 rounded-lg bg-slate-200" />
                                         {[1, 2, 3, 4].map((i) => (
                                             <div key={i} className="flex justify-between border-b border-slate-100 py-3">
@@ -445,7 +445,7 @@ const ProfilePage = () => {
                                 </div>
                             </div>
                         ) : (
-                            <section className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
+                            <section className="rounded-3xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
                                 <p className="text-sm font-medium text-slate-500">Chưa có dữ liệu hồ sơ.</p>
                             </section>
                         )

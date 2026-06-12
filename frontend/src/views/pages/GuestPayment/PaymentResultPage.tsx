@@ -159,10 +159,10 @@ const PaymentResultPage = () => {
                 <p className="mt-3 text-sm leading-7 text-gray-500">{resultView.description}</p>
 
                 {error ? (
-                    <p className="mt-4 rounded-2xl bg-rose-50 p-3 text-sm font-semibold text-rose-600">{error}</p>
+                    <p className="mt-4 rounded-3xl bg-rose-50 p-3 text-sm font-semibold text-rose-600">{error}</p>
                 ) : null}
 
-                <div className="mt-6 rounded-2xl bg-gray-50 p-5 text-left text-sm text-gray-600">
+                <div className="mt-6 rounded-3xl bg-gray-50 p-5 text-left text-sm text-gray-600">
                     <div className="flex justify-between gap-4 border-b border-gray-200 py-2">
                         <span>Mã booking</span>
                         <strong>{payment?.bookingId ?? bookingId ?? "Không có"}</strong>
@@ -196,14 +196,14 @@ const PaymentResultPage = () => {
                 <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                     <Link
                         to={APP_ROUTES.accountTrips}
-                        className="inline-flex items-center justify-center rounded-2xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-500"
+                        className="inline-flex items-center justify-center rounded-3xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-white hover:bg-cyan-500"
                     >
                         Xem chuyến đi của tôi
                     </Link>
 
                     <Link
                         to={APP_ROUTES.search}
-                        className="inline-flex items-center justify-center rounded-2xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                        className="inline-flex items-center justify-center rounded-3xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                     >
                         Tiếp tục đặt phòng
                     </Link>

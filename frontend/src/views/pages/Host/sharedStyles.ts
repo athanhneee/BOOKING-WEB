@@ -1,13 +1,13 @@
-export const hostCardClass = "card bg-white rounded-2xl shadow-sm border border-gray-100 p-6";
+export const hostCardClass = "card bg-white rounded-3xl shadow-sm border border-gray-100 p-6";
 export const primaryButtonClass =
-    "bg-cyan-500 hover:bg-cyan-500 text-white rounded-2xl px-4 py-2.5 font-medium transition-colors";
+    "bg-cyan-500 hover:bg-cyan-500 text-white rounded-3xl px-4 py-2.5 font-medium transition-colors";
 export const secondaryButtonClass =
-    "border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-2xl px-4 py-2.5 transition-colors";
+    "border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-3xl px-4 py-2.5 transition-colors";
 export const reloadButtonClass = `${secondaryButtonClass} inline-flex flex-row items-center justify-center gap-2 whitespace-nowrap min-w-max`;
 export const inputClassName =
-    "w-full border border-gray-200 rounded-2xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500";
+    "w-full border border-gray-200 rounded-3xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500";
 export const textareaClassName = `${inputClassName} min-h-[120px]`;
-export const tableClassName = "w-full rounded-2xl overflow-hidden border border-gray-100";
+export const tableClassName = "w-full rounded-3xl overflow-hidden border border-gray-100";
 export const pageWrapperClass = "min-h-screen bg-[#F7F8FA] p-4 sm:p-6";
 export const labelClassName = "mb-2 block text-sm font-medium text-gray-700";
 

@@ -30,9 +30,9 @@ const AuthLayout = () => {
                 {photoCards.map((card) => (
                     <div
                         key={card.title}
-                        className={`absolute w-[270px] rounded-2xl border border-white/70 bg-white/78 p-3 shadow-[0_32px_80px_-40px_rgba(15,23,42,0.55)] backdrop-blur-lg ${card.className}`}
+                        className={`absolute w-[270px] rounded-3xl border border-white/70 bg-white/78 p-3 shadow-[0_32px_80px_-40px_rgba(15,23,42,0.55)] backdrop-blur-lg ${card.className}`}
                     >
-                        <img src={card.image} alt={card.alt} className="h-72 w-full rounded-2xl object-cover" />
+                        <img src={card.image} alt={card.alt} className="h-72 w-full rounded-3xl object-cover" />
                         <div className="px-2 pb-2 pt-4">
                             <p className="text-lg font-bold text-slate-900">{card.title}</p>
                             <p className="mt-2 text-sm leading-6 text-slate-500">{card.description}</p>

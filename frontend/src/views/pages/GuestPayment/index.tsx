@@ -202,13 +202,13 @@ const GuestPayment = () => {
     if (error && !booking) {
         return (
             <div className="min-h-screen bg-[#F7F8FA] px-4 py-16">
-                <div className="mx-auto max-w-3xl rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+                <div className="mx-auto max-w-3xl rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-sm">
                     <h1 className="text-2xl font-semibold text-gray-900">Không tìm thấy thông tin đặt chỗ</h1>
                     <p className="mt-3 text-sm leading-7 text-gray-500">{error}</p>
 
                     <Link
                         to="/noi-luu-tru"
-                        className="mt-6 inline-flex rounded-2xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-white"
+                        className="mt-6 inline-flex rounded-3xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-white"
                     >
                         Xem danh sách lưu trú
                     </Link>
@@ -255,11 +255,11 @@ const GuestPayment = () => {
             </header>
 
             <main className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-2">
-                <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
                     {listingImage ? (
-                        <img src={listingImage} alt={listingName} className="aspect-video w-full rounded-2xl object-cover" />
+                        <img src={listingImage} alt={listingName} className="aspect-video w-full rounded-3xl object-cover" />
                     ) : (
-                        <div className="flex aspect-video w-full items-center justify-center rounded-2xl bg-gray-100 text-sm font-medium text-gray-500">
+                        <div className="flex aspect-video w-full items-center justify-center rounded-3xl bg-gray-100 text-sm font-medium text-gray-500">
                             Đang cập nhật ảnh
                         </div>
                     )}
@@ -273,7 +273,7 @@ const GuestPayment = () => {
                         </p>
 
                         <div className="mt-5 grid gap-4 md:grid-cols-2">
-                            <div className="rounded-2xl bg-gray-50 p-4">
+                            <div className="rounded-3xl bg-gray-50 p-4">
                                 <p className="inline-flex items-center gap-2 text-sm text-gray-500">
                                     <FiCalendar />
                                     Nhận phòng
@@ -281,7 +281,7 @@ const GuestPayment = () => {
                                 <p className="mt-2 font-semibold text-gray-900">{formatDate(checkIn)}</p>
                             </div>
 
-                            <div className="rounded-2xl bg-gray-50 p-4">
+                            <div className="rounded-3xl bg-gray-50 p-4">
                                 <p className="inline-flex items-center gap-2 text-sm text-gray-500">
                                     <FiCalendar />
                                     Trả phòng
@@ -290,7 +290,7 @@ const GuestPayment = () => {
                             </div>
                         </div>
 
-                        <div className="mt-6 rounded-2xl border border-gray-100">
+                        <div className="mt-6 rounded-3xl border border-gray-100">
                             <div className="flex items-center justify-between px-4 py-3 text-sm text-gray-500">
                                 <span>{nights} đêm</span>
                                 <span>{formatCurrency(subtotalAmount)}</span>
@@ -335,7 +335,7 @@ const GuestPayment = () => {
                     </div>
                 </section>
 
-                <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
                     <div className="space-y-6">
                         <div>
                             <h2 className="text-xl font-bold text-gray-900">Chọn phương thức thanh toán</h2>
@@ -349,7 +349,7 @@ const GuestPayment = () => {
                                 type="button"
                                 onClick={() => isVnpayAvailable && setMethod("vnpay")}
                                 disabled={!isVnpayAvailable}
-                                className={`rounded-2xl border p-4 text-left font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${method === "vnpay"
+                                className={`rounded-3xl border p-4 text-left font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${method === "vnpay"
                                     ? "border-cyan-400 bg-cyan-50 text-cyan-600"
                                     : "border-gray-200 text-gray-700"
                                     }`}
@@ -364,7 +364,7 @@ const GuestPayment = () => {
                                 type="button"
                                 onClick={() => isMomoAvailable && setMethod("momo")}
                                 disabled={!isMomoAvailable}
-                                className={`rounded-2xl border p-4 text-left font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${method === "momo"
+                                className={`rounded-3xl border p-4 text-left font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${method === "momo"
                                     ? "border-cyan-400 bg-cyan-50 text-cyan-600"
                                     : "border-gray-200 text-gray-700"
                                     }`}
@@ -394,20 +394,20 @@ const GuestPayment = () => {
                         )}
 
                         {isExpired && (
-                            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            <div className="rounded-3xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                                 Phiên giữ chỗ đã hết hạn, lịch đã được mở lại. Vui lòng đặt lại nếu bạn vẫn muốn thuê căn này.
                             </div>
                         )}
 
                         {error ? (
-                            <p className="rounded-2xl bg-rose-50 p-3 text-sm font-semibold text-rose-600">{error}</p>
+                            <p className="rounded-3xl bg-rose-50 p-3 text-sm font-semibold text-rose-600">{error}</p>
                         ) : null}
 
                         <button
                             type="button"
                             onClick={handlePay}
                             disabled={isSubmitting || isExpired || !isPayable || !selectedMethod || !isSelectedMethodAvailable}
-                            className="w-full rounded-2xl bg-cyan-500 px-4 py-3 font-medium text-white transition-colors hover:bg-cyan-500 disabled:opacity-60"
+                            className="w-full rounded-3xl bg-cyan-500 px-4 py-3 font-medium text-white transition-colors hover:bg-cyan-500 disabled:opacity-60"
                         >
                             {isSubmitting ? (
                                 <span className="inline-flex items-center gap-2">

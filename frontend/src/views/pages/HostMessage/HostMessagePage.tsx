@@ -416,7 +416,7 @@ const HostMessagePage = () => {
 
                         <form onSubmit={handleSubmitHostMessage} className="mt-5 space-y-3">
                             {messageNotice ? (
-                                <p className="rounded-2xl bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-600">
+                                <p className="rounded-3xl bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-600">
                                     {messageNotice}
                                 </p>
                             ) : null}

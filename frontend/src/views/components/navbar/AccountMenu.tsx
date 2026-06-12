@@ -248,7 +248,7 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
                     key={item.key}
                     to={item.to}
                     onClick={close}
-                    className="group flex min-h-11 items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-cyan-300/10 hover:text-cyan-800"
+                    className="group flex min-h-11 items-center gap-3 rounded-3xl px-4 py-2.5 text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-cyan-300/10 hover:text-cyan-800"
                 >
                     {content}
                 </Link>
@@ -263,7 +263,7 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
                     item.action?.();
                     close();
                 }}
-                className="group flex min-h-11 w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-cyan-300/10 hover:text-cyan-800"
+                className="group flex min-h-11 w-full items-center gap-3 rounded-3xl px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-cyan-300/10 hover:text-cyan-800"
             >
                 {content}
             </button>
@@ -286,7 +286,7 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
 
                 <div
                     className={cn(
-                        "absolute right-0 top-[calc(100%+12px)] hidden w-[320px] origin-top-right rounded-2xl border border-slate-200 bg-white p-2 shadow-md transition-all duration-200 md:block",
+                        "absolute right-0 top-[calc(100%+12px)] hidden w-[320px] origin-top-right rounded-3xl border border-slate-200 bg-white p-2 shadow-md transition-all duration-200 md:block",
                         isDesktopOpen
                             ? "visible translate-y-0 opacity-100"
                             : "pointer-events-none invisible -translate-y-2 opacity-0",
@@ -321,7 +321,7 @@ const AccountMenu = ({ user, isAuthenticated, hostAction }: AccountMenuProps) =>
                         <div className="shrink-0 px-4 pt-4">
                             <div className="mx-auto mb-4 h-1.5 w-14 rounded-full bg-slate-200" />
 
-                            <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-cyan-300/10 px-4 py-4">
+                            <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl bg-cyan-300/10 px-4 py-4">
                                 <div className="flex items-center gap-3">
                                     <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 text-sm font-semibold text-white">
                                         {user.avatarUrl ? (

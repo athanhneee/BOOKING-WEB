@@ -86,17 +86,17 @@ const BaoCao = () => {
                     }
                 />
 
-                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+                {error ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Doanh thu gộp</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(report.totals.grossRevenue)}</p></article>
-                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Doanh thu host</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(report.totals.hostRevenue)}</p></article>
-                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Phí nền tảng</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(report.totals.platformRevenue)}</p></article>
-                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Số booking</p><p className="mt-2 text-2xl font-bold text-gray-900">{report.totals.bookingCount}</p></article>
+                    <article className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Doanh thu gộp</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(report.totals.grossRevenue)}</p></article>
+                    <article className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Doanh thu host</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(report.totals.hostRevenue)}</p></article>
+                    <article className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Phí nền tảng</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(report.totals.platformRevenue)}</p></article>
+                    <article className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Số booking</p><p className="mt-2 text-2xl font-bold text-gray-900">{report.totals.bookingCount}</p></article>
                 </div>
 
                 <div className="grid gap-6 xl:grid-cols-2">
-                    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                    <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
                         <h2 className="text-lg font-semibold text-gray-900">Doanh thu host theo kỳ</h2>
                         <div className="mt-6 h-80">
                             {loading ? (
@@ -118,7 +118,7 @@ const BaoCao = () => {
                         </div>
                     </section>
 
-                    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                    <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
                         <h2 className="text-lg font-semibold text-gray-900">Số booking theo kỳ</h2>
                         <div className="mt-6 h-80">
                             {loading ? (
@@ -141,9 +141,9 @@ const BaoCao = () => {
                     </section>
                 </div>
 
-                <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
                     <h2 className="text-lg font-semibold text-gray-900">Chi tiết theo kỳ</h2>
-                    <div className="mt-4 overflow-x-auto rounded-2xl border border-gray-100">
+                    <div className="mt-4 overflow-x-auto rounded-3xl border border-gray-100">
                         <table className={`${tableClassName} min-w-[600px] text-left text-sm md:min-w-0`}>
                             <thead className="bg-gray-50 text-gray-500"><tr><th className="px-4 py-3">Kỳ</th><th className="px-4 py-3">Booking</th><th className="px-4 py-3">Doanh thu gộp</th><th className="px-4 py-3">Phí nền tảng</th><th className="px-4 py-3">Doanh thu host</th></tr></thead>
                             <tbody className="divide-y divide-gray-100 bg-white">

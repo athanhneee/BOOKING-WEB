@@ -35,7 +35,7 @@ const ConfirmDialog = ({
                 <button
                     type="button"
                     onClick={onClose}
-                    className="inline-flex items-center justify-center rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                    className="inline-flex items-center justify-center rounded-3xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
                 >
                     {cancelLabel}
                 </button>
@@ -43,7 +43,7 @@ const ConfirmDialog = ({
                 <button
                     type="button"
                     onClick={onConfirm}
-                    className={`inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-medium text-white transition-colors ${variant === "danger" ? "bg-rose-500 hover:bg-rose-600" : "bg-cyan-500 hover:bg-cyan-500"
+                    className={`inline-flex items-center justify-center rounded-3xl px-4 py-2.5 text-sm font-medium text-white transition-colors ${variant === "danger" ? "bg-rose-500 hover:bg-rose-600" : "bg-cyan-500 hover:bg-cyan-500"
                         }`}
                 >
                     {confirmLabel}

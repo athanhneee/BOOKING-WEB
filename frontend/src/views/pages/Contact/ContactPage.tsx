@@ -65,7 +65,7 @@ const ContactPage = () => {
                                         href={item.href}
                                         target={item.href.startsWith("http") ? "_blank" : undefined}
                                         rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                                        className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:border-cyan-200 hover:shadow-md"
+                                        className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm transition hover:border-cyan-200 hover:shadow-md"
                                     >
                                         <Icon className="text-lg text-cyan-600" />
                                         <p className="mt-3 text-sm font-semibold text-slate-950">{item.label}</p>
@@ -76,14 +76,14 @@ const ContactPage = () => {
                         </div>
                     </div>
 
-                    <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+                    <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
                         <img src={stayImage} alt="Không gian villa Minh Thanh tại Vũng Tàu" className="h-[280px] w-full object-cover sm:h-[420px]" />
                     </div>
                 </section>
 
                 <section className="bg-white py-12">
                     <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(280px,0.72fr)_minmax(0,1.28fr)] lg:px-8">
-                        <aside className="rounded-2xl border border-cyan-100 bg-cyan-50 p-5 sm:p-6">
+                        <aside className="rounded-3xl border border-cyan-100 bg-cyan-50 p-5 sm:p-6">
                             <h2 className="text-2xl font-bold text-slate-950">Thông tin hỗ trợ</h2>
                             <div className="mt-5 space-y-4">
                                 <div className="flex gap-3">
@@ -95,7 +95,7 @@ const ContactPage = () => {
                                 </div>
 
                                 {supportTopics.map((topic) => (
-                                    <div key={topic} className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-700">
+                                    <div key={topic} className="rounded-3xl bg-white px-4 py-3 text-sm font-medium text-slate-700">
                                         {topic}
                                     </div>
                                 ))}
@@ -112,7 +112,7 @@ const ContactPage = () => {
                             </a>
                         </aside>
 
-                        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+                        <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
                             <h2 className="text-2xl font-bold text-slate-950">Gửi yêu cầu tư vấn</h2>
                             <p className="mt-2 text-sm leading-7 text-slate-500">
                                 Điền thông tin cơ bản để đội ngũ hỗ trợ gợi ý căn phù hợp hơn.
@@ -152,7 +152,7 @@ const ContactPage = () => {
                                 </label>
 
                                 {sentMessage ? (
-                                    <p className="rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-600">
+                                    <p className="rounded-3xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm font-medium text-cyan-600">
                                         {sentMessage}
                                     </p>
                                 ) : null}

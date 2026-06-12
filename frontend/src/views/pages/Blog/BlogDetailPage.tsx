@@ -28,7 +28,7 @@ type StatusCardProps = {
 
 const StatusCard = ({ title, description, action, isLoading }: StatusCardProps) => (
     <div className="min-h-screen bg-[#f7f8fb] px-4 pt-28 text-slate-900 sm:px-6 lg:px-8">
-        <section className="mx-auto flex max-w-3xl flex-col items-center justify-center rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm sm:p-10">
+        <section className="mx-auto flex max-w-3xl flex-col items-center justify-center rounded-3xl border border-slate-100 bg-white p-8 text-center shadow-sm sm:p-10">
             {isLoading && (
                 <div className="mb-6 h-12 w-12 animate-spin rounded-full border-[4px] border-cyan-600 border-t-transparent shadow-sm"></div>
             )}
@@ -138,7 +138,7 @@ const BlogDetailPage = () => {
                         Quay lại danh sách bài viết
                     </Link>
 
-                    <div className="mt-7 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+                    <div className="mt-7 overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
                         <img src={post.coverImage} alt={post.title} className="h-[280px] w-full object-cover sm:h-[460px]" />
 
                         <article className="px-5 py-7 sm:px-8 lg:px-10 lg:py-10">

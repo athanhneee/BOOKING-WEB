@@ -1188,7 +1188,7 @@ const SearchBarInner = ({
                                         value={draftState.location}
                                         onChange={(event) => setLocationText(event.target.value)}
                                         placeholder="Tìm kiếm điểm đến"
-                                        className="mt-3 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-base text-gray-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
+                                        className="mt-3 w-full rounded-3xl border border-gray-200 bg-gray-50 px-4 py-3 text-base text-gray-800 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
                                     />
 
                                     <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

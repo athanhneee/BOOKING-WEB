@@ -40,24 +40,24 @@ const TrangThaiHost = () => {
 
 
                 {loading ? (
-                    <div className="mt-8 flex flex-col items-center justify-center rounded-2xl bg-gray-50 p-10 text-center">
+                    <div className="mt-8 flex flex-col items-center justify-center rounded-3xl bg-gray-50 p-10 text-center">
                         <div className="mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-cyan-500 border-t-transparent"></div>
                         <span className="text-sm font-medium text-gray-500">Đang tải trạng thái...</span>
                     </div>
                 ) : null}
-                {error ? <div className="mt-8 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+                {error ? <div className="mt-8 rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
                 {!loading && !error ? (
-                    <div className="mt-8 rounded-2xl border border-gray-100 bg-gray-50 p-6">
+                    <div className="mt-8 rounded-3xl border border-gray-100 bg-gray-50 p-6">
                         <p className="text-sm text-gray-500">Trạng thái hiện tại</p>
                         <p className="mt-2 text-2xl font-bold text-gray-900">{status ? statusText[status] ?? status : "Chưa gửi hồ sơ"}</p>
-                        {data?.application?.rejectionReason ? <p className="mt-4 rounded-xl bg-rose-50 p-4 text-sm text-rose-700">Lý do từ chối: {data.application.rejectionReason}</p> : null}
+                        {data?.application?.rejectionReason ? <p className="mt-4 rounded-3xl bg-rose-50 p-4 text-sm text-rose-700">Lý do từ chối: {data.application.rejectionReason}</p> : null}
                         {data?.application ? <div className="mt-5 text-sm text-gray-600"><p>Liên hệ: {data.application.contactPhone || "-"}</p><p>Địa chỉ: {data.application.businessAddress || "-"}</p></div> : null}
                     </div>
                 ) : null}
 
                 <div className="mt-8 flex flex-wrap gap-3">
-                    {status === "approved" ? <Link to={APP_ROUTES.hostProperties} className="rounded-xl bg-cyan-500 px-5 py-2.5 font-medium text-white">Vào trang chủ nhà</Link> : <Link to={APP_ROUTES.hostRegister} className="rounded-xl bg-cyan-500 px-5 py-2.5 font-medium text-white">Gửi/Cập nhật hồ sơ</Link>}
-                    <Link to={APP_ROUTES.home} className="rounded-xl border border-gray-200 px-5 py-2.5 text-gray-700">Về trang chủ</Link>
+                    {status === "approved" ? <Link to={APP_ROUTES.hostProperties} className="rounded-3xl bg-cyan-500 px-5 py-2.5 font-medium text-white">Vào trang chủ nhà</Link> : <Link to={APP_ROUTES.hostRegister} className="rounded-3xl bg-cyan-500 px-5 py-2.5 font-medium text-white">Gửi/Cập nhật hồ sơ</Link>}
+                    <Link to={APP_ROUTES.home} className="rounded-3xl border border-gray-200 px-5 py-2.5 text-gray-700">Về trang chủ</Link>
                 </div>
             </div>
         </div>

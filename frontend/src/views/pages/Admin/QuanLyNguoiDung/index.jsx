@@ -51,13 +51,13 @@ const QuanLyNguoiDung = () => {
         <div className={pageWrapperClass}>
             <div className="mx-auto max-w-7xl space-y-6">
 
-                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
-                <section className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:flex-row">
-                    <div className="relative flex-1"><FiSearch className="absolute left-3 top-3 text-gray-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm email, số điện thoại, tên..." className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-3" /></div>
-                    <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-xl border border-gray-200 px-3 py-2.5">{statusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
+                {error ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+                <section className="flex flex-col gap-3 rounded-3xl border border-gray-100 bg-white p-4 shadow-sm md:flex-row">
+                    <div className="relative flex-1"><FiSearch className="absolute left-3 top-3 text-gray-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm email, số điện thoại, tên..." className="w-full rounded-3xl border border-gray-200 py-2.5 pl-10 pr-3" /></div>
+                    <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-3xl border border-gray-200 px-3 py-2.5">{statusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
                     <button type="button" onClick={fetchUsers} className={reloadButtonClass}><FiRefreshCw className="shrink-0" />Tải lại</button>
                 </section>
-                <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
                     <div className="overflow-x-auto">
                         <table className={`${tableClassName} text-left text-sm`}>
                             <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
@@ -100,23 +100,21 @@ const QuanLyNguoiDung = () => {
                                                 </span>
                                             </td>
                                             <td className="px-5 py-4">
-                                                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                                    locked ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600"
-                                                }`}>
+                                                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${locked ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600"
+                                                    }`}>
                                                     <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${locked ? "bg-rose-500" : "bg-emerald-500"}`}></span>
                                                     {user.status}
                                                 </span>
                                             </td>
                                             <td className="px-5 py-4 text-right">
-                                                <button 
-                                                    disabled={actionId === userId} 
-                                                    type="button" 
-                                                    onClick={() => changeStatus(user, locked ? "active" : "blocked")} 
-                                                    className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all disabled:opacity-50 ${
-                                                        locked 
-                                                            ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100" 
-                                                            : "bg-rose-50 text-rose-600 hover:bg-rose-100"
-                                                    }`}
+                                                <button
+                                                    disabled={actionId === userId}
+                                                    type="button"
+                                                    onClick={() => changeStatus(user, locked ? "active" : "blocked")}
+                                                    className={`rounded-3xl px-4 py-2 text-sm font-semibold transition-all disabled:opacity-50 ${locked
+                                                        ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                                                        : "bg-rose-50 text-rose-600 hover:bg-rose-100"
+                                                        }`}
                                                 >
                                                     {locked ? "Mở khóa" : "Khóa"}
                                                 </button>

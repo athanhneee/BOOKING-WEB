@@ -20,7 +20,7 @@ const ReviewModal = ({ isOpen, trip, onClose, onSuccess }: ReviewModalProps) => 
 
     const handleSubmit = async () => {
         if (!trip.id) return;
-        
+
         setIsSubmitting(true);
         setError("");
 
@@ -79,7 +79,7 @@ const ReviewModal = ({ isOpen, trip, onClose, onSuccess }: ReviewModalProps) => 
                             <label className="block text-base font-bold text-slate-850">
                                 Mức độ hài lòng của bạn
                             </label>
-                            
+
                             <div className="mt-4 flex gap-2">
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <button
@@ -123,7 +123,7 @@ const ReviewModal = ({ isOpen, trip, onClose, onSuccess }: ReviewModalProps) => 
                         </div>
 
                         {error && (
-                            <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+                            <div className="mt-4 rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
                                 {error}
                             </div>
                         )}

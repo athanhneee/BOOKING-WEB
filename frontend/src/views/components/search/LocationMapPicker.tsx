@@ -85,7 +85,7 @@ const LocationMapPicker = ({
 }: LocationMapPickerProps) => {
     const markerRef = useRef<LeafletMarker | null>(null);
     const mapTheme: LeafletMapTheme = "satellite";
-    
+
     // Fallback logic state
     const [useFallback, setUseFallback] = useState(false);
     const tileErrorCountRef = useRef(0);
@@ -124,7 +124,7 @@ const LocationMapPicker = ({
 
                 const nextPosition = marker.getLatLng();
                 const posObj = { lat: nextPosition.lat, lng: nextPosition.lng };
-                
+
                 if (!isLatLngInVungTauBounds(posObj)) {
                     handleOutOfBounds();
                     // Reset marker to previous bounded position
@@ -169,8 +169,8 @@ const LocationMapPicker = ({
         return null;
     }
 
-    const currentTileUrl = useFallback 
-        ? LEAFLET_MAP_THEMES[mapTheme].fallbackUrl 
+    const currentTileUrl = useFallback
+        ? LEAFLET_MAP_THEMES[mapTheme].fallbackUrl
         : LEAFLET_MAP_THEMES[mapTheme].url;
 
     return (
@@ -203,15 +203,15 @@ const LocationMapPicker = ({
                 <div className="relative min-h-0 flex-1 bg-[#f1f5f9]">
                     {toastMessage && (
                         <div className="absolute left-1/2 top-4 z-[1000] -translate-x-1/2">
-                            <Toast 
-                                message={toastMessage} 
-                                type="info" 
-                                onClose={() => setToastMessage("")} 
-                                duration={4000} 
+                            <Toast
+                                message={toastMessage}
+                                type="info"
+                                onClose={() => setToastMessage("")}
+                                duration={4000}
                             />
                         </div>
                     )}
-                    
+
                     <MapContainer
                         center={markerPosition}
                         zoom={14}
@@ -230,7 +230,7 @@ const LocationMapPicker = ({
                         <VungTauMapBoundsLimiter />
                         <MapViewUpdater position={boundedValue} />
                         <MapClickHandler onChange={onChange} onOutOfBounds={handleOutOfBounds} />
-                        
+
                         <Circle
                             center={markerPosition}
                             radius={radiusMeters}
@@ -270,7 +270,7 @@ const LocationMapPicker = ({
                     <button
                         type="button"
                         onClick={() => onConfirm(boundedValue)}
-                        className="inline-flex h-12 items-center justify-center rounded-2xl bg-cyan-500 px-6 text-[15px] font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:bg-cyan-400"
+                        className="inline-flex h-12 items-center justify-center rounded-3xl bg-cyan-500 px-6 text-[15px] font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:bg-cyan-400"
                     >
                         Tìm quanh vị trí này
                     </button>

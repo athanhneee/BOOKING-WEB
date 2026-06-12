@@ -33,8 +33,8 @@ const Modal = ({
         size === "xl"
             ? "sm:w-[min(1180px,calc(100vw-2.5rem))]"
             : size === "lg"
-              ? "sm:w-[min(1020px,calc(100vw-2.5rem))]"
-              : "sm:w-[min(920px,calc(100vw-2.5rem))]";
+                ? "sm:w-[min(1020px,calc(100vw-2.5rem))]"
+                : "sm:w-[min(920px,calc(100vw-2.5rem))]";
 
     useEffect(() => {
         if (!isOpen) {
@@ -80,7 +80,7 @@ const Modal = ({
                 role="dialog"
                 aria-modal="true"
                 className={cn(
-                    "modal-panel relative z-[1] flex h-[100dvh] w-full flex-col overflow-hidden bg-white shadow-2xl sm:mt-8 sm:h-auto sm:max-h-[calc(100dvh-4rem)] sm:rounded-2xl",
+                    "modal-panel relative z-[1] flex h-[100dvh] w-full flex-col overflow-hidden bg-white shadow-2xl sm:mt-8 sm:h-auto sm:max-h-[calc(100dvh-4rem)] sm:rounded-3xl",
                     sizeClassName,
                     panelClassName,
                 )}

@@ -142,7 +142,7 @@ const NearbyRecommendationsSection = ({ currentListing, searchState }: NearbyRec
                             onClick={() => openListing(listing.id)}
                             className="group w-[240px] shrink-0 snap-start text-left sm:w-[260px]"
                         >
-                            <div className="overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)]">
+                            <div className="overflow-hidden rounded-3xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)]">
                                 {/* Image */}
                                 <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
                                     {listing.imageUrl ? (

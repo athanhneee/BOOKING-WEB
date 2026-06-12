@@ -22,7 +22,7 @@ type BlogStatusPanelProps = {
 };
 
 const BlogStatusPanel = ({ title, description, action, isLoading }: BlogStatusPanelProps) => (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-sm">
+    <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-100 bg-white p-8 text-center shadow-sm">
         {isLoading && (
             <div className="mb-4 h-10 w-10 animate-spin rounded-full border-[4px] border-cyan-600 border-t-transparent shadow-sm"></div>
         )}
@@ -79,7 +79,7 @@ const BlogPage = () => {
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3 rounded-2xl border border-cyan-100 bg-white p-4 shadow-sm">
+                        <div className="grid grid-cols-2 gap-3 rounded-3xl border border-cyan-100 bg-white p-4 shadow-sm">
                             <div>
                                 <p className="text-2xl font-bold text-cyan-600 sm:text-3xl">{visiblePostCount || "--"}</p>
                                 <p className="mt-1 text-sm text-slate-500">bài viết kinh nghiệm</p>
@@ -113,7 +113,7 @@ const BlogPage = () => {
                         ) : featuredBlogPost ? (
                             <Link
                                 to={APP_ROUTES.blogPost(featuredBlogPost.slug)}
-                                className="group block overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
+                                className="group block overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
                                 aria-label={`Đọc bài viết: ${featuredBlogPost.title}`}
                             >
                                 <article>
@@ -154,7 +154,7 @@ const BlogPage = () => {
                             />
                         )}
 
-                        <aside className="rounded-2xl border border-slate-100 bg-[#f7f8fb] p-5 sm:p-6">
+                        <aside className="rounded-3xl border border-slate-100 bg-[#f7f8fb] p-5 sm:p-6">
                             <h2 className="text-xl font-bold text-slate-950">Gợi ý nhanh trước chuyến đi</h2>
                             <div className="mt-5 space-y-4">
                                 {travelTips.map((tip, index) => (

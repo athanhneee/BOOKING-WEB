@@ -184,7 +184,7 @@ const EditProfileModal = ({
                     onChange={(event) => updateField(fieldKey, event.target.value)}
                     placeholder={config.placeholder}
                     rows={mode === "all" ? 5 : 7}
-                    className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 text-sm leading-6 text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(34,211,238,0.1)]"
+                    className="w-full resize-none rounded-3xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 text-sm leading-6 text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(34,211,238,0.1)]"
                 />
             );
         }
@@ -202,7 +202,7 @@ const EditProfileModal = ({
                                     type="button"
                                     onClick={() => toggleLanguage(option)}
                                     className={cn(
-                                        "rounded-2xl border px-4 py-2 text-sm font-medium transition-all duration-200",
+                                        "rounded-3xl border px-4 py-2 text-sm font-medium transition-all duration-200",
                                         isActive
                                             ? "border-cyan-400 bg-cyan-50 text-cyan-700 shadow-sm"
                                             : "border-slate-200 bg-white text-slate-600 hover:border-cyan-300 hover:bg-cyan-50/50 hover:text-cyan-600",
@@ -226,13 +226,13 @@ const EditProfileModal = ({
                                 }
                             }}
                             placeholder={config.placeholder}
-                            className="min-h-[42px] flex-1 rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(34,211,238,0.1)]"
+                            className="min-h-[42px] flex-1 rounded-3xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(34,211,238,0.1)]"
                         />
 
                         <button
                             type="button"
                             onClick={addCustomLanguage}
-                            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-600"
+                            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-3xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-600"
                         >
                             <LuPlus size={15} />
                             Thêm
@@ -244,7 +244,7 @@ const EditProfileModal = ({
                             {draftUser.languages.map((language) => (
                                 <span
                                     key={language}
-                                    className="inline-flex items-center gap-1.5 rounded-2xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-medium text-cyan-700"
+                                    className="inline-flex items-center gap-1.5 rounded-3xl border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-sm font-medium text-cyan-700"
                                 >
                                     {language}
 
@@ -270,7 +270,7 @@ const EditProfileModal = ({
                 value={String(draftUser[fieldKey] ?? "")}
                 onChange={(event) => updateField(fieldKey, event.target.value)}
                 placeholder={config.placeholder}
-                className="min-h-[42px] w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(34,211,238,0.1)]"
+                className="min-h-[42px] w-full rounded-3xl border border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(34,211,238,0.1)]"
             />
         );
     };
@@ -294,7 +294,7 @@ const EditProfileModal = ({
             isOpen={isOpen}
             onClose={onClose}
             panelClassName={cn(
-                "mt-auto h-auto max-h-[92dvh] overflow-hidden rounded-t-3xl border border-slate-200/60 bg-white shadow-2xl sm:mt-8 sm:max-h-[calc(100dvh-4rem)] sm:rounded-2xl",
+                "mt-auto h-auto max-h-[92dvh] overflow-hidden rounded-t-3xl border border-slate-200/60 bg-white shadow-2xl sm:mt-8 sm:max-h-[calc(100dvh-4rem)] sm:rounded-3xl",
                 mode === "all" ? "sm:w-[min(880px,calc(100vw-2.5rem))]" : "sm:w-[min(680px,calc(100vw-2.5rem))]",
             )}
         >
@@ -333,7 +333,7 @@ const EditProfileModal = ({
                                 <div
                                     key={fieldKey}
                                     className={cn(
-                                        "rounded-2xl border border-slate-100 bg-white p-5 transition-all duration-200 hover:border-slate-200 hover:shadow-sm",
+                                        "rounded-3xl border border-slate-100 bg-white p-5 transition-all duration-200 hover:border-slate-200 hover:shadow-sm",
                                         spanClass,
                                     )}
                                 >
@@ -360,7 +360,7 @@ const EditProfileModal = ({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="inline-flex min-h-[42px] items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 hover:text-slate-900"
+                            className="inline-flex min-h-[42px] items-center justify-center rounded-3xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 hover:text-slate-900"
                         >
                             Hủy
                         </button>
@@ -369,7 +369,7 @@ const EditProfileModal = ({
                             type="button"
                             disabled={!hasChanged || isSaving}
                             onClick={handleSave}
-                            className="inline-flex min-h-[42px] items-center justify-center rounded-2xl bg-cyan-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+                            className="inline-flex min-h-[42px] items-center justify-center rounded-3xl bg-cyan-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
                         >
                             {isSaving ? "Đang lưu..." : "Lưu"}
                         </button>

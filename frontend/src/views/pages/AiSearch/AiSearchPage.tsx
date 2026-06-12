@@ -372,7 +372,7 @@ const AiSearchPage = () => {
                     <div className="mt-7">
                         {isLoading ? (
                             <>
-                                <div className="mb-6 flex items-center justify-center gap-3 rounded-2xl border border-cyan-100 bg-cyan-50 px-5 py-4">
+                                <div className="mb-6 flex items-center justify-center gap-3 rounded-3xl border border-cyan-100 bg-cyan-50 px-5 py-4">
                                     <Sparkles size={18} className="animate-pulse text-cyan-500" />
                                     <span className="text-sm font-semibold text-cyan-600">
                                         AI đang phân tích yêu cầu của bạn...
@@ -468,7 +468,7 @@ const AiSearchPage = () => {
                         ) : items.length > 0 ? (
                             <>
                                 {availabilityNotice ? (
-                                    <div className="mb-4 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-700">
+                                    <div className="mb-4 flex items-center gap-3 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-700">
                                         <Calendar size={16} className="shrink-0" />
                                         <span>{availabilityNotice}</span>
                                     </div>
@@ -481,7 +481,7 @@ const AiSearchPage = () => {
                                         return (
                                             <div
                                                 key={listing.listingId}
-                                                className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)]"
+                                                className="flex flex-col overflow-hidden rounded-3xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)]"
                                             >
                                                 <ListingCard
                                                     listing={listing}
@@ -493,7 +493,7 @@ const AiSearchPage = () => {
                                                         {visibleReasons.map((reason) => (
                                                             <p
                                                                 key={reason}
-                                                                className="rounded-2xl bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-800"
+                                                                className="rounded-3xl bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-800"
                                                             >
                                                                 {reason}
                                                             </p>

@@ -1188,17 +1188,17 @@ const ThemChoNghi = () => {
                 />
 
                 {loadingDetail ? (
-                    <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-white p-8">
+                    <div className="flex flex-col items-center justify-center rounded-3xl border border-gray-100 bg-white p-8">
                         <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
                         <span className="text-sm font-medium text-slate-500">Đang tải chỗ nghỉ...</span>
                     </div>
                 ) : null}
-                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
-                {success ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{success}</div> : null}
-                {uploadMessage ? <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-4 text-sm font-medium text-cyan-600">{uploadMessage}</div> : null}
-                {aiMessage ? <div className="rounded-2xl border border-violet-100 bg-violet-50 p-4 text-sm font-medium text-violet-700">{aiMessage}</div> : null}
+                {error ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+                {success ? <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{success}</div> : null}
+                {uploadMessage ? <div className="rounded-3xl border border-cyan-100 bg-cyan-50 p-4 text-sm font-medium text-cyan-600">{uploadMessage}</div> : null}
+                {aiMessage ? <div className="rounded-3xl border border-violet-100 bg-violet-50 p-4 text-sm font-medium text-violet-700">{aiMessage}</div> : null}
 
-                <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                <form onSubmit={handleSubmit} className="space-y-6 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
                     <div className="grid gap-5 md:grid-cols-2">
                         <label><span className={labelClassName}>Tiêu đề</span><input required value={form.title} onChange={(e) => setField("title", e.target.value)} className={inputClassName} /></label>
                         <label><span className={labelClassName}>Loại chỗ nghỉ</span><select value={form.propertyType} onChange={(e) => setField("propertyType", e.target.value as FormState["propertyType"])} className={inputClassName}><option value="villa">Villa</option><option value="apartment">Căn hộ</option><option value="homestay">Homestay</option><option value="hotel">Khách sạn</option></select></label>
@@ -1245,7 +1245,7 @@ const ThemChoNghi = () => {
                             </label>
                         </div>
 
-                        <div className="rounded-2xl border border-gray-100 bg-slate-50/70 p-4">
+                        <div className="rounded-3xl border border-gray-100 bg-slate-50/70 p-4">
                             <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                     <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
@@ -1261,7 +1261,7 @@ const ThemChoNghi = () => {
                                     {coordinateToInputValue(currentCoordinates.longitude)}
                                 </div>
                             </div>
-                            <div className="h-[360px] min-h-[320px] overflow-hidden rounded-2xl border border-gray-200 bg-white">
+                            <div className="h-[360px] min-h-[320px] overflow-hidden rounded-3xl border border-gray-200 bg-white">
                                 <ListingLocationMap
                                     position={currentCoordinates}
                                     onPositionChange={handleMapPositionChange}
@@ -1477,7 +1477,7 @@ const ThemChoNghi = () => {
 
                     <div>
                         <span className={labelClassName}>Ảnh chỗ nghỉ</span>
-                        <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center transition-colors hover:border-cyan-400 hover:bg-cyan-50/40">
+                        <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center transition-colors hover:border-cyan-400 hover:bg-cyan-50/40">
                             <input
                                 ref={imageInputRef}
                                 type="file"
@@ -1499,7 +1499,7 @@ const ThemChoNghi = () => {
                                             type="button"
                                             onClick={handleAnalyzeImagesWithAi}
                                             disabled={aiAnalyzing}
-                                            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-violet-100 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition-colors hover:border-violet-200 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                            className="inline-flex items-center justify-center gap-2 rounded-3xl border border-violet-100 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition-colors hover:border-violet-200 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-60"
                                         >
                                             <Sparkles size={16} />
                                             {aiAnalyzing ? "Đang phân tích ảnh..." : "Phân tích ảnh bằng AI"}
@@ -1516,7 +1516,7 @@ const ThemChoNghi = () => {
                                         const availableTags = tagTaxonomies.filter((taxonomy) => !tagCodes.has(taxonomy.code));
 
                                         return (
-                                            <div key={image.imageId} className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+                                            <div key={image.imageId} className="overflow-hidden rounded-3xl border border-gray-100 bg-white">
                                                 <img src={image.url} alt={buildExistingImageLabel(image, index)} className="h-32 w-full object-cover" />
                                                 <div className="space-y-2 px-3 py-2">
                                                     <div className="truncate text-xs text-gray-500">{buildExistingImageLabel(image, index)}</div>
@@ -1550,7 +1550,7 @@ const ThemChoNghi = () => {
                                                             const tagCode = event.target.value;
                                                             if (tagCode) handleAddImageTag(image, tagCode);
                                                         }}
-                                                        className="w-full rounded-2xl border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                                                        className="w-full rounded-3xl border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
                                                     >
                                                         <option value="">Thêm tag thiếu</option>
                                                         {availableTags.map((taxonomy) => (
@@ -1590,7 +1590,7 @@ const ThemChoNghi = () => {
                                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Ảnh mới chờ upload.</p>
                                 <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
                                     {selectedImages.map((image, index) => (
-                                        <div key={image.id} className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+                                        <div key={image.id} className="overflow-hidden rounded-3xl border border-gray-100 bg-white">
                                             <img src={image.previewUrl} alt={`Ảnh mới ${index + 1}`} className="h-32 w-full object-cover" />
                                             <div className="space-y-2 px-3 py-2">
                                                 <div className="truncate text-xs text-gray-500">{`Ảnh chỗ nghỉ ${existingImages.length + index + 1}`}</div>
@@ -1617,7 +1617,7 @@ const ThemChoNghi = () => {
                         ) : null}
                     </div>
 
-                    <label className="flex items-center gap-3 rounded-2xl border border-gray-100 p-4">
+                    <label className="flex items-center gap-3 rounded-3xl border border-gray-100 p-4">
                         <input type="checkbox" checked={form.instantBookEnabled} onChange={(e) => setField("instantBookEnabled", e.target.checked)} />
                         <span className="text-sm font-medium text-gray-700">Cho phép đặt nhanh</span>
                     </label>

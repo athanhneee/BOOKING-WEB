@@ -32,7 +32,7 @@ const StayCard = ({ stay }: StayCardProps) => {
                 search: location.search,
             }}
             state={{ returnTo }}
-            className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)]"
+            className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-3xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.15)]"
         >
             <div className="relative aspect-[4/3] overflow-hidden bg-slate-200">
                 {stay.imageUrl ? (
@@ -81,19 +81,19 @@ const StayCard = ({ stay }: StayCardProps) => {
                 <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-600">{stay.description}</p>
 
                 <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-600">
-                    <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
+                    <span className="inline-flex items-center gap-2 rounded-3xl bg-slate-50 px-3 py-2">
                         <FiUsers className="text-cyan-500" />
                         {stay.guests} khách
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
+                    <span className="inline-flex items-center gap-2 rounded-3xl bg-slate-50 px-3 py-2">
                         <FiHome className="text-cyan-500" />
                         {stay.bedrooms} phòng ngủ
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
+                    <span className="inline-flex items-center gap-2 rounded-3xl bg-slate-50 px-3 py-2">
                         <FaBed className="text-cyan-500" />
                         {stay.beds} giường
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2">
+                    <span className="inline-flex items-center gap-2 rounded-3xl bg-slate-50 px-3 py-2">
                         <FaBath className="text-cyan-500" />
                         {stay.bathrooms} phòng tắm
                     </span>

@@ -13,7 +13,7 @@ const CounterFilter = ({ items, value, onChange }: CounterFilterProps) => {
                 const currentValue = value[item.key];
 
                 return (
-                    <div key={item.key} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-4">
+                    <div key={item.key} className="flex items-center justify-between gap-4 rounded-3xl border border-slate-100 bg-slate-50/70 px-4 py-4">
                         <div>
                             <p className="text-sm font-semibold text-zinc-900">{item.label}</p>
                             <p className="mt-1 text-sm text-zinc-500">{item.description}</p>

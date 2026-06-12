@@ -135,18 +135,18 @@ const ChoNghi = () => {
                 <FilterTabs options={filterOptions} value={filter} onChange={setFilter} underline />
 
                 {error ? (
-                    <div className="animate-in fade-in slide-in-from-top-2 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700 shadow-sm">
+                    <div className="animate-in fade-in slide-in-from-top-2 rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700 shadow-sm">
                         {error}
                     </div>
                 ) : null}
                 {success ? (
-                    <div className="animate-in fade-in slide-in-from-top-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700 shadow-sm">
+                    <div className="animate-in fade-in slide-in-from-top-2 rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700 shadow-sm">
                         {success}
                     </div>
                 ) : null}
 
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-100 bg-white py-20 shadow-sm">
+                    <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-100 bg-white py-20 shadow-sm">
                         <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-cyan-600 border-t-transparent"></div>
                         <p className="text-sm font-medium text-slate-500">Đang tải chỗ nghỉ của bạn...</p>
                     </div>
@@ -162,7 +162,7 @@ const ChoNghi = () => {
                         <button
                             type="button"
                             onClick={() => navigate(APP_ROUTES.hostNewProperty)}
-                            className="mt-6 rounded-2xl bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cyan-700"
+                            className="mt-6 rounded-3xl bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-cyan-700"
                         >
                             Thêm chỗ nghỉ ngay
                         </button>
@@ -175,8 +175,8 @@ const ChoNghi = () => {
                         const isPublished = status === "published";
 
                         return (
-                            <article 
-                                key={property.listingId} 
+                            <article
+                                key={property.listingId}
                                 className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-cyan-200"
                             >
                                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
@@ -192,7 +192,7 @@ const ChoNghi = () => {
                                         </div>
                                     )}
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-slate-900/10 opacity-60 transition-opacity group-hover:opacity-40"></div>
-                                    
+
                                     {/* Status Badge */}
                                     <span className={`absolute left-4 top-4 inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur-md bg-white/95 shadow-sm ring-1 ring-inset ${statusStyles(status)}`}>
                                         <div className={`mr-1.5 h-1.5 w-1.5 rounded-full ${status === 'published' ? 'bg-emerald-500' : status === 'pending_approval' ? 'bg-amber-500' : 'bg-slate-400'}`}></div>
@@ -210,19 +210,19 @@ const ChoNghi = () => {
                                             <span className="block text-[11px] font-medium text-slate-500">/ đêm</span>
                                         </span>
                                     </div>
-                                    
+
                                     <h2 className="text-lg font-bold text-slate-900 line-clamp-1 transition-colors group-hover:text-cyan-700">
                                         {property.title}
                                     </h2>
-                                    
+
                                     <p className="mt-2 flex items-start gap-1.5 text-sm text-slate-500 line-clamp-2 min-h-[40px]">
                                         <FiMapPin className="mt-0.5 shrink-0 text-slate-400" />
                                         <span className="leading-relaxed">{getAddress(property)}</span>
                                     </p>
 
                                     <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-100 pt-4 text-[13px] font-medium text-slate-600">
-                                        <div className="flex items-center gap-1.5"><FiUsers className="text-slate-400"/> {property.maxGuests} khách</div>
-                                        <div className="flex items-center gap-1.5"><FiHome className="text-slate-400"/> {property.bedrooms} phòng ngủ</div>
+                                        <div className="flex items-center gap-1.5"><FiUsers className="text-slate-400" /> {property.maxGuests} khách</div>
+                                        <div className="flex items-center gap-1.5"><FiHome className="text-slate-400" /> {property.bedrooms} phòng ngủ</div>
                                     </div>
                                 </div>
 
@@ -230,7 +230,7 @@ const ChoNghi = () => {
                                     <button
                                         type="button"
                                         onClick={() => navigate(`${APP_ROUTES.hostNewProperty}?listingId=${property.listingId}`)}
-                                        className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
+                                        className="flex items-center justify-center gap-2 rounded-3xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
                                     >
                                         <FiEdit2 size={14} /> Chỉnh sửa
                                     </button>
@@ -238,7 +238,7 @@ const ChoNghi = () => {
                                     <button
                                         type="button"
                                         onClick={() => navigate(APP_ROUTES.hostCalendar)}
-                                        className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
+                                        className="flex items-center justify-center gap-2 rounded-3xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
                                     >
                                         <FiCalendar size={14} /> Lịch
                                     </button>
@@ -247,7 +247,7 @@ const ChoNghi = () => {
                                         <button
                                             type="button"
                                             onClick={() => handleSubmitForApproval(property.listingId)}
-                                            className="col-span-2 flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
+                                            className="col-span-2 flex items-center justify-center gap-2 rounded-3xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 active:scale-95"
                                         >
                                             <FiSend size={14} /> Gửi duyệt
                                         </button>
@@ -257,7 +257,7 @@ const ChoNghi = () => {
                                         <button
                                             type="button"
                                             onClick={() => setDialogProperty(property)}
-                                            className="col-span-2 flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 active:scale-95"
+                                            className="col-span-2 flex items-center justify-center gap-2 rounded-3xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 active:scale-95"
                                         >
                                             {isPublished ? <FiEyeOff size={14} /> : <FiEye size={14} />}
                                             {isPublished ? "Ẩn chỗ nghỉ" : "Hiện lại chỗ nghỉ"}

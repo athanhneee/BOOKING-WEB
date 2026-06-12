@@ -6,7 +6,7 @@ const Skeleton = ({ className = "", ...divProps }: SkeletonProps) => {
     return (
         <div
             {...divProps}
-            className={`animate-pulse rounded-2xl bg-slate-200/80 ${className}`.trim()}
+            className={`animate-pulse rounded-3xl bg-slate-200/80 ${className}`.trim()}
             aria-hidden={divProps["aria-hidden"] ?? true}
         />
     );

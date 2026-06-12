@@ -32,7 +32,7 @@ const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
                                 type="button"
                                 onClick={() => onTabChange(item.key)}
                                 className={cn(
-                                    "flex min-h-11 items-center gap-2.5 rounded-2xl border px-4 py-3 text-sm font-medium transition-all duration-200",
+                                    "flex min-h-11 items-center gap-2.5 rounded-3xl border px-4 py-3 text-sm font-medium transition-all duration-200",
                                     isActive
                                         ? "border-cyan-300/50 bg-cyan-300/10 text-cyan-800 shadow-sm"
                                         : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
@@ -47,7 +47,7 @@ const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
             </div>
 
             <aside className="hidden lg:block">
-                <div className="sticky top-28 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                <div className="sticky top-28 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
                     <div className="mb-4 px-3 pt-2">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Tài khoản</p>
                         <h2 className="mt-2 text-2xl font-semibold text-slate-900">Hồ sơ</h2>
@@ -64,7 +64,7 @@ const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
                                     type="button"
                                     onClick={() => onTabChange(item.key)}
                                     className={cn(
-                                        "flex w-full items-center gap-3 rounded-2xl border-l-4 px-4 py-3.5 text-left transition-all duration-200",
+                                        "flex w-full items-center gap-3 rounded-3xl border-l-4 px-4 py-3.5 text-left transition-all duration-200",
                                         isActive
                                             ? "border-l-cyan-600 bg-cyan-300/10 text-cyan-800"
                                             : "border-l-transparent text-slate-600 hover:bg-slate-50",

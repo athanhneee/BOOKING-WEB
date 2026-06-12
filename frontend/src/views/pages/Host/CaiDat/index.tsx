@@ -311,13 +311,13 @@ const CaiDat = () => {
             <div className="mx-auto max-w-6xl space-y-6">
                 <PageHeader title="Cài đặt" subtitle="Quản lý hồ sơ host và tài khoản nhận thanh toán." />
 
-                <div className="flex flex-wrap gap-2 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
+                <div className="flex flex-wrap gap-2 rounded-3xl border border-gray-100 bg-white p-3 shadow-sm">
                     {tabs.map((item) => (
                         <button
                             key={item.value}
                             type="button"
                             onClick={() => setTab(item.value)}
-                            className={`rounded-2xl px-4 py-2.5 text-sm font-medium ${tab === item.value ? "bg-cyan-300/15 text-cyan-600" : "text-gray-500 hover:bg-gray-50"}`}
+                            className={`rounded-3xl px-4 py-2.5 text-sm font-medium ${tab === item.value ? "bg-cyan-300/15 text-cyan-600" : "text-gray-500 hover:bg-gray-50"}`}
                         >
                             {item.label}
                         </button>
@@ -327,8 +327,8 @@ const CaiDat = () => {
                 <div className={hostCardClass}>
                     {tab === "profile" ? (
                         <div className="space-y-6">
-                            {profileError ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{profileError}</div> : null}
-                            {profileMessage ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{profileMessage}</div> : null}
+                            {profileError ? <div className="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{profileError}</div> : null}
+                            {profileMessage ? <div className="rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{profileMessage}</div> : null}
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                                 {profile?.avatarUrl ? (
                                     <img src={profile.avatarUrl} alt={profile.fullName ?? profile.name ?? "host"} className="h-20 w-20 rounded-full object-cover" />
@@ -366,8 +366,8 @@ const CaiDat = () => {
 
                     {tab === "bank" ? (
                         <div className="space-y-6">
-                            {bankError ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{bankError}</div> : null}
-                            {bankMessage ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{bankMessage}</div> : null}
+                            {bankError ? <div className="rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{bankError}</div> : null}
+                            {bankMessage ? <div className="rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{bankMessage}</div> : null}
 
                             <div className="grid gap-5 md:grid-cols-2">
                                 <div ref={bankPickerRef} className="relative md:col-span-2">
@@ -399,14 +399,14 @@ const CaiDat = () => {
                                             type="button"
                                             aria-label="Mở danh sách ngân hàng"
                                             onClick={() => setBankDropdownOpen((current) => !current)}
-                                            className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-2xl text-gray-500 hover:bg-gray-50"
+                                            className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-3xl text-gray-500 hover:bg-gray-50"
                                         >
                                             <ChevronDown className="h-4 w-4" />
                                         </button>
                                     </div>
 
                                     {bankDropdownOpen ? (
-                                        <div id="host-bank-options" className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-gray-200 bg-white p-2 shadow-lg">
+                                        <div id="host-bank-options" className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-3xl border border-gray-200 bg-white p-2 shadow-lg">
                                             {loadingBankData ? (
                                                 <div className="px-3 py-3 text-sm text-gray-500">Đang tải danh sách ngân hàng...</div>
                                             ) : null}
@@ -418,7 +418,7 @@ const CaiDat = () => {
                                                     key={`${bank.code}-${bank.bin ?? ""}`}
                                                     type="button"
                                                     onClick={() => handleSelectBank(bank)}
-                                                    className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-cyan-50 ${bank.code === bankForm.bankCode ? "bg-cyan-300/15" : ""}`}
+                                                    className={`flex w-full items-center gap-3 rounded-3xl px-3 py-2.5 text-left transition-colors hover:bg-cyan-50 ${bank.code === bankForm.bankCode ? "bg-cyan-300/15" : ""}`}
                                                 >
                                                     {bank.logo ? <img src={bank.logo} alt="" className="h-7 w-7 shrink-0 rounded-full object-contain" /> : <span className="h-7 w-7 shrink-0 rounded-full bg-cyan-50" />}
                                                     <span className="min-w-0">
@@ -468,7 +468,7 @@ const CaiDat = () => {
                                 </div>
                             </div>
 
-                            <p className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                            <p className="rounded-3xl bg-gray-50 px-4 py-3 text-sm text-gray-500">
                                 Thông tin này dùng để nhận thanh toán từ minh thanh villa.
                             </p>
                             <button type="button" disabled={savingBank || loadingBankData} onClick={handleSaveBankAccount} className={`${primaryButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}>

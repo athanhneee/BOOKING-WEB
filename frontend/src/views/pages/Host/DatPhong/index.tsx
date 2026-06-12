@@ -136,11 +136,11 @@ const DatPhong = () => {
                     }
                 />
 
-                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+                {error ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                     {summary.map((item) => (
-                        <article key={item.label} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                        <article key={item.label} className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
                             <div className="flex items-center justify-between gap-4">
                                 <div>
                                     <p className="text-sm text-gray-500">{item.label}</p>
@@ -152,15 +152,15 @@ const DatPhong = () => {
                     ))}
                 </div>
 
-                <div className="flex flex-wrap gap-2 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
+                <div className="flex flex-wrap gap-2 rounded-3xl border border-gray-100 bg-white p-3 shadow-sm">
                     {filters.map((item) => (
-                        <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={`rounded-2xl px-3 py-2 text-xs font-medium sm:px-4 sm:text-sm ${filter === item.value ? "bg-cyan-50 text-cyan-600" : "text-gray-500 hover:bg-gray-50"}`}>
+                        <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={`rounded-3xl px-3 py-2 text-xs font-medium sm:px-4 sm:text-sm ${filter === item.value ? "bg-cyan-50 text-cyan-600" : "text-gray-500 hover:bg-gray-50"}`}>
                             {item.label}
                         </button>
                     ))}
                 </div>
 
-                <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
                     <div className="overflow-x-auto">
                         <table className={`${tableClassName} text-left text-sm`}>
                             <thead className="bg-gray-50 text-gray-500">
@@ -224,7 +224,7 @@ const DatPhong = () => {
                                                                     const note = window.prompt(`Lý do ${cancelLabel.toLowerCase()} booking?`, hostRejectedReason) || hostRejectedReason;
                                                                     void runAction(booking.bookingId, () => cancelHostBooking(booking.bookingId, note));
                                                                 }}
-                                                                className="flex items-center justify-center gap-1.5 whitespace-nowrap rounded-2xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 shadow-sm transition-all hover:bg-rose-50 active:scale-95 disabled:opacity-50"
+                                                                className="flex items-center justify-center gap-1.5 whitespace-nowrap rounded-3xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 shadow-sm transition-all hover:bg-rose-50 active:scale-95 disabled:opacity-50"
                                                             >
                                                                 <FiXCircle size={16} /> {cancelLabel}
                                                             </button>

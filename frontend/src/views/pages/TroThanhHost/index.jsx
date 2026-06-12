@@ -64,14 +64,14 @@ const TroThanhHostLanding = () => {
                         <button
                             type="button"
                             onClick={() => navigate(APP_ROUTES.hostRegister)}
-                            className="rounded-xl bg-white px-8 py-3 font-semibold text-cyan-600 transition-colors hover:bg-gray-50"
+                            className="rounded-3xl bg-white px-8 py-3 font-semibold text-cyan-600 transition-colors hover:bg-gray-50"
                         >
                             Bắt đầu đăng ký
                         </button>
                         <button
                             type="button"
                             onClick={scrollToBenefits}
-                            className="rounded-xl border border-white px-8 py-3 text-white transition-colors hover:bg-white/10"
+                            className="rounded-3xl border border-white px-8 py-3 text-white transition-colors hover:bg-white/10"
                         >
                             Tìm hiểu thêm
                         </button>
@@ -85,7 +85,7 @@ const TroThanhHostLanding = () => {
 
                     <div className="mx-auto mt-10 grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-3">
                         {benefitCards.map((card) => (
-                            <article key={card.title} className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm">
+                            <article key={card.title} className="rounded-3xl border border-gray-100 bg-white p-6 text-center shadow-sm">
                                 <div className="mb-4 text-3xl sm:text-4xl">{card.icon}</div>
                                 <h3 className="font-semibold text-gray-900">{card.title}</h3>
                                 <p className="mt-2 text-sm text-gray-500">{card.description}</p>
@@ -123,7 +123,7 @@ const TroThanhHostLanding = () => {
                     const isOpen = openFaq === index;
 
                     return (
-                        <article key={item.question} className="mb-3 overflow-hidden rounded-2xl border border-gray-100 bg-white">
+                        <article key={item.question} className="mb-3 overflow-hidden rounded-3xl border border-gray-100 bg-white">
                             <button
                                 type="button"
                                 onClick={() => setOpenFaq((current) => (current === index ? -1 : index))}
@@ -144,13 +144,13 @@ const TroThanhHostLanding = () => {
             </section>
 
             <section className="px-6 py-16">
-                <div className="mx-auto my-12 max-w-3xl rounded-2xl bg-gradient-to-r from-cyan-500 to-cyan-500 p-10 text-center text-white">
+                <div className="mx-auto my-12 max-w-3xl rounded-3xl bg-gradient-to-r from-cyan-500 to-cyan-500 p-10 text-center text-white">
                     <h2 className="text-2xl font-bold">Sẵn sàng bắt đầu hành trình host của bạn?</h2>
                     <p className="mt-2 text-white/80">Đăng ký ngay — hoàn toàn miễn phí</p>
                     <button
                         type="button"
                         onClick={() => navigate(APP_ROUTES.hostRegister)}
-                        className="mt-6 rounded-xl px-8 py-3 font-semibold text-cyan-600 transition-colors"
+                        className="mt-6 rounded-3xl px-8 py-3 font-semibold text-cyan-600 transition-colors"
                     >
                         Đăng ký ngay
                     </button>

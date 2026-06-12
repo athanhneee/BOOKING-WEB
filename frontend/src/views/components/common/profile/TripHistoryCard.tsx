@@ -181,16 +181,16 @@ const TripHistoryCard = ({ trip, onReview }: TripHistoryCardProps) => {
     ];
 
     return (
-        <article className="overflow-hidden rounded-2xl bg-white p-4 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.12)] sm:p-5">
+        <article className="overflow-hidden rounded-3xl bg-white p-4 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.12)] sm:p-5">
             <div className="grid gap-5 md:grid-cols-[160px_minmax(0,1fr)] xl:grid-cols-[160px_minmax(0,1fr)_220px] xl:items-center">
                 {trip.imageUrl ? (
                     <img
                         src={trip.imageUrl}
                         alt={trip.propertyName}
-                        className="h-52 w-full rounded-2xl object-cover md:h-[120px] md:w-[160px]"
+                        className="h-52 w-full rounded-3xl object-cover md:h-[120px] md:w-[160px]"
                     />
                 ) : (
-                    <div className="flex h-52 w-full items-center justify-center rounded-2xl bg-slate-100 text-sm font-medium text-slate-500 md:h-[120px] md:w-[160px]">
+                    <div className="flex h-52 w-full items-center justify-center rounded-3xl bg-slate-100 text-sm font-medium text-slate-500 md:h-[120px] md:w-[160px]">
                         Chưa có ảnh
                     </div>
                 )}
@@ -243,7 +243,7 @@ const TripHistoryCard = ({ trip, onReview }: TripHistoryCardProps) => {
                                 }
                                 aria-expanded={action.key === "detail" ? isDetailOpen : undefined}
                                 className={cn(
-                                    "inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
+                                    "inline-flex min-h-11 items-center justify-center gap-2 rounded-3xl px-4 py-2.5 text-sm font-medium transition-all duration-200",
                                     action.variant === "primary"
                                         ? "bg-cyan-500 text-white hover:bg-cyan-500"
                                         : "border border-cyan-300/50 bg-white text-cyan-800 hover:bg-cyan-300/10",

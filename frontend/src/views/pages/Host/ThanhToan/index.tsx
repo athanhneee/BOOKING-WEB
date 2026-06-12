@@ -49,19 +49,19 @@ const ThanhToan = () => {
             <div className="mx-auto max-w-7xl space-y-6">
                 <PageHeader title="Thanh toán & đối soát" subtitle="Các khoảng doanh thu của bạn." />
 
-                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+                {error ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Tài khoản nhận tiền</p><p className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl">{accounts.length}</p></article>
-                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Đã thanh toán</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(totalPaid)}</p></article>
-                    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Chờ xử lý</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(pending)}</p></article>
+                    <article className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Tài khoản nhận tiền</p><p className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl">{accounts.length}</p></article>
+                    <article className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Đã thanh toán</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(totalPaid)}</p></article>
+                    <article className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm"><p className="text-sm text-gray-500">Chờ xử lý</p><p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(pending)}</p></article>
                 </div>
 
-                <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
                     <h2 className="text-lg font-semibold text-gray-900">Tài khoản ngân hàng</h2>
                     <div className="mt-4 grid gap-4 md:grid-cols-2">
                         {accounts.length === 0 ? <p className="text-sm text-gray-500">Chưa có tài khoản nhận tiền.</p> : accounts.map((account) => (
-                            <article key={account.payoutAccountId} className="rounded-2xl border border-gray-100 p-4">
+                            <article key={account.payoutAccountId} className="rounded-3xl border border-gray-100 p-4">
                                 <p className="font-semibold text-gray-900">{account.bankName}</p>
                                 <p className="mt-1 text-sm text-gray-500">{account.accountName} • {account.accountNumberMasked}</p>
                                 {account.isDefault ? <span className="mt-3 inline-block rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-600">Mặc định</span> : null}
@@ -70,7 +70,7 @@ const ThanhToan = () => {
                     </div>
                 </section>
 
-                <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
                     <div className="overflow-x-auto">
                         <table className={`${tableClassName} text-left text-sm`}>
                             <thead className="bg-gray-50 text-gray-500">

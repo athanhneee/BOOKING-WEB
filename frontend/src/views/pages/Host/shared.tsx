@@ -64,7 +64,7 @@ export const FilterTabs = <T extends string,>({ options, value, onChange, underl
                         type="button"
                         onClick={() => onChange(option.value)}
                         className={cn(
-                            underline ? "rounded-none px-3 py-2 text-sm font-medium transition-colors" : "rounded-2xl px-3 py-2 text-sm font-medium transition-colors",
+                            underline ? "rounded-none px-3 py-2 text-sm font-medium transition-colors" : "rounded-3xl px-3 py-2 text-sm font-medium transition-colors",
                             underline
                                 ? isActive
                                     ? "border-b-2 border-cyan-500 text-cyan-600"

@@ -114,13 +114,13 @@ const PopularDestinationsSection = ({
                 </h2>
 
                 {error ? (
-                    <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-center text-sm font-medium text-rose-700">
+                    <div className="mt-6 rounded-3xl border border-rose-200 bg-rose-50 px-5 py-4 text-center text-sm font-medium text-rose-700">
                         {error}
                     </div>
                 ) : null}
 
                 {!error && destinations.length === 0 ? (
-                    <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-white px-5 py-12 text-center text-sm font-medium text-zinc-500">
+                    <div className="mt-6 rounded-3xl border border-dashed border-zinc-300 bg-white px-5 py-12 text-center text-sm font-medium text-zinc-500">
                         Chưa có chỗ nghỉ đã duyệt. Hãy đăng nhập host để tạo phòng, sau đó Admin duyệt để hiển thị tại đây.
                     </div>
                 ) : null}
@@ -139,7 +139,7 @@ const PopularDestinationsSection = ({
                 ) : null}
 
                 {isExpanded ? (
-                    <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-3 sm:p-5 md:p-7">
+                    <div className="mt-6 rounded-3xl border border-zinc-200 bg-white p-3 sm:p-5 md:p-7">
                         <div className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
                             <h3 className="text-center text-base font-semibold text-zinc-900 sm:text-lg md:text-xl">
                                 Danh sách chỗ nghỉ đã duyệt
@@ -168,7 +168,7 @@ const PopularDestinationsSection = ({
                                 type="button"
                                 onClick={goPrevious}
                                 disabled={safePageIndex === 0}
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-zinc-300 bg-white px-6 py-3 text-base font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-3xl border border-zinc-300 bg-white px-6 py-3 text-base font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
                             >
                                 <FaArrowLeft />
                                 Quay lại
@@ -179,7 +179,7 @@ const PopularDestinationsSection = ({
                             type="button"
                             onClick={goNext}
                             disabled={isExpanded && safePageIndex >= totalPages - 1}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-zinc-300 bg-white px-6 py-3 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-8"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-3xl border border-zinc-300 bg-white px-6 py-3 text-base font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-8"
                         >
                             {!isExpanded ? "Xem thêm villa" : "Xem tiếp"}
                             <FaArrowRight />
@@ -192,7 +192,7 @@ const PopularDestinationsSection = ({
                                     setIsExpanded(false);
                                     setPageIndex(0);
                                 }}
-                                className="inline-flex w-full items-center justify-center rounded-2xl border border-zinc-300 bg-white px-6 py-3 text-base font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 sm:w-auto"
+                                className="inline-flex w-full items-center justify-center rounded-3xl border border-zinc-300 bg-white px-6 py-3 text-base font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 sm:w-auto"
                             >
                                 Thu gọn
                             </button>

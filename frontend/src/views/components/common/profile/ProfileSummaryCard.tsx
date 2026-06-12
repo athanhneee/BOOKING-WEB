@@ -20,7 +20,7 @@ const ProfileSummaryCard = ({ user, onEdit, onAvatarUpload }: ProfileSummaryCard
     const inputRef = useRef<HTMLInputElement | null>(null);
 
     return (
-        <article className="rounded-2xl bg-cyan-300/10 p-6 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
+        <article className="rounded-3xl bg-cyan-300/10 p-6 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
             <div className="flex flex-col items-center text-center">
                 <div className="relative">
                     {user.avatarUrl ? (
@@ -78,7 +78,7 @@ const ProfileSummaryCard = ({ user, onEdit, onAvatarUpload }: ProfileSummaryCard
             <button
                 type="button"
                 onClick={onEdit}
-                className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-cyan-300/50 bg-white px-4 py-3 text-sm font-medium text-cyan-800 transition-all duration-200 hover:bg-cyan-300/10"
+                className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-3xl border border-cyan-300/50 bg-white px-4 py-3 text-sm font-medium text-cyan-800 transition-all duration-200 hover:bg-cyan-300/10"
             >
                 Chỉnh sửa hồ sơ
             </button>

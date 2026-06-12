@@ -119,23 +119,23 @@ const LichLuuTru = () => {
             <div className="mx-auto max-w-7xl space-y-6">
                 <PageHeader title="Lịch lưu trú" />
 
-                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+                {error ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
-                <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
                     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                         <label className="space-y-2 sm:col-span-2">
                             <span className="text-sm font-medium text-gray-700">Chọn chỗ nghỉ</span>
-                            <select value={listingId} onChange={(event) => setListingId(Number(event.target.value) || "")} className="w-full rounded-2xl border border-gray-200 px-3 py-2.5">
+                            <select value={listingId} onChange={(event) => setListingId(Number(event.target.value) || "")} className="w-full rounded-3xl border border-gray-200 px-3 py-2.5">
                                 {listings.map((listing) => <option key={listing.listingId} value={listing.listingId}>{listing.title}</option>)}
                             </select>
                         </label>
                         <label className="space-y-2">
                             <span className="text-sm font-medium text-gray-700">Tháng</span>
-                            <input type="number" min={1} max={12} value={month} onChange={(event) => setMonth(Number(event.target.value))} className="w-full rounded-2xl border border-gray-200 px-3 py-2.5" />
+                            <input type="number" min={1} max={12} value={month} onChange={(event) => setMonth(Number(event.target.value))} className="w-full rounded-3xl border border-gray-200 px-3 py-2.5" />
                         </label>
                         <label className="space-y-2">
                             <span className="text-sm font-medium text-gray-700">Năm</span>
-                            <input type="number" min={2026} max={2030} value={year} onChange={(event) => setYear(Number(event.target.value))} className="w-full rounded-2xl border border-gray-200 px-3 py-2.5" />
+                            <input type="number" min={2026} max={2030} value={year} onChange={(event) => setYear(Number(event.target.value))} className="w-full rounded-3xl border border-gray-200 px-3 py-2.5" />
                         </label>
                     </div>
 
@@ -154,7 +154,7 @@ const LichLuuTru = () => {
                     <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-full bg-gray-200 border border-gray-300"></span>Đã qua</span>
                 </div>
 
-                <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-12">
                             <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
@@ -189,7 +189,7 @@ const LichLuuTru = () => {
                                         disabled={disabled}
                                         onClick={() => !disabled && toggleDate(day.date)}
                                         title={past ? "Ngày đã qua — không thể chỉnh lịch" : booked ? "Ngày này đã có khách đặt — không thể thay đổi" : undefined}
-                                        className={`rounded-2xl border p-3 text-left transition sm:p-4 ${stateClass}`}
+                                        className={`rounded-3xl border p-3 text-left transition sm:p-4 ${stateClass}`}
                                     >
                                         <p className="font-semibold text-gray-900">{day.date.slice(-2)}/{String(month).padStart(2, "0")}</p>
                                         <p className={`mt-2 text-xs font-medium ${statusColor}`}>{statusLabel}</p>

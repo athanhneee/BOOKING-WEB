@@ -25,16 +25,16 @@ const NotFoundPage = () => {
                     <div className="absolute bottom-3 h-40 w-[88%] rounded-full bg-cyan-200/55 blur-2xl" />
                     <div className="absolute left-[11%] top-6 h-10 w-20 rounded-full bg-cyan-200/80" />
                     <div className="absolute left-[24%] top-16 h-8 w-14 rounded-full bg-cyan-200/70" />
-                    <div className="absolute right-[10%] top-[12%] flex h-24 w-24 rotate-12 items-center justify-center rounded-2xl border-2 border-cyan-300/70 bg-white/80 shadow-[0_18px_50px_rgba(13,148,136,0.16)] backdrop-blur">
+                    <div className="absolute right-[10%] top-[12%] flex h-24 w-24 rotate-12 items-center justify-center rounded-3xl border-2 border-cyan-300/70 bg-white/80 shadow-[0_18px_50px_rgba(13,148,136,0.16)] backdrop-blur">
                         <span className="text-2xl font-black uppercase tracking-[0.32em] text-cyan-500">404</span>
                     </div>
 
                     <div className="relative w-full max-w-[620px] pb-24">
-                        <div className="absolute left-16 top-6 h-[380px] w-[76%] rounded-2xl bg-gradient-to-br from-cyan-400 to-cyan-500 shadow-[0_28px_70px_rgba(8,145,178,0.28)]" />
-                        <div className="absolute left-8 top-10 h-[380px] w-[76%] rounded-2xl bg-cyan-950/90 shadow-[0_20px_40px_rgba(15,118,110,0.24)]" />
+                        <div className="absolute left-16 top-6 h-[380px] w-[76%] rounded-3xl bg-gradient-to-br from-cyan-400 to-cyan-500 shadow-[0_28px_70px_rgba(8,145,178,0.28)]" />
+                        <div className="absolute left-8 top-10 h-[380px] w-[76%] rounded-3xl bg-cyan-950/90 shadow-[0_20px_40px_rgba(15,118,110,0.24)]" />
 
-                        <div className="relative ml-auto w-[84%] rounded-2xl border-[10px] border-cyan-300 bg-white shadow-[0_35px_80px_rgba(8,145,178,0.22)]">
-                            <div className="rounded-2xl bg-gradient-to-b from-cyan-50 via-white to-cyan-50 p-6 sm:p-8">
+                        <div className="relative ml-auto w-[84%] rounded-3xl border-[10px] border-cyan-300 bg-white shadow-[0_35px_80px_rgba(8,145,178,0.22)]">
+                            <div className="rounded-3xl bg-gradient-to-b from-cyan-50 via-white to-cyan-50 p-6 sm:p-8">
                                 <div className="flex items-center gap-2">
                                     <span className="h-3 w-3 rounded-full bg-cyan-300" />
                                     <span className="h-3 w-3 rounded-full bg-cyan-200" />
@@ -55,9 +55,9 @@ const NotFoundPage = () => {
                                 </p>
 
                                 <div className="mt-7 grid gap-3 sm:grid-cols-3">
-                                    <div className="h-14 rounded-2xl bg-cyan-100/80" />
-                                    <div className="h-14 rounded-2xl bg-cyan-100/80" />
-                                    <div className="h-14 rounded-2xl bg-cyan-100/80" />
+                                    <div className="h-14 rounded-3xl bg-cyan-100/80" />
+                                    <div className="h-14 rounded-3xl bg-cyan-100/80" />
+                                    <div className="h-14 rounded-3xl bg-cyan-100/80" />
                                 </div>
                             </div>
                         </div>
@@ -103,13 +103,13 @@ const NotFoundPage = () => {
                     </div>
 
                     <div className="mt-8 grid gap-4 text-left sm:grid-cols-2">
-                        <div className="rounded-2xl border border-cyan-200/80 bg-white/75 p-5 shadow-[0_18px_40px_rgba(8,145,178,0.12)] backdrop-blur">
+                        <div className="rounded-3xl border border-cyan-200/80 bg-white/75 p-5 shadow-[0_18px_40px_rgba(8,145,178,0.12)] backdrop-blur">
                             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-600">Mã lỗi</p>
                             <p className="mt-3 text-4xl font-black text-cyan-500">404</p>
                             <p className="mt-2 text-sm leading-6 text-cyan-600/80">Trang hiện tại không có dữ liệu để hiển thị.</p>
                         </div>
 
-                        <div className="rounded-2xl border border-cyan-200/80 bg-white/75 p-5 shadow-[0_18px_40px_rgba(15,118,110,0.12)] backdrop-blur">
+                        <div className="rounded-3xl border border-cyan-200/80 bg-white/75 p-5 shadow-[0_18px_40px_rgba(15,118,110,0.12)] backdrop-blur">
                             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-600">Gợi ý tiếp theo</p>
                             <p className="mt-3 text-lg font-semibold leading-7 text-cyan-900">
                                 Kiểm tra lại đường dẫn hoặc chuyển sang danh sách nơi lưu trú.

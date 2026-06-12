@@ -180,7 +180,7 @@ const TableSkeletonRows = ({ cols = 5, rows = 4 }) =>
         <tr key={rowIndex} className="border-b border-slate-100 animate-pulse">
             <td className="px-4 py-4">
                 <div className="flex items-center gap-3">
-                    <div className="h-20 w-32 shrink-0 rounded-xl bg-slate-200" />
+                    <div className="h-20 w-32 shrink-0 rounded-3xl bg-slate-200" />
                     <div className="space-y-2">
                         <div className="h-4 w-40 rounded-lg bg-slate-200" />
                         <div className="h-3 w-20 rounded-lg bg-slate-200" />
@@ -194,9 +194,9 @@ const TableSkeletonRows = ({ cols = 5, rows = 4 }) =>
             ))}
             <td className="px-4 py-4">
                 <div className="flex gap-2">
-                    <div className="h-9 w-24 rounded-xl bg-slate-200" />
-                    <div className="h-9 w-16 rounded-xl bg-slate-200" />
-                    <div className="h-9 w-20 rounded-xl bg-slate-200" />
+                    <div className="h-9 w-24 rounded-3xl bg-slate-200" />
+                    <div className="h-9 w-16 rounded-3xl bg-slate-200" />
+                    <div className="h-9 w-20 rounded-3xl bg-slate-200" />
                 </div>
             </td>
         </tr>
@@ -347,9 +347,9 @@ const KiemDuyetBaiDang = () => {
                     </button>
                 </div>
 
-                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+                {error ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
-                <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
                     <div className="overflow-x-auto">
                         <table className={`${tableClassName} text-left text-sm`}>
                             <thead className="bg-gray-50 text-gray-500">
@@ -390,12 +390,12 @@ const KiemDuyetBaiDang = () => {
                                                         <img
                                                             src={coverImageUrl}
                                                             alt={listing.title}
-                                                            className="h-20 w-32 shrink-0 rounded-xl object-cover"
+                                                            className="h-20 w-32 shrink-0 rounded-3xl object-cover"
                                                             loading="lazy"
                                                             onError={() => handleListingImageError(coverImageUrl)}
                                                         />
                                                     ) : (
-                                                        <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-medium text-slate-500">
+                                                        <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-3xl bg-slate-100 text-xs font-medium text-slate-500">
                                                             Chưa có ảnh
                                                         </div>
                                                     )}
@@ -414,7 +414,7 @@ const KiemDuyetBaiDang = () => {
                                                         type="button"
                                                         onClick={() => handleViewDetail(listing.listingId)}
                                                         disabled={isThisRowProcessing || isModalActionLoading}
-                                                        className="rounded-xl border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                                        className="rounded-3xl border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
                                                     >
                                                         {isModalActionLoading && !isThisRowProcessing ? "..." : "Xem chi tiết"}
                                                     </button>
@@ -423,7 +423,7 @@ const KiemDuyetBaiDang = () => {
                                                         type="button"
                                                         onClick={() => handleApprove(listing.listingId)}
                                                         disabled={isThisRowProcessing || isLoadingTable}
-                                                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:by-cyal-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                                        className="inline-flex items-center gap-1.5 rounded-3xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:by-cyal-600 disabled:cursor-not-allowed disabled:opacity-60"
                                                     >
                                                         {isThisRowProcessing ? (
                                                             <>
@@ -439,7 +439,7 @@ const KiemDuyetBaiDang = () => {
                                                         type="button"
                                                         onClick={() => openRejectModal(listing)}
                                                         disabled={isThisRowProcessing || isLoadingTable}
-                                                        className="rounded-xl bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                                        className="rounded-3xl bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
                                                     >
                                                         Từ chối
                                                     </button>
@@ -456,7 +456,7 @@ const KiemDuyetBaiDang = () => {
 
             {detailModalOpen && selectedListingDetail && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
-                    <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white p-4 shadow-xl sm:p-6">
+                    <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl bg-white p-4 shadow-xl sm:p-6">
                         <div className="mb-4 flex items-start justify-between gap-4">
                             <div>
                                 <h2 className="text-2xl font-bold text-gray-900">
@@ -471,14 +471,14 @@ const KiemDuyetBaiDang = () => {
                             <button
                                 type="button"
                                 onClick={() => setDetailModalOpen(false)}
-                                className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
+                                className="rounded-3xl border px-3 py-2 text-sm hover:bg-gray-50"
                             >
                                 Đóng
                             </button>
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-2">
-                            <section className="rounded-xl border p-4">
+                            <section className="rounded-3xl border p-4">
                                 <h3 className="mb-2 font-semibold text-gray-900">Thông tin host</h3>
                                 <p>Họ tên: {selectedListingDetail.host?.fullName || "Chưa có"}</p>
                                 <p>Email: {selectedListingDetail.host?.email || "Chưa có"}</p>
@@ -489,7 +489,7 @@ const KiemDuyetBaiDang = () => {
                                 </p>
                             </section>
 
-                            <section className="rounded-xl border p-4">
+                            <section className="rounded-3xl border p-4">
                                 <h3 className="mb-2 font-semibold text-gray-900">Giá & sức chứa</h3>
                                 <p>Giá thường: {Number(selectedListingDetail.basePrice || 0).toLocaleString("vi-VN")}đ</p>
                                 <p>Giá cuối tuần: {Number(selectedListingDetail.weekendPrice || 0).toLocaleString("vi-VN")}đ</p>
@@ -501,14 +501,14 @@ const KiemDuyetBaiDang = () => {
                             </section>
                         </div>
 
-                        <section className="mt-4 rounded-xl border p-4">
+                        <section className="mt-4 rounded-3xl border p-4">
                             <h3 className="mb-2 font-semibold text-gray-900">Mô tả</h3>
                             <p className="whitespace-pre-line text-gray-700">
                                 {selectedListingDetail.description || "Chưa có mô tả"}
                             </p>
                         </section>
 
-                        <section className="mt-4 rounded-xl border p-4">
+                        <section className="mt-4 rounded-3xl border p-4">
                             <h3 className="mb-3 font-semibold text-gray-900">Ảnh căn</h3>
                             <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                                 {(selectedListingDetail.images || []).map((image) => {
@@ -530,14 +530,14 @@ const KiemDuyetBaiDang = () => {
                                             }
                                             src={imageSrc}
                                             alt={selectedListingDetail.title}
-                                            className="h-44 w-full rounded-xl object-cover"
+                                            className="h-44 w-full rounded-3xl object-cover"
                                         />
                                     );
                                 })}
                             </div>
                         </section>
 
-                        <section className="mt-4 rounded-xl border p-4">
+                        <section className="mt-4 rounded-3xl border p-4">
                             <h3 className="mb-2 font-semibold text-gray-900">Tiện ích</h3>
                             <div className="flex flex-wrap gap-2">
                                 {(selectedListingDetail.amenities || []).map((amenity) => (
@@ -551,13 +551,13 @@ const KiemDuyetBaiDang = () => {
                             </div>
                         </section>
 
-                        <section className="mt-4 rounded-xl border p-4">
+                        <section className="mt-4 rounded-3xl border p-4">
                             <h3 className="mb-3 font-semibold text-gray-900">Nội quy</h3>
                             <div className="grid gap-3 sm:grid-cols-2">
                                 {getListingRuleItems(selectedListingDetail.rules).map((rule) => (
                                     <div
                                         key={rule.label}
-                                        className="rounded-xl border border-gray-100 bg-white p-3 shadow-sm"
+                                        className="rounded-3xl border border-gray-100 bg-white p-3 shadow-sm"
                                     >
                                         <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
                                             {rule.label}
@@ -576,7 +576,7 @@ const KiemDuyetBaiDang = () => {
                             <button
                                 type="button"
                                 onClick={() => setDetailModalOpen(false)}
-                                className="rounded-xl border px-4 py-2 hover:bg-gray-50"
+                                className="rounded-3xl border px-4 py-2 hover:bg-gray-50"
                             >
                                 Đóng
                             </button>
@@ -585,7 +585,7 @@ const KiemDuyetBaiDang = () => {
                                 type="button"
                                 onClick={() => handleApprove(selectedListingDetail.listingId)}
                                 disabled={isModalActionLoading}
-                                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 font-medium text-white hover:by-cyal-600 disabled:cursor-not-allowed disabled:opacity-70"
+                                className="inline-flex items-center gap-2 rounded-3xl bg-emerald-600 px-4 py-2 font-medium text-white hover:by-cyal-600 disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 {isModalActionLoading ? (
                                     <>
@@ -603,7 +603,7 @@ const KiemDuyetBaiDang = () => {
 
             {rejectModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+                    <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl">
                         <h2 className="text-xl font-bold text-gray-900">Từ chối căn</h2>
                         <p className="mt-1 text-sm text-gray-500">
                             Nhập lý do từ chối để host biết cần chỉnh sửa gì.
@@ -614,7 +614,7 @@ const KiemDuyetBaiDang = () => {
                             onChange={(event) => setRejectReason(event.target.value)}
                             disabled={isModalActionLoading}
                             rows={5}
-                            className="mt-4 w-full rounded-xl border border-gray-300 p-3 outline-none focus:border-red-500 disabled:opacity-60"
+                            className="mt-4 w-full rounded-3xl border border-gray-300 p-3 outline-none focus:border-red-500 disabled:opacity-60"
                             placeholder="Ví dụ: Ảnh chưa rõ, thiếu thông tin địa chỉ, giá chưa hợp lệ..."
                         />
 
@@ -623,7 +623,7 @@ const KiemDuyetBaiDang = () => {
                                 type="button"
                                 onClick={() => setRejectModalOpen(false)}
                                 disabled={isModalActionLoading}
-                                className="rounded-xl border px-4 py-2 hover:bg-gray-50 disabled:opacity-60"
+                                className="rounded-3xl border px-4 py-2 hover:bg-gray-50 disabled:opacity-60"
                             >
                                 Hủy
                             </button>
@@ -632,7 +632,7 @@ const KiemDuyetBaiDang = () => {
                                 type="button"
                                 onClick={handleReject}
                                 disabled={isModalActionLoading}
-                                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
+                                className="inline-flex items-center gap-2 rounded-3xl bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 {isModalActionLoading ? (
                                     <>

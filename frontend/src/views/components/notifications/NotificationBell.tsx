@@ -276,7 +276,7 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
             ) : null}
 
             {!loading && loadError ? (
-                <p className="mx-4 my-3 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
+                <p className="mx-4 my-3 rounded-3xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
                     {loadError}
                 </p>
             ) : null}
@@ -379,7 +379,7 @@ const NotificationBell = ({ buttonClassName }: NotificationBellProps) => {
             {open ? (
                 <div
                     ref={desktopPanelRef}
-                    className="absolute right-0 top-[calc(100%+12px)] z-50 hidden w-[22rem] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl md:block"
+                    className="absolute right-0 top-[calc(100%+12px)] z-50 hidden w-[22rem] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl md:block"
                 >
                     <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
                         <div>

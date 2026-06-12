@@ -50,7 +50,7 @@ const AdminLayout = () => {
                 <aside className={cn("fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-gray-200 bg-white px-4 py-5 shadow-xl transition-transform duration-300 lg:static lg:translate-x-0 lg:shadow-none", sidebarOpen ? "translate-x-0" : "-translate-x-full")}>
                     <div className="flex items-start justify-between gap-3">
                         <Link to={APP_ROUTES.adminOverview} className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-50"><img src={logo} alt="minh thanh villa" className="h-8 w-8 object-contain" /></div>
+                            <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-cyan-50"><img src={logo} alt="minh thanh villa" className="h-8 w-8 object-contain" /></div>
                             <div><p className="text-sm font-bold text-cyan-800">minh thanh villa</p><span className="mt-1 inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600">Admin Panel</span></div>
                         </Link>
                         <button type="button" onClick={() => setSidebarOpen(false)} aria-label="Đóng sidebar admin" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 lg:hidden"><FiX size={18} /></button>
@@ -60,25 +60,25 @@ const AdminLayout = () => {
                         {adminNavItems.map((item) => {
                             const Icon = item.icon;
                             return (
-                                <NavLink key={item.id} to={item.to} end={item.to === APP_ROUTES.adminOverview} onClick={() => setSidebarOpen(false)} className={({ isActive }) => cn("flex items-center gap-3 rounded-xl border-l-2 px-3 py-3 text-sm transition-colors", isActive ? "border-cyan-500 bg-cyan-50 font-semibold text-cyan-600" : "border-transparent text-gray-600 hover:bg-gray-50")}>
-                                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-600"><Icon size={18} /></span>
+                                <NavLink key={item.id} to={item.to} end={item.to === APP_ROUTES.adminOverview} onClick={() => setSidebarOpen(false)} className={({ isActive }) => cn("flex items-center gap-3 rounded-3xl border-l-2 px-3 py-3 text-sm transition-colors", isActive ? "border-cyan-500 bg-cyan-50 font-semibold text-cyan-600" : "border-transparent text-gray-600 hover:bg-gray-50")}>
+                                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-3xl bg-gray-100 text-gray-600"><Icon size={18} /></span>
                                     <span>{item.label}</span>
                                 </NavLink>
                             );
                         })}
                     </nav>
 
-                    <div className="mt-auto rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                    <div className="mt-auto rounded-3xl border border-gray-100 bg-gray-50 p-4">
                         <p className="text-sm font-semibold text-gray-900">{currentAdmin.name}</p>
                         <p className="mt-1 text-sm text-gray-500">{currentAdmin.email}</p>
-                        <button type="button" onClick={handleLogout} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-white"><FiLogOut size={16} />Đăng xuất</button>
+                        <button type="button" onClick={handleLogout} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-3xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-white"><FiLogOut size={16} />Đăng xuất</button>
                     </div>
                 </aside>
 
                 <div className="flex min-w-0 flex-1 flex-col">
                     <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur">
                         <div className="flex flex-wrap items-center gap-4 px-4 py-4 sm:px-6">
-                            <button type="button" onClick={() => setSidebarOpen(true)} className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-600 transition-colors hover:bg-gray-50 lg:hidden" aria-label="Mở menu admin"><FiMenu size={18} /></button>
+                            <button type="button" onClick={() => setSidebarOpen(true)} className="inline-flex h-11 w-11 items-center justify-center rounded-3xl border border-gray-200 text-gray-600 transition-colors hover:bg-gray-50 lg:hidden" aria-label="Mở menu admin"><FiMenu size={18} /></button>
                             <div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-600">Admin Center</p><h1 className="mt-1 text-lg font-bold text-gray-900 sm:text-xl md:text-2xl">{activeMeta.title}</h1><p className="mt-1 hidden text-sm text-gray-500 sm:block">{activeMeta.subtitle}</p></div>
                             <NotificationBell buttonClassName="border-gray-200 text-gray-600 shadow-none hover:bg-gray-50" />
                         </div>

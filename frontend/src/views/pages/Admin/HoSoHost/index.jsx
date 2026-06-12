@@ -188,7 +188,7 @@ const HoSoHost = () => {
                         <select
                             value={status}
                             onChange={(event) => setStatus(event.target.value)}
-                            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                            className="rounded-3xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                         >
                             {statusOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -196,10 +196,10 @@ const HoSoHost = () => {
                                 </option>
                             ))}
                         </select>
-                        <button 
-                            type="button" 
-                            onClick={fetchApplications} 
-                            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-cyan-600 active:scale-95"
+                        <button
+                            type="button"
+                            onClick={fetchApplications}
+                            className="flex items-center gap-2 rounded-3xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-cyan-600 active:scale-95"
                         >
                             <FiRefreshCw className={`shrink-0 ${loadingList ? "animate-spin" : ""}`} />
                             Tải lại
@@ -209,12 +209,12 @@ const HoSoHost = () => {
 
                 {/* Alerts */}
                 {error ? (
-                    <div className="animate-in fade-in slide-in-from-top-2 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700 shadow-sm">
+                    <div className="animate-in fade-in slide-in-from-top-2 rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm font-medium text-rose-700 shadow-sm">
                         {error}
                     </div>
                 ) : null}
                 {message ? (
-                    <div className="animate-in fade-in slide-in-from-top-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700 shadow-sm">
+                    <div className="animate-in fade-in slide-in-from-top-2 rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700 shadow-sm">
                         {message}
                     </div>
                 ) : null}
@@ -222,7 +222,7 @@ const HoSoHost = () => {
                 {/* Main Content Grid */}
                 <div className="flex flex-col xl:flex-row gap-6 items-start">
                     {/* Left Pane - List */}
-                    <section className="flex-1 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md">
+                    <section className="flex-1 w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md">
                         <div className="overflow-x-auto">
                             <table className={`${tableClassName} w-full text-left text-sm whitespace-nowrap`}>
                                 <thead className="border-b border-slate-100 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -295,11 +295,10 @@ const HoSoHost = () => {
                                                     <button
                                                         type="button"
                                                         onClick={() => fetchDetail(application.applicationId)}
-                                                        className={`inline-flex items-center justify-center rounded-xl border px-3 py-2 text-sm font-medium transition-all active:scale-95 ${
-                                                            isSelected 
-                                                            ? "border-cyan-200 bg-cyan-100 text-cyan-800" 
+                                                        className={`inline-flex items-center justify-center rounded-3xl border px-3 py-2 text-sm font-medium transition-all active:scale-95 ${isSelected
+                                                            ? "border-cyan-200 bg-cyan-100 text-cyan-800"
                                                             : "border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 shadow-sm hover:shadow"
-                                                        }`}
+                                                            }`}
                                                     >
                                                         <FiEye className="mr-1.5" />
                                                         Chi tiết
@@ -314,7 +313,7 @@ const HoSoHost = () => {
                     </section>
 
                     {/* Right Pane - Detail View */}
-                    <section className="w-full xl:w-[480px] shrink-0 xl:sticky xl:top-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-lg xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto custom-scrollbar transition-all duration-300">
+                    <section className="w-full xl:w-[480px] shrink-0 xl:sticky xl:top-24 rounded-3xl border border-slate-200 bg-white p-6 shadow-lg xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto custom-scrollbar transition-all duration-300">
                         {!selectedId ? (
                             <div className="flex flex-col items-center justify-center py-20 text-center">
                                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 ring-8 ring-slate-50/50">
@@ -354,7 +353,7 @@ const HoSoHost = () => {
                                 </div>
 
                                 {/* Detail Info Grid */}
-                                <div className="grid gap-x-4 gap-y-5 rounded-xl bg-slate-50/50 p-5 ring-1 ring-inset ring-slate-100 md:grid-cols-2">
+                                <div className="grid gap-x-4 gap-y-5 rounded-3xl bg-slate-50/50 p-5 ring-1 ring-inset ring-slate-100 md:grid-cols-2">
                                     <div>
                                         <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Người liên hệ</p>
                                         <p className="mt-1 text-sm font-semibold text-slate-900">{detail.contactName || "-"}</p>
@@ -399,11 +398,11 @@ const HoSoHost = () => {
                                         </span>
                                         Giấy tờ xác minh ({detail.documents?.length || 0})
                                     </h3>
-                                    
+
                                     <div className="space-y-4">
                                         {detail.documents?.length ? (
                                             detail.documents.map((document) => (
-                                                <div key={document.id} className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-cyan-200">
+                                                <div key={document.id} className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-cyan-200">
                                                     <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3 flex flex-wrap justify-between items-center gap-2">
                                                         <div>
                                                             <p className="font-semibold text-slate-900 text-sm">
@@ -429,7 +428,7 @@ const HoSoHost = () => {
                                                                     href={document.signedUrl}
                                                                     target="_blank"
                                                                     rel="noreferrer"
-                                                                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-cyan-600 active:scale-95"
+                                                                    className="flex w-full items-center justify-center gap-2 rounded-3xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:text-cyan-600 active:scale-95"
                                                                 >
                                                                     <FiEye /> Mở PDF trong tab mới
                                                                 </a>
@@ -447,7 +446,7 @@ const HoSoHost = () => {
                                                 </div>
                                             ))
                                         ) : (
-                                            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 py-10">
+                                            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 py-10">
                                                 <div className="mb-2 h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
                                                     <FiX className="text-slate-400" />
                                                 </div>
@@ -458,25 +457,24 @@ const HoSoHost = () => {
                                 </div>
 
                                 {/* Actions Section */}
-                                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm mt-6">
+                                <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm mt-6">
                                     <h3 className="mb-3 text-sm font-bold text-slate-900">Quyết định xét duyệt</h3>
                                     <div className="space-y-4">
                                         <textarea
                                             value={rejectReason}
                                             onChange={(event) => setRejectReason(event.target.value)}
                                             placeholder="Nhập lý do nếu bạn muốn từ chối hồ sơ này..."
-                                            className="min-h-[100px] w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                                            className="min-h-[100px] w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all"
                                         />
                                         <div className="flex flex-col sm:flex-row gap-3">
                                             <button
                                                 type="button"
                                                 disabled={actionLoading || detail.status === "approved"}
                                                 onClick={runApprove}
-                                                className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all active:scale-95 ${
-                                                    actionLoading || detail.status === "approved"
+                                                className={`flex-1 flex items-center justify-center gap-2 rounded-3xl px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all active:scale-95 ${actionLoading || detail.status === "approved"
                                                     ? "bg-emerald-400 cursor-not-allowed opacity-80"
                                                     : "bg-emerald-500 hover:bg-emerald-600 hover:shadow-md hover:-translate-y-0.5"
-                                                }`}
+                                                    }`}
                                             >
                                                 {actionLoading ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <FiCheck size={16} />}
                                                 Phê duyệt hồ sơ
@@ -485,11 +483,10 @@ const HoSoHost = () => {
                                                 type="button"
                                                 disabled={actionLoading || detail.status === "rejected"}
                                                 onClick={runReject}
-                                                className={`flex-1 flex items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-all active:scale-95 ${
-                                                    actionLoading || detail.status === "rejected"
+                                                className={`flex-1 flex items-center justify-center gap-2 rounded-3xl border px-5 py-3 text-sm font-semibold transition-all active:scale-95 ${actionLoading || detail.status === "rejected"
                                                     ? "border-rose-200 bg-rose-50 text-rose-400 cursor-not-allowed"
                                                     : "border-rose-200 bg-white text-rose-600 hover:bg-rose-50 hover:border-rose-300 shadow-sm"
-                                                }`}
+                                                    }`}
                                             >
                                                 {actionLoading ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-rose-600 border-t-transparent" /> : <FiX size={16} />}
                                                 Từ chối
@@ -501,7 +498,7 @@ const HoSoHost = () => {
                         ) : null}
 
                         {selectedId && !loadingDetail && !detail && selectedApplication ? (
-                            <div className="rounded-xl border border-rose-200 bg-rose-50 py-10 text-center">
+                            <div className="rounded-3xl border border-rose-200 bg-rose-50 py-10 text-center">
                                 <p className="text-sm font-medium text-rose-700">
                                     Không thể tải chi tiết hồ sơ #{selectedApplication.applicationId}.
                                 </p>

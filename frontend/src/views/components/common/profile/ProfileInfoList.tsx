@@ -45,7 +45,7 @@ const ProfileInfoList = ({ user, onEditField }: ProfileInfoListProps) => {
     };
 
     return (
-        <div className="rounded-2xl bg-white p-3 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
+        <div className="rounded-3xl bg-white p-3 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
             {rowConfigs.map((row) => {
                 const Icon = row.icon;
                 const value = getValue(row.key);
@@ -62,11 +62,11 @@ const ProfileInfoList = ({ user, onEditField }: ProfileInfoListProps) => {
                             }
                         }}
                         className={cn(
-                            "flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition-all duration-200",
+                            "flex w-full items-start gap-3 rounded-3xl px-3 py-3 text-left transition-all duration-200",
                             isEditable ? "cursor-pointer hover:bg-slate-50" : "cursor-default",
                         )}
                     >
-                        <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-cyan-300/10 text-cyan-600">
+                        <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-3xl bg-cyan-300/10 text-cyan-600">
                             <Icon size={18} />
                         </span>
 

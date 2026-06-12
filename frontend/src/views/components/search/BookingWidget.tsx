@@ -18,7 +18,7 @@ const BookingWidget = ({
     className = "",
 }: BookingWidgetProps) => {
     return (
-        <aside className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${className}`.trim()}>
+        <aside className={`rounded-3xl border border-slate-200 bg-white p-5 shadow-sm ${className}`.trim()}>
             <div className="flex items-start justify-between gap-4">
                 <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
                 {priceLabel ? <p className="shrink-0 text-base font-bold text-cyan-600">{priceLabel}</p> : null}
@@ -30,7 +30,7 @@ const BookingWidget = ({
                 <button
                     type="button"
                     onClick={onAction}
-                    className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-cyan-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-cyan-500"
+                    className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-3xl bg-cyan-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-cyan-500"
                 >
                     {actionLabel}
                 </button>

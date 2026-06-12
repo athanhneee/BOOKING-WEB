@@ -704,7 +704,7 @@ const DatePickerPanel = ({
                                     }
                                 }}
                                 className={cn(
-                                    "shrink-0 rounded-2xl px-6 py-2.5 text-sm font-semibold transition-all duration-150",
+                                    "shrink-0 rounded-3xl px-6 py-2.5 text-sm font-semibold transition-all duration-150",
                                     checkIn && checkOut
                                         ? "bg-cyan-500 text-white shadow-sm hover:bg-cyan-600 active:scale-95"
                                         : "cursor-not-allowed bg-gray-200 text-gray-400",

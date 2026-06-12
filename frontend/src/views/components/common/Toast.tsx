@@ -29,7 +29,7 @@ const Toast = ({ message, type = "info", onClose, duration = 3000 }: ToastProps)
     }, [duration, onClose]);
 
     return (
-        <div className={`flex min-w-64 max-w-sm items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-white shadow-lg ${colors[type]}`}>
+        <div className={`flex min-w-64 max-w-sm items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium text-white shadow-lg ${colors[type]}`}>
             {icons[type]}
             <span className="flex-1">{message}</span>
             <button type="button" onClick={onClose} className="transition-opacity hover:opacity-70">

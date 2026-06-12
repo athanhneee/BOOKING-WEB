@@ -15,7 +15,7 @@ const currencyFormatter = new Intl.NumberFormat("vi-VN", {
 const PopularDestinationCard = ({ destination, onClick }: PopularDestinationCardProps) => {
     const content = (
         <>
-            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gray-200">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-gray-200">
                 {destination.imageUrl ? (
                     <img
                         src={destination.imageUrl}

@@ -79,18 +79,18 @@ const DanhGia = () => {
             <div className="mx-auto max-w-7xl space-y-6">
                 <PageHeader title="Đánh giá" />
 
-                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+                {error ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
-                <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
                     <label className="block space-y-2">
                         <span className="text-sm font-medium text-gray-700">Chọn chỗ nghỉ</span>
-                        <select value={listingId} onChange={(event) => setListingId(Number(event.target.value) || "")} className="w-full rounded-2xl border border-gray-200 px-3 py-2.5">
+                        <select value={listingId} onChange={(event) => setListingId(Number(event.target.value) || "")} className="w-full rounded-3xl border border-gray-200 px-3 py-2.5">
                             {listings.map((listing) => <option key={listing.listingId} value={listing.listingId}>{listing.title}</option>)}
                         </select>
                     </label>
                 </section>
 
-                <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
                     <table className={`${tableClassName} text-left text-sm`}>
                         <thead className="bg-gray-50 text-gray-500">
                             <tr><th className="px-4 py-3">Khách</th><th className="px-4 py-3">Sao</th><th className="px-4 py-3">Nội dung</th><th className="px-4 py-3">Ngày</th><th className="px-4 py-3">Phản hồi host</th></tr>
@@ -115,7 +115,7 @@ const DanhGia = () => {
                                     <td className="px-4 py-4 text-gray-500">{formatDate(review.createdAt.slice(0, 10))}</td>
                                     <td className="px-4 py-4">
                                         {review.hostReply ? (
-                                            <p className="rounded-2xl bg-gray-50 p-3 text-gray-600">{review.hostReply}</p>
+                                            <p className="rounded-3xl bg-gray-50 p-3 text-gray-600">{review.hostReply}</p>
                                         ) : (
                                             <div className="space-y-2">
                                                 <textarea value={replyDrafts[review.reviewId] ?? ""} onChange={(event) => setReplyDrafts((current) => ({ ...current, [review.reviewId]: event.target.value }))} className={`${textareaClassName} min-h-[80px]`} placeholder="Nhập phản hồi..." />

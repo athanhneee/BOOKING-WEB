@@ -161,13 +161,13 @@ const StayFilterModal = ({ isOpen, onClose, value, bounds, onApply }: StayFilter
                                     key={option.value}
                                     type="button"
                                     onClick={() => handleSortChange(option.value)}
-                                    className={`flex w-full items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all duration-150 ${isSelected
+                                    className={`flex w-full items-start gap-3 rounded-3xl border-2 p-4 text-left transition-all duration-150 ${isSelected
                                         ? "border-cyan-500 bg-cyan-50"
                                         : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
                                         }`}
                                 >
                                     <div
-                                        className={`flex-shrink-0 rounded-2xl p-2 transition-colors ${isSelected ? "bg-cyan-100 text-cyan-500" : "bg-gray-100 text-gray-500"
+                                        className={`flex-shrink-0 rounded-3xl p-2 transition-colors ${isSelected ? "bg-cyan-100 text-cyan-500" : "bg-gray-100 text-gray-500"
                                             }`}
                                     >
                                         <Icon size={16} />
@@ -197,7 +197,7 @@ const StayFilterModal = ({ isOpen, onClose, value, bounds, onApply }: StayFilter
                     <button
                         type="button"
                         onClick={handleClearAll}
-                        className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 transition hover:border-cyan-200 hover:text-cyan-600"
+                        className="inline-flex items-center justify-center rounded-3xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 transition hover:border-cyan-200 hover:text-cyan-600"
                     >
                         Xóa tất cả
                     </button>
@@ -205,7 +205,7 @@ const StayFilterModal = ({ isOpen, onClose, value, bounds, onApply }: StayFilter
                     <button
                         type="button"
                         onClick={handleApply}
-                        className="inline-flex items-center justify-center rounded-2xl bg-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_-20px_rgba(8,145,178,0.8)] transition hover:bg-cyan-500"
+                        className="inline-flex items-center justify-center rounded-3xl bg-cyan-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_-20px_rgba(8,145,178,0.8)] transition hover:bg-cyan-500"
                     >
                         Áp dụng bộ lọc
                     </button>

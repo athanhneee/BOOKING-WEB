@@ -77,9 +77,9 @@ const KhachLuuTru = () => {
             <div className="mx-auto max-w-7xl space-y-6">
                 <PageHeader title="Khách lưu trú" subtitle="" />
 
-                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+                {error ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
 
-                <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
                     <label className="block space-y-2">
                         <span className="text-sm font-medium text-gray-700">Chọn chỗ nghỉ</span>
                         <select
@@ -89,7 +89,7 @@ const KhachLuuTru = () => {
                                 const value = event.target.value;
                                 setSelectedListingId(value === "all" ? "all" : Number(value));
                             }}
-                            className="w-full rounded-2xl border border-gray-200 px-3 py-2.5"
+                            className="w-full rounded-3xl border border-gray-200 px-3 py-2.5"
                         >
                             <option value="all">Tất cả chỗ nghỉ</option>
                             {listingOptions.map((listing) => (
@@ -114,7 +114,7 @@ const KhachLuuTru = () => {
                     ) : null}
                 </section>
 
-                <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm max-h-[600px] overflow-y-auto">
+                <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm max-h-[600px] overflow-y-auto">
                     <table className={`${tableClassName} text-left text-sm`}>
                         <thead className="bg-gray-50 text-gray-500">
                             <tr><th className="px-4 py-3">Khách</th><th className="px-4 py-3">Chỗ nghỉ</th><th className="px-4 py-3">Ngày lưu trú</th><th className="px-4 py-3">Số khách</th><th className="px-4 py-3">Trạng thái</th></tr>

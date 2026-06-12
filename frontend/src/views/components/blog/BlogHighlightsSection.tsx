@@ -69,15 +69,15 @@ const BlogHighlightsSection = () => {
                 </div>
 
                 {isLoading ? (
-                    <div className="mt-7 rounded-2xl border border-slate-100 bg-white p-8 text-center text-sm font-medium text-slate-500 shadow-sm">
+                    <div className="mt-7 rounded-3xl border border-slate-100 bg-white p-8 text-center text-sm font-medium text-slate-500 shadow-sm">
                         Đang tải bài viết...
                     </div>
                 ) : loadError ? (
-                    <div className="mt-7 rounded-2xl border border-amber-100 bg-amber-50 p-5 text-sm font-medium text-amber-700">
+                    <div className="mt-7 rounded-3xl border border-amber-100 bg-amber-50 p-5 text-sm font-medium text-amber-700">
                         {loadError}
                     </div>
                 ) : posts.length === 0 ? (
-                    <div className="mt-7 rounded-2xl border border-slate-100 bg-white p-8 text-center text-sm font-medium text-slate-500 shadow-sm">
+                    <div className="mt-7 rounded-3xl border border-slate-100 bg-white p-8 text-center text-sm font-medium text-slate-500 shadow-sm">
                         Chưa có bài viết nổi bật.
                     </div>
                 ) : (

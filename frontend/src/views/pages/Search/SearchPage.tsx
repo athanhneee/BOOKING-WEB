@@ -279,7 +279,7 @@ const SearchPage = () => {
                     {isLoading ? (
                         <StayGridSkeleton count={6} />
                     ) : error ? (
-                        <div className="rounded-2xl border border-rose-100 bg-rose-50 p-8 text-center shadow-sm">
+                        <div className="rounded-3xl border border-rose-100 bg-rose-50 p-8 text-center shadow-sm">
                             <p className="text-sm font-semibold text-rose-600">{error}</p>
                             <button
                                 type="button"
@@ -287,7 +287,7 @@ const SearchPage = () => {
                                     const nextParams = new URLSearchParams(searchParams);
                                     setSearchParams(nextParams);
                                 })()}
-                                className="mt-4 inline-flex h-10 items-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+                                className="mt-4 inline-flex h-10 items-center gap-2 rounded-3xl border border-rose-200 bg-white px-4 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
                             >
                                 Thử lại
                             </button>

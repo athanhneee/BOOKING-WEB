@@ -47,8 +47,8 @@ const PhanQuyenHeThong = () => {
         <div className={pageWrapperClass}>
             <div className="mx-auto max-w-7xl space-y-6">
 
-                {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
-                <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                {error ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+                <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
                     <div className="overflow-x-auto">
                         <table className={`${tableClassName} text-left text-sm`}>
                             <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
@@ -88,7 +88,7 @@ const PhanQuyenHeThong = () => {
                                                 <select
                                                     value={draftRole}
                                                     onChange={(event) => setDraftRoles((current) => ({ ...current, [userId]: event.target.value }))}
-                                                    className="min-w-[120px] cursor-pointer rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none transition-all focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 hover:border-gray-300"
+                                                    className="min-w-[120px] cursor-pointer rounded-3xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none transition-all focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 hover:border-gray-300"
                                                 >
                                                     {roles.map((role) => <option key={role} value={role}>{roleLabel[role] ?? role}</option>)}
                                                 </select>
@@ -99,7 +99,7 @@ const PhanQuyenHeThong = () => {
                                                         type="button"
                                                         disabled={savingId === userId || !isChanged}
                                                         onClick={() => saveRole(user)}
-                                                        className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all disabled:pointer-events-none ${isChanged ? "bg-cyan-600 text-white hover:bg-cyan-700 shadow-sm" : "bg-slate-100 text-slate-400"
+                                                        className={`rounded-3xl px-4 py-2 text-sm font-semibold transition-all disabled:pointer-events-none ${isChanged ? "bg-cyan-600 text-white hover:bg-cyan-700 shadow-sm" : "bg-slate-100 text-slate-400"
                                                             }`}
                                                     >
                                                         {savingId === userId ? "Đang lưu..." : "Lưu"}
@@ -108,7 +108,7 @@ const PhanQuyenHeThong = () => {
                                                         <button
                                                             type="button"
                                                             onClick={() => setDraftRoles((current) => ({ ...current, [userId]: currentRole }))}
-                                                            className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-100"
+                                                            className="rounded-3xl bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-100"
                                                         >
                                                             Hủy
                                                         </button>

@@ -118,7 +118,7 @@ const currencyFormatter = new Intl.NumberFormat("vi-VN", {
 });
 
 const cardClass =
-    "rounded-2xl border border-[#e8ddd1] bg-white shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:rounded-[34px]";
+    "rounded-3xl border border-[#e8ddd1] bg-white shadow-[0_30px_80px_-50px_rgba(71,47,23,0.38)] sm:rounded-[34px]";
 const bookingQueueLimitMessage =
     "Bạn chỉ có thể thêm tối đa 5 chỗ ở vào danh sách chờ đặt. Bạn có thể lưu chỗ ở này để xem sau.";
 
@@ -476,7 +476,7 @@ const BookingSelectionField = ({
         ref={buttonRef}
         type="button"
         onClick={onClick}
-        className={`flex w-full items-start gap-3 rounded-2xl border px-4 py-4 text-left transition-all duration-200 sm:rounded-[28px] ${isActive
+        className={`flex w-full items-start gap-3 rounded-3xl border px-4 py-4 text-left transition-all duration-200 sm:rounded-[28px] ${isActive
             ? "border-cyan-300 bg-cyan-50/80 shadow-[0_18px_35px_-28px_rgba(15,23,42,0.32)] ring-4 ring-cyan-100"
             : "border-slate-200 bg-white hover:border-cyan-200 hover:bg-slate-50/70"
             }`}
@@ -1293,7 +1293,7 @@ const MobileBookingSheetPanel = ({
 
                 <div className="shrink-0 border-t border-zinc-200 bg-[#f4f0eb] px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
                     {sheet === "dates" ? (
-                        <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3">
+                        <div className="mb-3 flex items-center justify-between gap-3 rounded-3xl bg-white px-4 py-3">
                             <div className="min-w-0 flex-1">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
                                     {mobileDateField === "checkin" ? "Đang chọn nhận phòng" : "Đang chọn trả phòng"}
@@ -1316,11 +1316,10 @@ const MobileBookingSheetPanel = ({
                     <button
                         type="button"
                         onClick={onClose}
-                        className={`inline-flex min-h-14 w-full items-center justify-center rounded-[26px] px-6 text-base font-semibold text-white shadow-lg transition-colors ${
-                            sheet === "dates" && checkIn && checkOut
+                        className={`inline-flex min-h-14 w-full items-center justify-center rounded-[26px] px-6 text-base font-semibold text-white shadow-lg transition-colors ${sheet === "dates" && checkIn && checkOut
                                 ? "bg-cyan-600 hover:bg-cyan-700"
                                 : "bg-cyan-600 hover:bg-cyan-700"
-                        }`}
+                            }`}
                     >
                         {sheet === "dates" && checkIn && checkOut ? "Xác nhận ngày" : "Áp dụng"}
                     </button>

@@ -472,7 +472,7 @@ const MessagesPage = () => {
                                             key={conversation.id}
                                             type="button"
                                             onClick={() => handleSelectConversation(conversation)}
-                                            className={`flex w-full gap-3 rounded-2xl px-3 py-3 text-left transition ${isActive
+                                            className={`flex w-full gap-3 rounded-3xl px-3 py-3 text-left transition ${isActive
                                                 ? "bg-cyan-50 ring-1 ring-cyan-100"
                                                 : "hover:bg-cyan-50/70"
                                                 }`}
@@ -563,7 +563,7 @@ const MessagesPage = () => {
                                                 key={conversation.id}
                                                 type="button"
                                                 onClick={() => handleSelectConversation(conversation)}
-                                                className="flex w-full gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-cyan-50/70 active:bg-cyan-50"
+                                                className="flex w-full gap-3 rounded-3xl px-3 py-3 text-left transition hover:bg-cyan-50/70 active:bg-cyan-50"
                                             >
                                                 <ConversationAvatar conversation={conversation} />
                                                 <span className="min-w-0 flex-1">

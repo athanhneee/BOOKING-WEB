@@ -123,7 +123,7 @@ const Guest = ({ value, isOpen, onOpen, onChange, className, popupClassName, onC
             ) : null}
 
             <div
-                className={`absolute left-1/2 top-[calc(100%+12px)] z-50 w-[min(380px,calc(100vw-2rem))] -translate-x-1/2 transform-gpu rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_32px_70px_-42px_rgba(15,23,42,0.42)] origin-top transition-all duration-200 ease-out will-change-transform ${popupClassName ?? ""} ${isOpen ? "translate-y-0 scale-100 opacity-100 pointer-events-auto" : "pointer-events-none -translate-y-1 scale-[0.98] opacity-0"}`}
+                className={`absolute left-1/2 top-[calc(100%+12px)] z-50 w-[min(380px,calc(100vw-2rem))] -translate-x-1/2 transform-gpu rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_32px_70px_-42px_rgba(15,23,42,0.42)] origin-top transition-all duration-200 ease-out will-change-transform ${popupClassName ?? ""} ${isOpen ? "translate-y-0 scale-100 opacity-100 pointer-events-auto" : "pointer-events-none -translate-y-1 scale-[0.98] opacity-0"}`}
             >
                 <p className="text-sm font-semibold text-gray-900">Bạn đi cùng ai?</p>
                 <p className="mt-1 text-xs text-gray-500">Tối đa 16 khách, chưa tính em bé và thú cưng.</p>

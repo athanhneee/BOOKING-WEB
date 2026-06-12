@@ -360,14 +360,14 @@ const HostTinNhan = () => {
 
                     <div className="max-h-[260px] space-y-2 overflow-y-auto p-3 sm:max-h-[320px] lg:max-h-none lg:flex-1">
                         {isLoadingConversations ? (
-                            <div className="flex flex-col items-center justify-center rounded-2xl bg-white px-4 py-8">
+                            <div className="flex flex-col items-center justify-center rounded-3xl bg-white px-4 py-8">
                                 <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
                                 <span className="text-sm font-medium text-slate-500">Đang tải hội thoại...</span>
                             </div>
                         ) : error ? (
-                            <div className="rounded-2xl bg-white px-4 py-8 text-sm text-rose-600">{error}</div>
+                            <div className="rounded-3xl bg-white px-4 py-8 text-sm text-rose-600">{error}</div>
                         ) : conversations.length === 0 ? (
-                            <div className="rounded-2xl bg-white px-4 py-12 text-center">
+                            <div className="rounded-3xl bg-white px-4 py-12 text-center">
                                 <FiInbox className="mx-auto text-3xl text-gray-400" />
                                 <p className="mt-3 text-sm font-semibold text-gray-900">Chưa có tin nhắn nào từ khách.</p>
                             </div>
@@ -382,7 +382,7 @@ const HostTinNhan = () => {
                                         type="button"
                                         onClick={() => handleSelectConversation(conversation)}
                                         className={cn(
-                                            "group flex w-full gap-3 rounded-2xl border px-3 py-3 text-left transition sm:px-4",
+                                            "group flex w-full gap-3 rounded-3xl border px-3 py-3 text-left transition sm:px-4",
                                             isActive
                                                 ? "border-cyan-200 bg-white shadow-sm ring-1 ring-cyan-100"
                                                 : "border-transparent bg-white/60 hover:border-gray-200 hover:bg-white",
