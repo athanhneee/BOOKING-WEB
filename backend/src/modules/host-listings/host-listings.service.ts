@@ -71,6 +71,7 @@ export type CreateListingInput = {
     basePrice: number;
     weekendPrice?: number | null;
     cleaningFee?: number | null;
+    surchargeAmount?: number | null;
     serviceFeePct?: number | null;
     extraGuestFee?: number | null;
     currency: "VND";
@@ -103,6 +104,7 @@ export type UpdateListingInput = Partial<
         | "basePrice"
         | "weekendPrice"
         | "cleaningFee"
+        | "surchargeAmount"
         | "serviceFeePct"
         | "extraGuestFee"
         | "maxGuests"
@@ -295,6 +297,7 @@ const sensitiveListingFields = new Set<keyof UpdateListingInput>([
     "basePrice",
     "weekendPrice",
     "cleaningFee",
+    "surchargeAmount",
     "serviceFeePct",
     "extraGuestFee",
     "includedGuests",
@@ -691,6 +694,7 @@ const serializeHostListingDetail = async (listing: ListingDocument) => {
         basePrice: listing.basePrice,
         weekendPrice: listing.weekendPrice ?? null,
         cleaningFee: listing.cleaningFee ?? null,
+        surchargeAmount: listing.surchargeAmount ?? null,
         serviceFeePct: listing.serviceFeePct ?? null,
         extraGuestFee: listing.extraGuestFee ?? null,
         currency: listing.currency,
@@ -873,6 +877,7 @@ export const updateListing = async (listingId: number, actor: HostActor, input: 
         if (sanitizedInput.basePrice !== undefined) listing.basePrice = sanitizedInput.basePrice;
         if (hasOwn(sanitizedInput, "weekendPrice")) listing.weekendPrice = sanitizedInput.weekendPrice ?? null;
         if (hasOwn(sanitizedInput, "cleaningFee")) listing.cleaningFee = sanitizedInput.cleaningFee ?? null;
+        if (hasOwn(sanitizedInput, "surchargeAmount")) listing.surchargeAmount = sanitizedInput.surchargeAmount ?? null;
         if (hasOwn(sanitizedInput, "serviceFeePct")) listing.serviceFeePct = sanitizedInput.serviceFeePct ?? null;
         if (hasOwn(sanitizedInput, "extraGuestFee")) listing.extraGuestFee = sanitizedInput.extraGuestFee ?? null;
         if (sanitizedInput.maxGuests !== undefined) listing.maxGuests = sanitizedInput.maxGuests;

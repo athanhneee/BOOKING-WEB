@@ -105,6 +105,7 @@ export type ListingRecord = {
     basePrice: number;
     weekendPrice: number | null;
     cleaningFee: number | null;
+    surchargeAmount: number | null;
     serviceFeePct: number | null;
     extraGuestFee: number | null;
     currency: string;
@@ -161,6 +162,7 @@ class ListingModel extends Model<InferAttributes<ListingModel>, InferCreationAtt
     declare basePrice: number;
     declare weekendPrice: number | null;
     declare cleaningFee: number | null;
+    declare surchargeAmount: CreationOptional<number | null>;
     declare serviceFeePct: number | null;
     declare extraGuestFee: CreationOptional<number | null>;
     declare currency: string;
@@ -304,6 +306,12 @@ ListingModel.init(
             type: DataTypes.DECIMAL(15, 2),
             allowNull: true,
             field: "cleaning_fee",
+        },
+        surchargeAmount: {
+            type: DataTypes.DECIMAL(15, 2),
+            allowNull: true,
+            defaultValue: 0,
+            field: "surcharge_amount",
         },
         serviceFeePct: {
             type: DataTypes.DECIMAL(5, 2),

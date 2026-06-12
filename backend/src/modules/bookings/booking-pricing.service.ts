@@ -29,6 +29,7 @@ export type BookingPriceBreakdown = {
     subtotal: number;
     cleaningFeeAmount: number;
     cleaningFee: number;
+    surchargeAmount: number;
     serviceFeeAmount: number;
     serviceFee: number;
     extraGuestFeeAmount: number;
@@ -215,8 +216,9 @@ export const calculateBookingPricing = async (params: {
     const extraGuestPricing = getExtraGuestPricing(listing, guestCount, totalNights);
     const accommodationAmount = subtotalAmount + extraGuestPricing.extraGuestFeeAmount;
     const cleaningFeeAmount = toNumber(listing.cleaningFee);
+    const surchargeAmount = toNumber((listing as ListingDocument & { surchargeAmount?: number | null }).surchargeAmount);
     const serviceFeeAmount = Math.round(accommodationAmount * (toNumber(listing.serviceFeePct) / 100));
-    const preDiscountTotal = accommodationAmount + cleaningFeeAmount + serviceFeeAmount;
+    const preDiscountTotal = accommodationAmount + cleaningFeeAmount + surchargeAmount + serviceFeeAmount;
     const normalizedCouponCode = normalizeCouponCode(couponCode);
     const { coupon, discountAmount } = await getCouponDiscount(
         userId,
@@ -238,6 +240,7 @@ export const calculateBookingPricing = async (params: {
         subtotal: subtotalAmount,
         cleaningFeeAmount,
         cleaningFee: cleaningFeeAmount,
+        surchargeAmount,
         serviceFeeAmount,
         serviceFee: serviceFeeAmount,
         extraGuestFeeAmount: extraGuestPricing.extraGuestFeeAmount,

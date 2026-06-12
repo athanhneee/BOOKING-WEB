@@ -524,6 +524,7 @@ const buildBookingPriceBreakdownForResponse = (booking: BookingDocument): Bookin
     );
     const subtotalAmount = toNumber(stored?.subtotalAmount ?? stored?.subtotal ?? booking.subtotalAmount);
     const cleaningFeeAmount = toNumber(stored?.cleaningFeeAmount ?? stored?.cleaningFee ?? booking.cleaningFeeAmount);
+    const surchargeAmount = toNumber(stored?.surchargeAmount);
     const serviceFeeAmount = toNumber(stored?.serviceFeeAmount ?? stored?.serviceFee ?? booking.serviceFeeAmount);
     const discountAmount = toNumber(stored?.discountAmount ?? stored?.discount ?? booking.discountAmount);
     const totalAmount = toNumber(stored?.totalAmount ?? booking.totalAmount);
@@ -548,6 +549,7 @@ const buildBookingPriceBreakdownForResponse = (booking: BookingDocument): Bookin
         subtotal: subtotalAmount,
         cleaningFeeAmount,
         cleaningFee: cleaningFeeAmount,
+        surchargeAmount,
         serviceFeeAmount,
         serviceFee: serviceFeeAmount,
         extraGuestFeeAmount,
