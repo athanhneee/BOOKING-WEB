@@ -249,6 +249,18 @@ npm run test        # Build + chạy tuần tự tất cả integration test
 
 ---
 
+## Bảo mật
+
+- **Xác thực:** JWT Access + Refresh token (refresh token lưu trong cookie `httpOnly`), hỗ trợ Google OAuth.
+- **Mật khẩu:** băm bằng `bcryptjs`; OTP được hash trước khi lưu.
+- **HTTP hardening:** `helmet`, CORS giới hạn theo `CLIENT_ORIGIN` / `CORS_ORIGINS`, `express-rate-limit`.
+- **Validation:** kiểm tra dữ liệu đầu vào bằng `zod` + `express-validator`.
+- **Schema production:** server chặn auto-sync schema khi `NODE_ENV=production`; migration chạy qua script deploy.
+
+> Quy trình vận hành bảo mật (xoay vòng secret, CORS/cookie, rate limit, backup/restore) xem chi tiết tại [`backend/docs/SECURITY_RUNBOOK.md`](./backend/docs/SECURITY_RUNBOOK.md).
+
+---
+
 ## Triển khai (Deployment)
 
 | Thành phần | Nền tảng | Cấu hình |
