@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { getAdminUsers, updateAdminUser } from "../../../../services/userService";
 import { pageWrapperClass, primaryButtonClass, secondaryButtonClass, tableClassName } from "../../Host/sharedStyles";
 
-const roles = ["guest", "host", "admin"];
-const roleLabel = { guest: "Guest", host: "Host", admin: "Admin" };
+const roles = ["guest", "host", "moderator", "admin"];
+const roleLabel = { guest: "Guest", host: "Host", moderator: "Moderator", admin: "Admin" };
 
 const PhanQuyenHeThong = () => {
     const [users, setUsers] = useState([]);
@@ -18,7 +18,7 @@ const PhanQuyenHeThong = () => {
         try {
             const result = await getAdminUsers({ page: 1, limit: 100 });
             setUsers(result.items ?? []);
-            setDraftRoles(Object.fromEntries((result.items ?? []).map((user) => [user.userId ?? user.id, user.role ?? user.roles?.[0] ?? "Guest"])));
+            setDraftRoles(Object.fromEntries((result.items ?? []).map((user) => [user.userId ?? user.id, user.role ?? user.roles?.[0] ?? "guest"])));
         } catch (fetchError) {
             setError(fetchError instanceof Error ? fetchError.message : "Không thể tải phân quyền.");
         } finally {
@@ -46,6 +46,10 @@ const PhanQuyenHeThong = () => {
     return (
         <div className={pageWrapperClass}>
             <div className="mx-auto max-w-7xl space-y-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Phân quyền hệ thống</h1>
+                    <p className="mt-1 text-sm text-gray-500">Cấp hoặc thay đổi vai trò cho từng người dùng.</p>
+                </div>
 
                 {error ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
                 <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
@@ -74,7 +78,7 @@ const PhanQuyenHeThong = () => {
                                 {!loading && users.length === 0 ? <tr><td colSpan={5} className="px-5 py-12 text-center text-slate-500">Không có user.</td></tr> : null}
                                 {users.map((user) => {
                                     const userId = user.userId ?? user.id;
-                                    const currentRole = user.role ?? user.roles?.[0] ?? "Guest";
+                                    const currentRole = user.role ?? user.roles?.[0] ?? "guest";
                                     const draftRole = draftRoles[userId] ?? currentRole;
                                     const isChanged = draftRole !== currentRole;
                                     return (
@@ -82,7 +86,7 @@ const PhanQuyenHeThong = () => {
                                             <td className="px-5 py-4 font-semibold text-slate-900">{user.fullName || user.name || user.username || `User #${userId}`}</td>
                                             <td className="px-5 py-4 text-slate-600">{user.email}</td>
                                             <td className="px-5 py-4 text-center">
-                                                <span className="inline-flex rounded-3xl bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{currentRole}</span>
+                                                <span className="inline-flex rounded-3xl bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{roleLabel[currentRole] ?? currentRole}</span>
                                             </td>
                                             <td className="px-5 py-4 text-center">
                                                 <select
