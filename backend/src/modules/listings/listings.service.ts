@@ -793,6 +793,18 @@ export const getPublicListings = async (query: PublicListingsQuery) => {
         }
 
         if (query.checkIn && query.checkOut) {
+            const requestedNights = Math.round(
+                (new Date(`${query.checkOut}T00:00:00.000Z`).getTime() - new Date(`${query.checkIn}T00:00:00.000Z`).getTime()) / (1000 * 60 * 60 * 24),
+            );
+
+            if (listing.minNights && requestedNights < listing.minNights) {
+                return false;
+            }
+
+            if (listing.maxNights && requestedNights > listing.maxNights) {
+                return false;
+            }
+
             if (bookedListingIds.has(listing.listingId)) {
                 return false;
             }

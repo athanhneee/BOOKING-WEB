@@ -49,9 +49,9 @@ const PhanQuyenHeThong = () => {
 
                 {error ? <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
                 <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                         <table className={`${tableClassName} text-left text-sm`}>
-                            <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                            <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 sticky top-0 z-10">
                                 <tr>
                                     <th className="px-5 py-4 font-semibold">Người dùng</th>
                                     <th className="px-5 py-4 font-semibold">Email</th>

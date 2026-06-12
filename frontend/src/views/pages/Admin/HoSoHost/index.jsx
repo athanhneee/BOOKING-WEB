@@ -223,9 +223,9 @@ const HoSoHost = () => {
                 <div className="flex flex-col xl:flex-row gap-6 items-start">
                     {/* Left Pane - List */}
                     <section className="flex-1 w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md">
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                             <table className={`${tableClassName} w-full text-left text-sm whitespace-nowrap`}>
-                                <thead className="border-b border-slate-100 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                <thead className="border-b border-slate-100 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500 sticky top-0 z-10">
                                     <tr>
                                         <th className="px-5 py-4">Người dùng</th>
                                         <th className="px-5 py-4">Liên hệ</th>

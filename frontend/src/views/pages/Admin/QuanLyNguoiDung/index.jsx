@@ -58,9 +58,9 @@ const QuanLyNguoiDung = () => {
                     <button type="button" onClick={fetchUsers} className={reloadButtonClass}><FiRefreshCw className="shrink-0" />Tải lại</button>
                 </section>
                 <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                         <table className={`${tableClassName} text-left text-sm`}>
-                            <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                            <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 sticky top-0 z-10">
                                 <tr>
                                     <th className="px-5 py-4 font-semibold">User</th>
                                     <th className="px-5 py-4 font-semibold">Email/Phone</th>
