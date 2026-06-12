@@ -47,14 +47,15 @@ BOOKING-WEB/
 ### Frontend
 | Thành phần | Công nghệ |
 |---|---|
-| Framework | React 18 + TypeScript |
+| Framework | React 19 + TypeScript |
 | Build tool | Vite |
-| Routing | React Router v6 |
-| State | Zustand / sessionStorage |
-| UI | Vanilla CSS |
+| Routing | React Router v7 |
+| State | Custom lightweight store + sessionStorage |
+| Styling | Tailwind CSS v4 |
+| Charts | Recharts |
 | Realtime | Socket.IO Client |
-| Maps | Leaflet |
-| HTTP | Axios |
+| Maps | Leaflet / React-Leaflet |
+| HTTP | Fetch API |
 
 ### Backend
 | Thành phần | Công nghệ |
