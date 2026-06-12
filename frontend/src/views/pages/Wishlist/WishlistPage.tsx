@@ -25,11 +25,11 @@ const SkeletonCard = () => (
     <div className="animate-pulse overflow-hidden rounded-3xl bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
         <div className="h-52 bg-slate-200" />
         <div className="p-4 space-y-3">
-            <div className="h-5 w-3/4 rounded-lg bg-slate-200" />
-            <div className="h-4 w-1/2 rounded-lg bg-slate-200" />
-            <div className="h-4 w-2/3 rounded-lg bg-slate-200" />
+            <div className="h-5 w-3/4 rounded-3xl bg-slate-200" />
+            <div className="h-4 w-1/2 rounded-3xl bg-slate-200" />
+            <div className="h-4 w-2/3 rounded-3xl bg-slate-200" />
             <div className="flex justify-between pt-2">
-                <div className="h-6 w-24 rounded-lg bg-slate-200" />
+                <div className="h-6 w-24 rounded-3xl bg-slate-200" />
                 <div className="h-9 w-28 rounded-3xl bg-slate-200" />
             </div>
         </div>

@@ -202,7 +202,7 @@ const ChoNghi = () => {
 
                                 <div className="flex flex-1 flex-col p-5">
                                     <div className="mb-3 flex items-start justify-between gap-2">
-                                        <span className="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-600 ring-1 ring-inset ring-slate-500/10">
+                                        <span className="inline-flex items-center rounded-3xl bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-600 ring-1 ring-inset ring-slate-500/10">
                                             {property.propertyType}
                                         </span>
                                         <span className="text-right text-sm font-bold text-slate-900">

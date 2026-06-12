@@ -82,7 +82,7 @@ const PhanQuyenHeThong = () => {
                                             <td className="px-5 py-4 font-semibold text-slate-900">{user.fullName || user.name || user.username || `User #${userId}`}</td>
                                             <td className="px-5 py-4 text-slate-600">{user.email}</td>
                                             <td className="px-5 py-4 text-center">
-                                                <span className="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{currentRole}</span>
+                                                <span className="inline-flex rounded-3xl bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{currentRole}</span>
                                             </td>
                                             <td className="px-5 py-4 text-center">
                                                 <select

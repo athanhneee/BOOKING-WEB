@@ -423,22 +423,22 @@ const ProfilePage = () => {
                                 <div className="animate-pulse space-y-4 rounded-3xl bg-white p-6 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
                                     <div className="flex flex-col items-center gap-4">
                                         <div className="h-24 w-24 rounded-full bg-slate-200" />
-                                        <div className="h-5 w-36 rounded-lg bg-slate-200" />
-                                        <div className="h-4 w-24 rounded-lg bg-slate-200" />
+                                        <div className="h-5 w-36 rounded-3xl bg-slate-200" />
+                                        <div className="h-4 w-24 rounded-3xl bg-slate-200" />
                                     </div>
                                     <div className="space-y-2 pt-4">
-                                        <div className="h-4 w-full rounded-lg bg-slate-200" />
-                                        <div className="h-4 w-5/6 rounded-lg bg-slate-200" />
-                                        <div className="h-4 w-4/6 rounded-lg bg-slate-200" />
+                                        <div className="h-4 w-full rounded-3xl bg-slate-200" />
+                                        <div className="h-4 w-5/6 rounded-3xl bg-slate-200" />
+                                        <div className="h-4 w-4/6 rounded-3xl bg-slate-200" />
                                     </div>
                                 </div>
                                 <div className="space-y-4">
                                     <div className="animate-pulse rounded-3xl bg-white p-6 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] space-y-3">
-                                        <div className="h-5 w-32 rounded-lg bg-slate-200" />
+                                        <div className="h-5 w-32 rounded-3xl bg-slate-200" />
                                         {[1, 2, 3, 4].map((i) => (
                                             <div key={i} className="flex justify-between border-b border-slate-100 py-3">
-                                                <div className="h-4 w-24 rounded-lg bg-slate-200" />
-                                                <div className="h-4 w-32 rounded-lg bg-slate-200" />
+                                                <div className="h-4 w-24 rounded-3xl bg-slate-200" />
+                                                <div className="h-4 w-32 rounded-3xl bg-slate-200" />
                                             </div>
                                         ))}
                                     </div>

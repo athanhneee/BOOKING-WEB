@@ -376,14 +376,14 @@ const HoSoHost = () => {
                                     </div>
                                     <div className="md:col-span-2">
                                         <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Ghi chú</p>
-                                        <div className="mt-1 rounded-lg bg-white p-3 text-sm text-slate-700 shadow-sm ring-1 ring-slate-200/50 min-h-[60px] italic">
+                                        <div className="mt-1 rounded-3xl bg-white p-3 text-sm text-slate-700 shadow-sm ring-1 ring-slate-200/50 min-h-[60px] italic">
                                             {detail.note || "Không có ghi chú"}
                                         </div>
                                     </div>
                                     {detail.rejectReason ? (
                                         <div className="md:col-span-2 mt-2">
                                             <p className="text-xs font-semibold text-rose-600 uppercase tracking-wider mb-1">Lý do từ chối trước đó</p>
-                                            <div className="rounded-lg bg-rose-50 p-3.5 text-sm font-medium text-rose-800 ring-1 ring-inset ring-rose-200">
+                                            <div className="rounded-3xl bg-rose-50 p-3.5 text-sm font-medium text-rose-800 ring-1 ring-inset ring-rose-200">
                                                 {detail.rejectReason}
                                             </div>
                                         </div>
@@ -393,7 +393,7 @@ const HoSoHost = () => {
                                 {/* Documents Section */}
                                 <div>
                                     <h3 className="mb-4 flex items-center gap-2 text-base font-bold text-slate-900">
-                                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-100 text-cyan-700">
+                                        <span className="flex h-7 w-7 items-center justify-center rounded-3xl bg-cyan-100 text-cyan-700">
                                             <FiCheck size={14} />
                                         </span>
                                         Giấy tờ xác minh ({detail.documents?.length || 0})
@@ -417,7 +417,7 @@ const HoSoHost = () => {
                                                     <div className="p-4 bg-slate-50/30 flex justify-center">
                                                         {document.mimeType === "application/pdf" ? (
                                                             <div className="w-full space-y-3">
-                                                                <div className="relative rounded-lg border border-slate-200 overflow-hidden bg-white shadow-sm">
+                                                                <div className="relative rounded-3xl border border-slate-200 overflow-hidden bg-white shadow-sm">
                                                                     <iframe
                                                                         title={document.originalFilename || `document-${document.id}`}
                                                                         src={document.signedUrl}
@@ -438,7 +438,7 @@ const HoSoHost = () => {
                                                                 <img
                                                                     src={document.signedUrl}
                                                                     alt={document.originalFilename || document.documentType}
-                                                                    className="max-h-[360px] w-full rounded-lg object-contain shadow-sm ring-1 ring-slate-200 transition-transform duration-300 group-hover:scale-[1.01]"
+                                                                    className="max-h-[360px] w-full rounded-3xl object-contain shadow-sm ring-1 ring-slate-200 transition-transform duration-300 group-hover:scale-[1.01]"
                                                                 />
                                                             </a>
                                                         )}

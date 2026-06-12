@@ -314,7 +314,7 @@ const EditProfileModal = ({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all duration-200 hover:bg-slate-50 hover:text-slate-700"
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-3xl border border-slate-200 bg-white text-slate-500 transition-all duration-200 hover:bg-slate-50 hover:text-slate-700"
                             aria-label="Đóng chỉnh sửa hồ sơ"
                         >
                             <LuX size={16} />

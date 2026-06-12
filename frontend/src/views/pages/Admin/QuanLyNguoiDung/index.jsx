@@ -95,7 +95,7 @@ const QuanLyNguoiDung = () => {
                                                 <p className="mt-0.5 text-xs text-slate-400">{user.phone || "-"}</p>
                                             </td>
                                             <td className="px-5 py-4">
-                                                <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                                                <span className="rounded-3xl bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
                                                     {(user.roles || [user.role]).filter(Boolean).join(", ")}
                                                 </span>
                                             </td>
