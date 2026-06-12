@@ -218,6 +218,25 @@ npm run test        # Build + chạy tuần tự tất cả integration test
 
 ---
 
+## Triển khai (Deployment)
+
+| Thành phần | Nền tảng | Cấu hình |
+|---|---|---|
+| Backend | [Render](https://render.com) | [`render.yaml`](./render.yaml) — region Singapore, health check `/api/health` |
+| Frontend | [Vercel](https://vercel.com) | [`frontend/vercel.json`](./frontend/vercel.json) — SPA rewrite về `index.html` |
+
+**Backend (Render):**
+- Build: `npm install --include=dev && npm run build`
+- Start: `node dist/index.js`
+- Khai báo các biến môi trường ở mục [Biến môi trường quan trọng](#biến-môi-trường-quan-trọng-backend) trong dashboard Render.
+- Chi tiết xem [`backend/RENDER_DEPLOY.md`](./backend/RENDER_DEPLOY.md).
+
+**Frontend (Vercel):**
+- Build: `npm run build` → xuất ra `dist/`
+- Thiết lập `VITE_API_URL` trỏ tới domain backend đã deploy.
+
+---
+
 ## Nhánh Git
 
 | Nhánh | Mục đích |
