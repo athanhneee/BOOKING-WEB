@@ -88,6 +88,7 @@ type FormState = {
     basePrice: string;
     weekendPrice: string;
     cleaningFee: string;
+    surchargeAmount: string;
     serviceFeePct: string;
     minNights: string;
     maxNights: string;
@@ -168,6 +169,7 @@ const initialForm: FormState = {
     basePrice: "3000000",
     weekendPrice: "3000000",
     cleaningFee: "0",
+    surchargeAmount: "0",
     serviceFeePct: "10",
     minNights: "1",
     maxNights: "14",
@@ -489,6 +491,7 @@ const buildFormFromDetail = (detail: HostListingDetail): FormState => ({
     basePrice: toInputValue(detail.basePrice),
     weekendPrice: toInputValue(detail.weekendPrice ?? detail.basePrice),
     cleaningFee: toInputValue(detail.cleaningFee),
+    surchargeAmount: toInputValue((detail as HostListingDetail & { surchargeAmount?: number | null }).surchargeAmount),
     serviceFeePct: toInputValue(detail.serviceFeePct),
     minNights: toInputValue(detail.minNights),
     maxNights: toInputValue(detail.maxNights),
@@ -730,6 +733,7 @@ const ThemChoNghi = () => {
         if (basePrice <= 0) return "Giá cơ bản phải lớn hơn 0.";
         if (weekendPrice <= 0) return "Giá cuối tuần phải lớn hơn 0.";
         if (cleaningFee < 0) return "Phí dọn dẹp không được nhỏ hơn 0.";
+        if (toNumber(form.surchargeAmount, 0) < 0) return "Phụ thu không được nhỏ hơn 0.";
         if (minNights < 1) return "Số đêm tối thiểu phải lớn hơn hoặc bằng 1.";
 
         if (maxNights !== null && maxNights < minNights) {
@@ -845,6 +849,7 @@ const ThemChoNghi = () => {
         basePrice: toNumber(form.basePrice, 0),
         weekendPrice: toNumber(form.weekendPrice || form.basePrice, 0),
         cleaningFee: toNumber(form.cleaningFee, 0),
+        surchargeAmount: toNumber(form.surchargeAmount, 0),
         serviceFeePct: toNullableNumber(form.serviceFeePct),
         currency: "VND",
         minNights: toNumber(form.minNights, 1),
@@ -1369,6 +1374,20 @@ const ThemChoNghi = () => {
                                 onChange={(e) => setIntegerField("cleaningFee", e.target.value)}
                                 className={inputClassName}
 
+                            />
+                        </label>
+
+                        <label>
+                            <span className={labelClassName}>Phụ thu</span>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={form.surchargeAmount}
+                                onKeyDown={preventInvalidIntegerKey}
+                                onChange={(e) => setIntegerField("surchargeAmount", e.target.value)}
+                                className={inputClassName}
+                                placeholder="0"
                             />
                         </label>
 

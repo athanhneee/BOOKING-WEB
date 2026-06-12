@@ -225,6 +225,7 @@ const GuestPayment = () => {
     const nights = Number(priceBreakdown?.totalNights ?? booking.totalNights ?? booking.nights ?? daysBetween(checkIn, checkOut));
     const subtotalAmount = Number(priceBreakdown?.subtotalAmount ?? booking.subtotalAmount ?? 0);
     const cleaningFeeAmount = Number(priceBreakdown?.cleaningFeeAmount ?? booking.cleaningFeeAmount ?? 0);
+    const surchargeAmount = Number(priceBreakdown?.surchargeAmount ?? 0);
     const serviceFeeAmount = Number(priceBreakdown?.serviceFeeAmount ?? booking.serviceFeeAmount ?? 0);
     const extraGuestFeeAmount = Number(priceBreakdown?.extraGuestFeeAmount ?? booking.extraGuestFeeAmount ?? 0);
     const discountAmount = Number(priceBreakdown?.discountAmount ?? booking.discountAmount ?? 0);
@@ -306,6 +307,13 @@ const GuestPayment = () => {
                                 <span>Phí dọn dẹp</span>
                                 <span>{formatCurrency(cleaningFeeAmount)}</span>
                             </div>
+
+                            {surchargeAmount > 0 ? (
+                                <div className="flex items-center justify-between px-4 py-3 text-sm text-gray-500">
+                                    <span>Phụ thu</span>
+                                    <span>{formatCurrency(surchargeAmount)}</span>
+                                </div>
+                            ) : null}
 
                             <div className="flex items-center justify-between px-4 py-3 text-sm text-gray-500">
                                 <span>Phí dịch vụ</span>
