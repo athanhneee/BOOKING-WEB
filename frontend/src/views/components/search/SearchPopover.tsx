@@ -109,10 +109,14 @@ const SearchPopover = forwardRef<HTMLDivElement, SearchPopoverProps>(
             return null;
         }
 
+        // Only animate once the panel has been measured and positioned, so the
+        // entrance transform never interferes with getBoundingClientRect.
+        const isPositioned = panelStyle.visibility === "visible";
+
         return createPortal(
             <div
                 ref={localRef}
-                className={`z-[99999] ${className}`}
+                className={`z-[99999] ${isPositioned ? "search-pop-anim" : ""} ${className}`}
                 style={panelStyle}
                 onMouseDown={(event) => event.stopPropagation()}
             >

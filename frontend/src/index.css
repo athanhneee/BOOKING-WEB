@@ -194,6 +194,25 @@ button:not(.rounded-none):not(.rounded-full):not(.rounded-3xl):not(.rounded-3xl)
     transition: background-color 80ms ease;
 }
 
+/* Search popover (location / dates / guests): smooth fade + slide in */
+.search-pop-anim {
+    animation: searchPopIn 0.17s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform-origin: top center;
+    will-change: transform, opacity;
+}
+
+@keyframes searchPopIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 /* Search bar field hover */
 .search-field-btn {
     transition:
