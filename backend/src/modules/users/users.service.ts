@@ -16,6 +16,7 @@ import {
     withTransaction,
 } from "./users.repository";
 import { UserRole, UserStatus } from "../../models/user";
+import Booking from "../../models/booking";
 
 type RequestContext = {
     ipAddress?: string | null;
@@ -319,6 +320,34 @@ const assertDoesNotRemoveLastActiveAdmin = async (
     }
 };
 
+const activeBookingStatuses = ["paid", "confirmed", "checked_in"] as const;
+
+const assertHostCanBeDowngraded = async (
+    userId: string | number,
+    currentRoles: UserRole[],
+    nextRoles?: UserRole[],
+) => {
+    if (!currentRoles.includes("host")) {
+        return;
+    }
+
+    if (nextRoles === undefined || nextRoles.includes("host")) {
+        return;
+    }
+
+    const activeBookingCount = await Booking.countDocuments({
+        hostUserId: Number(userId),
+        status: { $in: [...activeBookingStatuses] },
+    });
+
+    if (activeBookingCount > 0) {
+        throw new ApiError(
+            409,
+            "Host này đang có khách nên không thể đổi role từ host về guest",
+        );
+    }
+};
+
 export const updateCurrentUserProfile = async (actor: AuthenticatedUser, input: UpdateOwnProfileInput) => {
     assertNoSelfManagedAdminFields(input as Record<string, unknown>);
 
@@ -385,6 +414,7 @@ export const updateUserForAdmin = async (
         phone: input.phone,
     });
     await assertDoesNotRemoveLastActiveAdmin(oldRoles, previousStatus, nextRoles, input.status);
+    await assertHostCanBeDowngraded(user._id, oldRoles, nextRoles);
 
     const updates = {
         ...buildProfileUpdates(input, user.fullName),
