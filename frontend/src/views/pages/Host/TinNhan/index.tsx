@@ -436,7 +436,7 @@ const HostTinNhan = () => {
                                 </div>
                             </div>
 
-                            <div className="min-h-[200px] max-h-[56vh] flex-1 overflow-y-auto bg-[#f8fafc] px-3 py-4 sm:px-5 sm:py-5 lg:min-h-0">
+                            <div className="flex-1 overflow-y-auto bg-[#f8fafc] px-3 py-4 sm:px-5 sm:py-5 max-h-[56vh] lg:max-h-none">
                                 {isLoadingMessages ? (
                                     <div className="flex flex-col items-center justify-center py-10">
                                         <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
