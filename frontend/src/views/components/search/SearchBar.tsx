@@ -235,63 +235,6 @@ const DesktopField = ({
     </div>
 );
 
-type GuestCountInputProps = {
-    value: number;
-    min: number;
-    max: number;
-    label: string;
-    onChange: (next: number) => void;
-    className?: string;
-};
-
-// Editable number for the guest steppers: keeps +/- working while letting users type a value.
-const GuestCountInput = ({ value, min, max, label, onChange, className }: GuestCountInputProps) => {
-    const [draft, setDraft] = useState(String(value));
-    const [isFocused, setIsFocused] = useState(false);
-    const [lastSyncedValue, setLastSyncedValue] = useState(value);
-
-    if (value !== lastSyncedValue && !isFocused) {
-        setLastSyncedValue(value);
-        setDraft(String(value));
-    }
-
-    const clamp = (next: number) => Math.min(max, Math.max(min, next));
-
-    const handleChange = (raw: string) => {
-        const digits = raw.replace(/\D/g, "").slice(0, 2);
-        setDraft(digits);
-        if (digits !== "") {
-            onChange(clamp(Number(digits)));
-        }
-    };
-
-    const handleBlur = () => {
-        setIsFocused(false);
-        const normalized = draft === "" ? min : clamp(Number(draft));
-        setDraft(String(normalized));
-        onChange(normalized);
-    };
-
-    return (
-        <input
-            type="text"
-            inputMode="numeric"
-            aria-label={label}
-            value={draft}
-            onChange={(event) => handleChange(event.target.value)}
-            onFocus={(event) => {
-                setIsFocused(true);
-                event.target.select();
-            }}
-            onBlur={handleBlur}
-            className={cn(
-                "rounded-xl border border-transparent text-center font-semibold text-gray-900 outline-none transition focus:border-cyan-200 focus:bg-cyan-50/40 focus:ring-2 focus:ring-cyan-100",
-                className,
-            )}
-        />
-    );
-};
-
 const SearchBarInner = ({
     inferredVariant,
     initialDraftState,
@@ -511,15 +454,6 @@ const SearchBarInner = ({
                 },
             };
         });
-
-    const setGuestValue = (key: keyof GuestSelection, nextValue: number) =>
-        setDraftState((current) => ({
-            ...current,
-            guests: {
-                ...current.guests,
-                [key]: nextValue,
-            },
-        }));
 
     const resetSearch = () => {
         setDraftState(createDefaultBookingSearchState());
@@ -1282,14 +1216,9 @@ const SearchBarInner = ({
                                         >
                                             <FaMinus size={10} />
                                         </button>
-                                        <GuestCountInput
-                                            value={currentValue}
-                                            min={field.min}
-                                            max={field.max}
-                                            label={field.label}
-                                            onChange={(next) => setGuestValue(field.key, next)}
-                                            className="h-9 w-10 text-sm"
-                                        />
+                                        <span className="w-6 text-center text-sm font-semibold text-gray-900">
+                                            {currentValue}
+                                        </span>
                                         <button
                                             type="button"
                                             onClick={() => updateGuests(field.key, 1, field.min, field.max)}
@@ -1462,14 +1391,9 @@ const SearchBarInner = ({
                                                         >
                                                             <FaMinus size={10} />
                                                         </button>
-                                                        <GuestCountInput
-                                                            value={currentValue}
-                                                            min={field.min}
-                                                            max={field.max}
-                                                            label={field.label}
-                                                            onChange={(next) => setGuestValue(field.key, next)}
-                                                            className="h-10 w-12"
-                                                        />
+                                                        <span className="w-6 text-center font-semibold text-gray-900">
+                                                            {currentValue}
+                                                        </span>
                                                         <button
                                                             type="button"
                                                             onClick={() =>
