@@ -102,7 +102,7 @@ const normalizeUserRole = (role?: string): AuthUser["role"] => {
     const normalizedRole = String(role ?? "").trim().toLowerCase();
 
     if (normalizedRole === "admin") return "Admin";
-    if (normalizedRole === "moderator") return "Moderator";
+    // if (normalizedRole === "moderator") return "Moderator";
     if (normalizedRole === "host" || normalizedRole === "host verified" || normalizedRole === "host_verified") {
         return "host";
     }

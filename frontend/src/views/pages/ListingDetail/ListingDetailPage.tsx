@@ -1317,8 +1317,8 @@ const MobileBookingSheetPanel = ({
                         type="button"
                         onClick={onClose}
                         className={`inline-flex min-h-14 w-full items-center justify-center rounded-[26px] px-6 text-base font-semibold text-white shadow-lg transition-colors ${sheet === "dates" && checkIn && checkOut
-                                ? "bg-cyan-600 hover:bg-cyan-700"
-                                : "bg-cyan-600 hover:bg-cyan-700"
+                            ? "bg-cyan-600 hover:bg-cyan-700"
+                            : "bg-cyan-600 hover:bg-cyan-700"
                             }`}
                     >
                         {sheet === "dates" && checkIn && checkOut ? "Xác nhận ngày" : "Áp dụng"}

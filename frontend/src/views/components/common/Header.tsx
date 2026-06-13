@@ -134,7 +134,7 @@ const Header = () => {
 
         if (hostApplicationStatus === "pending") {
             return (
-                <Link to={APP_ROUTES.hostStatus} className={mobile ? "rounded-2xl px-4 py-3" : undefined}>
+                <Link to={APP_ROUTES.hostStatus} className={mobile ? "rounded-3xl px-4 py-3" : undefined}>
                     <span className="inline-flex items-center rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-sm font-medium text-yellow-700">
                         ⏳ Đang xét duyệt
                     </span>
@@ -142,161 +142,161 @@ const Header = () => {
             );
         }
 
-        if (hostApplicationStatus === "rejected") {
-            return (
-                <Link
-                    to={APP_ROUTES.hostStatus}
-                    className={
-                        mobile
-                            ? "rounded-2xl px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
-                            : "text-sm font-medium text-red-600 transition-colors hover:text-red-700"
-                    }
-                >
-                    Gửi lại hồ sơ
-                </Link>
-            );
-        }
+if (hostApplicationStatus === "rejected") {
+    return (
+        <Link
+            to={APP_ROUTES.hostStatus}
+            className={
+                mobile
+                    ? "rounded-3xl px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
+                    : "text-sm font-medium text-red-600 transition-colors hover:text-red-700"
+            }
+        >
+            Gửi lại hồ sơ
+        </Link>
+    );
+}
 
-        return (
-            <Link
-                to={APP_ROUTES.hostLanding}
-                className={
-                    mobile
-                        ? "rounded-2xl px-4 py-3 text-sm font-medium text-cyan-800 transition-all duration-200 hover:bg-cyan-300/10"
-                        : `hidden min-h-11 items-center justify-center rounded-2xl border px-4 py-2 text-sm font-medium transition-all duration-200 md:inline-flex ${useDarkText
-                            ? "border-cyan-300/50 bg-white text-cyan-800 hover:bg-cyan-300/10"
-                            : "border-white/30 bg-white/12 text-white backdrop-blur hover:bg-white/18"
-                        }`
-                }
-            >
-                Trở thành host
-            </Link>
-        );
+return (
+    <Link
+        to={APP_ROUTES.hostLanding}
+        className={
+            mobile
+                ? "rounded-3xl px-4 py-3 text-sm font-medium text-cyan-800 transition-all duration-200 hover:bg-cyan-300/10"
+                : `hidden min-h-11 items-center justify-center rounded-3xl border px-4 py-2 text-sm font-medium transition-all duration-200 md:inline-flex ${useDarkText
+                    ? "border-cyan-300/50 bg-white text-cyan-800 hover:bg-cyan-300/10"
+                    : "border-white/30 bg-white/12 text-white backdrop-blur hover:bg-white/18"
+                }`
+        }
+    >
+        Trở thành host
+    </Link>
+);
     };
 
-    const renderMobileWishlistLink = () => {
-        if (!currentUser) {
-            return null;
-        }
-
-        return (
-            <Link
-                to={APP_ROUTES.accountWishlist}
-                className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
-                onClick={() => setMobileMenuPath(null)}
-            >
-                <LuHeart size={17} className="shrink-0 text-slate-500" />
-                Danh sách yêu thích
-            </Link>
-        );
-    };
+const renderMobileWishlistLink = () => {
+    if (!currentUser) {
+        return null;
+    }
 
     return (
-        <header
-            className={`fixed left-0 top-0 z-50 w-full py-3 transition-transform duration-[520ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] will-change-transform md:py-4 ${isVisible ? "translate-y-0" : "pointer-events-none -translate-y-[110%]"
-                }`}
+        <Link
+            to={APP_ROUTES.accountWishlist}
+            className="flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
+            onClick={() => setMobileMenuPath(null)}
         >
-            <div className="container mx-auto flex items-center justify-between px-4 md:px-6">
-                <Link to={APP_ROUTES.home}>
-                    <img src={logo} alt="Minh Thanh Villa" className="h-8 object-contain md:h-9" />
-                </Link>
+            <LuHeart size={17} className="shrink-0 text-cyan-500" />
+            Danh sách yêu thích
+        </Link>
+    );
+};
 
-                <nav
-                    className={`hidden items-center space-x-8 text-base font-medium md:flex ${useDarkText ? "text-slate-900" : "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.75)]"
-                        }`}
+return (
+    <header
+        className={`fixed left-0 top-0 z-50 w-full py-3 transition-transform duration-[520ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] will-change-transform md:py-4 ${isVisible ? "translate-y-0" : "pointer-events-none -translate-y-[110%]"
+            }`}
+    >
+        <div className="container mx-auto flex items-center justify-between px-4 md:px-6">
+            <Link to={APP_ROUTES.home}>
+                <img src={logo} alt="Minh Thanh Villa" className="h-8 object-contain md:h-9" />
+            </Link>
+
+            <nav
+                className={`hidden items-center space-x-8 text-base font-medium md:flex ${useDarkText ? "text-slate-900" : "text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.75)]"
+                    }`}
+            >
+                {navLinks.map(({ to, label }) => {
+                    const isActive = location.pathname === to;
+
+                    return (
+                        <Link
+                            key={to}
+                            to={to}
+                            className={`${desktopLinkClass} ${isActive ? "text-cyan-600" : ""}`}
+                        >
+                            {label}
+                        </Link>
+                    );
+                })}
+            </nav>
+
+            <div className="flex items-center gap-2 md:gap-3">
+                {renderBecomeHostLink()}
+
+                {currentUser ? <NotificationBell /> : null}
+
+                <AccountMenu
+                    key={location.pathname}
+                    user={accountMenuUser}
+                    isAuthenticated={Boolean(currentUser)}
+                    hostAction={hostAction}
+                />
+
+                <button
+                    type="button"
+                    aria-label="Mở menu điều hướng"
+                    onClick={() =>
+                        setMobileMenuPath((current) => (current === location.pathname ? null : location.pathname))
+                    }
+                    className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors md:hidden ${mobileButtonClass}`}
                 >
-                    {navLinks.map(({ to, label }) => {
-                        const isActive = location.pathname === to;
+                    {mobileOpen ? <LuX size={18} /> : <LuMenu size={18} />}
+                </button>
+            </div>
+        </div>
 
-                        return (
+        {mobileOpen && (
+            <div className="px-4 pt-3 md:hidden">
+                <div className="mx-auto max-w-7xl rounded-3xl border border-slate-200 bg-white/95 p-2 shadow-md backdrop-blur">
+                    <nav className="flex flex-col text-slate-900">
+                        {navLinks.map(({ to, label, icon: Icon }) => (
                             <Link
                                 key={to}
                                 to={to}
-                                className={`${desktopLinkClass} ${isActive ? "text-cyan-600" : ""}`}
+                                className="flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
+                                onClick={() => setMobileMenuPath(null)}
                             >
+                                <Icon size={17} className="shrink-0 text-cyan-500" />
                                 {label}
                             </Link>
-                        );
-                    })}
-                </nav>
+                        ))}
 
-                <div className="flex items-center gap-2 md:gap-3">
-                    {renderBecomeHostLink()}
+                        {renderMobileWishlistLink()}
+                        {hostApplicationStatus === "pending" ? null : renderBecomeHostLink(true)}
 
-                    {currentUser ? <NotificationBell /> : null}
-
-                    <AccountMenu
-                        key={location.pathname}
-                        user={accountMenuUser}
-                        isAuthenticated={Boolean(currentUser)}
-                        hostAction={hostAction}
-                    />
-
-                    <button
-                        type="button"
-                        aria-label="Mở menu điều hướng"
-                        onClick={() =>
-                            setMobileMenuPath((current) => (current === location.pathname ? null : location.pathname))
-                        }
-                        className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors md:hidden ${mobileButtonClass}`}
-                    >
-                        {mobileOpen ? <LuX size={18} /> : <LuMenu size={18} />}
-                    </button>
-                </div>
-            </div>
-
-            {mobileOpen && (
-                <div className="px-4 pt-3 md:hidden">
-                    <div className="mx-auto max-w-7xl rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-md backdrop-blur">
-                        <nav className="flex flex-col text-slate-900">
-                            {navLinks.map(({ to, label, icon: Icon }) => (
+                        <div className="mt-1 border-t border-gray-100 pt-1">
+                            {currentUser ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setMobileMenuPath(null);
+                                        import("../../../services/authService").then(({ logout: doLogout }) => {
+                                            doLogout();
+                                            window.location.href = APP_ROUTES.login;
+                                        });
+                                    }}
+                                    className="flex w-full items-center gap-3 rounded-3xl px-4 py-3 text-left text-sm font-medium text-red-600 transition-all duration-200 hover:bg-red-50"
+                                >
+                                    <LuLogOut size={17} className="shrink-0" />
+                                    Đăng xuất
+                                </button>
+                            ) : (
                                 <Link
-                                    key={to}
-                                    to={to}
-                                    className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-slate-50"
+                                    to={APP_ROUTES.login}
+                                    className="flex items-center gap-3 rounded-3xl px-4 py-3 text-sm font-semibold text-cyan-600 transition-all duration-200 hover:bg-cyan-50"
                                     onClick={() => setMobileMenuPath(null)}
                                 >
-                                    <Icon size={17} className="shrink-0 text-slate-500" />
-                                    {label}
+                                    <LuLogIn size={17} className="shrink-0" />
+                                    Đăng nhập
                                 </Link>
-                            ))}
-
-                            {renderMobileWishlistLink()}
-                            {hostApplicationStatus === "pending" ? null : renderBecomeHostLink(true)}
-
-                            <div className="mt-1 border-t border-gray-100 pt-1">
-                                {currentUser ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setMobileMenuPath(null);
-                                            import("../../../services/authService").then(({ logout: doLogout }) => {
-                                                doLogout();
-                                                window.location.href = APP_ROUTES.login;
-                                            });
-                                        }}
-                                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-red-600 transition-all duration-200 hover:bg-red-50"
-                                    >
-                                        <LuLogOut size={17} className="shrink-0" />
-                                        Đăng xuất
-                                    </button>
-                                ) : (
-                                    <Link
-                                        to={APP_ROUTES.login}
-                                        className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-cyan-600 transition-all duration-200 hover:bg-cyan-50"
-                                        onClick={() => setMobileMenuPath(null)}
-                                    >
-                                        <LuLogIn size={17} className="shrink-0" />
-                                        Đăng nhập
-                                    </Link>
-                                )}
-                            </div>
-                        </nav>
-                    </div>
+                            )}
+                        </div>
+                    </nav>
                 </div>
-            )}
-        </header>
-    );
+            </div>
+        )}
+    </header>
+);
 };
 
 export default Header;
